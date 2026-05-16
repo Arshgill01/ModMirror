@@ -2,9 +2,22 @@
 
 ## Current Phase
 
-Wave 1 — Shared Contracts + Redis Data Layer + Dashboard Shell.
+Wave 2 — Mirror Scan + deterministic attribution.
 
-Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects, pure helper stubs, Redis data services, and dashboard shell are ready for Wave 2 integration. Runtime playtest remains blocked until `devvit login` is completed.
+Status: Wave 2 is being integrated across dedicated branches for attribution, demo seed data, live sources, dashboard scan UI, and tests/docs. Runtime playtest remains blocked until `devvit login` is completed.
+
+## Wave 2 Integration Checklist
+
+- [ ] Merge deterministic attribution engine.
+- [ ] Merge mandatory `r/ExampleLearning` demo seed data.
+- [ ] Merge live source adapters for mod log, rules, and removal reasons.
+- [ ] Merge Mirror Scan dashboard states.
+- [ ] Wire demo and live scan through the same scan service.
+- [ ] Verify confidence breakdown totals.
+- [ ] Verify demo Rule 2 drift candidate.
+- [ ] Complete `docs/WAVE2_COMPLETION_REPORT.md`.
+- [ ] Keep Policy Agreement Flow out of Wave 2.
+- [ ] Keep Apply Policy and Override Audit out of Wave 2.
 
 ## Wave 1 Completed Locally
 
