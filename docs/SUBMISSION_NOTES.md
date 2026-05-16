@@ -55,8 +55,18 @@ Existing tools help with removal speed, notes, strikes, or queue handling. ModMi
 
 ModMirror does not automatically ban users by default. It recommends, nudges, and logs. Moderators remain responsible for final decisions.
 
+## Current Build Proof
+
+- Mirror Scan demo mode surfaces Rule 2 drift.
+- Policy Agreement Flow can create/edit policies from drift or manually.
+- Apply Policy simulator previews and confirms `log_only` decisions.
+- Deviating actions require an override reason and are stored for aggregate review.
+
 ## Known Limitations
 
 - Historical rule attribution depends on available mod log/removal reason data.
 - ModMirror uses confidence levels and does not claim perfect attribution.
 - Low-volume communities may see less historical drift at first, so ModMirror includes policy-first setup and demo mode.
+- Live public comment/private message/modmail/native Mod Notes delivery is not enabled by default.
+- Browser UI proof is signed in and playtest-ready; clicking the dashboard
+  launcher creates a visible custom post and remains pending explicit approval.
