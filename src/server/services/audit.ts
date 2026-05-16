@@ -8,6 +8,8 @@ import type {
   OverrideEvent,
   OverrideReason,
   OverrideSummary,
+  PolicySnapshot,
+  PolicyVersionStatus,
 } from '../../shared/schema';
 import { parseJson, redisKeys, serializeJson } from './redis';
 
@@ -49,6 +51,18 @@ export async function saveActionEvent(
   }
   if (input.policyId !== undefined) {
     event.policyId = input.policyId;
+  }
+  if (input.policyVersionId !== undefined) {
+    event.policyVersionId = input.policyVersionId;
+  }
+  if (input.policyVersionNumber !== undefined) {
+    event.policyVersionNumber = input.policyVersionNumber;
+  }
+  if (input.policyVersionStatus !== undefined) {
+    event.policyVersionStatus = input.policyVersionStatus;
+  }
+  if (input.policySnapshot !== undefined) {
+    event.policySnapshot = input.policySnapshot;
   }
 
   const createdAtScore = Date.parse(event.createdAt);
@@ -153,6 +167,21 @@ export async function saveOverrideEvent(
   if (input.overrideNote !== undefined) {
     event.overrideNote = input.overrideNote;
   }
+  if (input.policyId !== undefined) {
+    event.policyId = input.policyId;
+  }
+  if (input.policyVersionId !== undefined) {
+    event.policyVersionId = input.policyVersionId;
+  }
+  if (input.policyVersionNumber !== undefined) {
+    event.policyVersionNumber = input.policyVersionNumber;
+  }
+  if (input.policyVersionStatus !== undefined) {
+    event.policyVersionStatus = input.policyVersionStatus;
+  }
+  if (input.policySnapshot !== undefined) {
+    event.policySnapshot = input.policySnapshot;
+  }
 
   await saveAuditEvent(event);
   return event;
@@ -205,6 +234,10 @@ export function createLogOnlyActionInput(options: {
   ruleKey: string;
   ruleName?: string;
   policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policySnapshot?: PolicySnapshot;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
   deliveryMode?: MessageDeliveryMode;
@@ -233,6 +266,18 @@ export function createLogOnlyActionInput(options: {
   }
   if (options.policyId !== undefined) {
     input.policyId = options.policyId;
+  }
+  if (options.policyVersionId !== undefined) {
+    input.policyVersionId = options.policyVersionId;
+  }
+  if (options.policyVersionNumber !== undefined) {
+    input.policyVersionNumber = options.policyVersionNumber;
+  }
+  if (options.policyVersionStatus !== undefined) {
+    input.policyVersionStatus = options.policyVersionStatus;
+  }
+  if (options.policySnapshot !== undefined) {
+    input.policySnapshot = options.policySnapshot;
   }
 
   return input;
