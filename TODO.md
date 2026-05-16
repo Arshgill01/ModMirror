@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Wave 0 — Research + Scaffold Proof
+Wave 1 — Shared Contracts
 
-Status: Local scaffold/build proof complete. Runtime playtest is blocked until `devvit login` is completed.
+Status: Shared TypeScript contracts, constants, lightweight demo seed objects, and pure helper stubs are ready for Wave 2 integration. Runtime playtest remains blocked until `devvit login` is completed.
 
 ## Wave 0 Completed
 
@@ -44,11 +44,19 @@ Status: Local scaffold/build proof complete. Runtime playtest is blocked until `
 
 ## Recommended Wave 1
 
-- Create `src/shared/schema.ts` with the researched data contracts.
-- Create `src/shared/constants.ts` with Redis key helpers and confidence/action constants.
+- [x] Create `src/shared/schema.ts` with the researched data contracts.
+- [x] Create `src/shared/constants.ts` with Redis key helpers and confidence/action constants.
+- [x] Create `src/shared/scoring.ts` with pure helper stubs for Wave 2.
+- [x] Add lightweight `src/shared/demoData.ts` seed objects without the full Wave 2 scan dataset.
 - Split server code into `src/server/services/` as planned while preserving the Devvit Web/Hono entrypoint.
-- Add unit tests for pure helpers using the now-working `vitest.config.ts`.
+- [x] Add unit tests for pure helpers using the now-working `vitest.config.ts`.
 - Add a minimal dashboard/health surface only after runtime playtest is unblocked.
+
+## Ready For Wave 2
+
+- Shared contracts are importable from server code through `src/shared/index.ts`.
+- Use `ruleKey` for policy and attribution references; do not assume a stable Devvit rule ID.
+- Full Mirror Scan attribution and the 50-80 action demo dataset remain Wave 2 scope.
 
 ## Do Not Start Yet
 
