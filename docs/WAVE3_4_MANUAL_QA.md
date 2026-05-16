@@ -9,12 +9,14 @@ Manual checklist for the first complete ModMirror policy loop.
 - [x] Complete Reddit/Google login consent if required.
 - [x] Confirm the ModMirror dashboard launcher appears in the subreddit
       moderator menu.
+- [x] Confirm the dashboard launcher opens a confirmation form without creating
+      a visible post.
 - [ ] Confirm the ModMirror dashboard renders inside Reddit.
 
-Current browser result: Safari is signed in, opens the playtest subreddit, and
-shows "Open ModMirror dashboard" in the subreddit moderator overflow menu.
-Activating it creates a visible custom post, so Codex paused for explicit
-approval before clicking it.
+Current browser result: Safari is signed in, opens the playtest subreddit,
+shows "Open ModMirror dashboard" in the subreddit moderator overflow menu, and
+opens the confirmation form. The form was cancelled; no visible custom post was
+created.
 
 ## Dashboard Loop
 

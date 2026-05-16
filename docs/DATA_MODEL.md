@@ -323,8 +323,8 @@ runtime-verified.
 
 Apply Policy uses the dashboard simulator as the safe primary surface for this
 wave. The dashboard launch surface is a moderator-only subreddit menu item that
-creates a custom post and navigates to it. Post/comment menu UX remains
-runtime-unverified in browser playtest.
+opens a confirmation form before creating a custom post and navigating to it.
+Post/comment menu UX remains runtime-unverified in browser playtest.
 - `modmail` is allowed as a future private delivery path because SDK typings expose modmail creation. It is not runtime-verified.
 - `private_message` is intentionally excluded from the preferred model because subreddit private message sending is deprecated in the installed typings.
 - Per-mod aggregate analytics should not be added to shared response types until permission gating is runtime-verified.

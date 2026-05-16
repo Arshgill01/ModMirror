@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { context, reddit } from '@devvit/web/server';
 import type { UiResponse } from '@devvit/web/shared';
 import type { FormField } from '@devvit/shared-types/shared/form.js';
 import { getTargetSummary, runRedisSmoke } from '../core/smoke';
@@ -101,6 +102,36 @@ forms.post('/smoke-chained-submit', async (c) => {
           target.authorName ?? 'unknown author'
         }; Redis ${redisResult.ok ? 'read/write passed' : 'read/write failed'}.`,
         appearance: redisResult.ok ? 'success' : 'neutral',
+      },
+    },
+    200
+  );
+});
+
+forms.post('/dashboard-launch-submit', async (c) => {
+  await c.req.json().catch(() => undefined);
+
+  const subredditName =
+    context.subredditName ?? (await reddit.getCurrentSubreddit()).name;
+  const post = await reddit.submitCustomPost({
+    subredditName,
+    title: 'ModMirror policy dashboard',
+    entry: 'default',
+    textFallback: {
+      text: 'Open this post in Reddit to use the ModMirror policy dashboard.',
+    },
+  });
+
+  const url = post.permalink.startsWith('http')
+    ? post.permalink
+    : `https://www.reddit.com${post.permalink}`;
+
+  return c.json<UiResponse>(
+    {
+      navigateTo: url,
+      showToast: {
+        text: 'Opening ModMirror dashboard',
+        appearance: 'success',
       },
     },
     200

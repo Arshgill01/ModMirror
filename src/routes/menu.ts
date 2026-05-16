@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { context, reddit } from '@devvit/web/server';
 import type { MenuItemRequest, UiResponse } from '@devvit/web/shared';
 import type { FormField } from '@devvit/shared-types/shared/form.js';
 
@@ -28,6 +27,22 @@ const buildSmokeForm = (title: string, request: MenuItemRequest) => ({
   fields: buildSmokeFields(request.targetId, request.location),
   title,
   acceptLabel: 'Continue',
+  cancelLabel: 'Cancel',
+});
+
+const buildDashboardLaunchForm = () => ({
+  title: 'Open ModMirror Dashboard',
+  fields: [
+    {
+      name: 'confirmation',
+      label: 'Confirmation',
+      type: 'paragraph',
+      defaultValue:
+        'This creates a visible ModMirror dashboard custom post in this subreddit and opens it.',
+      disabled: true,
+    },
+  ] satisfies FormField[],
+  acceptLabel: 'Create dashboard post',
   cancelLabel: 'Cancel',
 });
 
@@ -60,27 +75,11 @@ menu.post('/smoke-post', async (c) => {
 menu.post('/open-dashboard', async (c) => {
   await c.req.json<MenuItemRequest>().catch(() => undefined);
 
-  const subredditName =
-    context.subredditName ?? (await reddit.getCurrentSubreddit()).name;
-  const post = await reddit.submitCustomPost({
-    subredditName,
-    title: 'ModMirror policy dashboard',
-    entry: 'default',
-    textFallback: {
-      text: 'Open this post in Reddit to use the ModMirror policy dashboard.',
-    },
-  });
-
-  const url = post.permalink.startsWith('http')
-    ? post.permalink
-    : `https://www.reddit.com${post.permalink}`;
-
   return c.json<UiResponse>(
     {
-      navigateTo: url,
-      showToast: {
-        text: 'Opening ModMirror dashboard',
-        appearance: 'success',
+      showForm: {
+        name: 'dashboardLaunch',
+        form: buildDashboardLaunchForm(),
       },
     },
     200

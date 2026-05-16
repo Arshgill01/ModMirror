@@ -113,8 +113,8 @@ Status: implemented locally and CLI playtest-ready.
 - Added action event and override event services backed by Redis sorted sets.
 - Added Apply Policy preview/confirm endpoints and dashboard simulator.
 - Enforced override reason on deviating selected actions.
-- Added a moderator-only subreddit menu launcher that creates and opens the
-  dashboard custom post.
+- Added a moderator-only subreddit menu launcher that opens a confirmation form
+  before creating and opening the dashboard custom post.
 - Kept delivery mode `log_only` and avoided unverified live enforcement.
 
 ### Commands Run
@@ -136,10 +136,9 @@ Status: implemented locally and CLI playtest-ready.
 - PASS: lint.
 - PASS: `npx devvit whoami` as `u/BrightyBrainiac`.
 - PASS: `npm run dev` reached Playtest ready for `r/modmirror_dev`.
-- PARTIAL: Safari is signed in, opens the playtest subreddit, and shows the
-  dashboard launcher in the moderator overflow menu. Clicking the launcher
-  creates a visible custom post, so Codex paused for explicit approval before
-  activating it.
+- PARTIAL: Safari is signed in, opens the playtest subreddit, shows the
+  dashboard launcher in the moderator overflow menu, and opens the confirmation
+  form without creating a visible custom post.
 - PARTIAL: `npm audit` reports 31 known vulnerabilities; no force fix applied.
 
 ### Runtime Status
@@ -148,14 +147,15 @@ Status: implemented locally and CLI playtest-ready.
 
 ```txt
 https://www.reddit.com/r/modmirror_dev/?playtest=modmirror
-v0.0.1.10
+v0.0.1.11
 ```
 
 ### Open Risks
 
-- Redis route behavior, dashboard custom-post rendering, and Reddit menu/form
-  behavior still need browser proof. The dashboard launch surface is visible,
-  but activation creates a visible test post.
+- Redis route behavior, dashboard custom-post rendering, and post/comment
+  Reddit menu/form behavior still need browser proof. The dashboard launch
+  surface is visible and now gates visible post creation behind a confirmation
+  form.
 - Public comment/private message/modmail/native Mod Notes delivery remain
   disabled/unverified.
 - `npm audit` includes Devvit transitive `protobufjs` advisories with no fix

@@ -42,7 +42,8 @@
   },
   "forms": {
     "smokeTarget": "/internal/form/smoke-target-submit",
-    "smokeChained": "/internal/form/smoke-chained-submit"
+    "smokeChained": "/internal/form/smoke-chained-submit",
+    "dashboardLaunch": "/internal/form/dashboard-launch-submit"
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"

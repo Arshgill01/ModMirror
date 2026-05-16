@@ -69,5 +69,5 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Low-volume communities may see less historical drift at first, so ModMirror includes policy-first setup and demo mode.
 - Live public comment/private message/modmail/native Mod Notes delivery is not enabled by default.
 - Browser UI proof is signed in, playtest-ready, and shows the dashboard
-  launcher; clicking it creates a visible custom post and remains pending
-  explicit approval.
+  launcher; visible dashboard post creation is gated behind a confirmation
+  form.

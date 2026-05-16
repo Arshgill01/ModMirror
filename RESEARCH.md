@@ -49,8 +49,8 @@ Updated by: Codex
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
-| Verified | Dashboard client entry exists and now includes Mirror Scan, Policy Agreement, and Apply Policy simulator pages. | Local build/typecheck proof; Safari opens the signed-in playtest subreddit and shows the dashboard launcher. Dashboard custom post launch was not clicked because it creates a visible test post. |
-| Verified | Policy Agreement Flow API/UI, Apply Policy simulator, action events, override events, aggregate override summaries, and dashboard launcher build and test locally. | `npm run build`, `npm test`, `npm run type-check`, and `npm run lint` pass in Wave 3/4 worktree. Runtime dashboard render proof still needs approval to create the dashboard custom post. |
+| Verified | Dashboard client entry exists and now includes Mirror Scan, Policy Agreement, and Apply Policy simulator pages. | Local build/typecheck proof; Safari opens the signed-in playtest subreddit and shows the dashboard launcher. The launcher opens a confirmation form before creating a visible custom post. |
+| Verified | Policy Agreement Flow API/UI, Apply Policy simulator, action events, override events, aggregate override summaries, and dashboard launcher build and test locally. | `npm run build`, `npm test`, `npm run type-check`, and `npm run lint` pass in Wave 3/4 worktree. Runtime dashboard render proof still needs approval to submit the custom-post confirmation form. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -64,7 +64,7 @@ Updated by: Codex
 - `sendPrivateMessageAsSubreddit` exists in typings but is deprecated and should not be used.
 - Comment-before/removal and comment-after/removal behavior is unknown until playtest verifies it on safe test content.
 - Per-mod analytics must remain omitted or hidden until moderator permission checks are runtime-verified.
-- Wave 3/4 adds dashboard Apply Policy simulator as the safe primary surface because post/comment menu action UX remains browser/runtime-unverified. CLI playtest reaches ready, Safari is signed in, and the playtest subreddit opens. The dashboard launcher appears in the subreddit moderator overflow menu. Codex has not clicked it yet because it creates a visible custom post.
+- Wave 3/4 adds dashboard Apply Policy simulator as the safe primary surface because post/comment menu action UX remains browser/runtime-unverified. CLI playtest reaches ready, Safari is signed in, and the playtest subreddit opens. The dashboard launcher appears in the subreddit moderator overflow menu and opens a confirmation form before custom post creation.
 - `npm audit` still reports 31 vulnerabilities: 3 low, 27 high, 1 critical. Key items are `hono` and `vite` fixes that require out-of-range/force updates, and Devvit transitive `protobufjs` advisories with no fix available through the installed Devvit package chain.
 
 ## Implementation Warnings for Future Agents
@@ -290,11 +290,11 @@ Conclusion:
 | Can access author?              | Not directly from `MenuItemRequest`; it only contains `location` and `targetId`. Author can be fetched with `reddit.getPostById` or `reddit.getCommentById`. |
 | Can trigger form?               | Yes by returning `UiResponse.showForm` from the menu endpoint.                                                                                               |
 | Can chain forms?                | Type/build proof yes: first form submit returns another `UiResponse.showForm`. Runtime not verified.                                                         |
-| Can open dashboard/custom post? | `UiResponse.navigateTo` and `reddit.submitCustomPost` exist. A moderator-only subreddit menu launcher is implemented; runtime click proof is pending approval to create the visible test post. |
+| Can open dashboard/custom post? | `UiResponse.showForm`, `UiResponse.navigateTo`, and `reddit.submitCustomPost` exist. A moderator-only subreddit menu launcher is implemented as a confirmation form before visible custom-post creation. |
 
 Conclusion:
 
-- Apply Policy can start from post/comment menus, capture target ID, fetch target author, and use forms. Runtime UX still needs playtest. The dashboard itself can be launched from a subreddit menu custom post once the visible test post creation is approved.
+- Apply Policy can start from post/comment menus, capture target ID, fetch target author, and use forms. Runtime UX still needs playtest. The dashboard itself can be launched from a subreddit menu confirmation form once visible test post creation is approved.
 
 ## Enforcement Action Findings
 

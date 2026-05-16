@@ -32,9 +32,10 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
 15. Return to dashboard and show override/audit count.
 
 Runtime note: the dashboard can be launched from a moderator-only subreddit
-menu action that creates a custom post. Post/comment Apply Policy menu UX
-remains a later browser playtest item. The Wave 3/4 demo uses the dashboard
-simulator so no unverified Reddit moderation action is performed.
+menu action that opens a confirmation form before creating a custom post.
+Post/comment Apply Policy menu UX remains a later browser playtest item. The
+Wave 3/4 demo uses the dashboard simulator so no unverified Reddit moderation
+action is performed.
 
 ## 2-minute Demo
 
