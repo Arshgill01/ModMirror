@@ -20,8 +20,8 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
    - third offense: suggest 3-day ban
    - message delivery: log only until public comment delivery is verified
 7. Save policy.
-8. Open a test post/comment.
-9. Use "Apply ModMirror Policy."
+8. Open the Apply Policy dashboard simulator.
+9. Select the Rule 2 policy.
 10. Select Rule 2.
 11. Show recommendation:
     - "Policy recommends remove + warning"
@@ -30,6 +30,11 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
     - "This is stricter than team policy. Continue with override?"
 14. Choose override reason or follow policy.
 15. Return to dashboard and show override/audit count.
+
+Runtime note: the dashboard can be launched from a moderator-only subreddit
+menu action that creates a custom post. Post/comment Apply Policy menu UX
+remains a later browser playtest item. The Wave 3/4 demo uses the dashboard
+simulator so no unverified Reddit moderation action is performed.
 
 ## 2-minute Demo
 
@@ -77,10 +82,10 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [ ] Demo seed loaded
 - [ ] Mirror Scan result
 - [ ] Rule 2 drift detail
-- [ ] Policy editor
-- [ ] Apply Policy flow
-- [ ] Consistency nudge
-- [ ] Override audit summary
+- [x] Policy editor
+- [x] Apply Policy simulator
+- [x] Consistency nudge / override reason requirement
+- [x] Override audit summary API/service
 
 ## Devpost Opening
 

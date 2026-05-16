@@ -298,6 +298,33 @@ Wave 2 thresholds:
 ## Runtime-Dependent Fields
 
 - `public_comment` delivery is allowed in the model, but the default remains `log_only` until playtest proves comment delivery before/after removal.
+
+## Wave 3/4 Additions
+
+Policies now have create/update input contracts, recommendation output, and Apply
+Policy preview/confirm contracts in `src/shared/schema.ts`.
+
+Additional Redis-backed records:
+
+```txt
+modmirror:{subreddit}:actions
+modmirror:{subreddit}:actions:user:{username}
+modmirror:{subreddit}:overrides
+```
+
+`ActionEvent` stores the confirmed Apply Policy decision with target, rule,
+policy, recommended action, selected action, delivery mode, source, and
+timestamp. The default delivery mode remains `log_only`.
+
+`OverrideEvent` stores deviations from policy only when an override reason is
+provided. Aggregate summaries count overrides by rule and reason, and the
+dashboard/API intentionally avoid per-mod breakdowns until permission gating is
+runtime-verified.
+
+Apply Policy uses the dashboard simulator as the safe primary surface for this
+wave. The dashboard launch surface is a moderator-only subreddit menu item that
+creates a custom post and navigates to it. Post/comment menu UX remains
+runtime-unverified in browser playtest.
 - `modmail` is allowed as a future private delivery path because SDK typings expose modmail creation. It is not runtime-verified.
 - `private_message` is intentionally excluded from the preferred model because subreddit private message sending is deprecated in the installed typings.
 - Per-mod aggregate analytics should not be added to shared response types until permission gating is runtime-verified.

@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 3/4 preflight complete; Devvit app identity exists and `npm run dev` reaches Playtest ready.
+Status: Wave 3/4 implementation complete locally; Devvit app identity exists and `npm run dev` reaches Playtest ready.
 
 Last updated: 2026-05-16
 
@@ -40,7 +40,7 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Unverified | Reddit API methods work in the target subreddit during playtest. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reaches Playtest ready for `r/modmirror_dev`, but smoke routes/actions still need browser/UI verification. |
+| Unverified | Reddit API methods work in the target subreddit during playtest. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reaches Playtest ready for `r/modmirror_dev`, and Safari opens the signed-in playtest subreddit. Smoke routes/actions still need browser/UI verification. |
 | Unverified | Redis read/write works in playtest. | Type/build proof only; hit `/api/smoke/redis` after auth. |
 | Unverified | Menu actions and chained forms work in the Reddit UI. | Type/build proof only; invoke smoke menu actions after auth. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
@@ -49,8 +49,9 @@ Updated by: Codex
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
-| Deferred | Rich dashboard/client implementation. | No client entry exists yet; Wave 1 owns the skeleton. |
-| Deferred | Full Mirror Scan scoring, policy editor, Apply Policy, and override audit. | Must wait for Wave 1 contracts and remaining playtest proof. |
+| Verified | Dashboard client entry exists and now includes Mirror Scan, Policy Agreement, and Apply Policy simulator pages. | Local build/typecheck proof; Safari opens the signed-in playtest subreddit. Dashboard custom post launch is implemented but not clicked because it creates a visible test post. |
+| Verified | Policy Agreement Flow API/UI, Apply Policy simulator, action events, override events, aggregate override summaries, and dashboard launcher build and test locally. | `npm run build`, `npm test`, `npm run type-check`, and `npm run lint` pass in Wave 3/4 worktree. Runtime UI proof still needs approval to create the dashboard custom post. |
+| Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
 
@@ -63,6 +64,8 @@ Updated by: Codex
 - `sendPrivateMessageAsSubreddit` exists in typings but is deprecated and should not be used.
 - Comment-before/removal and comment-after/removal behavior is unknown until playtest verifies it on safe test content.
 - Per-mod analytics must remain omitted or hidden until moderator permission checks are runtime-verified.
+- Wave 3/4 adds dashboard Apply Policy simulator as the safe primary surface because post/comment menu action UX remains browser/runtime-unverified. CLI playtest reaches ready, Safari is signed in, and the playtest subreddit opens. The dashboard launcher is a subreddit moderator menu item that creates a custom post and navigates to it; Codex has not clicked it yet because creating a post is externally visible.
+- `npm audit` still reports 31 vulnerabilities: 3 low, 27 high, 1 critical. Key items are `hono` and `vite` fixes that require out-of-range/force updates, and Devvit transitive `protobufjs` advisories with no fix available through the installed Devvit package chain.
 
 ## Implementation Warnings for Future Agents
 
@@ -154,7 +157,7 @@ Important fields discovered:
 
 | Capability                     | Required config                                                                                            |       Verified? | Notes                                                                                                |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------- | --------------: | ---------------------------------------------------------------------------------------------------- |
-| Reddit API read/write          | `"permissions": { "reddit": true }`                                                                        | Type/build only | Template uses this for Reddit API. Playtest blocked by auth.                                         |
+| Reddit API read/write          | `"permissions": { "reddit": true }`                                                                        | Type/build only | Template uses this for Reddit API. CLI playtest reaches ready; route behavior still needs browser/UI proof. |
 | Redis                          | No explicit `devvit.json` permission found in generated template; import `redis` from `@devvit/web/server` | Type/build only | `@devvit/web/server` re-exports `@devvit/redis`; `RedisClient` defaults to installation scope.       |
 | Menu actions                   | `menu.items[]` with `location`, `forUserType`, `endpoint`                                                  | Type/build only | Post/comment menu locations are configured.                                                          |
 | Forms                          | Top-level `forms` map from form name to endpoint                                                           | Type/build only | Menu action returns `UiResponse.showForm`.                                                           |
@@ -182,7 +185,7 @@ Important fields discovered:
 | Exists in SDK?                  | Yes. `reddit.getModerationLog(options)` exists in `node_modules/@devvit/reddit/RedditClient.d.ts`.                                  |
 | Method path/import              | `import { reddit } from '@devvit/web/server'`; method `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`.          |
 | Required permission             | `permissions.reddit = true` in `devvit.json`.                                                                                       |
-| Works in playtest?              | Not verified; blocked by CLI auth.                                                                                                  |
+| Works in playtest?              | Not verified through browser UI; CLI playtest reaches ready.                                                                         |
 | Returns action type?            | Yes, `ModAction.type`.                                                                                                              |
 | Returns target ID?              | Yes when present, `ModAction.target?.id`.                                                                                           |
 | Returns target author?          | Yes when present, `ModAction.target?.author`.                                                                                       |
@@ -228,7 +231,7 @@ Conclusion:
 | Returns ID?           | Yes, `id`.                                               |
 | Returns title?        | Yes, `title`.                                            |
 | Returns message/body? | Yes, `message`.                                          |
-| Works in playtest?    | Not verified; blocked by CLI auth.                       |
+| Works in playtest?    | Not verified through browser UI; CLI playtest reaches ready. |
 
 Raw type shape:
 
@@ -287,11 +290,11 @@ Conclusion:
 | Can access author?              | Not directly from `MenuItemRequest`; it only contains `location` and `targetId`. Author can be fetched with `reddit.getPostById` or `reddit.getCommentById`. |
 | Can trigger form?               | Yes by returning `UiResponse.showForm` from the menu endpoint.                                                                                               |
 | Can chain forms?                | Type/build proof yes: first form submit returns another `UiResponse.showForm`. Runtime not verified.                                                         |
-| Can open dashboard/custom post? | `UiResponse.navigateTo` exists. Runtime behavior not verified.                                                                                               |
+| Can open dashboard/custom post? | `UiResponse.navigateTo` and `reddit.submitCustomPost` exist. A moderator-only subreddit menu launcher is implemented; runtime click proof is pending approval to create the visible test post. |
 
 Conclusion:
 
-- Apply Policy can start from post/comment menus, capture target ID, fetch target author, and use forms. Runtime UX still needs playtest.
+- Apply Policy can start from post/comment menus, capture target ID, fetch target author, and use forms. Runtime UX still needs playtest. The dashboard itself can be launched from a subreddit menu custom post once the visible test post creation is approved.
 
 ## Enforcement Action Findings
 
@@ -308,7 +311,7 @@ Conclusion:
 
 Conclusion:
 
-- Removal comment behavior remains a Wave 1/2 playtest item after auth. Do not promise comment-after-removal until tested.
+- Removal comment behavior remains a later playtest item after browser login. Do not promise comment-after-removal until tested.
 - Default MVP message delivery should be `log_only` until playtest proves public comment behavior in both normal and removed-thread states. Public comments can become the preferred moderator-facing delivery mode after that proof; deprecated subreddit PM should not be used.
 
 ### remove/approve/ignore reports
@@ -375,7 +378,7 @@ Wave 1 data layer notes:
 - `src/server/services/policies.ts` stores each policy under `modmirror:{subreddit}:policy:{ruleId}` and duplicates policy JSON into the `modmirror:{subreddit}:policies` hash for listing.
 - `src/server/services/scans.ts` stores scan metadata under `modmirror:{subreddit}:scan:{scanId}` and `modmirror:{subreddit}:scan:last`.
 - `src/server/services/audit.ts` stores override/audit events in the `modmirror:{subreddit}:overrides` sorted set with `createdAt` as the score.
-- `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`; runtime behavior remains unverified until playtest auth is available.
+- `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`; runtime behavior remains unverified until browser playtest can exercise routes after login consent.
 
 ## Permission / Visibility Findings
 
@@ -403,7 +406,7 @@ Conclusion:
 | `npm run lint`         | PASS.                                                                                                                                    |
 | `npm run build`        | PASS.                                                                                                                                    |
 | `npm test`             | PASS after adding `vitest.config.ts`; no tests exist yet.                                                                                |
-| `npm run dev`          | PARTIAL. Vite/server build completes, then Devvit prompts for Reddit OAuth and cannot proceed without browser auth.                      |
+| `npm run dev`          | PASS. Vite/server build completes and Devvit reaches Playtest ready for `r/modmirror_dev`; Safari opens the signed-in playtest subreddit. |
 | `npm audit --omit=dev` | FAIL. Direct/transitive vulnerabilities remain in template dependencies, including `hono`, `vite`, and `protobufjs` via Devvit packages. |
 
 ## Broken Assumptions

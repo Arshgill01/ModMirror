@@ -30,6 +30,13 @@
         "location": "post",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/smoke-post"
+      },
+      {
+        "label": "Open ModMirror dashboard",
+        "description": "Create and open the ModMirror policy dashboard for this subreddit.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/open-dashboard"
       }
     ]
   },
