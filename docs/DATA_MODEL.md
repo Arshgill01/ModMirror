@@ -1,6 +1,6 @@
 # DATA_MODEL.md — ModMirror Data Model
 
-This is the Wave 1 shared data model. Keep `src/shared/schema.ts` as the
+This is the Wave 2 shared data model. Keep `src/shared/schema.ts` as the
 implementation source of truth and update this document when contract behavior
 changes.
 
@@ -71,6 +71,12 @@ export type OverrideReason =
 
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
+export type MirrorScanSource = 'live' | 'demo';
+
+export type NormalizedRuleSource = 'reddit_rule' | 'manual' | 'demo';
+
+export type NormalizedRemovalReasonSource = 'reddit_removal_reason' | 'demo';
+
 export type HealthState = 'ok' | 'degraded' | 'blocked';
 
 export interface SubredditRuleRef {
@@ -116,6 +122,58 @@ export interface AttributedModAction {
   evidence: string[];
 }
 
+export interface NormalizedRule {
+  ruleKey: string;
+  ruleName: string;
+  description?: string;
+  violationReason?: string;
+  priority?: number;
+  kind?: 'all' | 'link' | 'comment';
+  source: NormalizedRuleSource;
+}
+
+export interface NormalizedRemovalReason {
+  id: string;
+  title: string;
+  message?: string;
+  source: NormalizedRemovalReasonSource;
+}
+
+export interface NormalizedModAction {
+  id: string;
+  subreddit: string;
+  source: ActionSource;
+  rawActionType: string;
+  normalizedAction?: EnforcementAction;
+  createdAt: string;
+  moderator?: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  detailsText?: string;
+  removalReasonId?: string;
+  removalReasonTitle?: string;
+  directRuleKey?: string;
+  directRuleName?: string;
+}
+
+export interface MirrorScanSources {
+  subreddit: string;
+  source: MirrorScanSource;
+  rules: NormalizedRule[];
+  removalReasons: NormalizedRemovalReason[];
+  actions: NormalizedModAction[];
+  warnings: string[];
+}
+
+export interface AttributionResult {
+  actionId: string;
+  inferredRuleKey?: string;
+  inferredRuleName?: string;
+  confidence: Confidence;
+  score: number;
+  evidence: string[];
+}
+
 export interface MirrorScan {
   id: string;
   subreddit: string;
@@ -128,6 +186,7 @@ export interface MirrorScan {
   confidenceBreakdown: Record<Confidence, number>;
   driftCandidates: DriftCandidate[];
   smallSubredditStatus: SmallSubredditThresholdStatus;
+  warnings: string[];
 }
 
 export interface DriftCandidate {
@@ -197,16 +256,16 @@ Wave 1 adds shared constants in `src/shared/constants.ts` for app name/tagline,
 confidence values, enforcement action values, delivery modes, override reasons,
 demo subreddit name, drift thresholds, and route names.
 
-Pure helper stubs live in `src/shared/scoring.ts`:
+Pure shared helpers live in `src/shared/scoring.ts`:
 
 - `confidenceLabel(score)`
 - `isOverrideAction(recommendedAction, selectedAction)`
 - `getSmallSubredditThresholdStatus(observedActions, minimumActions?)`
-- normalization helpers for future deterministic attribution
+- normalization helpers used by deterministic attribution
 
-Full attribution scoring remains Wave 2 scope.
+Full deterministic attribution lives in `src/server/services/attribution.ts`.
 
-## Attribution Scoring Draft
+## Attribution Scoring
 
 Use deterministic scoring.
 
@@ -228,6 +287,13 @@ Return:
 - evidence strings.
 
 Never silently force a rule match.
+
+Wave 2 thresholds:
+
+- `score >= 0.8`: high
+- `score >= 0.5`: medium
+- `score > 0`: low
+- `score === 0`: unmatched
 
 ## Runtime-Dependent Fields
 

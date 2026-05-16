@@ -96,6 +96,64 @@ export interface AttributedModAction {
   evidence: string[];
 }
 
+export type MirrorScanSource = 'live' | 'demo';
+
+export type NormalizedRuleSource = 'reddit_rule' | 'manual' | 'demo';
+
+export type NormalizedRemovalReasonSource = 'reddit_removal_reason' | 'demo';
+
+export interface NormalizedRule {
+  ruleKey: string;
+  ruleName: string;
+  description?: string;
+  violationReason?: string;
+  priority?: number;
+  kind?: 'all' | 'link' | 'comment';
+  source: NormalizedRuleSource;
+}
+
+export interface NormalizedRemovalReason {
+  id: string;
+  title: string;
+  message?: string;
+  source: NormalizedRemovalReasonSource;
+}
+
+export interface NormalizedModAction {
+  id: string;
+  subreddit: string;
+  source: ActionSource;
+  rawActionType: string;
+  normalizedAction?: EnforcementAction;
+  createdAt: string;
+  moderator?: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  detailsText?: string;
+  removalReasonId?: string;
+  removalReasonTitle?: string;
+  directRuleKey?: string;
+  directRuleName?: string;
+}
+
+export interface MirrorScanSources {
+  subreddit: string;
+  source: MirrorScanSource;
+  rules: NormalizedRule[];
+  removalReasons: NormalizedRemovalReason[];
+  actions: NormalizedModAction[];
+  warnings: string[];
+}
+
+export interface AttributionResult {
+  actionId: string;
+  inferredRuleKey?: string;
+  inferredRuleName?: string;
+  confidence: Confidence;
+  score: number;
+  evidence: string[];
+}
+
 export interface MirrorScan {
   id: string;
   subreddit: string;
@@ -108,6 +166,7 @@ export interface MirrorScan {
   confidenceBreakdown: Record<Confidence, number>;
   driftCandidates: DriftCandidate[];
   smallSubredditStatus: SmallSubredditThresholdStatus;
+  warnings: string[];
 }
 
 export interface DriftCandidate {
