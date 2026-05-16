@@ -24,16 +24,18 @@ ModMirror helps moderator teams act consistently.
 - Policy Agreement Flow
 - Apply Policy Action
 - Consistency Nudge + Override Audit
+- Governance Core
 - Demo seed mode
 
 ## Development Status
 
-Wave 5 Governance Core is the current implementation target.
+Wave 5 Governance Core is implemented locally.
 
 The app now includes the Wave 0-4 loop locally: Mirror Scan, Policy Agreement,
 Apply Policy simulator, consistency nudges, and aggregate override audit. Wave 5
 adds governance follow-through: immutable policy versions, action snapshots,
-policy health scoring, and an override review inbox.
+policy health scoring, an override review inbox, and governance dashboard
+surfaces.
 
 ## Local Commands
 

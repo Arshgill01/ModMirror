@@ -95,9 +95,9 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Apply Policy simulator
 - [x] Consistency nudge / override reason requirement
 - [x] Override audit summary API/service
-- [ ] Governance dashboard policy health cards
-- [ ] Override review inbox
-- [ ] Policy version history summary
+- [x] Governance dashboard policy health cards
+- [x] Override review inbox
+- [x] Policy version history summary
 
 ## Devpost Opening
 

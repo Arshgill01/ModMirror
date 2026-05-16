@@ -392,6 +392,33 @@ provided. Aggregate summaries count overrides by rule and reason, and the
 dashboard/API intentionally avoid per-mod breakdowns until permission gating is
 runtime-verified.
 
+## Wave 5 Additions
+
+Policy edits are versioned. `RulePolicy` stores the active version pointer, and
+each `PolicyVersion` stores immutable policy steps, delivery mode, change
+metadata, creator, and timestamp. Legacy Wave 3/4 policies are lazily treated as
+version 1 instead of being deleted.
+
+`ActionEvent` and `OverrideEvent` include policy version fields and
+`PolicySnapshot` when a policy exists at Apply Policy confirmation time. If a
+policy/version is missing, records use `policyVersionStatus: 'missing'` so the
+audit trail does not crash or pretend certainty.
+
+Overrides are reviewable. New override events default to
+`reviewStatus: 'unresolved'`, and review updates store reviewer, timestamp,
+status, and optional note while preserving the original selected/recommended
+actions and override reason.
+
+Policy health is deterministic. It uses tracked action count, adherence rate,
+override rate, unresolved override count, and `policy_seems_wrong` override
+count to return:
+
+- `stable`
+- `watch`
+- `at_risk`
+- `needs_review`
+- `insufficient_data`
+
 Apply Policy uses the dashboard simulator as the safe primary surface for this
 wave. The dashboard launch surface is a moderator-only subreddit menu item that
 opens a confirmation form before creating a custom post and navigating to it.

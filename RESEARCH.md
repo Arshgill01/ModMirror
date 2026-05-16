@@ -6,9 +6,9 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 3/4 implementation complete locally; Devvit app identity exists and `npm run dev` reaches Playtest ready.
+Status: Wave 5 Governance Core implementation complete locally; Devvit app identity exists and `npm run dev` reaches Playtest ready.
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 Updated by: Codex
 
@@ -51,12 +51,13 @@ Updated by: Codex
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
 | Verified | Dashboard client entry exists and now includes Mirror Scan, Policy Agreement, and Apply Policy simulator pages. | Local build/typecheck proof; Safari opens the signed-in playtest subreddit, shows the dashboard launcher, confirms custom-post creation, and renders the dashboard WebView. |
 | Verified | Policy Agreement Flow API/UI, Apply Policy simulator, action events, override events, aggregate override summaries, and dashboard launcher build and test locally. | `npm run build`, `npm test`, `npm run type-check`, and `npm run lint` pass. Browser proof rendered dashboard custom post `t3_1teywdj` on Devvit version `v0.0.1.12`. |
+| Verified | Wave 5 policy versioning, override review statuses, policy health scoring, and governance dashboard build and test locally. | On 2026-05-17, `npm install`, `npm run build`, `npm run type-check`, `npm run lint`, `npm test`, and `npx devvit whoami` passed in the integration worktree. `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.15`. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
 
 - The current scaffold is Devvit Web with a server-first Hono structure. It does not currently have a React/client dashboard entry.
-- `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`; `npx devvit view --json` returned app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`, slug `modmirror`, and owner `BrightyBrainiac`. `npm run dev` reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`; dashboard browser proof used `v0.0.1.12`, and the final rebuilt runtime reached `v0.0.1.14`.
+- `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`; `npx devvit view --json` returned app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`, slug `modmirror`, and owner `BrightyBrainiac`. `npm run dev` reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`; dashboard browser proof used `v0.0.1.12`, and Wave 5 integration reached Playtest ready on `v0.0.1.15` on 2026-05-17.
 - `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
 - Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
 - Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.
