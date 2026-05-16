@@ -5,6 +5,10 @@ import { APP_NAME, type HealthResponse } from '../shared/status';
 import { DEMO_SUBREDDIT_NAME } from '../shared/constants';
 import type {
   ActionEvent,
+  ApplyPolicyConfirmInput,
+  ApplyPolicyConfirmResult,
+  ApplyPolicyPreview,
+  ApplyPolicyPreviewInput,
   ApiResponse,
   DriftCandidate,
   MirrorScan,
@@ -27,6 +31,7 @@ import {
   listRecentActionEvents,
   listRecentAuditEvents,
 } from '../server/services/audit';
+import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
 
 export const api = new Hono();
 
@@ -258,6 +263,42 @@ api.get('/overrides/summary', async (c) => {
   return c.json(response);
 });
 
+api.post('/apply-policy/preview', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyPreviewInput>;
+
+  try {
+    const input = normalizeApplyPreviewInput(body);
+    const response: ApiResponse<ApplyPolicyPreview> = {
+      ok: true,
+      data: await previewApplyPolicy(input),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(applyPolicyError(error), 400);
+  }
+});
+
+api.post('/apply-policy/confirm', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyConfirmInput>;
+
+  try {
+    const input = normalizeApplyConfirmInput(body);
+    const options: Parameters<typeof confirmApplyPolicy>[0] = {
+      input,
+    };
+    if (context.username !== undefined) {
+      options.modUsername = context.username;
+    }
+    const response: ApiResponse<ApplyPolicyConfirmResult> = {
+      ok: true,
+      data: await confirmApplyPolicy(options),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(applyPolicyError(error), 400);
+  }
+});
+
 function getCurrentSubreddit(): string {
   return context.subredditName ?? DEMO_SUBREDDIT_NAME;
 }
@@ -268,6 +309,63 @@ function policyError(error: unknown): ApiResponse<RulePolicy> {
     error: {
       code: 'policy_validation_failed',
       message: error instanceof Error ? error.message : 'Policy request failed',
+    },
+  };
+}
+
+function normalizeApplyPreviewInput(
+  body: Partial<ApplyPolicyPreviewInput>
+): ApplyPolicyPreviewInput {
+  const input: ApplyPolicyPreviewInput = {
+    subreddit: body.subreddit ?? getCurrentSubreddit(),
+    ruleKey: body.ruleKey ?? '',
+    source: body.source ?? 'simulator',
+  };
+
+  if (body.targetThingId !== undefined) {
+    input.targetThingId = body.targetThingId;
+  }
+  if (body.targetAuthor !== undefined) {
+    input.targetAuthor = body.targetAuthor;
+  }
+  if (body.selectedAction !== undefined) {
+    input.selectedAction = body.selectedAction;
+  }
+
+  return input;
+}
+
+function normalizeApplyConfirmInput(
+  body: Partial<ApplyPolicyConfirmInput>
+): ApplyPolicyConfirmInput {
+  if (body.selectedAction === undefined) {
+    throw new Error('selectedAction is required');
+  }
+
+  const input: ApplyPolicyConfirmInput = {
+    ...normalizeApplyPreviewInput(body),
+    selectedAction: body.selectedAction,
+  };
+
+  if (body.overrideReason !== undefined) {
+    input.overrideReason = body.overrideReason;
+  }
+  if (body.overrideNote !== undefined) {
+    input.overrideNote = body.overrideNote;
+  }
+
+  return input;
+}
+
+function applyPolicyError(
+  error: unknown
+): ApiResponse<ApplyPolicyPreview | ApplyPolicyConfirmResult> {
+  return {
+    ok: false,
+    error: {
+      code: 'apply_policy_failed',
+      message:
+        error instanceof Error ? error.message : 'Apply Policy request failed',
     },
   };
 }
