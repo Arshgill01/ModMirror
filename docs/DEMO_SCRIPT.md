@@ -29,7 +29,12 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
 13. ModMirror shows:
     - "This is stricter than team policy. Continue with override?"
 14. Choose override reason or follow policy.
-15. Return to dashboard and show override/audit count.
+15. Return to Governance and show:
+    - Rule 2 policy health,
+    - unresolved override inbox,
+    - current policy version.
+16. Mark the override as "Policy needs update."
+17. Edit the Rule 2 policy and show that a new policy version is created.
 
 Runtime note: the dashboard can be launched from a moderator-only subreddit
 menu action that opens a confirmation form before creating a custom post.
@@ -45,6 +50,9 @@ Use the 60-second demo plus:
 - confidence labels,
 - demo seed data toggle,
 - aggregate override analytics,
+- override review inbox,
+- policy health,
+- policy version history,
 - no-policy fallback.
 
 ## Demo Data
@@ -87,6 +95,9 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Apply Policy simulator
 - [x] Consistency nudge / override reason requirement
 - [x] Override audit summary API/service
+- [x] Governance dashboard policy health cards
+- [x] Override review inbox
+- [x] Policy version history summary
 
 ## Devpost Opening
 

@@ -26,6 +26,10 @@ The app runs a Mirror Scan over recent moderation activity, compares actions aga
 
 ModMirror does not replace moderators or auto-judge content. It keeps humans in control while making team norms visible, repeatable, and auditable.
 
+Wave 5 expands this from a detection-and-nudge loop into a governance loop:
+ModMirror does not just detect inconsistency. It gives teams a feedback loop:
+detect drift, set policy, enforce, review exceptions, and improve policy.
+
 ## Project Impact Draft
 
 Communities that would benefit:
@@ -61,6 +65,11 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Policy Agreement Flow can create/edit policies from drift or manually.
 - Apply Policy simulator previews and confirms `log_only` decisions.
 - Deviating actions require an override reason and are stored for aggregate review.
+- Policy edits create version history so future reviews can see which policy
+  version was active.
+- Policy health uses deterministic thresholds to flag rules that look stable,
+  at risk, or in need of review.
+- Overrides can be reviewed without exposing per-mod performance analytics.
 
 ## Known Limitations
 
@@ -68,6 +77,10 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - ModMirror uses confidence levels and does not claim perfect attribution.
 - Low-volume communities may see less historical drift at first, so ModMirror includes policy-first setup and demo mode.
 - Live public comment/private message/modmail/native Mod Notes delivery is not enabled by default.
+- Policy health depends on tracked action volume and may show insufficient data
+  for sparse communities.
+- Scheduler/digest, Calibration Mode, and Case Packet / Appeal Context are
+  future waves, not Wave 5 behavior.
 - Browser UI proof is signed in, playtest-ready, shows the dashboard launcher,
   creates the dashboard custom post after confirmation, and renders the
   ModMirror dashboard WebView.

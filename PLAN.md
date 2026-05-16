@@ -201,53 +201,57 @@ Allow mods to apply a policy to a post/comment.
 - Confirmed action is logged.
 - Delivery behavior is stable and documented.
 
-## Wave 5 — Consistency Nudge + Override Audit
+## Wave 5 — Governance Core
 
 ### Objective
 
-Warn when the chosen action differs from policy, and record overrides.
+Close the governance loop after policy application by preserving policy
+history, reviewing exceptions, and surfacing deterministic policy health.
 
 ### Deliverables
 
-- Compare selected action to policy.
-- Show nudge when deviating.
-- Require override reason.
-- Optional free-text note.
-- Store override event.
-- Dashboard aggregate override view.
+- Immutable policy version history.
+- Active version pointer for each policy.
+- Action and override logs stamped with the active policy version/snapshot.
+- Override review inbox with unresolved/reviewed statuses.
+- Deterministic policy health scoring:
+  - stable
+  - watch
+  - at_risk
+  - needs_review
+  - insufficient_data
+- Governance dashboard showing health cards, review inbox, and version summary.
 
 ### Acceptance Criteria
 
-- Deviations require reason.
-- Overrides appear in dashboard.
-- Aggregate analytics work.
-- Per-mod analytics are hidden unless permission-gated or omitted.
+- Policy edits create new versions without deleting older versions.
+- Apply Policy logs include policy version context when available.
+- Overrides default to unresolved and can be reviewed.
+- Policy health works for real, demo, and sparse data without AI/LLMs.
+- Dashboard exposes health, inbox, and version data without per-mod blame.
 
-## Wave 6 — Polish + Submission
+## Wave 6 — Case Packet / Appeal Context
 
 ### Objective
 
-Prepare the hackathon submission.
+Use the governance data from Waves 1-5 to build a focused case context view
+for appeals and moderator review. Do not add digest/scheduler or AI judging.
 
 ### Deliverables
 
-- README
-- app listing text
-- Devpost tool overview
-- project impact section
-- screenshots
-- demo video script
-- known limitations
-- final QA pass
+- Case Packet / Appeal Context view for a single target/user/rule.
+- Policy version active at action time.
+- Relevant action and override history.
+- Clear confidence labels for inferred historical attribution.
+- Human-readable context for moderator review.
+- README/submission polish after runtime proof.
 
 ### Acceptance Criteria
 
-- App feels understandable within 60 seconds.
-- Demo mode works.
-- Submission clearly explains community impact.
-- No unsupported novelty claims.
-- No false claim that ModMirror is the first mod notes/removal reason app.
-- Submission emphasizes consistency-first thesis.
+- Case context is explainable without becoming an AI judge.
+- No automatic enforcement or digest scheduler is introduced.
+- Demo mode still works.
+- Submission copy stays within verified behavior.
 
 ## Deferred Features
 

@@ -24,15 +24,18 @@ ModMirror helps moderator teams act consistently.
 - Policy Agreement Flow
 - Apply Policy Action
 - Consistency Nudge + Override Audit
+- Governance Core
 - Demo seed mode
 
 ## Development Status
 
-Wave 0 local scaffold proof.
+Wave 5 Governance Core is implemented locally.
 
-The repo contains a Devvit Web mod-tool scaffold with non-destructive smoke
-surfaces for Redis, Reddit API reads, post/comment menu actions, and form
-chaining. Full playtest is currently blocked until `devvit login` is completed.
+The app now includes the Wave 0-4 loop locally: Mirror Scan, Policy Agreement,
+Apply Policy simulator, consistency nudges, and aggregate override audit. Wave 5
+adds governance follow-through: immutable policy versions, action snapshots,
+policy health scoring, an override review inbox, and governance dashboard
+surfaces.
 
 ## Local Commands
 

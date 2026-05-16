@@ -11,6 +11,12 @@ export const redisKeys = {
   policies: (subreddit: string) => mmKey(subreddit, 'policies'),
   policy: (subreddit: string, ruleId: string) =>
     mmKey(subreddit, `policy:${ruleId}`),
+  policyVersions: (subreddit: string, policyId: string) =>
+    mmKey(subreddit, `policy:${policyId}:versions`),
+  policyVersion: (subreddit: string, policyId: string, versionId: string) =>
+    mmKey(subreddit, `policy:${policyId}:version:${versionId}`),
+  policyChanges: (subreddit: string, policyId: string) =>
+    mmKey(subreddit, `policy:${policyId}:changes`),
   scanLast: (subreddit: string) => mmKey(subreddit, 'scan:last'),
   scan: (subreddit: string, scanId: string) =>
     mmKey(subreddit, `scan:${scanId}`),
@@ -18,6 +24,8 @@ export const redisKeys = {
   actionsByUser: (subreddit: string, username: string) =>
     mmKey(subreddit, `actions:user:${username}`),
   overrides: (subreddit: string) => mmKey(subreddit, 'overrides'),
+  overrideReview: (subreddit: string, overrideId: string) =>
+    mmKey(subreddit, `override:${overrideId}:review`),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 

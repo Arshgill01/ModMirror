@@ -13,7 +13,11 @@ import type {
   DriftCandidate,
   MirrorScan,
   OverrideEvent,
+  OverrideReviewStatus,
+  OverrideReviewUpdateInput,
   OverrideSummary,
+  PolicyHealthOverview,
+  PolicyHealthSummary,
   PolicyCreateInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -23,15 +27,25 @@ import {
   createPolicy,
   createPolicyFromDriftCandidate,
   getPolicyById,
+  listPolicyChangeEvents,
+  listPolicyVersions,
   listPolicies,
   updatePolicy,
 } from '../server/services/policies';
 import {
   buildOverrideSummary,
+  getOverrideEvent,
+  listOverrideEvents,
   listRecentActionEvents,
   listRecentAuditEvents,
+  updateOverrideReview,
+  validateOverrideReviewStatus,
 } from '../server/services/audit';
 import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
+import {
+  getPolicyHealthOverview,
+  listPolicyHealthSummaries,
+} from '../server/services/policyHealth';
 
 export const api = new Hono();
 
@@ -214,7 +228,10 @@ api.put('/policies/:id', async (c) => {
     const policy = await updatePolicy(
       getCurrentSubreddit(),
       c.req.param('id'),
-      body
+      {
+        ...body,
+        updatedBy: body.updatedBy ?? context.username ?? 'unknown',
+      }
     );
     if (!policy) {
       return c.json(
@@ -238,6 +255,50 @@ api.put('/policies/:id', async (c) => {
   }
 });
 
+api.get('/policies/:id/versions', async (c) => {
+  const subreddit = getCurrentSubreddit();
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_not_found',
+          message: 'Policy was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: await listPolicyVersions(subreddit, policy.id),
+  });
+});
+
+api.get('/policies/:id/changes', async (c) => {
+  const subreddit = getCurrentSubreddit();
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_not_found',
+          message: 'Policy was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: await listPolicyChangeEvents(subreddit, policy.id),
+  });
+});
+
 api.get('/actions', async (c) => {
   const response: ApiResponse<ActionEvent[]> = {
     ok: true,
@@ -247,11 +308,94 @@ api.get('/actions', async (c) => {
 });
 
 api.get('/overrides', async (c) => {
+  const status = c.req.query('status');
+  const ruleKey = c.req.query('ruleKey');
+  if (status !== undefined) {
+    try {
+      validateOverrideReviewStatus(status);
+    } catch (error) {
+      return c.json(overrideError(error), 400);
+    }
+  }
+
+  const options: Parameters<typeof listOverrideEvents>[0] = {
+    subreddit: getCurrentSubreddit(),
+  };
+  if (status !== undefined) {
+    options.status = status as OverrideReviewStatus;
+  }
+  if (ruleKey !== undefined) {
+    options.ruleKey = ruleKey;
+  }
+
   const response: ApiResponse<OverrideEvent[]> = {
     ok: true,
-    data: await listRecentAuditEvents(getCurrentSubreddit()),
+    data: await listOverrideEvents(options),
   };
   return c.json(response);
+});
+
+api.get('/overrides/:id', async (c) => {
+  const event = await getOverrideEvent(getCurrentSubreddit(), c.req.param('id'));
+  if (!event) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'override_not_found',
+          message: 'Override was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<OverrideEvent>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: event,
+  } satisfies ApiResponse<OverrideEvent>);
+});
+
+api.post('/overrides/:id/review', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<OverrideReviewUpdateInput>;
+
+  try {
+    if (body.reviewStatus === undefined) {
+      throw new Error('reviewStatus is required');
+    }
+    const input: OverrideReviewUpdateInput = {
+      reviewStatus: body.reviewStatus,
+      reviewedBy: body.reviewedBy ?? context.username ?? 'unknown',
+    };
+    if (body.reviewNote !== undefined) {
+      input.reviewNote = body.reviewNote;
+    }
+
+    const updated = await updateOverrideReview(
+      getCurrentSubreddit(),
+      c.req.param('id'),
+      input
+    );
+    if (!updated) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'override_not_found',
+            message: 'Override was not found for this subreddit.',
+          },
+        } satisfies ApiResponse<OverrideEvent>,
+        404
+      );
+    }
+
+    return c.json({
+      ok: true,
+      data: updated,
+    } satisfies ApiResponse<OverrideEvent>);
+  } catch (error) {
+    return c.json(overrideError(error), 400);
+  }
 });
 
 api.get('/overrides/summary', async (c) => {
@@ -261,6 +405,38 @@ api.get('/overrides/summary', async (c) => {
     data: buildOverrideSummary(events),
   };
   return c.json(response);
+});
+
+api.get('/policy-health', async (c) => {
+  const response: ApiResponse<PolicyHealthOverview> = {
+    ok: true,
+    data: await getPolicyHealthOverview(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/policies/:id/health', async (c) => {
+  const summaries = await listPolicyHealthSummaries(getCurrentSubreddit());
+  const summary = summaries.find(
+    (item) => item.policyId === c.req.param('id')
+  );
+  if (!summary) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_health_not_found',
+          message: 'Policy health was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<PolicyHealthSummary>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: summary,
+  } satisfies ApiResponse<PolicyHealthSummary>);
 });
 
 api.post('/apply-policy/preview', async (c) => {
@@ -366,6 +542,17 @@ function applyPolicyError(
       code: 'apply_policy_failed',
       message:
         error instanceof Error ? error.message : 'Apply Policy request failed',
+    },
+  };
+}
+
+function overrideError(error: unknown): ApiResponse<OverrideEvent[]> {
+  return {
+    ok: false,
+    error: {
+      code: 'override_review_failed',
+      message:
+        error instanceof Error ? error.message : 'Override review failed',
     },
   };
 }

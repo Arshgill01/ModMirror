@@ -29,6 +29,7 @@ import './styles.css';
 
 type PageId =
   | 'overview'
+  | 'governance'
   | 'mirror-scan'
   | 'policies'
   | 'apply-policy'
@@ -36,6 +37,17 @@ type PageId =
   | 'demo-mode';
 type ScanMode = 'live' | 'demo';
 type FeatureStatusState = (typeof WAVE_1_FEATURE_STATUSES)[number]['state'];
+type PolicyHealthStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review'
+  | 'insufficient_data';
+type OverrideReviewStatus =
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
 
 type Page = {
   id: PageId;
@@ -79,6 +91,73 @@ type ApplyUiState = {
   result: ApplyPolicyConfirmResult | undefined;
 };
 
+type PolicyHealthSummary = {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  totalActions: number;
+  followedPolicyCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policySeemsWrongCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  reasons: string[];
+  recommendations: string[];
+  sampleWarning?: string;
+};
+
+type PolicyHealthOverview = {
+  totalPolicies: number;
+  stablePolicies: number;
+  policiesNeedingReview: number;
+  unresolvedOverrides: number;
+  summaries: PolicyHealthSummary[];
+};
+
+type ReviewableOverrideEvent = {
+  id: string;
+  subreddit: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  ruleKey: string;
+  ruleName?: string;
+  recommendedAction: EnforcementAction;
+  selectedAction: EnforcementAction;
+  overrideReason: OverrideReason;
+  overrideNote?: string;
+  reviewStatus: 'unresolved' | OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  createdAt: string;
+  policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+};
+
+type PolicyVersionSummary = {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  ruleName: string;
+  createdAt: string;
+  createdBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+};
+
+type GovernanceUiState = {
+  loading: boolean;
+  savingOverrideId: string | undefined;
+  error: string | undefined;
+  message: string | undefined;
+  health: PolicyHealthOverview | undefined;
+  overrides: ReviewableOverrideEvent[];
+  versionsByPolicy: Record<string, PolicyVersionSummary[]>;
+};
+
 const overviewPage: Page = {
   id: 'overview',
   label: 'Overview',
@@ -88,6 +167,12 @@ const overviewPage: Page = {
 
 const pages: Page[] = [
   overviewPage,
+  {
+    id: 'governance',
+    label: 'Governance',
+    title: 'Governance',
+    body: 'Review policy health, unresolved overrides, and policy version history as a team feedback loop.',
+  },
   {
     id: 'mirror-scan',
     label: 'Mirror Scan',
@@ -149,6 +234,15 @@ let applyState: ApplyUiState = {
   message: undefined,
   preview: undefined,
   result: undefined,
+};
+let governanceState: GovernanceUiState = {
+  loading: false,
+  savingOverrideId: undefined,
+  error: undefined,
+  message: undefined,
+  health: undefined,
+  overrides: [],
+  versionsByPolicy: {},
 };
 
 function getPageFromHash(): PageId {
@@ -231,6 +325,7 @@ function render() {
   bindScanActions();
   bindPolicyActions();
   bindApplyPolicyActions();
+  bindGovernanceActions();
 }
 
 function renderPage(page: Page) {
@@ -243,8 +338,244 @@ function renderPage(page: Page) {
   if (page.id === 'apply-policy') {
     return renderApplyPolicyPage();
   }
+  if (page.id === 'governance' || page.id === 'overrides') {
+    return renderGovernancePage();
+  }
 
   return renderPlaceholderPage(page);
+}
+
+function renderGovernancePage() {
+  return `
+    <section class="section policy-layout" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">Governance Core</h3>
+        <p>${pages.find((page) => page.id === 'governance')?.body ?? ''}</p>
+        ${renderGovernanceMessage()}
+      </div>
+      <div class="policy-actions">
+        <button class="secondary-button" data-load-governance ${governanceState.loading ? 'disabled' : ''}>Refresh governance</button>
+      </div>
+    </section>
+
+    ${renderGovernanceOverview()}
+    ${renderPolicyHealthCards()}
+    ${renderOverrideInbox()}
+    ${renderPolicyVersionSummary()}
+  `;
+}
+
+function renderGovernanceMessage() {
+  if (governanceState.error) {
+    return `<p class="inline-error">${escapeHtml(governanceState.error)}</p>`;
+  }
+  if (governanceState.message) {
+    return `<p class="inline-success">${escapeHtml(governanceState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderGovernanceOverview() {
+  const health = governanceState.health;
+  if (governanceState.loading && !health) {
+    return `
+      <section class="section loading-state">
+        <h3>Loading governance data</h3>
+        <p class="muted">Reading policy health, reviewable overrides, and version summaries.</p>
+      </section>
+    `;
+  }
+  if (!health) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No governance data yet</h3>
+        <p>Create a policy and record Apply Policy actions. ModMirror will start showing health and review signals as data accumulates.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="scan-summary-grid" aria-label="Governance overview">
+      ${renderMetricCard('Active policies', health.totalPolicies.toString())}
+      ${renderMetricCard('Stable policies', health.stablePolicies.toString())}
+      ${renderMetricCard('Need review', health.policiesNeedingReview.toString())}
+      ${renderMetricCard('Unresolved overrides', health.unresolvedOverrides.toString())}
+    </section>
+  `;
+}
+
+function renderPolicyHealthCards() {
+  const summaries = governanceState.health?.summaries ?? [];
+  if (summaries.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>Policy health</h3>
+        <p>Not enough tracked policy data yet. Create policies now; health status will appear after Apply Policy actions are logged.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="health-card-grid" aria-label="Policy health cards">
+      ${summaries.map(renderPolicyHealthCard).join('')}
+    </section>
+  `;
+}
+
+function renderPolicyHealthCard(summary: PolicyHealthSummary) {
+  const topReason = summary.reasons[0] ?? 'No issue detected.';
+  const recommendation =
+    summary.recommendations[0] ?? 'Continue reviewing new exceptions.';
+
+  return `
+    <article class="health-card status-${summary.status}">
+      <div class="health-card-header">
+        <div>
+          <h3>${escapeHtml(summary.ruleName)}</h3>
+          <p>${escapeHtml(summary.ruleKey)}</p>
+        </div>
+        <span>${formatHealthStatus(summary.status)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Actions</dt><dd>${summary.totalActions}</dd></div>
+        <div><dt>Adherence</dt><dd>${formatPercent(summary.adherenceRate)}</dd></div>
+        <div><dt>Overrides</dt><dd>${summary.overrideCount}</dd></div>
+        <div><dt>Unresolved</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
+      </dl>
+      <p><strong>Top issue:</strong> ${escapeHtml(topReason)}</p>
+      <p><strong>Recommendation:</strong> ${escapeHtml(recommendation)}</p>
+      <div class="policy-actions left">
+        <button class="secondary-button" data-filter-overrides="${escapeAttribute(summary.ruleKey)}">Review overrides</button>
+        <button class="secondary-button" data-edit-policy="${escapeAttribute(summary.policyId)}">Edit policy</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderOverrideInbox() {
+  const overrides = [...governanceState.overrides].sort((left, right) =>
+    left.reviewStatus === right.reviewStatus
+      ? Date.parse(right.createdAt) - Date.parse(left.createdAt)
+      : left.reviewStatus === 'unresolved'
+        ? -1
+        : 1
+  );
+
+  if (overrides.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>Override review inbox</h3>
+        <p>No unresolved overrides. Your team has no policy exceptions waiting for review.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="inbox-list" aria-label="Override review inbox">
+      ${overrides.map(renderOverrideRow).join('')}
+    </section>
+  `;
+}
+
+function renderOverrideRow(event: ReviewableOverrideEvent) {
+  const label = event.ruleName ?? event.ruleKey;
+  const version = event.policyVersionNumber
+    ? `Policy v${event.policyVersionNumber}`
+    : 'Policy version unavailable';
+
+  return `
+    <article class="inbox-row">
+      <div class="inbox-row-main">
+        <div>
+          <h3>${escapeHtml(label)}</h3>
+          <p>${formatAction(event.recommendedAction)} recommended; ${formatAction(event.selectedAction)} selected.</p>
+        </div>
+        <span class="review-pill">${formatAction(event.reviewStatus)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Reason</dt><dd>${formatAction(event.overrideReason)}</dd></div>
+        <div><dt>Created</dt><dd>${formatDate(event.createdAt)}</dd></div>
+        <div><dt>Version</dt><dd>${escapeHtml(version)}</dd></div>
+        <div><dt>Target</dt><dd>${escapeHtml(event.targetThingId ?? 'not captured')}</dd></div>
+      </dl>
+      ${event.overrideNote ? `<p class="muted">${escapeHtml(event.overrideNote)}</p>` : ''}
+      <input class="review-note-input" data-review-note="${escapeAttribute(event.id)}" placeholder="Optional review note" value="${escapeAttribute(event.reviewNote ?? '')}">
+      <div class="policy-actions left">
+        ${renderReviewButton(event, 'accepted_exception', 'Accept exception')}
+        ${renderReviewButton(event, 'policy_needs_update', 'Policy needs update')}
+        ${renderReviewButton(event, 'needs_team_discussion', 'Team discussion')}
+        ${renderReviewButton(event, 'no_action_needed', 'No action needed')}
+      </div>
+    </article>
+  `;
+}
+
+function renderReviewButton(
+  event: ReviewableOverrideEvent,
+  status: OverrideReviewStatus,
+  label: string
+) {
+  return `
+    <button class="secondary-button table-button" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''}>
+      ${label}
+    </button>
+  `;
+}
+
+function renderPolicyVersionSummary() {
+  const policies = policyState.policies;
+  if (policies.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>Policy versions</h3>
+        <p>No policies have been created yet. Version history begins with each policy's first saved version.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="version-list" aria-label="Policy version history">
+      ${policies.map(renderPolicyVersionCard).join('')}
+    </section>
+  `;
+}
+
+function renderPolicyVersionCard(policy: RulePolicy) {
+  const versionedPolicy = policy as RulePolicy & {
+    activeVersionNumber?: number;
+    activeVersionId?: string;
+  };
+  const versions = governanceState.versionsByPolicy[policy.id] ?? [];
+  const latest = versions.at(-1);
+  const versionNumber =
+    versionedPolicy.activeVersionNumber ?? latest?.versionNumber ?? 1;
+
+  return `
+    <article class="version-card">
+      <div class="health-card-header">
+        <div>
+          <h3>${escapeHtml(policy.ruleName)}</h3>
+          <p>Current version ${versionNumber}</p>
+        </div>
+        <span>${policy.active ? 'Active' : 'Inactive'}</span>
+      </div>
+      ${
+        versions.length > 0
+          ? `<ol>${versions
+              .map(
+                (version) => `
+                  <li>
+                    <strong>v${version.versionNumber}</strong>
+                    <span>${formatDate(version.createdAt)} by ${escapeHtml(version.createdBy)}</span>
+                    ${version.changeSummary ? `<p>${escapeHtml(version.changeSummary)}</p>` : ''}
+                  </li>
+                `
+              )
+              .join('')}</ol>`
+          : '<p class="muted">Version API not available yet or no versions have been recorded.</p>'
+      }
+    </article>
+  `;
 }
 
 function renderPlaceholderPage(page: Page) {
@@ -931,6 +1262,42 @@ function bindApplyPolicyActions() {
   );
 }
 
+function bindGovernanceActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-governance]')
+    .forEach((button) => {
+      button.addEventListener('click', () => void loadGovernance());
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-filter-overrides]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        activePage = 'governance';
+        window.location.hash = '#governance';
+        void loadGovernance(button.dataset.filterOverrides);
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-review-override]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const overrideId = button.dataset.reviewOverride;
+        const status = button.dataset.reviewStatus as
+          | OverrideReviewStatus
+          | undefined;
+        if (!overrideId || !status) {
+          return;
+        }
+        const noteInput = document.querySelector<HTMLInputElement>(
+          `[data-review-note="${cssEscape(overrideId)}"]`
+        );
+        void reviewOverride(overrideId, status, noteInput?.value.trim());
+      });
+    });
+}
+
 function formatState(state: FeatureStatusState) {
   return state === 'ready-for-integration' ? 'Ready for integration' : 'Placeholder';
 }
@@ -1065,6 +1432,133 @@ async function loadPolicies() {
   }
 
   render();
+}
+
+async function loadGovernance(ruleKey?: string) {
+  governanceState = {
+    ...governanceState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const [health, policies, overrides] = await Promise.all([
+      fetchApi<PolicyHealthOverview>('/api/policy-health'),
+      fetchApi<RulePolicy[]>(API_ROUTES.policies),
+      fetchApi<ReviewableOverrideEvent[]>(
+        ruleKey
+          ? `/api/overrides?status=unresolved&ruleKey=${encodeURIComponent(ruleKey)}`
+          : '/api/overrides?status=unresolved'
+      ),
+    ]);
+    const versionsByPolicy = await loadPolicyVersions(policies);
+    policyState = {
+      ...policyState,
+      policies,
+    };
+    governanceState = {
+      ...governanceState,
+      loading: false,
+      health,
+      overrides,
+      versionsByPolicy,
+    };
+  } catch (error) {
+    governanceState = {
+      ...governanceState,
+      loading: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Governance data fetch failed',
+    };
+  }
+
+  render();
+}
+
+async function loadPolicyVersions(
+  policies: RulePolicy[]
+): Promise<Record<string, PolicyVersionSummary[]>> {
+  const entries = await Promise.all(
+    policies.map(async (policy) => {
+      try {
+        return [
+          policy.id,
+          await fetchApi<PolicyVersionSummary[]>(
+            `${API_ROUTES.policies}/${policy.id}/versions`
+          ),
+        ] as const;
+      } catch {
+        return [policy.id, []] as const;
+      }
+    })
+  );
+
+  return Object.fromEntries(entries);
+}
+
+async function reviewOverride(
+  overrideId: string,
+  reviewStatus: OverrideReviewStatus,
+  reviewNote?: string
+) {
+  governanceState = {
+    ...governanceState,
+    savingOverrideId: overrideId,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const body: {
+      reviewStatus: OverrideReviewStatus;
+      reviewNote?: string;
+    } = { reviewStatus };
+    if (reviewNote) {
+      body.reviewNote = reviewNote;
+    }
+    const updated = await fetchApi<ReviewableOverrideEvent>(
+      `/api/overrides/${encodeURIComponent(overrideId)}/review`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    governanceState = {
+      ...governanceState,
+      savingOverrideId: undefined,
+      overrides: governanceState.overrides.map((event) =>
+        event.id === updated.id ? updated : event
+      ),
+      message: 'Override review updated.',
+    };
+  } catch (error) {
+    governanceState = {
+      ...governanceState,
+      savingOverrideId: undefined,
+      error:
+        error instanceof Error ? error.message : 'Override review update failed',
+    };
+  }
+
+  render();
+}
+
+async function fetchApi<T>(
+  url: string,
+  init?: RequestInit
+): Promise<T> {
+  const response = await fetch(url, init);
+  const payload = (await response.json()) as ApiResponse<T>;
+  if (!payload.ok) {
+    throw new Error(payload.error.message);
+  }
+  return payload.data;
 }
 
 async function createPolicyFromDrift(candidate: DriftCandidate) {
@@ -1309,6 +1803,18 @@ function formatDate(value: string) {
   }).format(timestamp);
 }
 
+function formatHealthStatus(status: PolicyHealthStatus) {
+  return status.replaceAll('_', ' ');
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function cssEscape(value: string) {
+  return window.CSS?.escape ? window.CSS.escape(value) : value.replaceAll('"', '\\"');
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -1330,3 +1836,4 @@ window.addEventListener('hashchange', () => {
 render();
 void loadHealth();
 void loadPolicies();
+void loadGovernance();

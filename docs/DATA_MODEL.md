@@ -28,11 +28,15 @@ export function mmKey(subreddit: string, suffix: string): string {
 modmirror:{subreddit}:config
 modmirror:{subreddit}:policies
 modmirror:{subreddit}:policy:{localRuleKey}
+modmirror:{subreddit}:policy:{policyId}:versions
+modmirror:{subreddit}:policy:{policyId}:version:{versionId}
+modmirror:{subreddit}:policy:{policyId}:changes
 modmirror:{subreddit}:scan:last
 modmirror:{subreddit}:scan:{scanId}
 modmirror:{subreddit}:actions
 modmirror:{subreddit}:actions:user:{username}
 modmirror:{subreddit}:overrides
+modmirror:{subreddit}:override:{overrideId}:review
 modmirror:{subreddit}:demo
 ```
 
@@ -69,6 +73,20 @@ export type OverrideReason =
   | 'policy_seems_wrong'
   | 'other';
 
+export type OverrideReviewStatus =
+  | 'unresolved'
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
+
+export type PolicyHealthStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review'
+  | 'insufficient_data';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type MirrorScanSource = 'live' | 'demo';
@@ -89,12 +107,40 @@ export interface SubredditRuleRef {
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
+  activeVersionId?: string;
+  activeVersionNumber?: number;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
   steps: PolicyStep[];
   defaultMessageMode: MessageDeliveryMode;
   active: boolean;
+}
+
+export interface PolicyVersion extends SubredditRuleRef {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  subreddit: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  active: boolean;
+  createdAt: string;
+  createdBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicySnapshot {
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  policyVersionStatus: 'active' | 'missing' | 'legacy';
+  ruleKey: string;
+  ruleName: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  capturedAt: string;
 }
 
 export interface PolicyStep {
@@ -210,6 +256,15 @@ export interface OverrideEvent {
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason;
   overrideNote?: string;
+  policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policySnapshot?: PolicySnapshot;
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt: string;
   createdAt: string;
 }
 
@@ -230,6 +285,22 @@ export interface HealthStatus {
   subredditName?: string;
   username?: string;
   checkedAt: string;
+}
+
+export interface PolicyHealthSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  totalActions: number;
+  followedPolicyCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policySeemsWrongCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  reasons: string[];
+  recommendations: string[];
 }
 
 export interface ApiError {
@@ -320,6 +391,33 @@ timestamp. The default delivery mode remains `log_only`.
 provided. Aggregate summaries count overrides by rule and reason, and the
 dashboard/API intentionally avoid per-mod breakdowns until permission gating is
 runtime-verified.
+
+## Wave 5 Additions
+
+Policy edits are versioned. `RulePolicy` stores the active version pointer, and
+each `PolicyVersion` stores immutable policy steps, delivery mode, change
+metadata, creator, and timestamp. Legacy Wave 3/4 policies are lazily treated as
+version 1 instead of being deleted.
+
+`ActionEvent` and `OverrideEvent` include policy version fields and
+`PolicySnapshot` when a policy exists at Apply Policy confirmation time. If a
+policy/version is missing, records use `policyVersionStatus: 'missing'` so the
+audit trail does not crash or pretend certainty.
+
+Overrides are reviewable. New override events default to
+`reviewStatus: 'unresolved'`, and review updates store reviewer, timestamp,
+status, and optional note while preserving the original selected/recommended
+actions and override reason.
+
+Policy health is deterministic. It uses tracked action count, adherence rate,
+override rate, unresolved override count, and `policy_seems_wrong` override
+count to return:
+
+- `stable`
+- `watch`
+- `at_risk`
+- `needs_review`
+- `insufficient_data`
 
 Apply Policy uses the dashboard simulator as the safe primary surface for this
 wave. The dashboard launch surface is a moderator-only subreddit menu item that

@@ -25,6 +25,20 @@ export type OverrideReason =
   | 'policy_seems_wrong'
   | 'other';
 
+export type OverrideReviewStatus =
+  | 'unresolved'
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
+
+export type PolicyHealthStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review'
+  | 'insufficient_data';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
@@ -41,12 +55,15 @@ export interface SubredditRuleRef {
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
+  activeVersionId?: string;
+  activeVersionNumber?: number;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
   steps: PolicyStep[];
   defaultMessageMode: MessageDeliveryMode;
   active: boolean;
+  archived?: boolean;
 }
 
 export interface PolicyCreateInput extends SubredditRuleRef {
@@ -64,6 +81,52 @@ export interface PolicyUpdateInput {
   steps?: PolicyStep[];
   defaultMessageMode?: MessageDeliveryMode;
   active?: boolean;
+  updatedBy?: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicyVersion extends SubredditRuleRef {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  subreddit: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  active: boolean;
+  createdAt: string;
+  createdBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicyChangeEvent {
+  id: string;
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  subreddit: string;
+  ruleKey: string;
+  ruleName: string;
+  changeType: 'created' | 'updated' | 'legacy_migrated';
+  changedAt: string;
+  changedBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export type PolicyVersionStatus = 'active' | 'missing' | 'legacy';
+
+export interface PolicySnapshot {
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  policyVersionStatus: PolicyVersionStatus;
+  ruleKey: string;
+  ruleName: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  capturedAt: string;
 }
 
 export interface ApplyPolicyContext {
@@ -267,11 +330,28 @@ export interface OverrideEvent {
   targetThingId?: string;
   targetAuthor?: string;
   ruleKey: string;
+  ruleName?: string;
+  policyId?: string;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason;
   overrideNote?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policySnapshot?: PolicySnapshot;
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt: string;
   createdAt: string;
+}
+
+export interface OverrideReviewUpdateInput {
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy: string;
+  reviewNote?: string;
 }
 
 export interface ActionEvent {
@@ -283,6 +363,10 @@ export interface ActionEvent {
   ruleKey: string;
   ruleName?: string;
   policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policySnapshot?: PolicySnapshot;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
   deliveryMode: MessageDeliveryMode;
@@ -295,6 +379,31 @@ export interface OverrideSummary {
   overridesByRule: Record<string, number>;
   overridesByReason: Record<OverrideReason, number>;
   recentOverrides: Array<Omit<OverrideEvent, 'modUsername'>>;
+}
+
+export interface PolicyHealthSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  totalActions: number;
+  followedPolicyCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policySeemsWrongCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  reasons: string[];
+  recommendations: string[];
+  sampleWarning?: string;
+}
+
+export interface PolicyHealthOverview {
+  totalPolicies: number;
+  stablePolicies: number;
+  policiesNeedingReview: number;
+  unresolvedOverrides: number;
+  summaries: PolicyHealthSummary[];
 }
 
 export interface SmallSubredditThresholdStatus {

@@ -15,6 +15,8 @@ const overrideEvents: OverrideEvent[] = [
     recommendedAction: 'warn',
     selectedAction: 'temporary_ban_suggested',
     overrideReason: 'severe_context',
+    reviewStatus: 'unresolved',
+    updatedAt: '2026-05-16T00:00:00.000Z',
     createdAt: '2026-05-16T00:00:00.000Z',
   },
   {
@@ -25,6 +27,8 @@ const overrideEvents: OverrideEvent[] = [
     recommendedAction: 'remove',
     selectedAction: 'manual_review',
     overrideReason: 'policy_seems_wrong',
+    reviewStatus: 'unresolved',
+    updatedAt: '2026-05-16T00:01:00.000Z',
     createdAt: '2026-05-16T00:01:00.000Z',
   },
 ];
