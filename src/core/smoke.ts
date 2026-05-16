@@ -1,8 +1,6 @@
-import { context, reddit, redis } from '@devvit/web/server';
+import { context, reddit } from '@devvit/web/server';
 import { isT1, isT3 } from '@devvit/shared-types/tid.js';
-
-export const mmKey = (subreddit: string, suffix: string) =>
-  `modmirror:${subreddit}:${suffix}`;
+import { runRedisDataSmoke } from '../server/services/redis';
 
 export type SmokeTargetSummary = {
   id: string;
@@ -13,22 +11,7 @@ export type SmokeTargetSummary = {
 
 export async function runRedisSmoke() {
   const subreddit = context.subredditName || context.subredditId || 'unknown';
-  const key = mmKey(subreddit, 'wave0:redis-smoke');
-  const value = JSON.stringify({
-    appSlug: context.appSlug,
-    subredditId: context.subredditId,
-    subredditName: context.subredditName,
-    checkedAt: new Date().toISOString(),
-  });
-
-  await redis.set(key, value);
-  const readBack = await redis.get(key);
-
-  return {
-    key,
-    readBack,
-    ok: readBack === value,
-  };
+  return runRedisDataSmoke(subreddit);
 }
 
 export async function getTargetSummary(
