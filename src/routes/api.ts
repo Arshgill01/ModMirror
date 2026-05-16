@@ -4,9 +4,12 @@ import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import { DEMO_SUBREDDIT_NAME } from '../shared/constants';
 import type {
+  ActionEvent,
   ApiResponse,
   DriftCandidate,
   MirrorScan,
+  OverrideEvent,
+  OverrideSummary,
   PolicyCreateInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -19,6 +22,11 @@ import {
   listPolicies,
   updatePolicy,
 } from '../server/services/policies';
+import {
+  buildOverrideSummary,
+  listRecentActionEvents,
+  listRecentAuditEvents,
+} from '../server/services/audit';
 
 export const api = new Hono();
 
@@ -223,6 +231,31 @@ api.put('/policies/:id', async (c) => {
   } catch (error) {
     return c.json(policyError(error), 400);
   }
+});
+
+api.get('/actions', async (c) => {
+  const response: ApiResponse<ActionEvent[]> = {
+    ok: true,
+    data: await listRecentActionEvents(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/overrides', async (c) => {
+  const response: ApiResponse<OverrideEvent[]> = {
+    ok: true,
+    data: await listRecentAuditEvents(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/overrides/summary', async (c) => {
+  const events = await listRecentAuditEvents(getCurrentSubreddit(), 100);
+  const response: ApiResponse<OverrideSummary> = {
+    ok: true,
+    data: buildOverrideSummary(events),
+  };
+  return c.json(response);
 });
 
 function getCurrentSubreddit(): string {

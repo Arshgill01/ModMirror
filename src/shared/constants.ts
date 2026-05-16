@@ -60,6 +60,9 @@ export const API_ROUTES = {
   scan: '/api/scan',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
+  actions: '/api/actions',
+  overrides: '/api/overrides',
+  overrideSummary: '/api/overrides/summary',
   redisSmoke: '/api/smoke/redis',
   redditSmoke: '/api/smoke/reddit',
 } as const;
