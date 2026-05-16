@@ -10,18 +10,18 @@ import {
 
 export async function getPolicyByRule(
   subreddit: string,
-  ruleId: string
+  ruleKey: string
 ): Promise<RulePolicy | undefined> {
-  return readJson<RulePolicy>(redisKeys.policy(subreddit, ruleId));
+  return readJson<RulePolicy>(redisKeys.policy(subreddit, ruleKey));
 }
 
 export async function setPolicyByRule(policy: RulePolicy): Promise<void> {
   const policyJson = serializeJson(policy);
 
   await Promise.all([
-    writeJson(redisKeys.policy(policy.subreddit, policy.ruleId), policy),
+    writeJson(redisKeys.policy(policy.subreddit, policy.ruleKey), policy),
     redis.hSet(redisKeys.policies(policy.subreddit), {
-      [policy.ruleId]: policyJson,
+      [policy.ruleKey]: policyJson,
     }),
   ]);
 }
