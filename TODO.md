@@ -2,9 +2,27 @@
 
 ## Current Phase
 
-Wave 3/4 — Policy Agreement Flow + Apply Policy Action implemented locally.
+Wave 5 — Governance Core.
 
-Status: Mirror Scan, deterministic attribution, policy creation/editing, Apply Policy simulator, log-only action events, deviation override enforcement, aggregate override summary services, and a moderator-only dashboard launch menu are implemented. CLI playtest reaches ready for `r/modmirror_dev`; Safari is signed in, opens the playtest subreddit, creates the dashboard custom post after confirmation, renders the dashboard WebView, and runs demo Mirror Scan drift output.
+Status: Wave 0-4 are implemented locally. Wave 5 adds immutable policy
+versioning, Apply Policy version/snapshot stamping, override review statuses,
+deterministic policy health, and a governance dashboard. After Wave 5, the next
+planned wave is Wave 6: Case Packet / Appeal Context. Do not start digest,
+scheduler, Calibration Mode, AI/LLM, or external-service work.
+
+## Wave 5 Governance Core Checklist
+
+- [ ] Policy edits create immutable versions.
+- [ ] Active policy version pointer is stored.
+- [ ] Old policy versions remain readable.
+- [ ] Apply Policy action logs include policy version/snapshot when available.
+- [ ] Overrides default to unresolved review status.
+- [ ] Override review updates preserve original override event fields.
+- [ ] Policy health supports stable/watch/at_risk/needs_review/insufficient_data.
+- [ ] Governance dashboard shows policy health, override review inbox, and version summaries.
+- [ ] Demo mode still works.
+- [ ] Build/typecheck/lint/tests pass after integration.
+- [ ] Runtime/playtest status is recorded honestly.
 
 ## Wave 3/4 Completion Checklist
 
