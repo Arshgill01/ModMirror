@@ -16,6 +16,8 @@ import type {
   OverrideReviewStatus,
   OverrideReviewUpdateInput,
   OverrideSummary,
+  PolicyHealthOverview,
+  PolicyHealthSummary,
   PolicyCreateInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -40,6 +42,10 @@ import {
   validateOverrideReviewStatus,
 } from '../server/services/audit';
 import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
+import {
+  getPolicyHealthOverview,
+  listPolicyHealthSummaries,
+} from '../server/services/policyHealth';
 
 export const api = new Hono();
 
@@ -399,6 +405,38 @@ api.get('/overrides/summary', async (c) => {
     data: buildOverrideSummary(events),
   };
   return c.json(response);
+});
+
+api.get('/policy-health', async (c) => {
+  const response: ApiResponse<PolicyHealthOverview> = {
+    ok: true,
+    data: await getPolicyHealthOverview(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/policies/:id/health', async (c) => {
+  const summaries = await listPolicyHealthSummaries(getCurrentSubreddit());
+  const summary = summaries.find(
+    (item) => item.policyId === c.req.param('id')
+  );
+  if (!summary) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_health_not_found',
+          message: 'Policy health was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<PolicyHealthSummary>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: summary,
+  } satisfies ApiResponse<PolicyHealthSummary>);
 });
 
 api.post('/apply-policy/preview', async (c) => {

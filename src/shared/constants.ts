@@ -5,6 +5,7 @@ import type {
   MessageDeliveryMode,
   OverrideReason,
   OverrideReviewStatus,
+  PolicyHealthStatus,
 } from './schema';
 
 export const APP_NAME = 'ModMirror';
@@ -53,6 +54,14 @@ export const OVERRIDE_REVIEW_STATUS_VALUES = [
   'no_action_needed',
 ] as const satisfies readonly OverrideReviewStatus[];
 
+export const POLICY_HEALTH_STATUS_VALUES = [
+  'stable',
+  'watch',
+  'at_risk',
+  'needs_review',
+  'insufficient_data',
+] as const satisfies readonly PolicyHealthStatus[];
+
 export const ACTION_SOURCE_VALUES = [
   'live',
   'demo',
@@ -72,6 +81,7 @@ export const API_ROUTES = {
   actions: '/api/actions',
   overrides: '/api/overrides',
   overrideSummary: '/api/overrides/summary',
+  policyHealth: '/api/policy-health',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',
