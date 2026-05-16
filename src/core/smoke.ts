@@ -1,8 +1,6 @@
 import { context, reddit, redis } from '@devvit/web/server';
 import { isT1, isT3 } from '@devvit/shared-types/tid.js';
-
-export const mmKey = (subreddit: string, suffix: string) =>
-  `modmirror:${subreddit}:${suffix}`;
+import { mmKey } from '../shared';
 
 export type SmokeTargetSummary = {
   id: string;

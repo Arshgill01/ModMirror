@@ -1,6 +1,8 @@
 # DATA_MODEL.md — ModMirror Data Model
 
-This is the draft data model after Wave 0 local SDK/build proof. Runtime playtest is still blocked by Devvit auth, so anything involving live Reddit side effects remains unverified.
+This is the Wave 1 shared data model. Keep `src/shared/schema.ts` as the
+implementation source of truth and update this document when contract behavior
+changes.
 
 ## Key Principles
 
@@ -36,6 +38,10 @@ modmirror:{subreddit}:demo
 
 ## Types
 
+Devvit's current `Rule` type does not expose a stable rule ID. ModMirror uses a
+derived local `ruleKey` plus rule name/priority metadata instead of assuming a
+platform rule ID exists.
+
 ```ts
 export type Confidence = 'high' | 'medium' | 'low' | 'unmatched';
 
@@ -50,22 +56,33 @@ export type EnforcementAction =
   | 'manual_review';
 
 export type MessageDeliveryMode =
-  | 'log_only'
   | 'public_comment'
-  | 'modmail';
+  | 'private_message'
+  | 'modmail'
+  | 'log_only';
 
-export interface RuleReference {
-  localRuleKey: string;
-  shortName: string;
-  priority?: number;
-  descriptionSnapshot?: string;
-  violationReasonSnapshot?: string;
+export type OverrideReason =
+  | 'severe_context'
+  | 'repeat_pattern_not_captured'
+  | 'user_history_outside_modmirror'
+  | 'edge_case_mod_discretion'
+  | 'policy_seems_wrong'
+  | 'other';
+
+export type ActionSource = 'live' | 'demo' | 'modmirror';
+
+export type HealthState = 'ok' | 'degraded' | 'blocked';
+
+export interface SubredditRuleRef {
+  ruleKey: string;
+  ruleName: string;
+  rulePriority?: number;
+  ruleKind?: 'all' | 'link' | 'comment';
 }
 
-export interface RulePolicy {
+export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
-  rule: RuleReference;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -86,12 +103,14 @@ export interface PolicyStep {
 export interface AttributedModAction {
   id: string;
   subreddit: string;
+  source: ActionSource;
   rawActionType: string;
+  normalizedAction?: EnforcementAction;
   targetThingId?: string;
   targetAuthor?: string;
   moderator?: string;
   createdAt: string;
-  inferredLocalRuleKey?: string;
+  inferredRuleKey?: string;
   inferredRuleName?: string;
   confidence: Confidence;
   evidence: string[];
@@ -101,22 +120,23 @@ export interface MirrorScan {
   id: string;
   subreddit: string;
   createdAt: string;
-  createdBy: string;
-  source: 'live' | 'demo';
+  createdBy?: string;
+  source: ActionSource;
   totalActionsScanned: number;
   attributedCount: number;
   unmatchedCount: number;
   confidenceBreakdown: Record<Confidence, number>;
   driftCandidates: DriftCandidate[];
+  smallSubredditStatus: SmallSubredditThresholdStatus;
 }
 
 export interface DriftCandidate {
-  localRuleKey?: string;
+  ruleKey?: string;
   ruleName: string;
   confidence: Confidence;
   summary: string;
   totalActions: number;
-  actionDistribution: Record<string, number>;
+  actionDistribution: Partial<Record<EnforcementAction, number>>;
   recommendation: string;
 }
 
@@ -126,20 +146,65 @@ export interface OverrideEvent {
   modUsername: string;
   targetThingId?: string;
   targetAuthor?: string;
-  localRuleKey: string;
+  ruleKey: string;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
-  overrideReason:
-    | 'severe_context'
-    | 'repeat_pattern_not_captured'
-    | 'user_history_outside_modmirror'
-    | 'edge_case_mod_discretion'
-    | 'policy_seems_wrong'
-    | 'other';
+  overrideReason: OverrideReason;
   overrideNote?: string;
   createdAt: string;
 }
+
+export interface SmallSubredditThresholdStatus {
+  meetsThreshold: boolean;
+  observedActions: number;
+  minimumActions: number;
+  message: string;
+}
+
+export interface HealthStatus {
+  ok: boolean;
+  state: HealthState;
+  appName: string;
+  appSlug?: string;
+  appVersion?: string;
+  subredditId?: string;
+  subredditName?: string;
+  username?: string;
+  checkedAt: string;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
+export type ApiSuccess<T> = {
+  ok: true;
+  data: T;
+};
+
+export type ApiFailure = {
+  ok: false;
+  error: ApiError;
+};
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 ```
+
+## Shared Constants And Helpers
+
+Wave 1 adds shared constants in `src/shared/constants.ts` for app name/tagline,
+confidence values, enforcement action values, delivery modes, override reasons,
+demo subreddit name, drift thresholds, and route names.
+
+Pure helper stubs live in `src/shared/scoring.ts`:
+
+- `confidenceLabel(score)`
+- `isOverrideAction(recommendedAction, selectedAction)`
+- `getSmallSubredditThresholdStatus(observedActions, minimumActions?)`
+- normalization helpers for future deterministic attribution
+
+Full attribution scoring remains Wave 2 scope.
 
 ## Attribution Scoring Draft
 
@@ -147,14 +212,14 @@ Use deterministic scoring.
 
 Possible signals:
 
-| Signal | Example | Weight |
-|---|---|---:|
-| Exact removal reason title equals rule title | "Low Effort" = "Low Effort" | High |
-| Removal reason title includes rule keyword | "Low-effort questions" includes "low effort" | High |
-| Removal reason message overlaps rule text | "beginner question without code" | Medium |
-| Mod log note contains rule number | "Rule 2" | High |
-| ModMirror-created action has local rule key | direct | High |
-| No useful text | unmatched | None |
+| Signal                                       | Example                                      |  Weight |
+| -------------------------------------------- | -------------------------------------------- | ------: |
+| Exact removal reason title equals rule title | "Low Effort" = "Low Effort"                  |    High |
+| Removal reason title includes rule keyword   | "Low-effort questions" includes "low effort" |    High |
+| Removal reason message overlaps rule text    | "beginner question without code"             |  Medium |
+| Mod log note contains rule number            | "Rule 2"                                     |    High |
+| ModMirror-created action has ruleKey         | direct                                       | Certain |
+| No useful text                               | unmatched                                    |    None |
 
 Return:
 

@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Wave 1 — App Skeleton + Data Contracts.
+Wave 1 — Shared Contracts + Redis Data Layer + Dashboard Shell.
 
-Status: Wave 0 local scaffold/build proof is complete. Runtime playtest remains blocked until `devvit login` is completed, so Wave 1 should build contracts/skeletons that do not depend on unverified Reddit runtime behavior.
+Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects, pure helper stubs, Redis data services, and dashboard shell are ready for Wave 2 integration. Runtime playtest remains blocked until `devvit login` is completed.
 
 ## Wave 0 Completed Locally
 
@@ -51,10 +51,10 @@ Status: Wave 0 local scaffold/build proof is complete. Runtime playtest remains 
 
 ## Wave 2 Prerequisites
 
-- [ ] Wave 1 shared contracts, Redis helper, health/status endpoint, and dashboard shell exist and pass typecheck/build.
-- [ ] Runtime playtest either verifies Redis/Reddit/menu/form behavior or Wave 2 explicitly stays demo/local-only until auth is unblocked.
+- [x] Wave 1 shared contracts, Redis helper, health/status endpoint, and dashboard shell exist and pass typecheck/build.
+- [x] Runtime playtest either verifies Redis/Reddit/menu/form behavior or Wave 2 explicitly stays demo/local-only until auth is unblocked.
 - [ ] Comment delivery ordering is tested or Mirror Scan/Policy work defaults all outbound messaging to `log_only`.
-- [ ] The rule attribution contract uses confidence labels and evidence arrays for every inferred match.
+- [x] The rule attribution contract uses confidence labels and evidence arrays for every inferred match.
 - [ ] Demo seed data is available before judging-facing screenshots or video work.
 
 ## Wave 2 Tasks After Prerequisites
@@ -66,6 +66,12 @@ Status: Wave 0 local scaffold/build proof is complete. Runtime playtest remains 
 - [ ] Implement deterministic attribution with high/medium/low/unmatched confidence labels.
 - [ ] Store scan summaries and raw-enough evidence in Redis without storing unnecessary sensitive content.
 - [ ] Render Mirror Scan dashboard results with clear demo/live labeling.
+
+## Ready For Wave 2
+
+- Shared contracts are importable from server code through `src/shared/index.ts`.
+- Use `ruleKey` for policy and attribution references; do not assume a stable Devvit rule ID.
+- Full Mirror Scan attribution and the 50-80 action demo dataset remain Wave 2 scope.
 
 ## Do Not Start Yet
 

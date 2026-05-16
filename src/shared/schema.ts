@@ -1,0 +1,146 @@
+export type Confidence = 'high' | 'medium' | 'low' | 'unmatched';
+
+export type EnforcementAction =
+  | 'remove'
+  | 'approve'
+  | 'warn'
+  | 'note'
+  | 'temporary_ban_suggested'
+  | 'permanent_ban_suggested'
+  | 'ignore_reports'
+  | 'manual_review';
+
+export type MessageDeliveryMode =
+  | 'public_comment'
+  | 'private_message'
+  | 'modmail'
+  | 'log_only';
+
+export type OverrideReason =
+  | 'severe_context'
+  | 'repeat_pattern_not_captured'
+  | 'user_history_outside_modmirror'
+  | 'edge_case_mod_discretion'
+  | 'policy_seems_wrong'
+  | 'other';
+
+export type ActionSource = 'live' | 'demo' | 'modmirror';
+
+export type HealthState = 'ok' | 'degraded' | 'blocked';
+
+export interface SubredditRuleRef {
+  ruleKey: string;
+  ruleName: string;
+  rulePriority?: number;
+  ruleKind?: 'all' | 'link' | 'comment';
+}
+
+export interface RulePolicy extends SubredditRuleRef {
+  id: string;
+  subreddit: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  active: boolean;
+}
+
+export interface PolicyStep {
+  offenseCount: number;
+  windowDays: number;
+  recommendedAction: EnforcementAction;
+  removalMessageTemplate?: string;
+  noteTemplate?: string;
+  requireOverrideReasonForDeviation: boolean;
+}
+
+export interface AttributedModAction {
+  id: string;
+  subreddit: string;
+  source: ActionSource;
+  rawActionType: string;
+  normalizedAction?: EnforcementAction;
+  targetThingId?: string;
+  targetAuthor?: string;
+  moderator?: string;
+  createdAt: string;
+  inferredRuleKey?: string;
+  inferredRuleName?: string;
+  confidence: Confidence;
+  evidence: string[];
+}
+
+export interface MirrorScan {
+  id: string;
+  subreddit: string;
+  createdAt: string;
+  createdBy?: string;
+  source: ActionSource;
+  totalActionsScanned: number;
+  attributedCount: number;
+  unmatchedCount: number;
+  confidenceBreakdown: Record<Confidence, number>;
+  driftCandidates: DriftCandidate[];
+  smallSubredditStatus: SmallSubredditThresholdStatus;
+}
+
+export interface DriftCandidate {
+  ruleKey?: string;
+  ruleName: string;
+  confidence: Confidence;
+  summary: string;
+  totalActions: number;
+  actionDistribution: Partial<Record<EnforcementAction, number>>;
+  recommendation: string;
+}
+
+export interface OverrideEvent {
+  id: string;
+  subreddit: string;
+  modUsername: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  ruleKey: string;
+  recommendedAction: EnforcementAction;
+  selectedAction: EnforcementAction;
+  overrideReason: OverrideReason;
+  overrideNote?: string;
+  createdAt: string;
+}
+
+export interface SmallSubredditThresholdStatus {
+  meetsThreshold: boolean;
+  observedActions: number;
+  minimumActions: number;
+  message: string;
+}
+
+export interface HealthStatus {
+  ok: boolean;
+  state: HealthState;
+  appName: string;
+  appSlug?: string;
+  appVersion?: string;
+  subredditId?: string;
+  subredditName?: string;
+  username?: string;
+  checkedAt: string;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
+export type ApiSuccess<T> = {
+  ok: true;
+  data: T;
+};
+
+export type ApiFailure = {
+  ok: false;
+  error: ApiError;
+};
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
