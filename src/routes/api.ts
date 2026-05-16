@@ -2,8 +2,36 @@ import { Hono } from 'hono';
 import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
-import type { ApiResponse, MirrorScan } from '../shared/schema';
+import { DEMO_SUBREDDIT_NAME } from '../shared/constants';
+import type {
+  ActionEvent,
+  ApplyPolicyConfirmInput,
+  ApplyPolicyConfirmResult,
+  ApplyPolicyPreview,
+  ApplyPolicyPreviewInput,
+  ApiResponse,
+  DriftCandidate,
+  MirrorScan,
+  OverrideEvent,
+  OverrideSummary,
+  PolicyCreateInput,
+  PolicyUpdateInput,
+  RulePolicy,
+} from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
+import {
+  createPolicy,
+  createPolicyFromDriftCandidate,
+  getPolicyById,
+  listPolicies,
+  updatePolicy,
+} from '../server/services/policies';
+import {
+  buildOverrideSummary,
+  listRecentActionEvents,
+  listRecentAuditEvents,
+} from '../server/services/audit';
+import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
 
 export const api = new Hono();
 
@@ -78,3 +106,266 @@ api.post('/scan', async (c) => {
     return c.json(response, 500);
   }
 });
+
+api.get('/policies', async (c) => {
+  const subreddit = getCurrentSubreddit();
+
+  try {
+    const response: ApiResponse<RulePolicy[]> = {
+      ok: true,
+      data: await listPolicies(subreddit),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(policyError(error), 500);
+  }
+});
+
+api.post('/policies', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PolicyCreateInput>;
+
+  try {
+    const input: PolicyCreateInput = {
+      subreddit: body.subreddit ?? getCurrentSubreddit(),
+      createdBy: body.createdBy ?? context.username ?? 'unknown',
+      ruleKey: body.ruleKey ?? '',
+      ruleName: body.ruleName ?? '',
+      steps: body.steps ?? [],
+      defaultMessageMode: body.defaultMessageMode ?? 'log_only',
+      active: body.active ?? true,
+    };
+    if (body.rulePriority !== undefined) {
+      input.rulePriority = body.rulePriority;
+    }
+    if (body.ruleKind !== undefined) {
+      input.ruleKind = body.ruleKind;
+    }
+
+    const response: ApiResponse<RulePolicy> = {
+      ok: true,
+      data: await createPolicy(input),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.post('/policies/from-drift', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    subreddit: string;
+    createdBy: string;
+    driftCandidate: DriftCandidate;
+  }>;
+
+  if (!body.driftCandidate) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_validation_failed',
+          message: 'driftCandidate is required',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      400
+    );
+  }
+
+  try {
+    const response: ApiResponse<RulePolicy> = {
+      ok: true,
+      data: await createPolicyFromDriftCandidate({
+        subreddit: body.subreddit ?? getCurrentSubreddit(),
+        createdBy: body.createdBy ?? context.username ?? 'unknown',
+        driftCandidate: body.driftCandidate,
+      }),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.get('/policies/:id', async (c) => {
+  const policy = await getPolicyById(getCurrentSubreddit(), c.req.param('id'));
+  if (!policy) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_not_found',
+          message: 'Policy was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: policy,
+  } satisfies ApiResponse<RulePolicy>);
+});
+
+api.put('/policies/:id', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as PolicyUpdateInput;
+
+  try {
+    const policy = await updatePolicy(
+      getCurrentSubreddit(),
+      c.req.param('id'),
+      body
+    );
+    if (!policy) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'policy_not_found',
+            message: 'Policy was not found for this subreddit.',
+          },
+        } satisfies ApiResponse<RulePolicy>,
+        404
+      );
+    }
+
+    return c.json({
+      ok: true,
+      data: policy,
+    } satisfies ApiResponse<RulePolicy>);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.get('/actions', async (c) => {
+  const response: ApiResponse<ActionEvent[]> = {
+    ok: true,
+    data: await listRecentActionEvents(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/overrides', async (c) => {
+  const response: ApiResponse<OverrideEvent[]> = {
+    ok: true,
+    data: await listRecentAuditEvents(getCurrentSubreddit()),
+  };
+  return c.json(response);
+});
+
+api.get('/overrides/summary', async (c) => {
+  const events = await listRecentAuditEvents(getCurrentSubreddit(), 100);
+  const response: ApiResponse<OverrideSummary> = {
+    ok: true,
+    data: buildOverrideSummary(events),
+  };
+  return c.json(response);
+});
+
+api.post('/apply-policy/preview', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyPreviewInput>;
+
+  try {
+    const input = normalizeApplyPreviewInput(body);
+    const response: ApiResponse<ApplyPolicyPreview> = {
+      ok: true,
+      data: await previewApplyPolicy(input),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(applyPolicyError(error), 400);
+  }
+});
+
+api.post('/apply-policy/confirm', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyConfirmInput>;
+
+  try {
+    const input = normalizeApplyConfirmInput(body);
+    const options: Parameters<typeof confirmApplyPolicy>[0] = {
+      input,
+    };
+    if (context.username !== undefined) {
+      options.modUsername = context.username;
+    }
+    const response: ApiResponse<ApplyPolicyConfirmResult> = {
+      ok: true,
+      data: await confirmApplyPolicy(options),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(applyPolicyError(error), 400);
+  }
+});
+
+function getCurrentSubreddit(): string {
+  return context.subredditName ?? DEMO_SUBREDDIT_NAME;
+}
+
+function policyError(error: unknown): ApiResponse<RulePolicy> {
+  return {
+    ok: false,
+    error: {
+      code: 'policy_validation_failed',
+      message: error instanceof Error ? error.message : 'Policy request failed',
+    },
+  };
+}
+
+function normalizeApplyPreviewInput(
+  body: Partial<ApplyPolicyPreviewInput>
+): ApplyPolicyPreviewInput {
+  const input: ApplyPolicyPreviewInput = {
+    subreddit: body.subreddit ?? getCurrentSubreddit(),
+    ruleKey: body.ruleKey ?? '',
+    source: body.source ?? 'simulator',
+  };
+
+  if (body.targetThingId !== undefined) {
+    input.targetThingId = body.targetThingId;
+  }
+  if (body.targetAuthor !== undefined) {
+    input.targetAuthor = body.targetAuthor;
+  }
+  if (body.selectedAction !== undefined) {
+    input.selectedAction = body.selectedAction;
+  }
+
+  return input;
+}
+
+function normalizeApplyConfirmInput(
+  body: Partial<ApplyPolicyConfirmInput>
+): ApplyPolicyConfirmInput {
+  if (body.selectedAction === undefined) {
+    throw new Error('selectedAction is required');
+  }
+
+  const input: ApplyPolicyConfirmInput = {
+    ...normalizeApplyPreviewInput(body),
+    selectedAction: body.selectedAction,
+  };
+
+  if (body.overrideReason !== undefined) {
+    input.overrideReason = body.overrideReason;
+  }
+  if (body.overrideNote !== undefined) {
+    input.overrideNote = body.overrideNote;
+  }
+
+  return input;
+}
+
+function applyPolicyError(
+  error: unknown
+): ApiResponse<ApplyPolicyPreview | ApplyPolicyConfirmResult> {
+  return {
+    ok: false,
+    error: {
+      code: 'apply_policy_failed',
+      message:
+        error instanceof Error ? error.message : 'Apply Policy request failed',
+    },
+  };
+}
