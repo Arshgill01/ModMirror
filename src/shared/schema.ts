@@ -248,6 +248,29 @@ export interface OverrideEvent {
   createdAt: string;
 }
 
+export interface ActionEvent {
+  id: string;
+  subreddit: string;
+  modUsername?: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  ruleKey: string;
+  ruleName?: string;
+  policyId?: string;
+  recommendedAction: EnforcementAction;
+  selectedAction: EnforcementAction;
+  deliveryMode: MessageDeliveryMode;
+  source: ApplyPolicySource;
+  createdAt: string;
+}
+
+export interface OverrideSummary {
+  totalOverrides: number;
+  overridesByRule: Record<string, number>;
+  overridesByReason: Record<OverrideReason, number>;
+  recentOverrides: Array<Omit<OverrideEvent, 'modUsername'>>;
+}
+
 export interface SmallSubredditThresholdStatus {
   meetsThreshold: boolean;
   observedActions: number;
