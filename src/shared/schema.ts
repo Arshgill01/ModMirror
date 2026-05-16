@@ -25,6 +25,20 @@ export type OverrideReason =
   | 'policy_seems_wrong'
   | 'other';
 
+export type OverrideReviewStatus =
+  | 'unresolved'
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
+
+export type PolicyHealthStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review'
+  | 'insufficient_data';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
@@ -267,10 +281,16 @@ export interface OverrideEvent {
   targetThingId?: string;
   targetAuthor?: string;
   ruleKey: string;
+  policyId?: string;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason;
   overrideNote?: string;
+  reviewStatus?: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt?: string;
   createdAt: string;
 }
 
@@ -295,6 +315,31 @@ export interface OverrideSummary {
   overridesByRule: Record<string, number>;
   overridesByReason: Record<OverrideReason, number>;
   recentOverrides: Array<Omit<OverrideEvent, 'modUsername'>>;
+}
+
+export interface PolicyHealthSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  totalActions: number;
+  followedPolicyCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policySeemsWrongCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  reasons: string[];
+  recommendations: string[];
+  sampleWarning?: string;
+}
+
+export interface PolicyHealthOverview {
+  totalPolicies: number;
+  stablePolicies: number;
+  policiesNeedingReview: number;
+  unresolvedOverrides: number;
+  summaries: PolicyHealthSummary[];
 }
 
 export interface SmallSubredditThresholdStatus {
