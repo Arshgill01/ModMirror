@@ -136,9 +136,10 @@ Status: implemented locally and CLI playtest-ready.
 - PASS: lint.
 - PASS: `npx devvit whoami` as `u/BrightyBrainiac`.
 - PASS: `npm run dev` reached Playtest ready for `r/modmirror_dev`.
-- PARTIAL: Safari is signed in and opens the playtest subreddit. Clicking the
-  dashboard launcher creates a visible custom post, so Codex paused for explicit
-  approval before activating it.
+- PARTIAL: Safari is signed in, opens the playtest subreddit, and shows the
+  dashboard launcher in the moderator overflow menu. Clicking the launcher
+  creates a visible custom post, so Codex paused for explicit approval before
+  activating it.
 - PARTIAL: `npm audit` reports 31 known vulnerabilities; no force fix applied.
 
 ### Runtime Status
@@ -147,14 +148,14 @@ Status: implemented locally and CLI playtest-ready.
 
 ```txt
 https://www.reddit.com/r/modmirror_dev/?playtest=modmirror
-v0.0.1.7
+v0.0.1.10
 ```
 
 ### Open Risks
 
-- Redis route behavior, dashboard interaction, and Reddit menu/form behavior
-  still need browser proof. The dashboard launch surface is implemented, but
-  activation creates a visible test post.
+- Redis route behavior, dashboard custom-post rendering, and Reddit menu/form
+  behavior still need browser proof. The dashboard launch surface is visible,
+  but activation creates a visible test post.
 - Public comment/private message/modmail/native Mod Notes delivery remain
   disabled/unverified.
 - `npm audit` includes Devvit transitive `protobufjs` advisories with no fix

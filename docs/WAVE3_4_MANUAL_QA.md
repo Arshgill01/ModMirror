@@ -7,12 +7,12 @@ Manual checklist for the first complete ModMirror policy loop.
 - [x] `npm run dev` reaches Playtest ready for `r/modmirror_dev`.
 - [x] Safari opened the playtest URL.
 - [x] Complete Reddit/Google login consent if required.
-- [ ] Confirm the ModMirror dashboard launcher appears in the subreddit
+- [x] Confirm the ModMirror dashboard launcher appears in the subreddit
       moderator menu.
 - [ ] Confirm the ModMirror dashboard renders inside Reddit.
 
-Current browser result: Safari is signed in and opens the playtest subreddit.
-The dashboard launcher is implemented as a moderator-only subreddit menu action.
+Current browser result: Safari is signed in, opens the playtest subreddit, and
+shows "Open ModMirror dashboard" in the subreddit moderator overflow menu.
 Activating it creates a visible custom post, so Codex paused for explicit
 approval before clicking it.
 

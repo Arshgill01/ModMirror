@@ -4,7 +4,7 @@
 
 Wave 3/4 — Policy Agreement Flow + Apply Policy Action implemented locally.
 
-Status: Mirror Scan, deterministic attribution, policy creation/editing, Apply Policy simulator, log-only action events, deviation override enforcement, aggregate override summary services, and a moderator-only dashboard launch menu are implemented. CLI playtest reaches ready for `r/modmirror_dev`; Safari is signed in and opens the playtest subreddit. Activating the dashboard launcher creates a visible custom post and needs explicit approval before browser proof clicks it.
+Status: Mirror Scan, deterministic attribution, policy creation/editing, Apply Policy simulator, log-only action events, deviation override enforcement, aggregate override summary services, and a moderator-only dashboard launch menu are implemented. CLI playtest reaches ready for `r/modmirror_dev`; Safari is signed in, opens the playtest subreddit, and shows the dashboard launcher. Activating the launcher creates a visible custom post and needs explicit approval before browser proof clicks it.
 
 ## Wave 3/4 Completion Checklist
 
@@ -24,7 +24,8 @@ Status: Mirror Scan, deterministic attribution, policy creation/editing, Apply P
 - [x] Demo scan supports the full policy/apply loop.
 - [x] Local build/test/typecheck/lint pass in Wave 3/4 worktree.
 - [x] Runtime playtest reaches ready.
-- [ ] Browser UI proof for the dashboard custom post after approval to create the visible test post.
+- [x] Browser UI proof that signed-in Safari opens the playtest subreddit and shows the dashboard launcher.
+- [ ] Browser UI proof that the dashboard custom post renders after approval to create the visible test post.
 
 ## Wave 2 Integration Checklist
 
