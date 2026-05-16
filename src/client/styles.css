@@ -29,7 +29,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -187,6 +188,14 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.policy-layout,
+.policy-form-header {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .section h3,
 .panel h3 {
   font-size: 18px;
@@ -264,6 +273,13 @@ button:disabled {
 }
 
 .scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.policy-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -443,6 +459,136 @@ button:disabled {
   font-weight: 700;
 }
 
+.inline-error,
+.inline-success {
+  border-radius: 8px;
+  font-size: 13px !important;
+  font-weight: 700;
+  margin-top: 12px !important;
+  padding: 10px 12px;
+}
+
+.inline-error {
+  background: #f8dddd;
+  border: 1px solid #d99d9d;
+  color: #8f1d1d !important;
+}
+
+.inline-success {
+  background: var(--accent-muted);
+  border: 1px solid #8fb8a2;
+  color: #175d55 !important;
+}
+
+.policy-table-section {
+  margin: 0 auto 20px;
+  max-width: 1180px;
+  overflow-x: auto;
+}
+
+.policy-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.policy-table th,
+.policy-table td {
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.policy-table th {
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.policy-table td span {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.table-button {
+  min-height: 32px;
+  padding: 5px 9px;
+}
+
+.policy-form-section {
+  display: grid;
+  gap: 18px;
+}
+
+.policy-form {
+  display: grid;
+  gap: 14px;
+}
+
+.policy-form label,
+.policy-step label {
+  color: var(--text);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.policy-form input,
+.policy-form select {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.policy-form input[readonly] {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.step-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.policy-step {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+}
+
+.policy-step legend {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.checkbox-label {
+  align-items: start;
+  display: flex !important;
+  gap: 8px !important;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.checkbox-label input {
+  min-height: auto;
+}
+
 .details-grid {
   display: grid;
   gap: 12px;
@@ -501,7 +647,9 @@ button:disabled {
   .topbar,
   .intro-section,
   .details-grid,
-  .scan-hero {
+  .scan-hero,
+  .policy-layout,
+  .policy-form-header {
     grid-template-columns: 1fr;
   }
 
@@ -516,8 +664,13 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .scan-actions {
+  .scan-actions,
+  .policy-actions {
     justify-content: flex-start;
+  }
+
+  .step-grid {
+    grid-template-columns: 1fr;
   }
 }
 
