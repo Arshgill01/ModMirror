@@ -32,7 +32,7 @@ export const DEMO_POLICY: RulePolicy = {
   createdAt: '2026-05-16T00:00:00.000Z',
   updatedAt: '2026-05-16T00:00:00.000Z',
   createdBy: 'demo-lead-mod',
-  defaultMessageMode: 'public_comment',
+  defaultMessageMode: 'log_only',
   active: true,
   steps: [
     {
