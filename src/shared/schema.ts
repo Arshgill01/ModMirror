@@ -25,6 +25,13 @@ export type OverrideReason =
   | 'policy_seems_wrong'
   | 'other';
 
+export type OverrideReviewStatus =
+  | 'unresolved'
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
@@ -325,7 +332,18 @@ export interface OverrideEvent {
   policyVersionNumber?: number;
   policyVersionStatus?: PolicyVersionStatus;
   policySnapshot?: PolicySnapshot;
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt: string;
   createdAt: string;
+}
+
+export interface OverrideReviewUpdateInput {
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy: string;
+  reviewNote?: string;
 }
 
 export interface ActionEvent {

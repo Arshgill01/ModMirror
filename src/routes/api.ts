@@ -13,6 +13,8 @@ import type {
   DriftCandidate,
   MirrorScan,
   OverrideEvent,
+  OverrideReviewStatus,
+  OverrideReviewUpdateInput,
   OverrideSummary,
   PolicyCreateInput,
   PolicyUpdateInput,
@@ -30,8 +32,12 @@ import {
 } from '../server/services/policies';
 import {
   buildOverrideSummary,
+  getOverrideEvent,
+  listOverrideEvents,
   listRecentActionEvents,
   listRecentAuditEvents,
+  updateOverrideReview,
+  validateOverrideReviewStatus,
 } from '../server/services/audit';
 import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
 
@@ -296,11 +302,94 @@ api.get('/actions', async (c) => {
 });
 
 api.get('/overrides', async (c) => {
+  const status = c.req.query('status');
+  const ruleKey = c.req.query('ruleKey');
+  if (status !== undefined) {
+    try {
+      validateOverrideReviewStatus(status);
+    } catch (error) {
+      return c.json(overrideError(error), 400);
+    }
+  }
+
+  const options: Parameters<typeof listOverrideEvents>[0] = {
+    subreddit: getCurrentSubreddit(),
+  };
+  if (status !== undefined) {
+    options.status = status as OverrideReviewStatus;
+  }
+  if (ruleKey !== undefined) {
+    options.ruleKey = ruleKey;
+  }
+
   const response: ApiResponse<OverrideEvent[]> = {
     ok: true,
-    data: await listRecentAuditEvents(getCurrentSubreddit()),
+    data: await listOverrideEvents(options),
   };
   return c.json(response);
+});
+
+api.get('/overrides/:id', async (c) => {
+  const event = await getOverrideEvent(getCurrentSubreddit(), c.req.param('id'));
+  if (!event) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'override_not_found',
+          message: 'Override was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<OverrideEvent>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: event,
+  } satisfies ApiResponse<OverrideEvent>);
+});
+
+api.post('/overrides/:id/review', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<OverrideReviewUpdateInput>;
+
+  try {
+    if (body.reviewStatus === undefined) {
+      throw new Error('reviewStatus is required');
+    }
+    const input: OverrideReviewUpdateInput = {
+      reviewStatus: body.reviewStatus,
+      reviewedBy: body.reviewedBy ?? context.username ?? 'unknown',
+    };
+    if (body.reviewNote !== undefined) {
+      input.reviewNote = body.reviewNote;
+    }
+
+    const updated = await updateOverrideReview(
+      getCurrentSubreddit(),
+      c.req.param('id'),
+      input
+    );
+    if (!updated) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'override_not_found',
+            message: 'Override was not found for this subreddit.',
+          },
+        } satisfies ApiResponse<OverrideEvent>,
+        404
+      );
+    }
+
+    return c.json({
+      ok: true,
+      data: updated,
+    } satisfies ApiResponse<OverrideEvent>);
+  } catch (error) {
+    return c.json(overrideError(error), 400);
+  }
 });
 
 api.get('/overrides/summary', async (c) => {
@@ -415,6 +504,17 @@ function applyPolicyError(
       code: 'apply_policy_failed',
       message:
         error instanceof Error ? error.message : 'Apply Policy request failed',
+    },
+  };
+}
+
+function overrideError(error: unknown): ApiResponse<OverrideEvent[]> {
+  return {
+    ok: false,
+    error: {
+      code: 'override_review_failed',
+      message:
+        error instanceof Error ? error.message : 'Override review failed',
     },
   };
 }

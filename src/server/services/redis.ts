@@ -24,6 +24,8 @@ export const redisKeys = {
   actionsByUser: (subreddit: string, username: string) =>
     mmKey(subreddit, `actions:user:${username}`),
   overrides: (subreddit: string) => mmKey(subreddit, 'overrides'),
+  overrideReview: (subreddit: string, overrideId: string) =>
+    mmKey(subreddit, `override:${overrideId}:review`),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 
