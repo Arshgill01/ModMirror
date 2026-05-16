@@ -194,12 +194,7 @@ function renderMirrorScanPage() {
 }
 
 function renderScanWarnings() {
-  const warnings = [
-    ...(scanState.mode === 'demo'
-      ? ['Demo data - not real subreddit moderation history.']
-      : []),
-    ...scanState.warnings,
-  ];
+  const warnings = scanState.warnings;
 
   if (warnings.length === 0) {
     return '';
@@ -445,7 +440,7 @@ async function runScan(mode: ScanMode) {
       loading: false,
       mode,
       result: payload.data,
-      warnings: [],
+      warnings: payload.data.warnings,
     };
   } catch (error) {
     scanState = {

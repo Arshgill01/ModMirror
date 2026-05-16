@@ -8,7 +8,7 @@ import type {
 } from '../../shared/schema';
 
 export const DEMO_DATA_LABEL =
-  'Demo data - not real subreddit moderation history.';
+  'Demo data — not real subreddit moderation history.';
 
 const BASE_TIME = Date.UTC(2026, 4, 16, 12, 0, 0);
 

@@ -166,6 +166,7 @@ export interface MirrorScan {
   confidenceBreakdown: Record<Confidence, number>;
   driftCandidates: DriftCandidate[];
   smallSubredditStatus: SmallSubredditThresholdStatus;
+  warnings: string[];
 }
 
 export interface DriftCandidate {

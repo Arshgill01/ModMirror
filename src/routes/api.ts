@@ -3,6 +3,7 @@ import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import type { ApiResponse, MirrorScan } from '../shared/schema';
+import { runMirrorScan } from '../server/services/mirrorScan';
 
 export const api = new Hono();
 
@@ -48,14 +49,32 @@ api.post('/smoke/reddit', async (c) => {
 });
 
 api.post('/scan', async (c) => {
-  const response: ApiResponse<MirrorScan> = {
-    ok: false,
-    error: {
-      code: 'scan_not_integrated',
-      message:
-        'Mirror Scan service is not wired on this branch yet. Integration will connect this endpoint to demo and live scan sources.',
-    },
-  };
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    mode: string;
+  }>;
+  const mode: 'live' | 'demo' = body.mode === 'demo' ? 'demo' : 'live';
 
-  return c.json(response, 501);
+  try {
+    const scan =
+      context.username !== undefined
+        ? await runMirrorScan({ mode, createdBy: context.username })
+        : await runMirrorScan({ mode });
+    const response: ApiResponse<MirrorScan> = {
+      ok: true,
+      data: scan,
+    };
+
+    return c.json(response);
+  } catch (error) {
+    const response: ApiResponse<MirrorScan> = {
+      ok: false,
+      error: {
+        code: 'scan_failed',
+        message:
+          error instanceof Error ? error.message : 'Unknown scan failure',
+      },
+    };
+
+    return c.json(response, 500);
+  }
 });

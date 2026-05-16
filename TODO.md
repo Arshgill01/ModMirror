@@ -2,22 +2,22 @@
 
 ## Current Phase
 
-Wave 2 — Mirror Scan + deterministic attribution.
+Wave 2 — Mirror Scan + deterministic attribution complete locally.
 
-Status: Wave 2 is being integrated across dedicated branches for attribution, demo seed data, live sources, dashboard scan UI, and tests/docs. Runtime playtest remains blocked until `devvit login` is completed.
+Status: Mirror Scan, deterministic attribution, live source adapters, demo seed data, dashboard scan UI, and focused tests are integrated. Runtime playtest remains blocked until `devvit login` is completed.
 
 ## Wave 2 Integration Checklist
 
-- [ ] Merge deterministic attribution engine.
-- [ ] Merge mandatory `r/ExampleLearning` demo seed data.
-- [ ] Merge live source adapters for mod log, rules, and removal reasons.
-- [ ] Merge Mirror Scan dashboard states.
-- [ ] Wire demo and live scan through the same scan service.
-- [ ] Verify confidence breakdown totals.
-- [ ] Verify demo Rule 2 drift candidate.
-- [ ] Complete `docs/WAVE2_COMPLETION_REPORT.md`.
-- [ ] Keep Policy Agreement Flow out of Wave 2.
-- [ ] Keep Apply Policy and Override Audit out of Wave 2.
+- [x] Merge deterministic attribution engine.
+- [x] Merge mandatory `r/ExampleLearning` demo seed data.
+- [x] Merge live source adapters for mod log, rules, and removal reasons.
+- [x] Merge Mirror Scan dashboard states.
+- [x] Wire demo and live scan through the same scan service.
+- [x] Verify confidence breakdown totals.
+- [x] Verify demo Rule 2 drift candidate.
+- [x] Complete `docs/WAVE2_COMPLETION_REPORT.md`.
+- [x] Keep Policy Agreement Flow out of Wave 2.
+- [x] Keep Apply Policy and Override Audit out of Wave 2.
 
 ## Wave 1 Completed Locally
 
@@ -54,9 +54,9 @@ Status: Wave 2 is being integrated across dedicated branches for attribution, de
 
 ## Wave 0 Runtime Blockers
 
-- [ ] Complete `npm run login` / `npx devvit login`.
-- [ ] Complete `npx devvit whoami`.
-- [ ] Create or bind the real Reddit app identity for `modmirror`.
+- [x] Complete `npm run login` / `npx devvit login`.
+- [x] Complete `npx devvit whoami` locally as `u/BrightyBrainiac`.
+- [ ] Create or bind the real Reddit app identity for `modmirror`; `npm run dev` currently fails with "Your app doesn't exist yet - you'll need to run 'npx devvit init' before you can playtest your app."
 - [ ] Run `npm run dev` through a full playtest session in a small test subreddit.
 - [ ] Hit `/api/smoke/redis` in playtest and confirm Redis read/write.
 - [ ] Hit `/api/smoke/reddit` in playtest and capture redacted sample output.
@@ -87,48 +87,29 @@ Status: Wave 2 is being integrated across dedicated branches for attribution, de
 - [x] Runtime playtest either verifies Redis/Reddit/menu/form behavior or Wave 2 explicitly stays demo/local-only until auth is unblocked.
 - [ ] Comment delivery ordering is tested or Mirror Scan/Policy work defaults all outbound messaging to `log_only`.
 - [x] The rule attribution contract uses confidence labels and evidence arrays for every inferred match.
-- [ ] Demo seed data is available before judging-facing screenshots or video work.
+- [x] Demo seed data is available before judging-facing screenshots or video work.
 
 ## Wave 2 Tasks After Prerequisites
 
-- [ ] Fetch moderation log actions through `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`.
-- [ ] Fetch removal reasons through `reddit.getSubredditRemovalReasons(subredditName)`.
-- [ ] Fetch subreddit rules through `reddit.getRules(subredditName)` or `subreddit.getRules()`.
-- [ ] Normalize mod actions without assuming structured rule/removal IDs.
-- [ ] Implement deterministic attribution with high/medium/low/unmatched confidence labels.
-- [ ] Store scan summaries and raw-enough evidence in Redis without storing unnecessary sensitive content.
-- [ ] Render Mirror Scan dashboard results with clear demo/live labeling.
+- [x] Fetch moderation log actions through `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`.
+- [x] Fetch removal reasons through `reddit.getSubredditRemovalReasons(subredditName)`.
+- [x] Fetch subreddit rules through `reddit.getRules(subredditName)`.
+- [x] Normalize mod actions without assuming structured rule/removal IDs.
+- [x] Implement deterministic attribution with high/medium/low/unmatched confidence labels.
+- [x] Store scan summary metadata in Redis while avoiding raw content storage.
+- [x] Render Mirror Scan dashboard results with clear demo/live labeling.
 
-## Recommended Wave 2
-
-- Build Mirror Scan on top of `src/server/services/scans.ts`.
-- Keep attribution deterministic and confidence-scored.
-- Use `src/server/services/policies.ts` only for policy lookup/persistence; do not add editor UI in Wave 2 unless explicitly scoped.
-- Add focused tests for pure attribution/scoring helpers once those helpers exist.
-
-## Wave 2 UI Tasks
-
-- Render live Mirror Scan results from the Wave 2 scan endpoint.
-- Show scanned action count, confidence breakdown, unmatched count, and drift candidates.
-- Add a useful small-subreddit/no-history state that routes users to demo mode or policy setup.
-- Wire demo seed data into the dashboard without making it look like live subreddit data.
-- Preserve the exact "Wave 2 will implement live scan" placeholder until the scan endpoint is ready.
-- Keep all inferred rule labels confidence-scored and visually distinct from confirmed data.
-
-## Ready For Wave 2
+## Ready For Wave 3
 
 - Shared contracts are importable from server code through `src/shared/index.ts`.
 - Use `ruleKey` for policy and attribution references; do not assume a stable Devvit rule ID.
-- Full Mirror Scan attribution and the 50-80 action demo dataset remain Wave 2 scope.
+- Start Policy Agreement Flow from `MirrorScan.driftCandidates`.
+- Keep policy message delivery defaulted to `log_only` until public comment behavior is playtest-verified.
 
-## Do Not Start Yet
+## Do Not Start Until Scoped
 
-Do not implement these until Wave 1 contracts exist and the relevant runtime behavior is verified or explicitly demo-only:
-
-- full Mirror Scan scoring beyond pure/unit-testable helpers
-- policy editor
-- Apply Policy enforcement flow
-- public comment delivery as a default
-- private message, modmail, or native Mod Notes delivery
-- override audit dashboard
-- Devpost final copy
+- Apply Policy enforcement flow.
+- public comment delivery as a default.
+- private message, modmail, or native Mod Notes delivery.
+- override audit dashboard.
+- Devpost final copy.
