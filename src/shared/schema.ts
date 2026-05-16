@@ -95,6 +95,32 @@ export interface PolicyRecommendation {
   message: string;
 }
 
+export interface ApplyPolicyPreviewInput {
+  subreddit?: string;
+  ruleKey: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  selectedAction?: EnforcementAction;
+  source?: ApplyPolicySource;
+}
+
+export interface ApplyPolicyPreview {
+  recommendation: PolicyRecommendation;
+  policy?: RulePolicy;
+}
+
+export interface ApplyPolicyConfirmInput extends ApplyPolicyPreviewInput {
+  selectedAction: EnforcementAction;
+  overrideReason?: OverrideReason;
+  overrideNote?: string;
+}
+
+export interface ApplyPolicyConfirmResult {
+  recommendation: PolicyRecommendation;
+  actionEvent: ActionEvent;
+  overrideEvent?: OverrideEvent;
+}
+
 export interface PolicyReadinessState {
   reason: PolicyFallbackReason;
   message: string;

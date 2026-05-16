@@ -286,6 +286,10 @@ button:disabled {
   justify-content: flex-end;
 }
 
+.policy-actions.left {
+  justify-content: flex-start;
+}
+
 .primary-button,
 .secondary-button {
   border-radius: 8px;
@@ -549,6 +553,7 @@ button:disabled {
   color: var(--text);
   min-height: 38px;
   padding: 8px 10px;
+  width: 100%;
 }
 
 .policy-form input[readonly] {
@@ -587,6 +592,12 @@ button:disabled {
 
 .checkbox-label input {
   min-height: auto;
+  width: auto;
+}
+
+.apply-preview {
+  display: grid;
+  gap: 12px;
 }
 
 .details-grid {
