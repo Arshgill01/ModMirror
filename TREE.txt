@@ -1,0 +1,17 @@
+.codex/skills/devpost-submission/SKILL.md
+.codex/skills/devvit-research/SKILL.md
+.codex/skills/modmirror-product-guardrails/SKILL.md
+.codex/skills/wave-execution/SKILL.md
+AGENTS.md
+PLAN.md
+README.md
+RESEARCH.md
+TODO.md
+docs/DATA_MODEL.md
+docs/DECISIONS.md
+docs/DEMO_SCRIPT.md
+docs/DEVVIT_RESEARCH_QUESTIONS.md
+docs/PRODUCT.md
+docs/SUBMISSION_NOTES.md
+prompts/WAVE0_GOAL.md
+scripts/bootstrap_dirs.sh
