@@ -25,6 +25,7 @@ export const ENFORCEMENT_ACTION_VALUES = [
   'permanent_ban_suggested',
   'ignore_reports',
   'manual_review',
+  'log_only',
 ] as const satisfies readonly EnforcementAction[];
 
 export const MESSAGE_DELIVERY_MODE_VALUES = [
@@ -57,6 +58,11 @@ export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
 export const API_ROUTES = {
   health: '/api/health',
   scan: '/api/scan',
+  policies: '/api/policies',
+  policyFromDrift: '/api/policies/from-drift',
+  actions: '/api/actions',
+  overrides: '/api/overrides',
+  overrideSummary: '/api/overrides/summary',
   redisSmoke: '/api/smoke/redis',
   redditSmoke: '/api/smoke/reddit',
 } as const;

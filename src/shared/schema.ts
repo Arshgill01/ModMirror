@@ -8,7 +8,8 @@ export type EnforcementAction =
   | 'temporary_ban_suggested'
   | 'permanent_ban_suggested'
   | 'ignore_reports'
-  | 'manual_review';
+  | 'manual_review'
+  | 'log_only';
 
 export type MessageDeliveryMode =
   | 'public_comment'
@@ -25,6 +26,8 @@ export type OverrideReason =
   | 'other';
 
 export type ActionSource = 'live' | 'demo' | 'modmirror';
+
+export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
 
 export type HealthState = 'ok' | 'degraded' | 'blocked';
 
@@ -44,6 +47,58 @@ export interface RulePolicy extends SubredditRuleRef {
   steps: PolicyStep[];
   defaultMessageMode: MessageDeliveryMode;
   active: boolean;
+}
+
+export interface PolicyCreateInput extends SubredditRuleRef {
+  subreddit: string;
+  createdBy: string;
+  steps: PolicyStep[];
+  defaultMessageMode?: MessageDeliveryMode;
+  active?: boolean;
+}
+
+export interface PolicyUpdateInput {
+  ruleName?: string;
+  rulePriority?: number;
+  ruleKind?: 'all' | 'link' | 'comment';
+  steps?: PolicyStep[];
+  defaultMessageMode?: MessageDeliveryMode;
+  active?: boolean;
+}
+
+export interface ApplyPolicyContext {
+  subreddit: string;
+  ruleKey: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  selectedAction?: EnforcementAction;
+  source?: ApplyPolicySource;
+}
+
+export type PolicyFallbackReason =
+  | 'policy_found'
+  | 'no_policy'
+  | 'no_scan_data'
+  | 'small_subreddit';
+
+export interface PolicyRecommendation {
+  ruleKey: string;
+  ruleName?: string;
+  policyId?: string;
+  offenseCount: number;
+  recommendedAction: EnforcementAction;
+  messageDeliveryMode: MessageDeliveryMode;
+  requiresOverrideReason: boolean;
+  selectedAction?: EnforcementAction;
+  deviatesFromPolicy: boolean;
+  fallbackReason: PolicyFallbackReason;
+  message: string;
+}
+
+export interface PolicyReadinessState {
+  reason: PolicyFallbackReason;
+  message: string;
+  canCreatePolicy: boolean;
 }
 
 export interface AppConfig {
@@ -191,6 +246,29 @@ export interface OverrideEvent {
   overrideReason: OverrideReason;
   overrideNote?: string;
   createdAt: string;
+}
+
+export interface ActionEvent {
+  id: string;
+  subreddit: string;
+  modUsername?: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  ruleKey: string;
+  ruleName?: string;
+  policyId?: string;
+  recommendedAction: EnforcementAction;
+  selectedAction: EnforcementAction;
+  deliveryMode: MessageDeliveryMode;
+  source: ApplyPolicySource;
+  createdAt: string;
+}
+
+export interface OverrideSummary {
+  totalOverrides: number;
+  overridesByRule: Record<string, number>;
+  overridesByReason: Record<OverrideReason, number>;
+  recentOverrides: Array<Omit<OverrideEvent, 'modUsername'>>;
 }
 
 export interface SmallSubredditThresholdStatus {
