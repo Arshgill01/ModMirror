@@ -18,6 +18,7 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
    - first offense: remove + warning
    - second offense: remove + formal note
    - third offense: suggest 3-day ban
+   - message delivery: log only until public comment delivery is verified
 7. Save policy.
 8. Open a test post/comment.
 9. Use "Apply ModMirror Policy."
@@ -63,6 +64,12 @@ Seed actions:
   - mostly consistent removals
 - Rule 1:
   - severe cases escalated
+
+## Wave 0 Runtime Caveat
+
+Until Devvit playtest verifies comment behavior before/after removal, the live demo should treat visible warning/removal messages as preview text and store the actual decision as `log_only`.
+
+Do not show public comment, private message, modmail, or native Mod Notes delivery as working unless that exact path has been tested in the target subreddit.
 
 ## Screenshot Checklist
 

@@ -28,6 +28,49 @@ Updated by: Codex
 | Upload command | `npm run deploy` -> checks then `devvit upload`; direct command is `devvit upload` |
 | Publish command | `npm run launch` -> deploy then `devvit publish`; direct command is `devvit publish` |
 
+## Assumption Status Summary
+
+| Status | Assumption | Evidence / next action |
+|---|---|---|
+| Verified | The generated app is a Devvit Web server scaffold using Hono, `@devvit/web/server`, and `@devvit/start/vite`. | `devvit.json`, `package.json`, `src/index.ts`, and successful `npm run build`. |
+| Verified | Public API routes can be mounted under `/api`; internal form/menu/trigger routes can be mounted separately. | Build-verified Hono routing in `src/index.ts` and route files. |
+| Verified | Reddit API methods for moderation log, removal reasons, rules, submit comment, remove, approve, ignore reports, private messages, modmail, Mod Notes, and permission checks exist in installed typings. | Local SDK typings in `node_modules/@devvit/*` plus `npm run type-check`. |
+| Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
+| Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
+| Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
+| Unverified | Reddit API methods work in the target subreddit during playtest. | Blocked until `devvit login`, app identity binding, and `npm run dev` playtest. |
+| Unverified | Redis read/write works in playtest. | Type/build proof only; hit `/api/smoke/redis` after auth. |
+| Unverified | Menu actions and chained forms work in the Reddit UI. | Type/build proof only; invoke smoke menu actions after auth. |
+| Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
+| Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
+| Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
+| Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
+| Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
+| Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
+| Deferred | Rich dashboard/client implementation. | No client entry exists yet; Wave 1 owns the skeleton. |
+| Deferred | Full Mirror Scan scoring, policy editor, Apply Policy, and override audit. | Must wait for Wave 1 contracts and remaining playtest proof. |
+
+## Known Platform Constraints
+
+- The current scaffold is Devvit Web with a server-first Hono structure. It does not currently have a React/client dashboard entry.
+- `npm run dev` maps to `devvit playtest` and cannot complete until `devvit login` succeeds and the app identity/test subreddit flow is completed.
+- `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
+- Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
+- Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.
+- Subreddit rules expose `shortName`, `description`, `violationReason`, `priority`, and related fields, but no stable SDK rule ID.
+- `sendPrivateMessageAsSubreddit` exists in typings but is deprecated and should not be used.
+- Comment-before/removal and comment-after/removal behavior is unknown until playtest verifies it on safe test content.
+- Per-mod analytics must remain omitted or hidden until moderator permission checks are runtime-verified.
+
+## Implementation Warnings for Future Agents
+
+- Do not add product code that assumes a generated client app exists; create the dashboard shell deliberately in Wave 1.
+- Do not claim live Reddit/Redis/menu behavior is verified from typecheck or build alone.
+- Do not use mod-log attribution as certain; every inferred rule/removal match needs confidence and evidence.
+- Do not store policies by raw Devvit rule ID unless a runtime-stable ID is later discovered.
+- Do not enable public comments, private messages, modmail, Mod Notes, or destructive enforcement as default behavior before playtest records the exact runtime behavior and permission errors.
+- Use `log_only` as the default message-delivery mode until public comment delivery is proven before/after removal.
+
 ## Project Structure
 
 Generated/modded Wave 0 tree:
@@ -263,6 +306,7 @@ Conclusion:
 Conclusion:
 
 - Removal comment behavior remains a Wave 1/2 playtest item after auth. Do not promise comment-after-removal until tested.
+- Default MVP message delivery should be `log_only` until playtest proves public comment behavior in both normal and removed-thread states. Public comments can become the preferred moderator-facing delivery mode after that proof; deprecated subreddit PM should not be used.
 
 ### remove/approve/ignore reports
 

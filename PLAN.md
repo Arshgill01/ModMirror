@@ -71,7 +71,7 @@ Kill platform uncertainty before product implementation.
 ### Deliverables
 
 - Devvit app scaffold or verified template.
-- Minimal dashboard endpoint/page.
+- Minimal dashboard endpoint/page. Wave 0 outcome: non-destructive smoke endpoints exist; generated template has no client dashboard entry yet.
 - Redis smoke test.
 - Reddit API smoke test.
 - Menu action smoke test if feasible.
@@ -81,10 +81,14 @@ Kill platform uncertainty before product implementation.
 ### Acceptance Criteria
 
 - `npm install` works.
-- `npm run dev` or current generated dev command works.
-- App can be playtested.
+- `npm run dev` or current generated dev command works far enough to identify playtest/auth blockers.
+- App can be playtested after Devvit auth/app binding is completed; Wave 0 did not complete runtime playtest.
 - RESEARCH.md answers every Wave 0 question with evidence or limitation.
 - Any failed assumption is clearly documented.
+
+### Wave 0 Outcome
+
+Local scaffold, typecheck, lint, build, test, and SDK/type research succeeded. Runtime playtest, Redis runtime proof, Reddit API runtime proof, menu/form UX proof, comment delivery ordering, modmail/private message behavior, native Mod Notes behavior, and exact moderator permission strings remain unverified.
 
 ## Wave 1 — App Skeleton + Data Contracts
 
@@ -92,13 +96,22 @@ Kill platform uncertainty before product implementation.
 
 Create the stable internal structure that all future waves use.
 
+### Wave 0 Reality To Preserve
+
+- The current scaffold is Devvit Web with Hono server routes; it does not yet include a generated client dashboard entry.
+- `npm run dev` runs `devvit playtest` and remains blocked until Reddit CLI auth/app binding is completed.
+- Reddit SDK support is type/build-verified locally, but live Reddit/Redis/menu/form behavior is not playtest-verified.
+- Policies must use local derived rule keys because the installed subreddit `Rule` type does not expose a stable rule ID.
+- Historical mod-log attribution must be inferred with confidence because `ModAction` does not expose structured rule/removal reason fields.
+- Message delivery must default to `log_only` until public comment behavior before/after removal is playtest-verified.
+
 ### Deliverables
 
 - `src/shared/schema.ts`
 - `src/shared/constants.ts`
 - server route structure
 - Redis key helper
-- basic dashboard shell
+- basic dashboard shell/client entry
 - demo mode flag
 - health endpoint
 - typed API response shapes
@@ -106,8 +119,8 @@ Create the stable internal structure that all future waves use.
 ### Acceptance Criteria
 
 - Typecheck/build passes.
-- Dashboard loads.
-- Health endpoint returns app/subreddit context if available.
+- Dashboard shell loads if the Wave 1 client entry is present; otherwise health/status routes must make the missing client explicit.
+- Health endpoint returns app/subreddit context if available and clearly labels missing playtest proof.
 - Redis key helper is used everywhere.
 
 ## Wave 2 — Mirror Scan + Attribution
