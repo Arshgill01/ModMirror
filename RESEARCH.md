@@ -122,6 +122,7 @@ Important fields discovered:
 |---|---|
 | Is this project using Devvit Web? | Yes. It uses `@devvit/web/server`, `@devvit/start/vite`, Hono, and `@hono/node-server`. |
 | Client entry | None in the mod-tool template; this is a server/API/form/menu scaffold, not a dashboard UI yet. |
+| Client build trigger | Verified from installed `@devvit/start@0.12.23` plugin code: client assets are built only when `devvit.json` includes `post.entrypoints`; Wave 1 adds a default `src/client/index.html` entrypoint built to `dist/client/index.html`. |
 | Server entry | `src/index.ts`, built to `dist/server/index.cjs`. |
 | Endpoint prefix | Public endpoints are mounted under `/api`; internal menu/form/trigger endpoints are mounted under `/internal`. |
 | Server framework | Hono. |

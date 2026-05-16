@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Wave 0 — Research + Scaffold Proof
+Wave 1 — Dashboard Shell
 
-Status: Local scaffold/build proof complete. Runtime playtest is blocked until `devvit login` is completed.
+Status: Agent C dashboard shell is implemented locally. Runtime playtest is still blocked until `devvit login` is completed.
 
 ## Wave 0 Completed
 
@@ -42,19 +42,30 @@ Status: Local scaffold/build proof complete. Runtime playtest is blocked until `
 4. Use the smoke endpoints and menu actions to capture real sample outputs.
 5. Update `RESEARCH.md` with runtime samples and any permission errors.
 
-## Recommended Wave 1
+## Wave 1 Dashboard Shell
 
-- Create `src/shared/schema.ts` with the researched data contracts.
-- Create `src/shared/constants.ts` with Redis key helpers and confidence/action constants.
-- Split server code into `src/server/services/` as planned while preserving the Devvit Web/Hono entrypoint.
-- Add unit tests for pure helpers using the now-working `vitest.config.ts`.
-- Add a minimal dashboard/health surface only after runtime playtest is unblocked.
+- [x] Add default Devvit Web client entrypoint for the dashboard shell.
+- [x] Add Overview, Mirror Scan, Policies, Overrides, and Demo Mode sections.
+- [x] Add Wave 1 status cards for Mirror Scan, Policy Agreement, Apply Policy, and Override Audit.
+- [x] Add read-only `/api/health` response shape for app, playtest, subreddit, demo, and Redis placeholder status.
+- [x] Keep demo mode toggle disabled until seeded demo data is wired.
+- [ ] Verify dashboard in a real Devvit playtest after CLI auth is completed.
+- [ ] Replace placeholder health Redis status after Agent B Redis data layer merges.
+- [ ] Consolidate dashboard status types with Agent A shared contracts after merge.
+
+## Recommended Wave 2 UI Tasks
+
+- Render live Mirror Scan results from the Wave 2 scan endpoint.
+- Show scanned action count, confidence breakdown, unmatched count, and drift candidates.
+- Add a useful small-subreddit/no-history state that routes users to demo mode or policy setup.
+- Wire demo seed data into the dashboard without making it look like live subreddit data.
+- Preserve the exact “Wave 2 will implement live scan” placeholder until the scan endpoint is ready.
+- Keep all inferred rule labels confidence-scored and visually distinct from confirmed data.
 
 ## Do Not Start Yet
 
 Do not implement these until playtest smoke behavior is verified:
 
-- Full dashboard UI
 - Mirror scan scoring
 - Policy editor
 - Apply Policy flow
