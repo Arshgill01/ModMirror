@@ -41,12 +41,15 @@ export interface SubredditRuleRef {
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
+  activeVersionId?: string;
+  activeVersionNumber?: number;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
   steps: PolicyStep[];
   defaultMessageMode: MessageDeliveryMode;
   active: boolean;
+  archived?: boolean;
 }
 
 export interface PolicyCreateInput extends SubredditRuleRef {
@@ -64,6 +67,52 @@ export interface PolicyUpdateInput {
   steps?: PolicyStep[];
   defaultMessageMode?: MessageDeliveryMode;
   active?: boolean;
+  updatedBy?: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicyVersion extends SubredditRuleRef {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  subreddit: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  active: boolean;
+  createdAt: string;
+  createdBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicyChangeEvent {
+  id: string;
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  subreddit: string;
+  ruleKey: string;
+  ruleName: string;
+  changeType: 'created' | 'updated' | 'legacy_migrated';
+  changedAt: string;
+  changedBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export type PolicyVersionStatus = 'active' | 'missing' | 'legacy';
+
+export interface PolicySnapshot {
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  policyVersionStatus: PolicyVersionStatus;
+  ruleKey: string;
+  ruleName: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  capturedAt: string;
 }
 
 export interface ApplyPolicyContext {
@@ -271,6 +320,11 @@ export interface OverrideEvent {
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason;
   overrideNote?: string;
+  policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policySnapshot?: PolicySnapshot;
   createdAt: string;
 }
 
@@ -283,6 +337,10 @@ export interface ActionEvent {
   ruleKey: string;
   ruleName?: string;
   policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policySnapshot?: PolicySnapshot;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;
   deliveryMode: MessageDeliveryMode;

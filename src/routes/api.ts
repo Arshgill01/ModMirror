@@ -23,6 +23,8 @@ import {
   createPolicy,
   createPolicyFromDriftCandidate,
   getPolicyById,
+  listPolicyChangeEvents,
+  listPolicyVersions,
   listPolicies,
   updatePolicy,
 } from '../server/services/policies';
@@ -214,7 +216,10 @@ api.put('/policies/:id', async (c) => {
     const policy = await updatePolicy(
       getCurrentSubreddit(),
       c.req.param('id'),
-      body
+      {
+        ...body,
+        updatedBy: body.updatedBy ?? context.username ?? 'unknown',
+      }
     );
     if (!policy) {
       return c.json(
@@ -236,6 +241,50 @@ api.put('/policies/:id', async (c) => {
   } catch (error) {
     return c.json(policyError(error), 400);
   }
+});
+
+api.get('/policies/:id/versions', async (c) => {
+  const subreddit = getCurrentSubreddit();
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_not_found',
+          message: 'Policy was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: await listPolicyVersions(subreddit, policy.id),
+  });
+});
+
+api.get('/policies/:id/changes', async (c) => {
+  const subreddit = getCurrentSubreddit();
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'policy_not_found',
+          message: 'Policy was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<RulePolicy>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: await listPolicyChangeEvents(subreddit, policy.id),
+  });
 });
 
 api.get('/actions', async (c) => {
