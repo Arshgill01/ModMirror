@@ -1,0 +1,4 @@
+interface:
+  display_name: "Devvit Playtest QA"
+  short_description: "Verify ModMirror behavior in Devvit playtest."
+  default_prompt: "Use this skill when running Devvit login, upload, playtest, smoke endpoints, menu actions, forms, logs, and runtime verification."

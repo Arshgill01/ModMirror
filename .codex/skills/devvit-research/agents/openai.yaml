@@ -1,0 +1,4 @@
+interface:
+  display_name: "Devvit Research"
+  short_description: "Verify Devvit APIs and platform behavior before implementation."
+  default_prompt: "Use this skill to research Devvit SDK support, typings, commands, runtime behavior, and document findings in RESEARCH.md."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Demo Seed Data"
+  short_description: "Create realistic ModMirror demo datasets."
+  default_prompt: "Use this skill when creating or updating deterministic demo mode data, seeded moderation actions, rules, policies, and drift examples."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ModMirror Guardrails"
+  short_description: "Keep ModMirror product scope and safety clear."
+  default_prompt: "Use this skill before product, UX, data model, workflow, or copy changes that could alter ModMirror positioning or safety boundaries."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Submission"
+  short_description: "Prepare ModMirror hackathon submission assets."
+  default_prompt: "Use this skill when writing README, Devpost copy, screenshots checklist, demo script, known limitations, or submission narrative."

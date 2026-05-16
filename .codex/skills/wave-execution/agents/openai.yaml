@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wave Execution"
+  short_description: "Run ModMirror work in scoped, verifiable implementation waves."
+  default_prompt: "Use this skill when starting or completing a ModMirror build wave, including planning, validation, documentation, and commits."

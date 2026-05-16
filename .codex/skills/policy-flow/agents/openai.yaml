@@ -1,0 +1,4 @@
+interface:
+  display_name: "Policy Flow"
+  short_description: "Implement policy ladders and Apply Policy flows."
+  default_prompt: "Use this skill when building policy creation, edit, Apply Policy, consistency nudges, override reasons, or audit logging."

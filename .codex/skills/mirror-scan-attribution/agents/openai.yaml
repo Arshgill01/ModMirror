@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mirror Scan Attribution"
+  short_description: "Implement scan attribution and drift scoring."
+  default_prompt: "Use this skill when implementing or reviewing Mirror Scan, rule attribution, confidence scoring, drift candidates, or scan tests."
