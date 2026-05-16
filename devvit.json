@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "modmirror",
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "ModMirror smoke test",
+        "description": "Open a minimal Wave 0 research form for this comment.",
+        "location": "comment",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/smoke-comment"
+      },
+      {
+        "label": "ModMirror smoke test",
+        "description": "Open a minimal Wave 0 research form for this post.",
+        "location": "post",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/smoke-post"
+      }
+    ]
+  },
+  "forms": {
+    "smokeTarget": "/internal/form/smoke-target-submit",
+    "smokeChained": "/internal/form/smoke-chained-submit"
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "permissions": {
+    "reddit": true
+  }
+}
