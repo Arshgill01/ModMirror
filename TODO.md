@@ -93,6 +93,15 @@ Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects,
 - Use `src/server/services/policies.ts` only for policy lookup/persistence; do not add editor UI in Wave 2 unless explicitly scoped.
 - Add focused tests for pure attribution/scoring helpers once those helpers exist.
 
+## Wave 2 UI Tasks
+
+- Render live Mirror Scan results from the Wave 2 scan endpoint.
+- Show scanned action count, confidence breakdown, unmatched count, and drift candidates.
+- Add a useful small-subreddit/no-history state that routes users to demo mode or policy setup.
+- Wire demo seed data into the dashboard without making it look like live subreddit data.
+- Preserve the exact "Wave 2 will implement live scan" placeholder until the scan endpoint is ready.
+- Keep all inferred rule labels confidence-scored and visually distinct from confirmed data.
+
 ## Ready For Wave 2
 
 - Shared contracts are importable from server code through `src/shared/index.ts`.
