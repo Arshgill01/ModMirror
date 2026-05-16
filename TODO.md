@@ -2,9 +2,28 @@
 
 ## Current Phase
 
-Wave 0 — Research + Scaffold Proof
+Wave 1 — Redis/Data Layer
 
-Status: Local scaffold/build proof complete. Runtime playtest is blocked until `devvit login` is completed.
+Status: Local Redis/data-access skeleton is implemented. Runtime playtest is still blocked until `devvit login` is completed.
+
+## Wave 1 Completed Locally
+
+- [x] Create shared TypeScript data contracts in `src/shared/schema.ts`.
+- [x] Create shared constants for confidence levels, enforcement actions, and override reasons.
+- [x] Centralize Redis key construction in `src/server/services/redis.ts`.
+- [x] Add `getAppConfig` / `setAppConfig`.
+- [x] Add `getDemoModeState`, `getDemoModeFlag`, and `setDemoModeFlag`.
+- [x] Add `getPolicyByRule`, `setPolicyByRule`, and `listPolicies`.
+- [x] Add `saveLastScanMetadata` and `getLastScanMetadata`.
+- [x] Add `saveAuditEvent` and `listRecentAuditEvents`.
+- [x] Rewire `/api/smoke/redis` through the Wave 1 Redis service.
+
+## Wave 1 Runtime Blocked / Not Runtime-Verified
+
+- [ ] Hit `/api/smoke/redis` in playtest and confirm `modmirror:{subreddit}:smoke:redis-data-layer` write/read.
+- [ ] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
+- [ ] Confirm Redis sorted-set ordering for `modmirror:{subreddit}:overrides`.
+- [ ] Confirm practical Redis storage limits for scan metadata and audit events before storing larger live datasets.
 
 ## Wave 0 Completed
 
@@ -42,13 +61,12 @@ Status: Local scaffold/build proof complete. Runtime playtest is blocked until `
 4. Use the smoke endpoints and menu actions to capture real sample outputs.
 5. Update `RESEARCH.md` with runtime samples and any permission errors.
 
-## Recommended Wave 1
+## Recommended Wave 2
 
-- Create `src/shared/schema.ts` with the researched data contracts.
-- Create `src/shared/constants.ts` with Redis key helpers and confidence/action constants.
-- Split server code into `src/server/services/` as planned while preserving the Devvit Web/Hono entrypoint.
-- Add unit tests for pure helpers using the now-working `vitest.config.ts`.
-- Add a minimal dashboard/health surface only after runtime playtest is unblocked.
+- Build Mirror Scan on top of `src/server/services/scans.ts`.
+- Keep attribution deterministic and confidence-scored.
+- Use `src/server/services/policies.ts` only for policy lookup/persistence; do not add editor UI in Wave 2 unless explicitly scoped.
+- Add focused tests for pure attribution/scoring helpers once those helpers exist.
 
 ## Do Not Start Yet
 
