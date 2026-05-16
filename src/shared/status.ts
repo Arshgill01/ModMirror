@@ -13,27 +13,27 @@ export type FeatureStatus = {
 export const WAVE_1_FEATURE_STATUSES: FeatureStatus[] = [
   {
     name: 'Mirror Scan',
-    state: 'placeholder',
-    description: 'Dashboard surface is ready for scan output.',
-    next: 'Wave 2 will implement live scan.',
+    state: 'ready-for-integration',
+    description: 'Live and demo scan surfaces render confidence-scored drift candidates.',
+    next: 'Demo scan can feed the policy agreement flow.',
   },
   {
     name: 'Policy Agreement',
-    state: 'placeholder',
-    description: 'Policy ladder entry point is reserved for the next policy flow wave.',
-    next: 'Wave 3 will add create and edit policy workflows.',
+    state: 'ready-for-integration',
+    description: 'Teams can create, edit, and list policy ladders from drift or manually.',
+    next: 'Policies persist in Redis by subreddit and local rule key.',
   },
   {
     name: 'Apply Policy',
-    state: 'placeholder',
-    description: 'Menu/action flow remains out of scope for this dashboard shell.',
-    next: 'Wave 4 will connect post and comment context.',
+    state: 'ready-for-integration',
+    description: 'The dashboard simulator previews and confirms log-only recommendations.',
+    next: 'Post/comment Apply Policy UX remains a later runtime verification item.',
   },
   {
     name: 'Override Audit',
-    state: 'placeholder',
-    description: 'Audit view is present without pretending override data exists.',
-    next: 'Wave 5 will record and display aggregate override events.',
+    state: 'ready-for-integration',
+    description: 'Deviations require override reasons and are summarized without per-mod breakdowns.',
+    next: 'Use aggregate override patterns to refine policy in the next polish wave.',
   },
 ];
 

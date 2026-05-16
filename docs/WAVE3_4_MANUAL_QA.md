@@ -11,20 +11,21 @@ Manual checklist for the first complete ModMirror policy loop.
       moderator menu.
 - [x] Confirm the dashboard launcher opens a confirmation form without creating
       a visible post.
-- [ ] Confirm the ModMirror dashboard renders inside Reddit.
+- [x] Confirm the ModMirror dashboard renders inside Reddit.
 
 Current browser result: Safari is signed in, opens the playtest subreddit,
 shows "Open ModMirror dashboard" in the subreddit moderator overflow menu, and
-opens the confirmation form. The form was cancelled; no visible custom post was
-created.
+opens the confirmation form. After approval, it created
+`/r/modmirror_dev/comments/1teywdj/modmirror_policy_dashboard/`; the dashboard
+WebView rendered the ModMirror navigation and demo Mirror Scan drift output.
 
 ## Dashboard Loop
 
-- [ ] Open Mirror Scan.
-- [ ] Click Use Demo Data.
-- [ ] Confirm Rule 2 drift candidate appears with confidence label.
-- [ ] Open Policies.
-- [ ] Click Create team policy from the Rule 2 drift candidate.
+- [x] Open Mirror Scan.
+- [x] Click Use Demo Data.
+- [x] Confirm Rule 2 drift candidate appears with confidence label.
+- [x] Open Policies from the Rule 2 drift candidate.
+- [x] Click Open policy flow from the Rule 2 drift candidate.
 - [ ] Confirm policy appears in the policy table.
 - [ ] Edit the policy and save a changed action step.
 - [ ] Open Apply Policy.

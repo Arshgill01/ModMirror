@@ -136,9 +136,9 @@ Status: implemented locally and CLI playtest-ready.
 - PASS: lint.
 - PASS: `npx devvit whoami` as `u/BrightyBrainiac`.
 - PASS: `npm run dev` reached Playtest ready for `r/modmirror_dev`.
-- PARTIAL: Safari is signed in, opens the playtest subreddit, shows the
-  dashboard launcher in the moderator overflow menu, and opens the confirmation
-  form without creating a visible custom post.
+- PASS: Safari is signed in, opens the playtest subreddit, shows the dashboard
+  launcher in the moderator overflow menu, opens the confirmation form, creates
+  custom post `t3_1teywdj`, and renders the dashboard WebView.
 - PARTIAL: `npm audit` reports 31 known vulnerabilities; no force fix applied.
 
 ### Runtime Status
@@ -147,15 +147,18 @@ Status: implemented locally and CLI playtest-ready.
 
 ```txt
 https://www.reddit.com/r/modmirror_dev/?playtest=modmirror
-v0.0.1.11
+v0.0.1.12
 ```
+
+The final rebuilt runtime after status-copy cleanup also reached Playtest ready
+as `v0.0.1.14`; the visible dashboard post proof above remains tied to the
+created `v0.0.1.12` custom post.
 
 ### Open Risks
 
-- Redis route behavior, dashboard custom-post rendering, and post/comment
-  Reddit menu/form behavior still need browser proof. The dashboard launch
-  surface is visible and now gates visible post creation behind a confirmation
-  form.
+- Redis route behavior and post/comment Reddit menu/form behavior still need
+  browser proof. The dashboard launch surface and custom-post render path are
+  browser-verified.
 - Public comment/private message/modmail/native Mod Notes delivery remain
   disabled/unverified.
 - `npm audit` includes Devvit transitive `protobufjs` advisories with no fix
