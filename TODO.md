@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Wave 2 — Mirror Scan + deterministic attribution complete locally.
+Wave 3/4 — Policy Agreement Flow + Apply Policy Action in progress.
 
-Status: Mirror Scan, deterministic attribution, live source adapters, demo seed data, dashboard scan UI, and focused tests are integrated. Runtime playtest remains blocked until `devvit login` is completed.
+Status: Mirror Scan, deterministic attribution, live source adapters, demo seed data, dashboard scan UI, and focused tests are integrated. Wave 3/4 preflight confirmed the Devvit app identity exists and `npm run dev` reaches Playtest ready for `r/modmirror_dev`.
 
 ## Wave 2 Integration Checklist
 
@@ -56,8 +56,8 @@ Status: Mirror Scan, deterministic attribution, live source adapters, demo seed 
 
 - [x] Complete `npm run login` / `npx devvit login`.
 - [x] Complete `npx devvit whoami` locally as `u/BrightyBrainiac`.
-- [ ] Create or bind the real Reddit app identity for `modmirror`; `npm run dev` currently fails with "Your app doesn't exist yet - you'll need to run 'npx devvit init' before you can playtest your app."
-- [ ] Run `npm run dev` through a full playtest session in a small test subreddit.
+- [x] Create or bind the real Reddit app identity for `modmirror`; `npx devvit view --json` returns app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`.
+- [x] Run `npm run dev` far enough to reach Playtest ready in `r/modmirror_dev`.
 - [ ] Hit `/api/smoke/redis` in playtest and confirm Redis read/write.
 - [ ] Hit `/api/smoke/reddit` in playtest and capture redacted sample output.
 - [ ] Invoke post and comment menu smoke actions in Reddit and confirm form chaining UX.
@@ -105,6 +105,7 @@ Status: Mirror Scan, deterministic attribution, live source adapters, demo seed 
 - Use `ruleKey` for policy and attribution references; do not assume a stable Devvit rule ID.
 - Start Policy Agreement Flow from `MirrorScan.driftCandidates`.
 - Keep policy message delivery defaulted to `log_only` until public comment behavior is playtest-verified.
+- Preflight commands passed on 2026-05-16: `npm run build`, `npm test`, `npm run type-check`, `npm run lint`, `npx devvit whoami`, and `npm run dev` to Playtest ready.
 
 ## Do Not Start Until Scoped
 

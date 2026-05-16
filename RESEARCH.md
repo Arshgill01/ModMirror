@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 2 local Mirror Scan implementation complete; Reddit playtest blocked by missing CLI auth.
+Status: Wave 3/4 preflight complete; Devvit app identity exists and `npm run dev` reaches Playtest ready.
 
 Last updated: 2026-05-16
 
@@ -22,7 +22,7 @@ Updated by: Codex
 | Devvit packages           | `@devvit/start@0.12.23`, `@devvit/web@0.12.23`, `devvit@0.12.23`; transitive `@devvit/reddit@0.12.23`, `@devvit/redis@0.12.23`                      |
 | Template used             | Official Devvit template registry entry `mod-tool`, URL `https://github.com/reddit/devvit-template-mod-tool-devvit-web/archive/refs/heads/main.zip` |
 | App name in `devvit.json` | `modmirror`                                                                                                                                         |
-| Test subreddit            | Not configured; `devvit playtest` would create/use a default only after auth                                                                        |
+| Test subreddit            | `modmirror_dev` via `devvit.json` `dev.subreddit`                                                                                                  |
 | Dev command               | `npm run dev` -> `devvit playtest`                                                                                                                  |
 | Build command             | `npm run build` -> `vite build`                                                                                                                     |
 | Upload command            | `npm run deploy` -> checks then `devvit upload`; direct command is `devvit upload`                                                                  |
@@ -40,7 +40,7 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Unverified | Reddit API methods work in the target subreddit during playtest. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`, but `npm run dev` is blocked because the Devvit app identity does not exist yet. |
+| Unverified | Reddit API methods work in the target subreddit during playtest. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reaches Playtest ready for `r/modmirror_dev`, but smoke routes/actions still need browser/UI verification. |
 | Unverified | Redis read/write works in playtest. | Type/build proof only; hit `/api/smoke/redis` after auth. |
 | Unverified | Menu actions and chained forms work in the Reddit UI. | Type/build proof only; invoke smoke menu actions after auth. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
@@ -55,7 +55,7 @@ Updated by: Codex
 ## Known Platform Constraints
 
 - The current scaffold is Devvit Web with a server-first Hono structure. It does not currently have a React/client dashboard entry.
-- `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`, but `npm run dev` failed because the Devvit app identity does not exist yet and the CLI asked to run `npx devvit init`.
+- `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`; `npx devvit view --json` returned app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`, slug `modmirror`, and owner `BrightyBrainiac`. `npm run dev` reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` at version `v0.0.1.2`.
 - `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
 - Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
 - Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.
