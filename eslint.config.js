@@ -18,6 +18,12 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/client/**/*.{ts,tsx,js}'],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
