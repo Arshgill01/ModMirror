@@ -178,3 +178,30 @@ Reason:
 
 - `submitComment` and `Comment.distinguish` exist in typings, but runtime behavior is not verified.
 - Deprecated subreddit private messages must not be used.
+
+## Decision 14: Immutable Policy Versions
+
+Status: Locked for Wave 5.
+
+Every policy edit creates a new version. Action and override records should
+store the policy version/snapshot active at the time whenever a policy exists.
+
+Reason:
+
+- Teams need to understand actions against the policy that existed then, not
+  only the newest policy.
+- Future appeal/case context depends on versioned policy history.
+- Mutating older policy definitions would make the audit trail misleading.
+
+## Decision 15: Governance Stays Aggregate-First
+
+Status: Locked unless moderator permission research changes.
+
+Policy health and override review are framed around team policy quality, not
+individual moderator performance.
+
+Reason:
+
+- ModMirror's product thesis is consistency and governance, not surveillance.
+- Exact moderator permission strings for per-mod visibility remain
+  runtime-unverified.

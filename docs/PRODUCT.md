@@ -106,6 +106,25 @@ The mod chooses a reason and can add a note.
 Wave 3/4 stores action events and override events, and exposes aggregate
 override summaries without per-mod blame.
 
+### 5. Governance Core
+
+Wave 5 turns the audit trail into a team feedback loop.
+
+It adds:
+
+- immutable policy version history,
+- policy snapshots on Apply Policy action logs,
+- override review statuses,
+- deterministic policy health scoring,
+- a governance dashboard for health, review, and version context.
+
+This lets a lead mod answer:
+
+- Which rules appear stable?
+- Which rules need review?
+- Which overrides are unresolved?
+- Which policy version was active when an action was taken?
+
 ## Primary Demo
 
 A fake/test community has Rule 2 enforcement drift.
@@ -152,6 +171,9 @@ That is:
 - Queue dashboard.
 - Toolbox replacement.
 - Full appeal packet generation.
+- Case Packet / Appeal Context before Wave 6.
+- Digest/scheduler.
+- Calibration Mode.
 - Cross-subreddit comparisons.
 - External analytics.
 - LLM summaries.
@@ -164,6 +186,7 @@ Safe claims:
 - ModMirror helps reveal enforcement drift.
 - ModMirror helps teams define rule policies.
 - ModMirror provides consistency nudges.
+- ModMirror helps teams review exceptions and improve policy over time.
 - ModMirror is human-in-the-loop.
 - ModMirror uses deterministic attribution and confidence scoring.
 

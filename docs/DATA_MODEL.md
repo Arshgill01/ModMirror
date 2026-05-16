@@ -28,11 +28,15 @@ export function mmKey(subreddit: string, suffix: string): string {
 modmirror:{subreddit}:config
 modmirror:{subreddit}:policies
 modmirror:{subreddit}:policy:{localRuleKey}
+modmirror:{subreddit}:policy:{policyId}:versions
+modmirror:{subreddit}:policy:{policyId}:version:{versionId}
+modmirror:{subreddit}:policy:{policyId}:changes
 modmirror:{subreddit}:scan:last
 modmirror:{subreddit}:scan:{scanId}
 modmirror:{subreddit}:actions
 modmirror:{subreddit}:actions:user:{username}
 modmirror:{subreddit}:overrides
+modmirror:{subreddit}:override:{overrideId}:review
 modmirror:{subreddit}:demo
 ```
 
@@ -69,6 +73,20 @@ export type OverrideReason =
   | 'policy_seems_wrong'
   | 'other';
 
+export type OverrideReviewStatus =
+  | 'unresolved'
+  | 'accepted_exception'
+  | 'policy_needs_update'
+  | 'needs_team_discussion'
+  | 'no_action_needed';
+
+export type PolicyHealthStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review'
+  | 'insufficient_data';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type MirrorScanSource = 'live' | 'demo';
@@ -89,12 +107,40 @@ export interface SubredditRuleRef {
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
+  activeVersionId?: string;
+  activeVersionNumber?: number;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
   steps: PolicyStep[];
   defaultMessageMode: MessageDeliveryMode;
   active: boolean;
+}
+
+export interface PolicyVersion extends SubredditRuleRef {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  subreddit: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  active: boolean;
+  createdAt: string;
+  createdBy: string;
+  changeReason?: string;
+  changeSummary?: string;
+}
+
+export interface PolicySnapshot {
+  policyId: string;
+  policyVersionId: string;
+  policyVersionNumber: number;
+  policyVersionStatus: 'active' | 'missing' | 'legacy';
+  ruleKey: string;
+  ruleName: string;
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  capturedAt: string;
 }
 
 export interface PolicyStep {
@@ -210,6 +256,15 @@ export interface OverrideEvent {
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason;
   overrideNote?: string;
+  policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policySnapshot?: PolicySnapshot;
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  updatedAt: string;
   createdAt: string;
 }
 
@@ -230,6 +285,22 @@ export interface HealthStatus {
   subredditName?: string;
   username?: string;
   checkedAt: string;
+}
+
+export interface PolicyHealthSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  totalActions: number;
+  followedPolicyCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policySeemsWrongCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  reasons: string[];
+  recommendations: string[];
 }
 
 export interface ApiError {
