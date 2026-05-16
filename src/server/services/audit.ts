@@ -1,24 +1,49 @@
 import { redis } from '@devvit/web/server';
 import { randomUUID } from 'node:crypto';
-import { OVERRIDE_REASON_VALUES } from '../../shared/constants';
+import {
+  OVERRIDE_REASON_VALUES,
+  OVERRIDE_REVIEW_STATUS_VALUES,
+} from '../../shared/constants';
 import type {
   ActionEvent,
   EnforcementAction,
   MessageDeliveryMode,
   OverrideEvent,
   OverrideReason,
+  OverrideReviewStatus,
+  OverrideReviewUpdateInput,
   OverrideSummary,
 } from '../../shared/schema';
-import { parseJson, redisKeys, serializeJson } from './redis';
+import { parseJson, readJson, redisKeys, serializeJson, writeJson } from './redis';
 
 export type ActionEventInput = Omit<ActionEvent, 'id' | 'createdAt'> & {
   id?: string;
   createdAt?: string;
 };
 
-export type OverrideEventInput = Omit<OverrideEvent, 'id' | 'createdAt'> & {
+export type OverrideEventInput = Omit<
+  OverrideEvent,
+  | 'id'
+  | 'createdAt'
+  | 'reviewStatus'
+  | 'reviewedBy'
+  | 'reviewedAt'
+  | 'reviewNote'
+  | 'updatedAt'
+> & {
   id?: string;
   createdAt?: string;
+  reviewStatus?: OverrideReviewStatus;
+  updatedAt?: string;
+};
+
+type OverrideReviewRecord = {
+  overrideId: string;
+  reviewStatus: OverrideReviewStatus;
+  reviewedBy: string;
+  reviewedAt: string;
+  reviewNote?: string;
+  updatedAt: string;
 };
 
 export async function saveActionEvent(
@@ -119,9 +144,11 @@ export async function listRecentAuditEvents(
     }
   );
 
-  return rows
+  const events = rows
     .map((row: { member: string }) => parseJson<OverrideEvent>(row.member))
     .filter((event): event is OverrideEvent => event !== undefined);
+
+  return Promise.all(events.map((event) => hydrateOverrideReview(event)));
 }
 
 export async function saveOverrideEvent(
@@ -133,6 +160,7 @@ export async function saveOverrideEvent(
     input.overrideReason
   );
 
+  const createdAt = input.createdAt ?? new Date().toISOString();
   const event: OverrideEvent = {
     id: input.id ?? `override-${randomUUID()}`,
     subreddit: input.subreddit,
@@ -141,7 +169,9 @@ export async function saveOverrideEvent(
     recommendedAction: input.recommendedAction,
     selectedAction: input.selectedAction,
     overrideReason: input.overrideReason,
-    createdAt: input.createdAt ?? new Date().toISOString(),
+    reviewStatus: input.reviewStatus ?? 'unresolved',
+    updatedAt: input.updatedAt ?? createdAt,
+    createdAt,
   };
 
   if (input.targetThingId !== undefined) {
@@ -156,6 +186,76 @@ export async function saveOverrideEvent(
 
   await saveAuditEvent(event);
   return event;
+}
+
+export async function listOverrideEvents(options: {
+  subreddit: string;
+  limit?: number;
+  status?: OverrideReviewStatus;
+  ruleKey?: string;
+}): Promise<OverrideEvent[]> {
+  const events = await listRecentAuditEvents(options.subreddit, options.limit ?? 100);
+
+  return events.filter((event) => {
+    if (options.status !== undefined && event.reviewStatus !== options.status) {
+      return false;
+    }
+    if (options.ruleKey !== undefined && event.ruleKey !== options.ruleKey) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export async function getOverrideEvent(
+  subreddit: string,
+  overrideId: string
+): Promise<OverrideEvent | undefined> {
+  const events = await listRecentAuditEvents(subreddit, 500);
+  return events.find((event) => event.id === overrideId);
+}
+
+export async function updateOverrideReview(
+  subreddit: string,
+  overrideId: string,
+  input: OverrideReviewUpdateInput
+): Promise<OverrideEvent | undefined> {
+  validateOverrideReviewStatus(input.reviewStatus);
+  if (!input.reviewedBy.trim()) {
+    throw new Error('reviewedBy is required');
+  }
+
+  const event = await getOverrideEvent(subreddit, overrideId);
+  if (!event) {
+    return undefined;
+  }
+
+  const now = new Date().toISOString();
+  const review: OverrideReviewRecord = {
+    overrideId,
+    reviewStatus: input.reviewStatus,
+    reviewedBy: input.reviewedBy,
+    reviewedAt: now,
+    updatedAt: now,
+  };
+  if (input.reviewNote !== undefined) {
+    review.reviewNote = input.reviewNote;
+  }
+
+  await writeJson(redisKeys.overrideReview(subreddit, overrideId), review);
+  return applyOverrideReview(event, review);
+}
+
+export function validateOverrideReviewStatus(
+  status: string
+): asserts status is OverrideReviewStatus {
+  if (
+    !OVERRIDE_REVIEW_STATUS_VALUES.includes(
+      status as OverrideReviewStatus
+    )
+  ) {
+    throw new Error('Invalid override review status');
+  }
 }
 
 export function validateOverrideReasonForDeviation(
@@ -195,6 +295,42 @@ export function buildOverrideSummary(
       return safeEvent;
     }),
   };
+}
+
+async function hydrateOverrideReview(event: OverrideEvent): Promise<OverrideEvent> {
+  const normalized = normalizeOverrideReviewDefaults(event);
+  const review = await readJson<OverrideReviewRecord>(
+    redisKeys.overrideReview(normalized.subreddit, normalized.id)
+  );
+
+  return review ? applyOverrideReview(normalized, review) : normalized;
+}
+
+function normalizeOverrideReviewDefaults(event: OverrideEvent): OverrideEvent {
+  return {
+    ...event,
+    reviewStatus: event.reviewStatus ?? 'unresolved',
+    updatedAt: event.updatedAt ?? event.createdAt,
+  };
+}
+
+function applyOverrideReview(
+  event: OverrideEvent,
+  review: OverrideReviewRecord
+): OverrideEvent {
+  const updated: OverrideEvent = {
+    ...event,
+    reviewStatus: review.reviewStatus,
+    reviewedBy: review.reviewedBy,
+    reviewedAt: review.reviewedAt,
+    updatedAt: review.updatedAt,
+  };
+
+  if (review.reviewNote !== undefined) {
+    updated.reviewNote = review.reviewNote;
+  }
+
+  return updated;
 }
 
 export function createLogOnlyActionInput(options: {

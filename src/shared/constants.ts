@@ -4,6 +4,7 @@ import type {
   EnforcementAction,
   MessageDeliveryMode,
   OverrideReason,
+  OverrideReviewStatus,
 } from './schema';
 
 export const APP_NAME = 'ModMirror';
@@ -43,6 +44,14 @@ export const OVERRIDE_REASON_VALUES = [
   'policy_seems_wrong',
   'other',
 ] as const satisfies readonly OverrideReason[];
+
+export const OVERRIDE_REVIEW_STATUS_VALUES = [
+  'unresolved',
+  'accepted_exception',
+  'policy_needs_update',
+  'needs_team_discussion',
+  'no_action_needed',
+] as const satisfies readonly OverrideReviewStatus[];
 
 export const ACTION_SOURCE_VALUES = [
   'live',
