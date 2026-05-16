@@ -46,6 +46,31 @@ export interface RulePolicy extends SubredditRuleRef {
   active: boolean;
 }
 
+export interface AppConfig {
+  subreddit: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface DemoModeState {
+  enabled: boolean;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface LastScanMetadata {
+  id: string;
+  subreddit: string;
+  createdAt: string;
+  createdBy: string;
+  source: ActionSource;
+  totalActionsScanned: number;
+  attributedCount: number;
+  unmatchedCount: number;
+  confidenceBreakdown: Record<Confidence, number>;
+  driftCandidateCount: number;
+}
+
 export interface PolicyStep {
   offenseCount: number;
   windowDays: number;
@@ -144,3 +169,10 @@ export type ApiFailure = {
 };
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
+
+export interface RedisSmokeResult {
+  key: string;
+  value: string;
+  readBack?: string;
+  ok: boolean;
+}

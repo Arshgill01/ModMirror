@@ -6,6 +6,25 @@ Wave 1 — Shared Contracts + Redis Data Layer + Dashboard Shell.
 
 Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects, pure helper stubs, Redis data services, and dashboard shell are ready for Wave 2 integration. Runtime playtest remains blocked until `devvit login` is completed.
 
+## Wave 1 Completed Locally
+
+- [x] Create shared TypeScript data contracts in `src/shared/schema.ts`.
+- [x] Create shared constants for confidence levels, enforcement actions, and override reasons.
+- [x] Centralize Redis key construction in `src/server/services/redis.ts`.
+- [x] Add `getAppConfig` / `setAppConfig`.
+- [x] Add `getDemoModeState`, `getDemoModeFlag`, and `setDemoModeFlag`.
+- [x] Add `getPolicyByRule`, `setPolicyByRule`, and `listPolicies`.
+- [x] Add `saveLastScanMetadata` and `getLastScanMetadata`.
+- [x] Add `saveAuditEvent` and `listRecentAuditEvents`.
+- [x] Rewire `/api/smoke/redis` through the Wave 1 Redis service.
+
+## Wave 1 Runtime Blocked / Not Runtime-Verified
+
+- [ ] Hit `/api/smoke/redis` in playtest and confirm `modmirror:{subreddit}:smoke:redis-data-layer` write/read.
+- [ ] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
+- [ ] Confirm Redis sorted-set ordering for `modmirror:{subreddit}:overrides`.
+- [ ] Confirm practical Redis storage limits for scan metadata and audit events before storing larger live datasets.
+
 ## Wave 0 Completed Locally
 
 - [x] Create Devvit app scaffold from current official `mod-tool` template.
@@ -37,17 +56,17 @@ Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects,
 
 ## Wave 1 Tasks
 
-- [ ] Create `src/shared/schema.ts` with researched data contracts from `docs/DATA_MODEL.md`.
-- [ ] Create `src/shared/constants.ts` with confidence/action/message-delivery constants.
-- [ ] Use local derived rule keys, not assumed Devvit rule IDs, in shared policy types.
-- [ ] Set default message delivery to `log_only` until comment-before/removal and comment-after/removal behavior is playtest-verified.
-- [ ] Create a Redis key helper that produces `modmirror:{subreddit}:{suffix}` keys.
-- [ ] Split server code into `src/server/services/` while preserving the current Devvit Web/Hono entrypoint shape.
-- [ ] Add a health/status endpoint that reports app name, runtime context if available, demo-mode state, and whether live playtest proof is still missing.
-- [ ] Create the initial dashboard shell/client entry deliberately; the Wave 0 template did not generate one.
-- [ ] Add focused unit tests for pure shared helpers using `vitest.config.ts`.
-- [ ] Keep smoke endpoints/menu actions non-destructive until playtest proof exists.
-- [ ] Update `RESEARCH.md` if Wave 1 discovers new SDK/runtime facts.
+- [x] Create `src/shared/schema.ts` with researched data contracts from `docs/DATA_MODEL.md`.
+- [x] Create `src/shared/constants.ts` with confidence/action/message-delivery constants.
+- [x] Use local derived rule keys, not assumed Devvit rule IDs, in shared policy types.
+- [x] Set default message delivery to `log_only` until comment-before/removal and comment-after/removal behavior is playtest-verified.
+- [x] Create a Redis key helper that produces `modmirror:{subreddit}:{suffix}` keys.
+- [x] Split server code into `src/server/services/` while preserving the current Devvit Web/Hono entrypoint shape.
+- [x] Add a health/status endpoint that reports app name, runtime context if available, demo-mode state, and whether live playtest proof is still missing.
+- [x] Create the initial dashboard shell/client entry deliberately; the Wave 0 template did not generate one.
+- [x] Add focused unit tests for pure shared helpers using `vitest.config.ts`.
+- [x] Keep smoke endpoints/menu actions non-destructive until playtest proof exists.
+- [x] Update `RESEARCH.md` if Wave 1 discovers new SDK/runtime facts.
 
 ## Wave 2 Prerequisites
 
@@ -66,6 +85,13 @@ Status: Shared TypeScript contracts, constants, Redis helper, demo seed objects,
 - [ ] Implement deterministic attribution with high/medium/low/unmatched confidence labels.
 - [ ] Store scan summaries and raw-enough evidence in Redis without storing unnecessary sensitive content.
 - [ ] Render Mirror Scan dashboard results with clear demo/live labeling.
+
+## Recommended Wave 2
+
+- Build Mirror Scan on top of `src/server/services/scans.ts`.
+- Keep attribution deterministic and confidence-scored.
+- Use `src/server/services/policies.ts` only for policy lookup/persistence; do not add editor UI in Wave 2 unless explicitly scoped.
+- Add focused tests for pure attribution/scoring helpers once those helpers exist.
 
 ## Ready For Wave 2
 

@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 0 local scaffold proof complete; Reddit playtest blocked by missing CLI auth.
+Status: Wave 1 local Redis/data layer proof complete; Reddit playtest blocked by missing CLI auth.
 
 Last updated: 2026-05-16
 
@@ -14,19 +14,19 @@ Updated by: Codex
 
 ## Environment
 
-| Item | Finding |
-|---|---|
-| Node version | `v22.21.0` |
-| npm version | `10.9.4` |
-| Devvit CLI version | `@devvit/cli/0.12.23 darwin-arm64 node-v22.21.0` |
-| Devvit packages | `@devvit/start@0.12.23`, `@devvit/web@0.12.23`, `devvit@0.12.23`; transitive `@devvit/reddit@0.12.23`, `@devvit/redis@0.12.23` |
-| Template used | Official Devvit template registry entry `mod-tool`, URL `https://github.com/reddit/devvit-template-mod-tool-devvit-web/archive/refs/heads/main.zip` |
-| App name in `devvit.json` | `modmirror` |
-| Test subreddit | Not configured; `devvit playtest` would create/use a default only after auth |
-| Dev command | `npm run dev` -> `devvit playtest` |
-| Build command | `npm run build` -> `vite build` |
-| Upload command | `npm run deploy` -> checks then `devvit upload`; direct command is `devvit upload` |
-| Publish command | `npm run launch` -> deploy then `devvit publish`; direct command is `devvit publish` |
+| Item                      | Finding                                                                                                                                             |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node version              | `v22.21.0`                                                                                                                                          |
+| npm version               | `10.9.4`                                                                                                                                            |
+| Devvit CLI version        | `@devvit/cli/0.12.23 darwin-arm64 node-v22.21.0`                                                                                                    |
+| Devvit packages           | `@devvit/start@0.12.23`, `@devvit/web@0.12.23`, `devvit@0.12.23`; transitive `@devvit/reddit@0.12.23`, `@devvit/redis@0.12.23`                      |
+| Template used             | Official Devvit template registry entry `mod-tool`, URL `https://github.com/reddit/devvit-template-mod-tool-devvit-web/archive/refs/heads/main.zip` |
+| App name in `devvit.json` | `modmirror`                                                                                                                                         |
+| Test subreddit            | Not configured; `devvit playtest` would create/use a default only after auth                                                                        |
+| Dev command               | `npm run dev` -> `devvit playtest`                                                                                                                  |
+| Build command             | `npm run build` -> `vite build`                                                                                                                     |
+| Upload command            | `npm run deploy` -> checks then `devvit upload`; direct command is `devvit upload`                                                                  |
+| Publish command           | `npm run launch` -> deploy then `devvit publish`; direct command is `devvit publish`                                                                |
 
 ## Assumption Status Summary
 
@@ -150,43 +150,43 @@ Important fields discovered:
 
 ### Required permissions/capabilities
 
-| Capability | Required config | Verified? | Notes |
-|---|---|---:|---|
-| Reddit API read/write | `"permissions": { "reddit": true }` | Type/build only | Template uses this for Reddit API. Playtest blocked by auth. |
-| Redis | No explicit `devvit.json` permission found in generated template; import `redis` from `@devvit/web/server` | Type/build only | `@devvit/web/server` re-exports `@devvit/redis`; `RedisClient` defaults to installation scope. |
-| Menu actions | `menu.items[]` with `location`, `forUserType`, `endpoint` | Type/build only | Post/comment menu locations are configured. |
-| Forms | Top-level `forms` map from form name to endpoint | Type/build only | Menu action returns `UiResponse.showForm`. |
-| Triggers | Top-level `triggers` map | Type/build only | Template includes `onAppInstall`. Not needed for MVP yet. |
-| Devvit Web dashboard/endpoints | `server.dir`, `server.entry`; Hono server mounted by `src/index.ts` | Build verified | Public API routes are mounted under `/api`. Internal menu/form/trigger routes are under `/internal`. |
+| Capability                     | Required config                                                                                            |       Verified? | Notes                                                                                                |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- | --------------: | ---------------------------------------------------------------------------------------------------- |
+| Reddit API read/write          | `"permissions": { "reddit": true }`                                                                        | Type/build only | Template uses this for Reddit API. Playtest blocked by auth.                                         |
+| Redis                          | No explicit `devvit.json` permission found in generated template; import `redis` from `@devvit/web/server` | Type/build only | `@devvit/web/server` re-exports `@devvit/redis`; `RedisClient` defaults to installation scope.       |
+| Menu actions                   | `menu.items[]` with `location`, `forUserType`, `endpoint`                                                  | Type/build only | Post/comment menu locations are configured.                                                          |
+| Forms                          | Top-level `forms` map from form name to endpoint                                                           | Type/build only | Menu action returns `UiResponse.showForm`.                                                           |
+| Triggers                       | Top-level `triggers` map                                                                                   | Type/build only | Template includes `onAppInstall`. Not needed for MVP yet.                                            |
+| Devvit Web dashboard/endpoints | `server.dir`, `server.entry`; Hono server mounted by `src/index.ts`                                        |  Build verified | Public API routes are mounted under `/api`. Internal menu/form/trigger routes are under `/internal`. |
 
 ## Devvit Web Findings
 
-| Question | Answer |
-|---|---|
-| Is this project using Devvit Web? | Yes. It uses `@devvit/web/server`, `@devvit/start/vite`, Hono, and `@hono/node-server`. |
-| Client entry | None in the mod-tool template; this is a server/API/form/menu scaffold, not a dashboard UI yet. |
-| Server entry | `src/index.ts`, built to `dist/server/index.cjs`. |
-| Endpoint prefix | Public endpoints are mounted under `/api`; internal menu/form/trigger endpoints are mounted under `/internal`. |
-| Server framework | Hono. |
-| Endpoint auth | Not playtest-verified. Server context comes from Devvit request headers via `@devvit/web/server` `context`. |
+| Question                          | Answer                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Is this project using Devvit Web? | Yes. It uses `@devvit/web/server`, `@devvit/start/vite`, Hono, and `@hono/node-server`.                        |
+| Client entry                      | None in the mod-tool template; this is a server/API/form/menu scaffold, not a dashboard UI yet.                |
+| Server entry                      | `src/index.ts`, built to `dist/server/index.cjs`.                                                              |
+| Endpoint prefix                   | Public endpoints are mounted under `/api`; internal menu/form/trigger endpoints are mounted under `/internal`. |
+| Server framework                  | Hono.                                                                                                          |
+| Endpoint auth                     | Not playtest-verified. Server context comes from Devvit request headers via `@devvit/web/server` `context`.    |
 
 ## Reddit API Findings
 
 ### `getModerationLog`
 
-| Question | Answer |
-|---|---|
-| Exists in SDK? | Yes. `reddit.getModerationLog(options)` exists in `node_modules/@devvit/reddit/RedditClient.d.ts`. |
-| Method path/import | `import { reddit } from '@devvit/web/server'`; method `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`. |
-| Required permission | `permissions.reddit = true` in `devvit.json`. |
-| Works in playtest? | Not verified; blocked by CLI auth. |
-| Returns action type? | Yes, `ModAction.type`. |
-| Returns target ID? | Yes when present, `ModAction.target?.id`. |
-| Returns target author? | Yes when present, `ModAction.target?.author`. |
-| Returns moderator name? | Yes, `ModAction.moderatorName`. |
-| Returns removal reason? | No structured removal reason field in `ModAction` type. Only `description`, `details`, and `target` may contain text to infer from. |
-| Returns subreddit rule ID/name? | No structured rule ID/name field in `ModAction` type. |
-| Pagination/limit behavior | Returns `Listing<ModAction>` with `limit`, `pageSize`, `after`, `before` via listing options. |
+| Question                        | Answer                                                                                                                              |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Exists in SDK?                  | Yes. `reddit.getModerationLog(options)` exists in `node_modules/@devvit/reddit/RedditClient.d.ts`.                                  |
+| Method path/import              | `import { reddit } from '@devvit/web/server'`; method `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`.          |
+| Required permission             | `permissions.reddit = true` in `devvit.json`.                                                                                       |
+| Works in playtest?              | Not verified; blocked by CLI auth.                                                                                                  |
+| Returns action type?            | Yes, `ModAction.type`.                                                                                                              |
+| Returns target ID?              | Yes when present, `ModAction.target?.id`.                                                                                           |
+| Returns target author?          | Yes when present, `ModAction.target?.author`.                                                                                       |
+| Returns moderator name?         | Yes, `ModAction.moderatorName`.                                                                                                     |
+| Returns removal reason?         | No structured removal reason field in `ModAction` type. Only `description`, `details`, and `target` may contain text to infer from. |
+| Returns subreddit rule ID/name? | No structured rule ID/name field in `ModAction` type.                                                                               |
+| Pagination/limit behavior       | Returns `Listing<ModAction>` with `limit`, `pageSize`, `after`, `before` via listing options.                                       |
 
 Raw type shape:
 
@@ -218,14 +218,14 @@ Conclusion:
 
 ### `getSubredditRemovalReasons`
 
-| Question | Answer |
-|---|---|
-| Exists in SDK? | Yes. `reddit.getSubredditRemovalReasons(subredditName)`. |
-| Required permission | `permissions.reddit = true`. |
-| Returns ID? | Yes, `id`. |
-| Returns title? | Yes, `title`. |
-| Returns message/body? | Yes, `message`. |
-| Works in playtest? | Not verified; blocked by CLI auth. |
+| Question              | Answer                                                   |
+| --------------------- | -------------------------------------------------------- |
+| Exists in SDK?        | Yes. `reddit.getSubredditRemovalReasons(subredditName)`. |
+| Required permission   | `permissions.reddit = true`.                             |
+| Returns ID?           | Yes, `id`.                                               |
+| Returns title?        | Yes, `title`.                                            |
+| Returns message/body? | Yes, `message`.                                          |
+| Works in playtest?    | Not verified; blocked by CLI auth.                       |
 
 Raw type shape:
 
@@ -243,14 +243,14 @@ Conclusion:
 
 ### Subreddit Rules API
 
-| Question | Answer |
-|---|---|
-| Exists in SDK? | Yes. |
-| Method name | `reddit.getRules(subredditName)` and `subreddit.getRules()`. |
-| Required permission | `permissions.reddit = true`. |
-| Returns rule ID? | No explicit stable rule ID in `Rule` type. It returns `shortName`, `description`, `kind`, `violationReason`, `priority`, `createdUtc`, `subredditName`, and optional `descriptionHtml`. |
-| Returns short name/title? | Yes, `shortName`. |
-| Returns full description? | Yes, `description`. |
+| Question                  | Answer                                                                                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exists in SDK?            | Yes.                                                                                                                                                                                    |
+| Method name               | `reddit.getRules(subredditName)` and `subreddit.getRules()`.                                                                                                                            |
+| Required permission       | `permissions.reddit = true`.                                                                                                                                                            |
+| Returns rule ID?          | No explicit stable rule ID in `Rule` type. It returns `shortName`, `description`, `kind`, `violationReason`, `priority`, `createdUtc`, `subredditName`, and optional `descriptionHtml`. |
+| Returns short name/title? | Yes, `shortName`.                                                                                                                                                                       |
+| Returns full description? | Yes, `description`.                                                                                                                                                                     |
 
 Raw type shape:
 
@@ -275,16 +275,16 @@ Conclusion:
 
 ### Post/comment menu actions
 
-| Question | Answer |
-|---|---|
-| Can add post menu item? | Yes by config: `location: "post"`. |
-| Can add comment menu item? | Yes by config: `location: "comment"`. |
-| Can restrict to moderators? | Yes by config: `forUserType: "moderator"`. |
-| Can access post/comment ID? | Yes. `MenuItemRequest.targetId` includes `t3_` or `t1_`. |
-| Can access author? | Not directly from `MenuItemRequest`; it only contains `location` and `targetId`. Author can be fetched with `reddit.getPostById` or `reddit.getCommentById`. |
-| Can trigger form? | Yes by returning `UiResponse.showForm` from the menu endpoint. |
-| Can chain forms? | Type/build proof yes: first form submit returns another `UiResponse.showForm`. Runtime not verified. |
-| Can open dashboard/custom post? | `UiResponse.navigateTo` exists. Runtime behavior not verified. |
+| Question                        | Answer                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Can add post menu item?         | Yes by config: `location: "post"`.                                                                                                                           |
+| Can add comment menu item?      | Yes by config: `location: "comment"`.                                                                                                                        |
+| Can restrict to moderators?     | Yes by config: `forUserType: "moderator"`.                                                                                                                   |
+| Can access post/comment ID?     | Yes. `MenuItemRequest.targetId` includes `t3_` or `t1_`.                                                                                                     |
+| Can access author?              | Not directly from `MenuItemRequest`; it only contains `location` and `targetId`. Author can be fetched with `reddit.getPostById` or `reddit.getCommentById`. |
+| Can trigger form?               | Yes by returning `UiResponse.showForm` from the menu endpoint.                                                                                               |
+| Can chain forms?                | Type/build proof yes: first form submit returns another `UiResponse.showForm`. Runtime not verified.                                                         |
+| Can open dashboard/custom post? | `UiResponse.navigateTo` exists. Runtime behavior not verified.                                                                                               |
 
 Conclusion:
 
@@ -294,14 +294,14 @@ Conclusion:
 
 ### `submitComment`
 
-| Question | Answer |
-|---|---|
-| Method exists? | Yes. `reddit.submitComment({ id, text|richtext, runAs })`. |
-| Can comment on normal post? | Not playtest-verified. |
-| Can comment after removing post? | Not playtest-verified. |
-| If not, can comment before removal then remove? | Not playtest-verified. |
-| Can distinguish/sticky a removal comment? | Comment model has `distinguish(makeSticky?: boolean)`. Runtime not verified. |
-| Can distinguish bot/app author? | `submitComment` supports `runAs: 'APP'` or `'USER'` per typings. Runtime identity display not verified. |
+| Question                                        | Answer                                                                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Method exists?                                  | Yes. `reddit.submitComment({ id, text\|richtext, runAs })`.                                                |
+| Can comment on normal post?                     | Not playtest-verified.                                                                                     |
+| Can comment after removing post?                | Not playtest-verified.                                                                                     |
+| If not, can comment before removal then remove? | Not playtest-verified.                                                                                     |
+| Can distinguish/sticky a removal comment?       | Comment model has `distinguish(makeSticky?: boolean)`. Runtime not verified.                               |
+| Can distinguish bot/app author?                 | `submitComment` supports `runAs: 'APP'` or `'USER'` per typings. Runtime identity display not verified.    |
 
 Conclusion:
 
@@ -310,13 +310,13 @@ Conclusion:
 
 ### remove/approve/ignore reports
 
-| Question | Answer |
-|---|---|
-| Remove post method exists? | Yes. `reddit.remove(id, isSpam)` and `Post.remove(isSpam?)`. |
-| Remove comment method exists? | Yes. `reddit.remove(id, isSpam)` and `Comment.remove(isSpam?)`. |
-| Approve method exists? | Yes. `reddit.approve(id)`, `Post.approve()`, `Comment.approve()`. |
-| Ignore reports method exists? | Yes. `Post.ignoreReports()` and `Comment.ignoreReports()`. |
-| Required permission | `permissions.reddit = true`, plus moderator permissions at runtime. |
+| Question                      | Answer                                                              |
+| ----------------------------- | ------------------------------------------------------------------- |
+| Remove post method exists?    | Yes. `reddit.remove(id, isSpam)` and `Post.remove(isSpam?)`.        |
+| Remove comment method exists? | Yes. `reddit.remove(id, isSpam)` and `Comment.remove(isSpam?)`.     |
+| Approve method exists?        | Yes. `reddit.approve(id)`, `Post.approve()`, `Comment.approve()`.   |
+| Ignore reports method exists? | Yes. `Post.ignoreReports()` and `Comment.ignoreReports()`.          |
+| Required permission           | `permissions.reddit = true`, plus moderator permissions at runtime. |
 
 Conclusion:
 
@@ -324,12 +324,12 @@ Conclusion:
 
 ### Private message / modmail
 
-| Question | Answer |
-|---|---|
-| Can send private message? | SDK exposes `reddit.sendPrivateMessage(options)`. Runtime not verified. |
-| Can send as subreddit/mod team? | `sendPrivateMessageAsSubreddit` exists but is marked deprecated and "No longer working as expected." |
-| Can create modmail conversation? | Yes. `reddit.modMail.createConversation(...)`, plus mod discussion/inbox helpers. Runtime not verified. |
-| Any deprecated APIs to avoid? | Avoid `sendPrivateMessageAsSubreddit`; docs in typings recommend `modMail.createConversation` with `isAuthorHidden: true`. |
+| Question                         | Answer                                                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Can send private message?        | SDK exposes `reddit.sendPrivateMessage(options)`. Runtime not verified.                                                    |
+| Can send as subreddit/mod team?  | `sendPrivateMessageAsSubreddit` exists but is marked deprecated and "No longer working as expected."                       |
+| Can create modmail conversation? | Yes. `reddit.modMail.createConversation(...)`, plus mod discussion/inbox helpers. Runtime not verified.                    |
+| Any deprecated APIs to avoid?    | Avoid `sendPrivateMessageAsSubreddit`; docs in typings recommend `modMail.createConversation` with `isAuthorHidden: true`. |
 
 Conclusion:
 
@@ -337,13 +337,13 @@ Conclusion:
 
 ### Native Mod Notes
 
-| Question | Answer |
-|---|---|
-| Can add native Mod Note? | Yes. `reddit.addModNote(options)`. |
-| Can read native Mod Notes? | Yes. `reddit.getModNotes(options)`. |
-| Can delete/update native Mod Notes? | Delete exists: `reddit.deleteModNote(options)`. No update method found. |
-| Required permission | `permissions.reddit = true`, plus moderator permissions at runtime. |
-| Note labels available? | `BOT_BAN`, `PERMA_BAN`, `BAN`, `ABUSE_WARNING`, `SPAM_WARNING`, `SPAM_WATCH`, `SOLID_CONTRIBUTOR`, `HELPFUL_USER`. |
+| Question                            | Answer                                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Can add native Mod Note?            | Yes. `reddit.addModNote(options)`.                                                                                 |
+| Can read native Mod Notes?          | Yes. `reddit.getModNotes(options)`.                                                                                |
+| Can delete/update native Mod Notes? | Delete exists: `reddit.deleteModNote(options)`. No update method found.                                            |
+| Required permission                 | `permissions.reddit = true`, plus moderator permissions at runtime.                                                |
+| Note labels available?              | `BOT_BAN`, `PERMA_BAN`, `BAN`, `ABUSE_WARNING`, `SPAM_WARNING`, `SPAM_WATCH`, `SOLID_CONTRIBUTOR`, `HELPFUL_USER`. |
 
 Conclusion:
 
@@ -351,28 +351,37 @@ Conclusion:
 
 ## Redis Findings
 
-| Question | Answer |
-|---|---|
-| Redis client import | `import { redis } from '@devvit/web/server'` or `@devvit/redis`. |
-| String read/write works? | Type/build proof exists in `src/core/smoke.ts`; runtime not verified due auth blocker. |
-| Hash/list/sorted-set availability | Strings, numeric ops, hashes, sorted sets, transactions, bitfield are exposed. No list API found in `RedisClient.d.ts`. |
-| Namespacing behavior | Redis client defaults to `RedisKeyScope.INSTALLATION`; `redis.global` is also exposed. |
-| Per-installation storage confirmed? | Confirmed in typings (`RedisKeyScope.INSTALLATION` default), not runtime-tested. |
-| Practical limits | Not found in local typings. Needs official docs/runtime confirmation if data grows. |
+| Question                            | Answer                                                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Redis client import                 | `import { redis } from '@devvit/web/server'` or `@devvit/redis`.                                                        |
+| String read/write works?            | Type/build proof exists in `src/core/smoke.ts`; runtime not verified due auth blocker.                                  |
+| Hash/list/sorted-set availability   | Strings, numeric ops, hashes, sorted sets, transactions, bitfield are exposed. No list API found in `RedisClient.d.ts`. |
+| Namespacing behavior                | Redis client defaults to `RedisKeyScope.INSTALLATION`; `redis.global` is also exposed.                                  |
+| Per-installation storage confirmed? | Confirmed in typings (`RedisKeyScope.INSTALLATION` default), not runtime-tested.                                        |
+| Practical limits                    | Not found in local typings. Needs official docs/runtime confirmation if data grows.                                     |
 
 Smoke test notes:
 
-- `src/core/smoke.ts` writes and reads `modmirror:{subreddit}:wave0:redis-smoke`.
+- Wave 1 centralizes key construction in `src/server/services/redis.ts`.
+- `src/core/smoke.ts` now delegates to `runRedisDataSmoke`, which writes and reads `modmirror:{subreddit}:smoke:redis-data-layer`.
 - The helper follows the planned `modmirror:{subreddit}:{suffix}` naming pattern.
+
+Wave 1 data layer notes:
+
+- `src/server/services/config.ts` uses string JSON values for app config and demo state.
+- `src/server/services/policies.ts` stores each policy under `modmirror:{subreddit}:policy:{ruleId}` and duplicates policy JSON into the `modmirror:{subreddit}:policies` hash for listing.
+- `src/server/services/scans.ts` stores scan metadata under `modmirror:{subreddit}:scan:{scanId}` and `modmirror:{subreddit}:scan:last`.
+- `src/server/services/audit.ts` stores override/audit events in the `modmirror:{subreddit}:overrides` sorted set with `createdAt` as the score.
+- `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`; runtime behavior remains unverified until playtest auth is available.
 
 ## Permission / Visibility Findings
 
-| Question | Answer |
-|---|---|
-| Can identify current user? | Yes. `context.username`, `context.userId`, and `reddit.getCurrentUser()` exist. |
-| Can identify whether current user is moderator? | Menu config can restrict to `forUserType: "moderator"`; runtime permission checks can use `getModPermissionsForSubreddit`. |
-| Can inspect moderator permissions? | Yes. `User.getModPermissionsForSubreddit(subredditName): Promise<ModeratorPermission[]>`. |
-| Can distinguish full/manage permissions? | Typings expose permission strings including `all`; the template checks `all` or `posts`. Exact available permission values need runtime logging in playtest. |
+| Question                                        | Answer                                                                                                                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Can identify current user?                      | Yes. `context.username`, `context.userId`, and `reddit.getCurrentUser()` exist.                                                                              |
+| Can identify whether current user is moderator? | Menu config can restrict to `forUserType: "moderator"`; runtime permission checks can use `getModPermissionsForSubreddit`.                                   |
+| Can inspect moderator permissions?              | Yes. `User.getModPermissionsForSubreddit(subredditName): Promise<ModeratorPermission[]>`.                                                                    |
+| Can distinguish full/manage permissions?        | Typings expose permission strings including `all`; the template checks `all` or `posts`. Exact available permission values need runtime logging in playtest. |
 
 Conclusion:
 
@@ -380,18 +389,18 @@ Conclusion:
 
 ## Build/Test Findings
 
-| Command | Result |
-|---|---|
-| `npm install` | PASS. Installed 540 packages after adding `vitest`; npm audit reports 31 vulnerabilities. |
-| `node --version` | PASS: `v22.21.0`. |
-| `npm --version` | PASS: `10.9.4`. |
-| `npx devvit --version` | PASS: `@devvit/cli/0.12.23 darwin-arm64 node-v22.21.0`. |
-| `npx devvit whoami` | FAIL: `Not currently logged in. Try devvit login first`. |
-| `npm run type-check` | PASS. |
-| `npm run lint` | PASS. |
-| `npm run build` | PASS. |
-| `npm test` | PASS after adding `vitest.config.ts`; no tests exist yet. |
-| `npm run dev` | PARTIAL. Vite/server build completes, then Devvit prompts for Reddit OAuth and cannot proceed without browser auth. |
+| Command                | Result                                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`          | PASS. Installed 540 packages after adding `vitest`; npm audit reports 31 vulnerabilities.                                                |
+| `node --version`       | PASS: `v22.21.0`.                                                                                                                        |
+| `npm --version`        | PASS: `10.9.4`.                                                                                                                          |
+| `npx devvit --version` | PASS: `@devvit/cli/0.12.23 darwin-arm64 node-v22.21.0`.                                                                                  |
+| `npx devvit whoami`    | FAIL: `Not currently logged in. Try devvit login first`.                                                                                 |
+| `npm run type-check`   | PASS.                                                                                                                                    |
+| `npm run lint`         | PASS.                                                                                                                                    |
+| `npm run build`        | PASS.                                                                                                                                    |
+| `npm test`             | PASS after adding `vitest.config.ts`; no tests exist yet.                                                                                |
+| `npm run dev`          | PARTIAL. Vite/server build completes, then Devvit prompts for Reddit OAuth and cannot proceed without browser auth.                      |
 | `npm audit --omit=dev` | FAIL. Direct/transitive vulnerabilities remain in template dependencies, including `hono`, `vite`, and `protobufjs` via Devvit packages. |
 
 ## Broken Assumptions
