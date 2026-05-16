@@ -46,5 +46,8 @@
   },
   "permissions": {
     "reddit": true
+  },
+  "dev": {
+    "subreddit": "modmirror_dev"
   }
 }
