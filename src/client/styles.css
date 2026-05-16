@@ -33,6 +33,15 @@ input {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .shell {
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
@@ -149,7 +158,10 @@ input {
 
 .section,
 .status-grid,
-.details-grid {
+.details-grid,
+.scan-summary-grid,
+.notice-list,
+.drift-list {
   margin: 0 auto 20px;
   max-width: 1180px;
 }
@@ -166,6 +178,13 @@ input {
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.scan-hero {
+  align-items: center;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .section h3,
@@ -244,6 +263,186 @@ input {
   font-weight: 700;
 }
 
+.scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.primary-button,
+.secondary-button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 8px 12px;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: white;
+}
+
+.secondary-button {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.notice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.notice-list p {
+  background: var(--warning-muted);
+  border: 1px solid #dfc59e;
+  border-radius: 8px;
+  color: var(--warning);
+  font-size: 13px;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.loading-state,
+.error-state,
+.empty-scan-state,
+.breakdown-section,
+.small-subreddit-section {
+  display: grid;
+  gap: 8px;
+}
+
+.error-state {
+  border-color: #d99d9d;
+}
+
+.error-state h3 {
+  color: #8f1d1d;
+}
+
+.scan-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric-card,
+.drift-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.metric-card {
+  display: grid;
+  gap: 8px;
+  min-height: 96px;
+  padding: 16px;
+}
+
+.metric-card span,
+.confidence-item span,
+.distribution-item span {
+  color: var(--muted);
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.metric-card strong {
+  align-self: end;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.confidence-grid,
+.distribution-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.confidence-item,
+.distribution-item {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.confidence-item strong,
+.distribution-item strong {
+  font-size: 16px;
+}
+
+.confidence-high {
+  border-color: #8fb8a2;
+}
+
+.confidence-medium {
+  border-color: #d4bd6a;
+}
+
+.confidence-low {
+  border-color: #d9aa74;
+}
+
+.confidence-unmatched {
+  border-color: #b9b9ad;
+}
+
+.drift-list {
+  display: grid;
+  gap: 12px;
+}
+
+.drift-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.drift-card-header {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.drift-card h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.drift-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.confidence-pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  text-transform: capitalize;
+}
+
+.recommendation {
+  color: var(--text) !important;
+  font-weight: 700;
+}
+
 .details-grid {
   display: grid;
   gap: 12px;
@@ -301,7 +500,8 @@ input {
 
   .topbar,
   .intro-section,
-  .details-grid {
+  .details-grid,
+  .scan-hero {
     grid-template-columns: 1fr;
   }
 
@@ -309,8 +509,15 @@ input {
     display: grid;
   }
 
-  .status-grid {
+  .status-grid,
+  .scan-summary-grid,
+  .confidence-grid,
+  .distribution-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scan-actions {
+    justify-content: flex-start;
   }
 }
 
@@ -323,7 +530,10 @@ input {
     grid-template-columns: 1fr;
   }
 
-  .status-grid {
+  .status-grid,
+  .scan-summary-grid,
+  .confidence-grid,
+  .distribution-grid {
     grid-template-columns: 1fr;
   }
 }

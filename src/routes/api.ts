@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
+import type { ApiResponse, MirrorScan } from '../shared/schema';
 
 export const api = new Hono();
 
@@ -44,4 +45,17 @@ api.post('/smoke/redis', async (c) => {
 api.post('/smoke/reddit', async (c) => {
   const result = await runRedditSmoke();
   return c.json(result);
+});
+
+api.post('/scan', async (c) => {
+  const response: ApiResponse<MirrorScan> = {
+    ok: false,
+    error: {
+      code: 'scan_not_integrated',
+      message:
+        'Mirror Scan service is not wired on this branch yet. Integration will connect this endpoint to demo and live scan sources.',
+    },
+  };
+
+  return c.json(response, 501);
 });

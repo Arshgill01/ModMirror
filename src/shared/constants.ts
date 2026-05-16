@@ -56,6 +56,7 @@ export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
 
 export const API_ROUTES = {
   health: '/api/health',
+  scan: '/api/scan',
   redisSmoke: '/api/smoke/redis',
   redditSmoke: '/api/smoke/reddit',
 } as const;
