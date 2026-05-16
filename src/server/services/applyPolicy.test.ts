@@ -6,6 +6,8 @@ const policy: RulePolicy = {
   subreddit: 'ExampleLearning',
   ruleKey: 'rule-2-low-effort-questions-2',
   ruleName: 'Rule 2: Low-effort questions',
+  activeVersionId: 'policy-version-1',
+  activeVersionNumber: 1,
   createdAt: '2026-05-16T00:00:00.000Z',
   updatedAt: '2026-05-16T00:00:00.000Z',
   createdBy: 'leadmod',
@@ -35,11 +37,13 @@ const actionEvent: ActionEvent = {
 };
 
 const getPolicyByRule = vi.fn();
+const capturePolicySnapshot = vi.fn();
 const listRecentActionEvents = vi.fn();
 const saveActionEvent = vi.fn();
 const saveOverrideEvent = vi.fn();
 
 vi.mock('./policies', () => ({
+  capturePolicySnapshot,
   getPolicyByRule,
 }));
 
@@ -52,7 +56,19 @@ vi.mock('./audit', () => ({
 
 describe('apply policy service', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     getPolicyByRule.mockResolvedValue(policy);
+    capturePolicySnapshot.mockReturnValue({
+      policyId: policy.id,
+      policyVersionId: 'policy-version-1',
+      policyVersionNumber: 1,
+      policyVersionStatus: 'active',
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      steps: policy.steps,
+      defaultMessageMode: policy.defaultMessageMode,
+      capturedAt: '2026-05-16T00:00:00.000Z',
+    });
     listRecentActionEvents.mockResolvedValue([]);
     saveActionEvent.mockResolvedValue(actionEvent);
     saveOverrideEvent.mockResolvedValue({
@@ -91,6 +107,14 @@ describe('apply policy service', () => {
     });
 
     expect(result.actionEvent.id).toBe('action-1');
+    expect(saveActionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        policyId: policy.id,
+        policyVersionId: 'policy-version-1',
+        policyVersionNumber: 1,
+        policyVersionStatus: 'active',
+      })
+    );
     expect(saveOverrideEvent).not.toHaveBeenCalled();
   });
 
@@ -121,6 +145,14 @@ describe('apply policy service', () => {
 
     expect(result.overrideEvent?.overrideReason).toBe(
       'edge_case_mod_discretion'
+    );
+    expect(saveOverrideEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        policyId: policy.id,
+        policyVersionId: 'policy-version-1',
+        policyVersionNumber: 1,
+        policyVersionStatus: 'active',
+      })
     );
   });
 });

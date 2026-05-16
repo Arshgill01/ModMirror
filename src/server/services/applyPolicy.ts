@@ -14,7 +14,7 @@ import {
   saveActionEvent,
   saveOverrideEvent,
 } from './audit';
-import { getPolicyByRule } from './policies';
+import { capturePolicySnapshot, getPolicyByRule } from './policies';
 
 export async function previewApplyPolicy(
   input: ApplyPolicyPreviewInput
@@ -66,11 +66,13 @@ export async function confirmApplyPolicy(options: {
   }
 
   const subreddit = options.input.subreddit ?? DEMO_SUBREDDIT_NAME;
+  const policySnapshot = capturePolicySnapshot(preview.policy);
   const actionInput = createLogOnlyActionInput(createActionOptions(
     subreddit,
     recommendation,
     options.input,
-    options.modUsername
+    options.modUsername,
+    policySnapshot
   ));
   const actionEvent = await saveActionEvent(actionInput);
 
@@ -97,6 +99,15 @@ export async function confirmApplyPolicy(options: {
     if (options.input.overrideNote !== undefined) {
       overrideInput.overrideNote = options.input.overrideNote;
     }
+    if (policySnapshot !== undefined) {
+      overrideInput.policyId = policySnapshot.policyId;
+      overrideInput.policyVersionId = policySnapshot.policyVersionId;
+      overrideInput.policyVersionNumber = policySnapshot.policyVersionNumber;
+      overrideInput.policyVersionStatus = policySnapshot.policyVersionStatus;
+      overrideInput.policySnapshot = policySnapshot;
+    } else {
+      overrideInput.policyVersionStatus = 'missing';
+    }
 
     result.overrideEvent = await saveOverrideEvent(overrideInput);
   }
@@ -108,7 +119,8 @@ function createActionOptions(
   subreddit: string,
   recommendation: PolicyRecommendation,
   input: ApplyPolicyConfirmInput,
-  modUsername?: string
+  modUsername?: string,
+  policySnapshot?: ReturnType<typeof capturePolicySnapshot>
 ): Parameters<typeof createLogOnlyActionInput>[0] {
   const actionInput: Parameters<typeof createLogOnlyActionInput>[0] = {
     subreddit,
@@ -133,6 +145,15 @@ function createActionOptions(
   }
   if (recommendation.policyId !== undefined) {
     actionInput.policyId = recommendation.policyId;
+  }
+  if (policySnapshot !== undefined) {
+    actionInput.policyId = policySnapshot.policyId;
+    actionInput.policyVersionId = policySnapshot.policyVersionId;
+    actionInput.policyVersionNumber = policySnapshot.policyVersionNumber;
+    actionInput.policyVersionStatus = policySnapshot.policyVersionStatus;
+    actionInput.policySnapshot = policySnapshot;
+  } else {
+    actionInput.policyVersionStatus = 'missing';
   }
 
   return actionInput;
