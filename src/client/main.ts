@@ -5,9 +5,19 @@ import {
   WAVE_1_FEATURE_STATUSES,
   type HealthResponse,
 } from '../shared/status';
+import { API_ROUTES, CONFIDENCE_VALUES } from '../shared/constants';
+import type {
+  ApiResponse,
+  Confidence,
+  DriftCandidate,
+  EnforcementAction,
+  MirrorScan,
+} from '../shared/schema';
 import './styles.css';
 
 type PageId = 'overview' | 'mirror-scan' | 'policies' | 'overrides' | 'demo-mode';
+type ScanMode = 'live' | 'demo';
+type FeatureStatusState = (typeof WAVE_1_FEATURE_STATUSES)[number]['state'];
 
 type Page = {
   id: PageId;
@@ -16,11 +26,19 @@ type Page = {
   body: string;
 };
 
+type ScanUiState = {
+  loading: boolean;
+  mode?: ScanMode;
+  error?: string;
+  result?: MirrorScan;
+  warnings: string[];
+};
+
 const overviewPage: Page = {
   id: 'overview',
   label: 'Overview',
   title: 'Overview',
-  body: 'The Wave 1 shell shows the product shape without claiming scan, policy, or audit data is live.',
+  body: 'The dashboard shows the ModMirror product shape without claiming policy or audit workflows are live before their waves.',
 };
 
 const pages: Page[] = [
@@ -29,25 +47,25 @@ const pages: Page[] = [
     id: 'mirror-scan',
     label: 'Mirror Scan',
     title: 'Mirror Scan',
-    body: 'Wave 2 will implement live scan. Until then, this page reserves the scan summary, confidence breakdown, and drift candidate areas.',
+    body: 'Run a scan to compare recent moderation actions against subreddit rules and removal reasons with honest confidence labels.',
   },
   {
     id: 'policies',
     label: 'Policies',
     title: 'Policies',
-    body: 'Policy Agreement placeholders are ready for rule policy ladders once shared contracts and Redis persistence land.',
+    body: 'Policy Agreement Flow starts in Wave 3. This Wave 2 dashboard only shows drift findings that can inform policy work later.',
   },
   {
     id: 'overrides',
     label: 'Overrides',
     title: 'Overrides',
-    body: 'Override Audit will show aggregate deviations after the Apply Policy and consistency nudge flows exist.',
+    body: 'Override Audit remains out of scope until the Apply Policy and consistency nudge workflows exist.',
   },
   {
     id: 'demo-mode',
     label: 'Demo Mode',
     title: 'Demo Mode',
-    body: 'Demo mode is required for the submission, but seeded data is not wired in this Wave 1 dashboard shell.',
+    body: 'Demo data is clearly labeled so screenshots and cold-start review do not look like real subreddit history.',
   },
 ];
 
@@ -61,6 +79,10 @@ const appRoot = app;
 let activePage: PageId = getPageFromHash();
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
+let scanState: ScanUiState = {
+  loading: false,
+  warnings: [],
+};
 
 function getPageFromHash(): PageId {
   const candidate = window.location.hash.replace('#', '');
@@ -98,50 +120,227 @@ function render() {
             <h2>${page.title}</h2>
             <p>${APP_SUMMARY}</p>
           </div>
-          <div class="demo-control" aria-label="Demo mode placeholder">
-            <span class="demo-state">${health?.demoMode.enabled ? 'Demo on' : 'Demo off'}</span>
-            <label>
-              <input type="checkbox" disabled ${health?.demoMode.enabled ? 'checked' : ''} />
-              Demo mode placeholder
-            </label>
+          <div class="demo-control" aria-label="Demo mode status">
+            <span class="demo-state">${health?.demoMode.enabled ? 'Demo on' : 'Demo available'}</span>
+            <span class="muted">Demo data is requested from Mirror Scan, not mixed into live mode.</span>
           </div>
         </header>
 
-        <section class="section intro-section" aria-labelledby="current-page-title">
-          <div>
-            <h3 id="current-page-title">${page.title}</h3>
-            <p>${page.body}</p>
-          </div>
-          <div class="empty-state">
-            <strong>No live moderation data yet</strong>
-            <span>Wave 1 is the app shell. Later waves will connect scans, policies, and audit events.</span>
-          </div>
-        </section>
-
-        <section class="status-grid" aria-label="Wave 1 status cards">
-          ${WAVE_1_FEATURE_STATUSES.map(
-            (feature) => `
-              <article class="status-card">
-                <div class="status-card-header">
-                  <h3>${feature.name}</h3>
-                  <span>${formatState(feature.state)}</span>
-                </div>
-                <p>${feature.description}</p>
-                <p class="next-step">${feature.next}</p>
-              </article>
-            `
-          ).join('')}
-        </section>
-
-        <section class="section details-grid">
-          ${renderHealthCard()}
-          ${renderDemoCard()}
-        </section>
+        ${
+          page.id === 'mirror-scan'
+            ? renderMirrorScanPage()
+            : renderPlaceholderPage(page)
+        }
       </main>
     </div>
   `;
 
   bindNavigation();
+  bindScanActions();
+}
+
+function renderPlaceholderPage(page: Page) {
+  return `
+    <section class="section intro-section" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">${page.title}</h3>
+        <p>${page.body}</p>
+      </div>
+      <div class="empty-state">
+        <strong>No Wave 3 workflow here yet</strong>
+        <span>Wave 2 is limited to Mirror Scan, deterministic attribution, and demo data.</span>
+      </div>
+    </section>
+
+    <section class="status-grid" aria-label="Wave status cards">
+      ${WAVE_1_FEATURE_STATUSES.map(
+        (feature) => `
+          <article class="status-card">
+            <div class="status-card-header">
+              <h3>${feature.name}</h3>
+              <span>${formatState(feature.state)}</span>
+            </div>
+            <p>${feature.description}</p>
+            <p class="next-step">${feature.next}</p>
+          </article>
+        `
+      ).join('')}
+    </section>
+
+    <section class="section details-grid">
+      ${renderHealthCard()}
+      ${renderDemoCard()}
+    </section>
+  `;
+}
+
+function renderMirrorScanPage() {
+  return `
+    <section class="section scan-hero" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">Mirror Scan</h3>
+        <p>Run your first Mirror Scan to see how your team has been enforcing rules.</p>
+        <p>No rich history? Try demo mode to see what ModMirror looks like on an active team.</p>
+      </div>
+      <div class="scan-actions">
+        <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''}>Run Mirror Scan</button>
+        <button class="secondary-button" data-run-scan="demo" ${scanState.loading ? 'disabled' : ''}>Use Demo Data</button>
+      </div>
+    </section>
+
+    ${renderScanWarnings()}
+    ${renderScanBody()}
+  `;
+}
+
+function renderScanWarnings() {
+  const warnings = [
+    ...(scanState.mode === 'demo'
+      ? ['Demo data - not real subreddit moderation history.']
+      : []),
+    ...scanState.warnings,
+  ];
+
+  if (warnings.length === 0) {
+    return '';
+  }
+
+  return `
+    <section class="notice-list" aria-label="Scan warnings">
+      ${warnings
+        .map((warning) => `<p>${escapeHtml(warning)}</p>`)
+        .join('')}
+    </section>
+  `;
+}
+
+function renderScanBody() {
+  if (scanState.loading) {
+    return `
+      <section class="section loading-state">
+        <h3>Scanning moderation history</h3>
+        <p class="muted">Loading actions, rules, removal reasons, and attribution output.</p>
+      </section>
+    `;
+  }
+
+  if (scanState.error) {
+    return `
+      <section class="section error-state">
+        <h3>Scan could not complete</h3>
+        <p>${escapeHtml(scanState.error)}</p>
+      </section>
+    `;
+  }
+
+  if (!scanState.result) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No scan has run yet</h3>
+        <p>Run a live scan or use demo data to see scan summary, confidence breakdown, unmatched count, and drift candidates.</p>
+      </section>
+    `;
+  }
+
+  return `
+    ${renderScanSummary(scanState.result)}
+    ${renderDriftCandidates(scanState.result.driftCandidates)}
+  `;
+}
+
+function renderScanSummary(scan: MirrorScan) {
+  return `
+    <section class="scan-summary-grid" aria-label="Scan summary">
+      ${renderMetricCard('Source', scan.source)}
+      ${renderMetricCard('Actions scanned', scan.totalActionsScanned.toString())}
+      ${renderMetricCard('Attributed', scan.attributedCount.toString())}
+      ${renderMetricCard('Unmatched', scan.unmatchedCount.toString())}
+    </section>
+
+    <section class="section breakdown-section">
+      <div>
+        <h3>Confidence Breakdown</h3>
+        <p>Inferred rule labels stay confidence-scored because historical mod logs do not expose perfect rule attribution.</p>
+      </div>
+      <div class="confidence-grid">
+        ${CONFIDENCE_VALUES.map((confidence) =>
+          renderConfidenceItem(confidence, scan.confidenceBreakdown[confidence])
+        ).join('')}
+      </div>
+    </section>
+
+    <section class="section small-subreddit-section">
+      <h3>History Depth</h3>
+      <p>${escapeHtml(scan.smallSubredditStatus.message)}</p>
+    </section>
+  `;
+}
+
+function renderMetricCard(label: string, value: string) {
+  return `
+    <article class="metric-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `;
+}
+
+function renderConfidenceItem(confidence: Confidence, count: number) {
+  return `
+    <div class="confidence-item confidence-${confidence}">
+      <span>${confidence}</span>
+      <strong>${count}</strong>
+    </div>
+  `;
+}
+
+function renderDriftCandidates(candidates: DriftCandidate[]) {
+  if (candidates.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No drift candidates yet</h3>
+        <p>Not enough attributed history was found for reliable drift detection.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="drift-list" aria-label="Drift candidates">
+      ${candidates.map(renderDriftCandidate).join('')}
+    </section>
+  `;
+}
+
+function renderDriftCandidate(candidate: DriftCandidate) {
+  return `
+    <article class="drift-card">
+      <div class="drift-card-header">
+        <div>
+          <h3>${escapeHtml(candidate.ruleName)}</h3>
+          <p>${escapeHtml(candidate.summary)}</p>
+        </div>
+        <span class="confidence-pill confidence-${candidate.confidence}">${candidate.confidence}</span>
+      </div>
+      <div class="distribution-grid">
+        ${Object.entries(candidate.actionDistribution)
+          .map(([action, count]) =>
+            renderDistributionItem(action as EnforcementAction, count ?? 0)
+          )
+          .join('')}
+      </div>
+      <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
+      <button class="secondary-button" disabled>Create policy - coming in Wave 3</button>
+    </article>
+  `;
+}
+
+function renderDistributionItem(action: EnforcementAction, count: number) {
+  return `
+    <div class="distribution-item">
+      <span>${escapeHtml(formatAction(action))}</span>
+      <strong>${count}</strong>
+    </div>
+  `;
 }
 
 function bindNavigation() {
@@ -156,11 +355,18 @@ function bindNavigation() {
   });
 }
 
+function bindScanActions() {
+  document.querySelectorAll<HTMLButtonElement>('[data-run-scan]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const mode = button.dataset.runScan === 'demo' ? 'demo' : 'live';
+      void runScan(mode);
+    });
+  });
+}
+
 function formatState(state: FeatureStatusState) {
   return state === 'ready-for-integration' ? 'Ready for integration' : 'Placeholder';
 }
-
-type FeatureStatusState = (typeof WAVE_1_FEATURE_STATUSES)[number]['state'];
 
 function renderHealthCard() {
   if (healthError) {
@@ -203,9 +409,7 @@ function renderDemoCard() {
   return `
     <article class="panel">
       <h3>Demo Mode</h3>
-      <p>
-        Demo seed data is mandatory for the final submission. This shell exposes the indicator now and leaves the toggle disabled until the demo data layer is integrated.
-      </p>
+      <p>Demo scans use deterministic seeded actions and stay clearly labeled as non-live data.</p>
       <div class="placeholder-row">
         <span>Seed source</span>
         <strong>${escapeHtml(health?.demoMode.source ?? 'placeholder')}</strong>
@@ -214,18 +418,50 @@ function renderDemoCard() {
   `;
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+async function runScan(mode: ScanMode) {
+  scanState = {
+    loading: true,
+    mode,
+    warnings: [],
+  };
+  activePage = 'mirror-scan';
+  render();
+
+  try {
+    const response = await fetch(API_ROUTES.scan, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ mode }),
+    });
+    const payload = (await response.json()) as ApiResponse<MirrorScan>;
+
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+
+    scanState = {
+      loading: false,
+      mode,
+      result: payload.data,
+      warnings: [],
+    };
+  } catch (error) {
+    scanState = {
+      loading: false,
+      mode,
+      error: error instanceof Error ? error.message : 'Unknown scan error',
+      warnings: [],
+    };
+  }
+
+  render();
 }
 
 async function loadHealth() {
   try {
-    const response = await fetch('/api/health');
+    const response = await fetch(API_ROUTES.health);
     if (!response.ok) {
       throw new Error(`Health endpoint returned ${response.status}`);
     }
@@ -235,6 +471,19 @@ async function loadHealth() {
   }
 
   render();
+}
+
+function formatAction(action: EnforcementAction) {
+  return action.replaceAll('_', ' ');
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 window.addEventListener('hashchange', () => {
