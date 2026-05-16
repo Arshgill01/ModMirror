@@ -28,7 +28,20 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Planning / Wave 0.
+Wave 0 local scaffold proof.
+
+The repo contains a Devvit Web mod-tool scaffold with non-destructive smoke
+surfaces for Redis, Reddit API reads, post/comment menu actions, and form
+chaining. Full playtest is currently blocked until `devvit login` is completed.
+
+## Local Commands
+
+- `npm install`
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- `npm test`
+- `npm run dev`
 
 See:
 
