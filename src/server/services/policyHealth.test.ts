@@ -54,8 +54,10 @@ function override(
     selectedAction: 'manual_review',
     overrideReason: 'edge_case_mod_discretion',
     reviewStatus: 'unresolved',
-    createdAt: `2026-05-16T00:01:0${id}.000Z`,
     ...options,
+    updatedAt:
+      options.updatedAt ?? options.createdAt ?? `2026-05-16T00:01:0${id}.000Z`,
+    createdAt: options.createdAt ?? `2026-05-16T00:01:0${id}.000Z`,
   };
 }
 

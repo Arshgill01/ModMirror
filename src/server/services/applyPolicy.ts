@@ -90,6 +90,9 @@ export async function confirmApplyPolicy(options: {
       selectedAction: options.input.selectedAction,
       overrideReason: options.input.overrideReason,
     };
+    if (recommendation.ruleName !== undefined) {
+      overrideInput.ruleName = recommendation.ruleName;
+    }
     if (options.input.targetThingId !== undefined) {
       overrideInput.targetThingId = options.input.targetThingId;
     }

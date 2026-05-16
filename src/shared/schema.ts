@@ -330,6 +330,7 @@ export interface OverrideEvent {
   targetThingId?: string;
   targetAuthor?: string;
   ruleKey: string;
+  ruleName?: string;
   policyId?: string;
   recommendedAction: EnforcementAction;
   selectedAction: EnforcementAction;

@@ -194,6 +194,9 @@ export async function saveOverrideEvent(
   if (input.targetAuthor !== undefined) {
     event.targetAuthor = input.targetAuthor;
   }
+  if (input.ruleName !== undefined) {
+    event.ruleName = input.ruleName;
+  }
   if (input.overrideNote !== undefined) {
     event.overrideNote = input.overrideNote;
   }
