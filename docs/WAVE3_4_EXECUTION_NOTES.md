@@ -100,3 +100,69 @@ The wave is complete only when:
 - Local tests/build/typecheck/lint pass.
 - Playtest is attempted and result documented.
 - `RESEARCH.md`, `TODO.md`, and docs are updated.
+
+## Completion Report
+
+Status: implemented locally and CLI playtest-ready.
+
+### Summary
+
+- Added policy create/list/edit APIs and dashboard Policy Agreement Flow.
+- Added create-from-drift behavior for Mirror Scan drift candidates.
+- Added policy recommendation helpers and no-policy/small-subreddit states.
+- Added action event and override event services backed by Redis sorted sets.
+- Added Apply Policy preview/confirm endpoints and dashboard simulator.
+- Enforced override reason on deviating selected actions.
+- Added a moderator-only subreddit menu launcher that creates and opens the
+  dashboard custom post.
+- Kept delivery mode `log_only` and avoided unverified live enforcement.
+
+### Commands Run
+
+- `npm install`
+- `npm run build`
+- `npm test`
+- `npm run type-check || true`
+- `npm run lint || true`
+- `npx devvit whoami`
+- `npm audit || true`
+- `npm run dev`
+
+### Pass/Fail Status
+
+- PASS: build.
+- PASS: tests, 8 files and 35 tests.
+- PASS: typecheck.
+- PASS: lint.
+- PASS: `npx devvit whoami` as `u/BrightyBrainiac`.
+- PASS: `npm run dev` reached Playtest ready for `r/modmirror_dev`.
+- PARTIAL: Safari is signed in, opens the playtest subreddit, and shows the
+  dashboard launcher in the moderator overflow menu. Clicking the launcher
+  creates a visible custom post, so Codex paused for explicit approval before
+  activating it.
+- PARTIAL: `npm audit` reports 31 known vulnerabilities; no force fix applied.
+
+### Runtime Status
+
+`npm run dev` reached:
+
+```txt
+https://www.reddit.com/r/modmirror_dev/?playtest=modmirror
+v0.0.1.10
+```
+
+### Open Risks
+
+- Redis route behavior, dashboard custom-post rendering, and Reddit menu/form
+  behavior still need browser proof. The dashboard launch surface is visible,
+  but activation creates a visible test post.
+- Public comment/private message/modmail/native Mod Notes delivery remain
+  disabled/unverified.
+- `npm audit` includes Devvit transitive `protobufjs` advisories with no fix
+  available through the installed package chain.
+
+### Next Recommended Wave
+
+Wave 5 should focus on browser QA, route smoke verification, menu action proof,
+screenshots, and hackathon polish without enabling unverified destructive
+moderation actions.

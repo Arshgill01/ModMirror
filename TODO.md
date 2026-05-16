@@ -2,9 +2,30 @@
 
 ## Current Phase
 
-Wave 3/4 — Policy Agreement Flow + Apply Policy Action in progress.
+Wave 3/4 — Policy Agreement Flow + Apply Policy Action implemented locally.
 
-Status: Mirror Scan, deterministic attribution, live source adapters, demo seed data, dashboard scan UI, and focused tests are integrated. Wave 3/4 preflight confirmed the Devvit app identity exists and `npm run dev` reaches Playtest ready for `r/modmirror_dev`.
+Status: Mirror Scan, deterministic attribution, policy creation/editing, Apply Policy simulator, log-only action events, deviation override enforcement, aggregate override summary services, and a moderator-only dashboard launch menu are implemented. CLI playtest reaches ready for `r/modmirror_dev`; Safari is signed in, opens the playtest subreddit, and shows the dashboard launcher. Activating the launcher creates a visible custom post and needs explicit approval before browser proof clicks it.
+
+## Wave 3/4 Completion Checklist
+
+- [x] Policy creation API and dashboard flow.
+- [x] Policy editing API and dashboard flow.
+- [x] Policy list/overview dashboard.
+- [x] Create policy from Mirror Scan drift candidate.
+- [x] Manual policy creation.
+- [x] Empty policy fallback copy.
+- [x] Small-subreddit policy-first copy.
+- [x] Apply Policy preview endpoint and dashboard simulator.
+- [x] Apply Policy confirm endpoint in `log_only` mode.
+- [x] Deviating selected actions require override reason.
+- [x] Action events are stored in Redis sorted sets.
+- [x] Override events are stored in Redis sorted sets.
+- [x] Aggregate override summary service/API hides per-mod breakdowns.
+- [x] Demo scan supports the full policy/apply loop.
+- [x] Local build/test/typecheck/lint pass in Wave 3/4 worktree.
+- [x] Runtime playtest reaches ready.
+- [x] Browser UI proof that signed-in Safari opens the playtest subreddit and shows the dashboard launcher.
+- [ ] Browser UI proof that the dashboard custom post renders after approval to create the visible test post.
 
 ## Wave 2 Integration Checklist
 

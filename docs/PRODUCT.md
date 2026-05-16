@@ -91,6 +91,10 @@ Flow:
 - confirm action,
 - log result.
 
+Wave 3/4 implementation uses a dashboard simulator for this flow while Reddit
+post/comment menu UX remains browser-unverified. Confirmed actions are stored
+as `log_only` records.
+
 ### 4. Consistency Nudge + Override Audit
 
 If a moderator deviates from policy:
@@ -98,6 +102,9 @@ If a moderator deviates from policy:
 > This action is stricter than the team policy. Continue with override?
 
 The mod chooses a reason and can add a note.
+
+Wave 3/4 stores action events and override events, and exposes aggregate
+override summaries without per-mod blame.
 
 ## Primary Demo
 

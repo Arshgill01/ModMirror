@@ -5,17 +5,35 @@ import {
   WAVE_1_FEATURE_STATUSES,
   type HealthResponse,
 } from '../shared/status';
-import { API_ROUTES, CONFIDENCE_VALUES } from '../shared/constants';
+import {
+  API_ROUTES,
+  CONFIDENCE_VALUES,
+  ENFORCEMENT_ACTION_VALUES,
+  MESSAGE_DELIVERY_MODE_VALUES,
+  OVERRIDE_REASON_VALUES,
+} from '../shared/constants';
 import type {
+  ApplyPolicyConfirmResult,
+  ApplyPolicyPreview,
   ApiResponse,
   Confidence,
   DriftCandidate,
   EnforcementAction,
+  MessageDeliveryMode,
   MirrorScan,
+  OverrideReason,
+  PolicyStep,
+  RulePolicy,
 } from '../shared/schema';
 import './styles.css';
 
-type PageId = 'overview' | 'mirror-scan' | 'policies' | 'overrides' | 'demo-mode';
+type PageId =
+  | 'overview'
+  | 'mirror-scan'
+  | 'policies'
+  | 'apply-policy'
+  | 'overrides'
+  | 'demo-mode';
 type ScanMode = 'live' | 'demo';
 type FeatureStatusState = (typeof WAVE_1_FEATURE_STATUSES)[number]['state'];
 
@@ -34,11 +52,38 @@ type ScanUiState = {
   warnings: string[];
 };
 
+type PolicyFormState = {
+  mode: 'create' | 'edit';
+  policyId?: string;
+  ruleKey: string;
+  ruleName: string;
+  defaultMessageMode: MessageDeliveryMode;
+  steps: PolicyStep[];
+};
+
+type PolicyUiState = {
+  loading: boolean;
+  saving: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  policies: RulePolicy[];
+  form: PolicyFormState;
+};
+
+type ApplyUiState = {
+  loading: boolean;
+  confirming: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  preview: ApplyPolicyPreview | undefined;
+  result: ApplyPolicyConfirmResult | undefined;
+};
+
 const overviewPage: Page = {
   id: 'overview',
   label: 'Overview',
   title: 'Overview',
-  body: 'The dashboard shows the ModMirror product shape without claiming policy or audit workflows are live before their waves.',
+  body: 'The dashboard shows scan, policy, and audit readiness without claiming unverified enforcement delivery.',
 };
 
 const pages: Page[] = [
@@ -53,13 +98,19 @@ const pages: Page[] = [
     id: 'policies',
     label: 'Policies',
     title: 'Policies',
-    body: 'Policy Agreement Flow starts in Wave 3. This Wave 2 dashboard only shows drift findings that can inform policy work later.',
+    body: 'Turn drift findings into explicit team policy ladders. Delivery defaults to log only until live comment behavior is verified.',
+  },
+  {
+    id: 'apply-policy',
+    label: 'Apply Policy',
+    title: 'Apply Policy',
+    body: 'Use the dashboard simulator while Reddit menu actions remain runtime-unverified. Confirmed actions are logged with log-only delivery.',
   },
   {
     id: 'overrides',
     label: 'Overrides',
     title: 'Overrides',
-    body: 'Override Audit remains out of scope until the Apply Policy and consistency nudge workflows exist.',
+    body: 'Override Audit remains neutral and aggregate-first; per-mod breakdowns stay hidden until permission gating is verified.',
   },
   {
     id: 'demo-mode',
@@ -83,12 +134,57 @@ let scanState: ScanUiState = {
   loading: false,
   warnings: [],
 };
+let policyState: PolicyUiState = {
+  loading: false,
+  saving: false,
+  error: undefined,
+  message: undefined,
+  policies: [],
+  form: emptyPolicyForm(),
+};
+let applyState: ApplyUiState = {
+  loading: false,
+  confirming: false,
+  error: undefined,
+  message: undefined,
+  preview: undefined,
+  result: undefined,
+};
 
 function getPageFromHash(): PageId {
   const candidate = window.location.hash.replace('#', '');
   return pages.some((page) => page.id === candidate)
     ? (candidate as PageId)
     : 'overview';
+}
+
+function emptyPolicyForm(): PolicyFormState {
+  return {
+    mode: 'create',
+    ruleKey: '',
+    ruleName: '',
+    defaultMessageMode: 'log_only',
+    steps: [
+      {
+        offenseCount: 1,
+        windowDays: 30,
+        recommendedAction: 'warn',
+        requireOverrideReasonForDeviation: true,
+      },
+      {
+        offenseCount: 2,
+        windowDays: 30,
+        recommendedAction: 'remove',
+        requireOverrideReasonForDeviation: true,
+      },
+      {
+        offenseCount: 3,
+        windowDays: 30,
+        recommendedAction: 'temporary_ban_suggested',
+        requireOverrideReasonForDeviation: true,
+      },
+    ],
+  };
 }
 
 function render() {
@@ -122,21 +218,33 @@ function render() {
           </div>
           <div class="demo-control" aria-label="Demo mode status">
             <span class="demo-state">${health?.demoMode.enabled ? 'Demo on' : 'Demo available'}</span>
-            <span class="muted">Demo data is requested from Mirror Scan, not mixed into live mode.</span>
+            <span class="muted">Demo data stays labeled and separate from live scan mode.</span>
           </div>
         </header>
 
-        ${
-          page.id === 'mirror-scan'
-            ? renderMirrorScanPage()
-            : renderPlaceholderPage(page)
-        }
+        ${renderPage(page)}
       </main>
     </div>
   `;
 
   bindNavigation();
   bindScanActions();
+  bindPolicyActions();
+  bindApplyPolicyActions();
+}
+
+function renderPage(page: Page) {
+  if (page.id === 'mirror-scan') {
+    return renderMirrorScanPage();
+  }
+  if (page.id === 'policies') {
+    return renderPoliciesPage();
+  }
+  if (page.id === 'apply-policy') {
+    return renderApplyPolicyPage();
+  }
+
+  return renderPlaceholderPage(page);
 }
 
 function renderPlaceholderPage(page: Page) {
@@ -147,8 +255,8 @@ function renderPlaceholderPage(page: Page) {
         <p>${page.body}</p>
       </div>
       <div class="empty-state">
-        <strong>No Wave 3 workflow here yet</strong>
-        <span>Wave 2 is limited to Mirror Scan, deterministic attribution, and demo data.</span>
+        <strong>${page.id === 'overrides' ? 'Audit summary arrives after Apply Policy' : 'Demo-first workflow ready'}</strong>
+        <span>${page.id === 'overrides' ? 'Wave 4 records aggregate policy exceptions without individual blame.' : 'Run demo scan, create Rule 2 policy, then apply it from the policy loop.'}</span>
       </div>
     </section>
 
@@ -180,7 +288,7 @@ function renderMirrorScanPage() {
       <div>
         <h3 id="current-page-title">Mirror Scan</h3>
         <p>Run your first Mirror Scan to see how your team has been enforcing rules.</p>
-        <p>No rich history? Try demo mode to see what ModMirror looks like on an active team.</p>
+        <p>No rich history? Try demo mode to create the Rule 2 policy loop from seeded drift.</p>
       </div>
       <div class="scan-actions">
         <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''}>Run Mirror Scan</button>
@@ -193,6 +301,361 @@ function renderMirrorScanPage() {
   `;
 }
 
+function renderPoliciesPage() {
+  return `
+    <section class="section policy-layout" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">Policy Agreement</h3>
+        <p>${pages.find((page) => page.id === 'policies')?.body ?? ''}</p>
+        ${renderPolicyMessage()}
+      </div>
+      <div class="policy-actions">
+        <button class="secondary-button" data-load-policies ${policyState.loading ? 'disabled' : ''}>Refresh policies</button>
+        <button class="primary-button" data-reset-policy-form>Create manual policy</button>
+      </div>
+    </section>
+
+    ${renderPolicyFallback()}
+    ${renderPolicyList()}
+    ${renderDriftPolicyPanel()}
+    ${renderPolicyForm()}
+  `;
+}
+
+function renderPolicyMessage() {
+  if (policyState.error) {
+    return `<p class="inline-error">${escapeHtml(policyState.error)}</p>`;
+  }
+  if (policyState.message) {
+    return `<p class="inline-success">${escapeHtml(policyState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderPolicyFallback() {
+  const scan = scanState.result;
+  if (policyState.policies.length > 0) {
+    return '';
+  }
+
+  const copy =
+    scan && !scan.smallSubredditStatus.meetsThreshold
+      ? 'Not enough history for reliable drift detection yet. Set your team policy now; ModMirror will start measuring consistency from today.'
+      : 'No team policy exists for this rule yet. Create one now.';
+
+  return `
+    <section class="section empty-scan-state">
+      <h3>No active policies yet</h3>
+      <p>${escapeHtml(copy)}</p>
+    </section>
+  `;
+}
+
+function renderPolicyList() {
+  if (policyState.loading) {
+    return `
+      <section class="section loading-state">
+        <h3>Loading policies</h3>
+        <p class="muted">Reading the subreddit policy ladder list.</p>
+      </section>
+    `;
+  }
+
+  if (policyState.policies.length === 0) {
+    return '';
+  }
+
+  return `
+    <section class="policy-table-section" aria-label="Saved policies">
+      <table class="policy-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>Steps</th>
+            <th>Delivery</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${policyState.policies.map(renderPolicyRow).join('')}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
+function renderPolicyRow(policy: RulePolicy) {
+  return `
+    <tr>
+      <td>
+        <strong>${escapeHtml(policy.ruleName)}</strong>
+        <span>${escapeHtml(policy.ruleKey)}</span>
+      </td>
+      <td>${policy.steps.length}</td>
+      <td>${formatAction(policy.defaultMessageMode)}</td>
+      <td>${policy.active ? 'Active' : 'Inactive'}</td>
+      <td>${formatDate(policy.updatedAt)}</td>
+      <td><button class="secondary-button table-button" data-edit-policy="${escapeHtml(policy.id)}">Edit</button></td>
+    </tr>
+  `;
+}
+
+function renderDriftPolicyPanel() {
+  const candidates = scanState.result?.driftCandidates ?? [];
+  if (candidates.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>Create from drift</h3>
+        <p>Run a scan or use demo data to create a policy directly from a drift candidate.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="drift-list" aria-label="Create policy from drift candidates">
+      ${candidates.map(renderDriftPolicyCard).join('')}
+    </section>
+  `;
+}
+
+function renderDriftPolicyCard(candidate: DriftCandidate, index: number) {
+  const existing = policyState.policies.some(
+    (policy) => policy.ruleKey === candidate.ruleKey
+  );
+
+  return `
+    <article class="drift-card">
+      <div class="drift-card-header">
+        <div>
+          <h3>${escapeHtml(candidate.ruleName)}</h3>
+          <p>${escapeHtml(candidate.summary)}</p>
+        </div>
+        <span class="confidence-pill confidence-${candidate.confidence}">${candidate.confidence}</span>
+      </div>
+      <div class="distribution-grid">
+        ${Object.entries(candidate.actionDistribution)
+          .map(([action, count]) =>
+            renderDistributionItem(action as EnforcementAction, count ?? 0)
+          )
+          .join('')}
+      </div>
+      <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
+      <button class="primary-button" data-create-from-drift="${index}" ${existing || policyState.saving ? 'disabled' : ''}>
+        ${existing ? 'Policy exists' : 'Create team policy'}
+      </button>
+    </article>
+  `;
+}
+
+function renderPolicyForm() {
+  const form = policyState.form;
+
+  return `
+    <section class="section policy-form-section" aria-label="Policy editor">
+      <div class="policy-form-header">
+        <div>
+          <h3>${form.mode === 'edit' ? 'Edit Policy' : 'Manual Policy Creation'}</h3>
+          <p>Use local rule keys because the installed Devvit rule type does not expose stable rule IDs.</p>
+        </div>
+        <button class="secondary-button" data-reset-policy-form>Reset</button>
+      </div>
+
+      <form class="policy-form" data-policy-form>
+        <label>
+          Rule key
+          <input name="ruleKey" value="${escapeAttribute(form.ruleKey)}" ${form.mode === 'edit' ? 'readonly' : ''} required>
+        </label>
+        <label>
+          Rule name
+          <input name="ruleName" value="${escapeAttribute(form.ruleName)}" required>
+        </label>
+        <label>
+          Delivery mode
+          <select name="defaultMessageMode">
+            ${MESSAGE_DELIVERY_MODE_VALUES.map(
+              (mode) => `
+                <option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>
+              `
+            ).join('')}
+          </select>
+        </label>
+
+        <div class="step-grid">
+          ${form.steps.map(renderStepEditor).join('')}
+        </div>
+
+        <button class="primary-button" type="submit" ${policyState.saving ? 'disabled' : ''}>
+          ${form.mode === 'edit' ? 'Save policy' : 'Create policy'}
+        </button>
+      </form>
+    </section>
+  `;
+}
+
+function renderStepEditor(step: PolicyStep, index: number) {
+  return `
+    <fieldset class="policy-step">
+      <legend>Offense ${step.offenseCount}</legend>
+      <input type="hidden" name="offenseCount-${index}" value="${step.offenseCount}">
+      <label>
+        Window days
+        <input name="windowDays-${index}" type="number" min="1" value="${step.windowDays}">
+      </label>
+      <label>
+        Recommended action
+        <select name="recommendedAction-${index}">
+          ${ENFORCEMENT_ACTION_VALUES.map(
+            (action) => `
+              <option value="${action}" ${action === step.recommendedAction ? 'selected' : ''}>${formatAction(action)}</option>
+            `
+          ).join('')}
+        </select>
+      </label>
+      <label class="checkbox-label">
+        <input name="requireOverride-${index}" type="checkbox" ${step.requireOverrideReasonForDeviation ? 'checked' : ''}>
+        Require override reason on deviation
+      </label>
+    </fieldset>
+  `;
+}
+
+function renderApplyPolicyPage() {
+  return `
+    <section class="section policy-layout" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">Apply Policy Simulator</h3>
+        <p>${pages.find((page) => page.id === 'apply-policy')?.body ?? ''}</p>
+        ${renderApplyMessage()}
+      </div>
+      <div class="policy-actions">
+        <button class="secondary-button" data-load-policies ${policyState.loading ? 'disabled' : ''}>Refresh policies</button>
+      </div>
+    </section>
+
+    ${renderApplyForm()}
+    ${renderApplyPreview()}
+  `;
+}
+
+function renderApplyMessage() {
+  if (applyState.error) {
+    return `<p class="inline-error">${escapeHtml(applyState.error)}</p>`;
+  }
+  if (applyState.message) {
+    return `<p class="inline-success">${escapeHtml(applyState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderApplyForm() {
+  if (policyState.policies.length === 0) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No policy available</h3>
+        <p>No team policy exists for this rule yet. Create one from the Policies page before applying it.</p>
+        <button class="primary-button" data-go-policies>Create policy</button>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="section policy-form-section" aria-label="Apply Policy simulator">
+      <form class="policy-form" data-apply-form>
+        <label>
+          Policy
+          <select name="ruleKey">
+            ${policyState.policies
+              .filter((policy) => policy.active)
+              .map(
+                (policy) => `
+                  <option value="${policy.ruleKey}">${escapeHtml(policy.ruleName)}</option>
+                `
+              )
+              .join('')}
+          </select>
+        </label>
+        <label>
+          Target thing ID
+          <input name="targetThingId" value="t3_demo_policy_target" required>
+        </label>
+        <label>
+          Target author
+          <input name="targetAuthor" value="learner_1" required>
+        </label>
+        <label>
+          Selected action
+          <select name="selectedAction">
+            ${ENFORCEMENT_ACTION_VALUES.map(
+              (action) => `
+                <option value="${action}">${formatAction(action)}</option>
+              `
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Override reason
+          <select name="overrideReason">
+            <option value="">Only required on deviation</option>
+            ${OVERRIDE_REASON_VALUES.map(
+              (reason) => `
+                <option value="${reason}">${formatAction(reason)}</option>
+              `
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Override note
+          <input name="overrideNote" placeholder="Optional context for policy review">
+        </label>
+        <div class="policy-actions left">
+          <button class="secondary-button" type="button" data-apply-preview ${applyState.loading ? 'disabled' : ''}>Preview recommendation</button>
+          <button class="primary-button" type="submit" ${applyState.confirming ? 'disabled' : ''}>Confirm log-only action</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
+function renderApplyPreview() {
+  const preview = applyState.preview;
+  const result = applyState.result;
+
+  if (!preview && !result) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No preview yet</h3>
+        <p>Preview shows the policy recommendation, offense count, delivery mode, and whether an override reason is required.</p>
+      </section>
+    `;
+  }
+
+  const recommendation = result?.recommendation ?? preview?.recommendation;
+  if (!recommendation) {
+    return '';
+  }
+
+  return `
+    <section class="section apply-preview">
+      <h3>Recommendation</h3>
+      <dl class="status-list">
+        <div><dt>Rule</dt><dd>${escapeHtml(recommendation.ruleName ?? recommendation.ruleKey)}</dd></div>
+        <div><dt>Offense count</dt><dd>${recommendation.offenseCount}</dd></div>
+        <div><dt>Recommended action</dt><dd>${formatAction(recommendation.recommendedAction)}</dd></div>
+        <div><dt>Delivery mode</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
+        <div><dt>Deviation</dt><dd>${recommendation.deviatesFromPolicy ? 'Override required' : 'Matches policy'}</dd></div>
+      </dl>
+      <p class="muted">${escapeHtml(recommendation.message)}</p>
+      ${
+        result
+          ? `<p class="inline-success">Policy action logged${result.overrideEvent ? ' with override reason' : ''}.</p>`
+          : ''
+      }
+    </section>
+  `;
+}
+
 function renderScanWarnings() {
   const warnings = scanState.warnings;
 
@@ -202,9 +665,7 @@ function renderScanWarnings() {
 
   return `
     <section class="notice-list" aria-label="Scan warnings">
-      ${warnings
-        .map((warning) => `<p>${escapeHtml(warning)}</p>`)
-        .join('')}
+      ${warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join('')}
     </section>
   `;
 }
@@ -324,7 +785,7 @@ function renderDriftCandidate(candidate: DriftCandidate) {
           .join('')}
       </div>
       <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
-      <button class="secondary-button" disabled>Create policy - coming in Wave 3</button>
+      <button class="secondary-button" data-open-policy-page>Open policy flow</button>
     </article>
   `;
 }
@@ -351,12 +812,123 @@ function bindNavigation() {
 }
 
 function bindScanActions() {
-  document.querySelectorAll<HTMLButtonElement>('[data-run-scan]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const mode = button.dataset.runScan === 'demo' ? 'demo' : 'live';
-      void runScan(mode);
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-run-scan]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.runScan === 'demo' ? 'demo' : 'live';
+        void runScan(mode);
+      });
     });
-  });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-open-policy-page]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        activePage = 'policies';
+        window.location.hash = '#policies';
+        render();
+      });
+    });
+}
+
+function bindPolicyActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-policies]')
+    .forEach((button) => {
+      button.addEventListener('click', () => void loadPolicies());
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-reset-policy-form]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        policyState = {
+          ...policyState,
+          form: emptyPolicyForm(),
+          error: undefined,
+          message: undefined,
+        };
+        render();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-edit-policy]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const policy = policyState.policies.find(
+          (item) => item.id === button.dataset.editPolicy
+        );
+        if (policy) {
+          policyState = {
+            ...policyState,
+            form: {
+              mode: 'edit',
+              policyId: policy.id,
+              ruleKey: policy.ruleKey,
+              ruleName: policy.ruleName,
+              defaultMessageMode: policy.defaultMessageMode,
+              steps: policy.steps.map((step) => ({ ...step })),
+            },
+            error: undefined,
+            message: undefined,
+          };
+          render();
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-create-from-drift]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const index = Number(button.dataset.createFromDrift);
+        const candidate = scanState.result?.driftCandidates[index];
+        if (candidate) {
+          void createPolicyFromDrift(candidate);
+        }
+      });
+    });
+
+  document.querySelector<HTMLFormElement>('[data-policy-form]')?.addEventListener(
+    'submit',
+    (event) => {
+      event.preventDefault();
+      void savePolicyForm(new FormData(event.currentTarget as HTMLFormElement));
+    }
+  );
+}
+
+function bindApplyPolicyActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-go-policies]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        activePage = 'policies';
+        window.location.hash = '#policies';
+        render();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-apply-preview]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
+        if (form) {
+          void previewApplyPolicy(new FormData(form));
+        }
+      });
+    });
+
+  document.querySelector<HTMLFormElement>('[data-apply-form]')?.addEventListener(
+    'submit',
+    (event) => {
+      event.preventDefault();
+      void confirmApplyPolicy(new FormData(event.currentTarget as HTMLFormElement));
+    }
+  );
 }
 
 function formatState(state: FeatureStatusState) {
@@ -462,14 +1034,279 @@ async function loadHealth() {
     }
     health = (await response.json()) as HealthResponse;
   } catch (error) {
-    healthError = error instanceof Error ? error.message : 'Unknown health fetch error';
+    healthError =
+      error instanceof Error ? error.message : 'Unknown health fetch error';
   }
 
   render();
 }
 
-function formatAction(action: EnforcementAction) {
+async function loadPolicies() {
+  policyState = { ...policyState, loading: true, error: undefined };
+  render();
+
+  try {
+    const response = await fetch(API_ROUTES.policies);
+    const payload = (await response.json()) as ApiResponse<RulePolicy[]>;
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+    policyState = {
+      ...policyState,
+      loading: false,
+      policies: payload.data,
+    };
+  } catch (error) {
+    policyState = {
+      ...policyState,
+      loading: false,
+      error: error instanceof Error ? error.message : 'Policy fetch failed',
+    };
+  }
+
+  render();
+}
+
+async function createPolicyFromDrift(candidate: DriftCandidate) {
+  policyState = { ...policyState, saving: true, error: undefined };
+  render();
+
+  try {
+    const response = await fetch(API_ROUTES.policyFromDrift, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        subreddit: scanState.result?.subreddit,
+        driftCandidate: candidate,
+      }),
+    });
+    const payload = (await response.json()) as ApiResponse<RulePolicy>;
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+    policyState = {
+      ...policyState,
+      saving: false,
+      policies: upsertPolicy(policyState.policies, payload.data),
+      message: `Policy created for ${payload.data.ruleName}.`,
+      form: policyToForm(payload.data),
+    };
+  } catch (error) {
+    policyState = {
+      ...policyState,
+      saving: false,
+      error:
+        error instanceof Error ? error.message : 'Create-from-drift failed',
+    };
+  }
+
+  render();
+}
+
+async function savePolicyForm(formData: FormData) {
+  const form = formDataToPolicy(formData);
+  policyState = { ...policyState, saving: true, error: undefined };
+  render();
+
+  try {
+    const url =
+      policyState.form.mode === 'edit' && policyState.form.policyId
+        ? `${API_ROUTES.policies}/${policyState.form.policyId}`
+        : API_ROUTES.policies;
+    const method = policyState.form.mode === 'edit' ? 'PUT' : 'POST';
+    const response = await fetch(url, {
+      method,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    const payload = (await response.json()) as ApiResponse<RulePolicy>;
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+    policyState = {
+      ...policyState,
+      saving: false,
+      policies: upsertPolicy(policyState.policies, payload.data),
+      message: `Policy saved for ${payload.data.ruleName}.`,
+      form: policyToForm(payload.data),
+    };
+  } catch (error) {
+    policyState = {
+      ...policyState,
+      saving: false,
+      error: error instanceof Error ? error.message : 'Policy save failed',
+    };
+  }
+
+  render();
+}
+
+async function previewApplyPolicy(formData: FormData) {
+  applyState = {
+    ...applyState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetch(API_ROUTES.applyPolicyPreview, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(applyFormDataToPayload(formData, false)),
+    });
+    const payload = (await response.json()) as ApiResponse<ApplyPolicyPreview>;
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+    applyState = {
+      ...applyState,
+      loading: false,
+      preview: payload.data,
+      result: undefined,
+    };
+  } catch (error) {
+    applyState = {
+      ...applyState,
+      loading: false,
+      error:
+        error instanceof Error ? error.message : 'Apply Policy preview failed',
+    };
+  }
+
+  render();
+}
+
+async function confirmApplyPolicy(formData: FormData) {
+  applyState = {
+    ...applyState,
+    confirming: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetch(API_ROUTES.applyPolicyConfirm, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(applyFormDataToPayload(formData, true)),
+    });
+    const payload =
+      (await response.json()) as ApiResponse<ApplyPolicyConfirmResult>;
+    if (!payload.ok) {
+      throw new Error(payload.error.message);
+    }
+    applyState = {
+      ...applyState,
+      confirming: false,
+      preview: {
+        recommendation: payload.data.recommendation,
+      },
+      result: payload.data,
+      message: 'Policy action recorded in log-only mode.',
+    };
+  } catch (error) {
+    applyState = {
+      ...applyState,
+      confirming: false,
+      error:
+        error instanceof Error ? error.message : 'Apply Policy confirm failed',
+    };
+  }
+
+  render();
+}
+
+function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
+  const payload: {
+    ruleKey: string;
+    targetThingId: string;
+    targetAuthor: string;
+    selectedAction: EnforcementAction;
+    source: 'simulator';
+    overrideReason?: OverrideReason;
+    overrideNote?: string;
+  } = {
+    ruleKey: String(formData.get('ruleKey') ?? ''),
+    targetThingId: String(formData.get('targetThingId') ?? ''),
+    targetAuthor: String(formData.get('targetAuthor') ?? ''),
+    selectedAction: String(
+      formData.get('selectedAction') ?? 'manual_review'
+    ) as EnforcementAction,
+    source: 'simulator',
+  };
+
+  if (includeOverride) {
+    const overrideReason = String(formData.get('overrideReason') ?? '');
+    const overrideNote = String(formData.get('overrideNote') ?? '').trim();
+    if (overrideReason) {
+      payload.overrideReason = overrideReason as OverrideReason;
+    }
+    if (overrideNote) {
+      payload.overrideNote = overrideNote;
+    }
+  }
+
+  return payload;
+}
+
+function formDataToPolicy(formData: FormData) {
+  const steps = policyState.form.steps.map((step, index) => ({
+    offenseCount: step.offenseCount,
+    windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
+    recommendedAction: String(
+      formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
+    ) as EnforcementAction,
+    requireOverrideReasonForDeviation:
+      formData.get(`requireOverride-${index}`) === 'on',
+  }));
+
+  return {
+    ruleKey: String(formData.get('ruleKey') ?? '').trim(),
+    ruleName: String(formData.get('ruleName') ?? '').trim(),
+    defaultMessageMode: String(
+      formData.get('defaultMessageMode') ?? 'log_only'
+    ) as MessageDeliveryMode,
+    steps,
+    active: true,
+  };
+}
+
+function policyToForm(policy: RulePolicy): PolicyFormState {
+  return {
+    mode: 'edit',
+    policyId: policy.id,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    defaultMessageMode: policy.defaultMessageMode,
+    steps: policy.steps.map((step) => ({ ...step })),
+  };
+}
+
+function upsertPolicy(policies: RulePolicy[], policy: RulePolicy) {
+  const others = policies.filter((item) => item.id !== policy.id);
+  return [...others, policy].sort((left, right) =>
+    left.ruleName.localeCompare(right.ruleName)
+  );
+}
+
+function formatAction(action: string) {
   return action.replaceAll('_', ' ');
+}
+
+function formatDate(value: string) {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(timestamp);
 }
 
 function escapeHtml(value: string) {
@@ -481,6 +1318,10 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#039;');
 }
 
+function escapeAttribute(value: string) {
+  return escapeHtml(value);
+}
+
 window.addEventListener('hashchange', () => {
   activePage = getPageFromHash();
   render();
@@ -488,3 +1329,4 @@ window.addEventListener('hashchange', () => {
 
 render();
 void loadHealth();
+void loadPolicies();

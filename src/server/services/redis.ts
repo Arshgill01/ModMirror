@@ -14,6 +14,9 @@ export const redisKeys = {
   scanLast: (subreddit: string) => mmKey(subreddit, 'scan:last'),
   scan: (subreddit: string, scanId: string) =>
     mmKey(subreddit, `scan:${scanId}`),
+  actions: (subreddit: string) => mmKey(subreddit, 'actions'),
+  actionsByUser: (subreddit: string, username: string) =>
+    mmKey(subreddit, `actions:user:${username}`),
   overrides: (subreddit: string) => mmKey(subreddit, 'overrides'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
