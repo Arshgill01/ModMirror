@@ -606,6 +606,142 @@ button:disabled {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
 }
 
+.health-card-grid,
+.inbox-list,
+.version-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 auto 20px;
+  max-width: 1180px;
+}
+
+.health-card,
+.inbox-row,
+.version-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.health-card-header,
+.inbox-row-main {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.health-card h3,
+.inbox-row h3,
+.version-card h3 {
+  font-size: 17px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.health-card-header p,
+.inbox-row-main p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+.health-card-header span,
+.review-pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  text-transform: capitalize;
+}
+
+.status-stable .health-card-header span {
+  background: var(--accent-muted);
+  border-color: #8fb8a2;
+  color: #175d55;
+}
+
+.status-watch .health-card-header span,
+.status-at_risk .health-card-header span {
+  background: var(--warning-muted);
+  border-color: #dfc59e;
+  color: var(--warning);
+}
+
+.status-needs_review .health-card-header span {
+  background: #f8dddd;
+  border-color: #d99d9d;
+  color: #8f1d1d;
+}
+
+.status-insufficient_data .health-card-header span {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
+.compact-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.compact-metrics div {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+}
+
+.compact-metrics dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.compact-metrics dd {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.review-note-input {
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.version-card ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.version-card li span {
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.version-card li p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
 .status-list {
   display: grid;
   gap: 10px;
@@ -671,7 +807,8 @@ button:disabled {
   .status-grid,
   .scan-summary-grid,
   .confidence-grid,
-  .distribution-grid {
+  .distribution-grid,
+  .compact-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -697,7 +834,8 @@ button:disabled {
   .status-grid,
   .scan-summary-grid,
   .confidence-grid,
-  .distribution-grid {
+  .distribution-grid,
+  .compact-metrics {
     grid-template-columns: 1fr;
   }
 }
