@@ -98,3 +98,7 @@ Wave 7/8 is done only when all applicable items are checked.
 - This redesign rescue branch is not merged to `master` yet. Do not mark the
   goal complete until the user reviews the redesigned UI and explicitly gives
   the green light.
+- The redesign rescue branch was pushed to
+  `origin/redesign/wave7-8-command-center-ui` for review. GitHub offered PR
+  URL:
+  `https://github.com/Arshgill01/ModMirror/pull/new/redesign/wave7-8-command-center-ui`.
