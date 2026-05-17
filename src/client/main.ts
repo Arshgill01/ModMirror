@@ -1615,6 +1615,9 @@ function renderSettingsPage() {
       ${renderSettingsCard('Policies', summary.activePolicyCount.toString(), `${policyState.policies.length} policies loaded in this session.`)}
       ${renderSettingsCard('Overrides', summary.unresolvedOverrideCount.toString(), 'Unresolved override count is aggregate-first.')}
       ${renderSettingsCard('Delivery mode', 'log only', 'Public comments, private messages, modmail, and native Mod Notes remain disabled as default delivery until playtest-verified.')}
+      ${renderSettingsCard('Digest history', digestState.history.length.toString(), digestState.settings?.lastGeneratedAt ? `Last generated ${formatDate(digestState.settings.lastGeneratedAt)}.` : 'No saved digest history in this subreddit yet.')}
+      ${renderSettingsCard('Digest mod discussion', digestState.capabilities?.modDiscussion.state ?? 'unverified', digestState.capabilities?.modDiscussion.detail ?? 'Capability status loads from the digest runtime endpoint.')}
+      ${renderSettingsCard('Digest scheduler', digestState.capabilities?.scheduler.state ?? 'unverified', digestState.capabilities?.scheduler.detail ?? 'Weekly scheduling remains opt-in and disabled until runtime-verified.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;

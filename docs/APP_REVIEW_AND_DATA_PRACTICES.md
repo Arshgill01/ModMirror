@@ -22,6 +22,7 @@ ModMirror may store:
 - ModMirror-created action records,
 - override events and review statuses,
 - digest history,
+- digest settings/capability state,
 - demo mode state.
 
 ## Data Minimization
@@ -46,7 +47,7 @@ No LLMs, embeddings, analytics SaaS, or external databases.
 
 ## Automation
 
-Manual digest generation is safe.
+Manual digest generation and Markdown copy are the launch-safe reporting paths.
 
 Mod discussion delivery and scheduled digest are opt-in only and must be runtime-verified.
 
@@ -64,4 +65,5 @@ Low-volume communities may use policy-first setup instead of historical drift de
 
 ## Support
 
-TODO: Add GitHub issue link or support contact.
+Use the project repository issues for support and review feedback:
+`https://github.com/Arshgill01/ModMirror/issues`

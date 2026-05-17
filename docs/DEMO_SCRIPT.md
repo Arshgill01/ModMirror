@@ -54,10 +54,12 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
     - deterministic comparable cases with match reasons,
     - Markdown export.
 21. Open Digest and click "Generate Now."
-22. Show a team-ready Markdown digest with policy health, recommendations,
-    unresolved overrides, data mode, and caveats.
-23. Open Settings and point out data mode, Redis/API caveats, last scan,
-    delivery mode `log_only`, and demo state.
+22. Show a saved team-ready Markdown digest with policy health,
+    recommendations, unresolved overrides, data mode, caveats, and history.
+23. Copy the Markdown.
+24. Open Settings and point out data mode, Redis/API caveats, last scan,
+    delivery mode `log_only`, demo state, digest history, and unverified
+    delivery/scheduler capability status.
 
 ## 60-second Demo
 
@@ -70,7 +72,7 @@ Use the same flow, but skip Settings and policy editing:
 5. Apply stricter sample action and record override.
 6. Review override inbox.
 7. Generate Case Packet.
-8. Generate manual Digest.
+8. Generate manual Digest and show history.
 
 Runtime note: the dashboard starts as a compact inline Reddit card and Open
 Dashboard requests Reddit's native expanded WebView modal, preserving the
@@ -141,6 +143,7 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Case Packet demo generation
 - [x] Markdown export/copy surface
 - [x] Manual Digest page
+- [x] Digest history/capability status
 - [x] Runtime Settings page
 - [x] Mobile-width Settings screenshot
 

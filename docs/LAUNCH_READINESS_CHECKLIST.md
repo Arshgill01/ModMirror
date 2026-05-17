@@ -3,10 +3,10 @@
 ## Local Checks
 
 - [ ] `npm install`
-- [ ] `npm run build`
-- [ ] `npm run type-check`
-- [ ] `npm test`
-- [ ] `npm run lint`
+- [x] `npm run build`
+- [x] `npm run type-check`
+- [x] `npm test`
+- [x] `npm run lint`
 - [ ] `npm audit` reviewed and documented
 
 ## Runtime Checks
@@ -23,9 +23,9 @@
 - [ ] Apply Policy works.
 - [ ] Override review works.
 - [ ] Case Packet works.
-- [ ] Manual Digest works.
-- [ ] Markdown copy/export works.
-- [ ] Runtime Settings shows capability status.
+- [x] Manual Digest works locally.
+- [x] Markdown copy/export works locally.
+- [x] Runtime Settings shows capability status locally.
 
 ## Role Checks
 
@@ -62,25 +62,25 @@ Expected:
 
 ## Data Practices
 
-- [ ] stored data documented.
-- [ ] sensitive data minimized.
-- [ ] no external services.
-- [ ] no LLMs.
-- [ ] no cross-subreddit analytics.
-- [ ] no automatic punitive actions without human confirmation.
-- [ ] override data framed as team governance, not surveillance.
+- [x] stored data documented.
+- [x] sensitive data minimized.
+- [x] no external services.
+- [x] no LLMs.
+- [x] no cross-subreddit analytics.
+- [x] no automatic punitive actions without human confirmation.
+- [x] override data framed as team governance, not surveillance.
 
 ## Submission Assets
 
-- [ ] README complete.
-- [ ] App listing draft complete.
-- [ ] Devpost draft complete.
-- [ ] Project impact copy complete.
+- [x] README updated for current wave.
+- [x] App listing draft complete.
+- [x] Devpost draft complete.
+- [x] Project impact copy complete.
 - [ ] Screenshots captured.
-- [ ] Demo video script complete.
-- [ ] Known limitations clear.
+- [x] Demo video script complete.
+- [x] Known limitations clear.
 - [ ] Developer feedback notes drafted.
-- [ ] Final report complete.
+- [ ] Final report complete after runtime QA.
 
 ## Do Not Do Without Human Confirmation
 

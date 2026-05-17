@@ -37,8 +37,26 @@ modmirror:{subreddit}:actions
 modmirror:{subreddit}:actions:user:{username}
 modmirror:{subreddit}:overrides
 modmirror:{subreddit}:override:{overrideId}:review
+modmirror:{subreddit}:digests
+modmirror:{subreddit}:digest:{digestId}
+modmirror:{subreddit}:digest:settings
 modmirror:{subreddit}:demo
 ```
+
+## Wave 9/10 Digest Notes
+
+Wave 9/10 adds persisted digest history.
+
+- `modmirror:{subreddit}:digests` is a Redis sorted set of serialized digest
+  reports scored by `generatedAt`.
+- `modmirror:{subreddit}:digest:{digestId}` stores the full report by ID for
+  future detail views/export recovery.
+- `modmirror:{subreddit}:digest:settings` stores launch-safe digest settings:
+  delivery mode, schedule enabled flag, cadence, last generated timestamp, and
+  optional scheduler metadata.
+- Manual generation plus Markdown copy is the primary supported launch path.
+- Mod discussion delivery and scheduler settings must remain unavailable or
+  unverified until runtime proof exists.
 
 ## Wave 7/8 Productization Notes
 
@@ -111,6 +129,14 @@ export type NormalizedRuleSource = 'reddit_rule' | 'manual' | 'demo';
 export type NormalizedRemovalReasonSource = 'reddit_removal_reason' | 'demo';
 
 export type HealthState = 'ok' | 'degraded' | 'blocked';
+
+export type DigestSource = 'manual' | 'scheduled' | 'demo';
+
+export type DigestOverallStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review';
 
 export interface SubredditRuleRef {
   ruleKey: string;
