@@ -81,6 +81,33 @@ export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
 
 export type HealthState = 'ok' | 'degraded' | 'blocked';
 
+export type DigestSource = 'manual' | 'scheduled' | 'demo';
+
+export type DigestOverallStatus =
+  | 'stable'
+  | 'watch'
+  | 'at_risk'
+  | 'needs_review';
+
+export type DigestRecommendationSeverity = 'info' | 'watch' | 'urgent';
+
+export type DigestDeliveryMode =
+  | 'none'
+  | 'markdown_copied'
+  | 'mod_discussion'
+  | 'scheduled';
+
+export type DigestDeliveryState =
+  | 'not_configured'
+  | 'pending'
+  | 'sent'
+  | 'failed'
+  | 'unavailable';
+
+export type DigestCapabilityState = 'available' | 'unavailable' | 'unverified';
+
+export type DigestScheduleCadence = 'weekly';
+
 export interface SubredditRuleRef {
   ruleKey: string;
   ruleName: string;
@@ -537,6 +564,110 @@ export interface GenerateCasePacketRequest {
 
 export interface GenerateCasePacketResponse {
   packet: CasePacket;
+}
+
+export interface DigestReport {
+  id: string;
+  subreddit: string;
+  generatedAt: string;
+  generatedBy: string;
+  source: DigestSource;
+  periodStart: string;
+  periodEnd: string;
+  overallStatus: DigestOverallStatus;
+  summary: DigestSummary;
+  ruleHealth: DigestRuleHealthItem[];
+  overrideSummary: DigestOverrideSummary;
+  recommendations: DigestRecommendation[];
+  caveats: string[];
+  markdown: string;
+  delivery: DigestDeliveryStatus;
+}
+
+export interface DigestSummary {
+  activePolicies: number;
+  policyTrackedActions: number;
+  unresolvedOverrides: number;
+  rulesNeedingReview: number;
+  lastScanAt?: string;
+}
+
+export interface DigestRuleHealthItem {
+  ruleKey: string;
+  ruleName: string;
+  status: DigestOverallStatus | 'insufficient_data';
+  adherenceRate?: number;
+  trackedActions: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  topOverrideReason?: OverrideReason;
+  recommendation: string;
+}
+
+export interface DigestOverrideSummary {
+  total: number;
+  unresolved: number;
+  acceptedExceptions: number;
+  policyNeedsUpdate: number;
+  needsDiscussion: number;
+}
+
+export interface DigestRecommendation {
+  id: string;
+  severity: DigestRecommendationSeverity;
+  title: string;
+  detail: string;
+  actionLabel?: string;
+  targetRuleKey?: string;
+}
+
+export interface DigestDeliveryStatus {
+  mode: DigestDeliveryMode;
+  status: DigestDeliveryState;
+  message?: string;
+  deliveredAt?: string;
+}
+
+export interface DigestCapabilities {
+  modDiscussion: DigestCapabilityStatus;
+  scheduler: DigestCapabilityStatus;
+}
+
+export interface DigestCapabilityStatus {
+  state: DigestCapabilityState;
+  label: string;
+  detail: string;
+}
+
+export interface DigestSettings {
+  subreddit: string;
+  updatedAt: string;
+  updatedBy?: string;
+  deliveryMode: DigestDeliveryMode;
+  scheduleEnabled: boolean;
+  scheduleCadence: DigestScheduleCadence;
+  scheduledJobId?: string;
+  lastGeneratedAt?: string;
+  nextScheduledAt?: string;
+}
+
+export interface GenerateDigestRequest {
+  subreddit?: string;
+  source?: DigestSource;
+  periodDays?: number;
+}
+
+export interface GenerateDigestResponse {
+  report: DigestReport;
+  history: DigestReport[];
+  capabilities: DigestCapabilities;
+  settings: DigestSettings;
+}
+
+export interface DigestHistoryResponse {
+  history: DigestReport[];
+  capabilities: DigestCapabilities;
+  settings: DigestSettings;
 }
 
 export interface SmallSubredditThresholdStatus {

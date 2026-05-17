@@ -43,6 +43,11 @@ available, preserving the Devvit viewport dropdown, and opens to Command Center
 to guide the demo through scan, policy setup, Apply Policy, override review,
 Case Packet, manual Digest, and runtime Settings.
 
+Wave 9/10 adds the proactive reporting loop and launch package. Manual Digest
+now saves report history in Redis, shows deterministic recommendations, exposes
+Markdown export/copy, and labels mod discussion delivery plus scheduler as
+unverified until runtime proof exists.
+
 ## Project Impact Draft
 
 Communities that would benefit:
@@ -89,9 +94,11 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Command Center is the first dashboard screen and summarizes consistency
   score, top issue, unresolved overrides, policies, last scan, and data mode.
 - Manual Digest generates deterministic team-ready Markdown with policy health,
-  recommendations, caveats, and data mode labels.
+  recommendations, caveats, data mode labels, and saved history.
 - Runtime Settings shows live/demo state, Redis/API caveats, delivery mode, and
   demo status.
+- Runtime Settings shows digest history and delivery/scheduler capability
+  status.
 
 ## Known Limitations
 
@@ -103,7 +110,8 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
   for sparse communities.
 - Case Packets are evidence packets for moderator review; they do not decide
   appeals or claim perfect fairness.
-- Scheduled digest delivery and Calibration Mode remain future waves.
+- Scheduled digest delivery and Calibration Mode remain deferred unless
+  explicitly opted in and runtime-verified.
 - Browser UI proof is signed in, playtest-ready, shows the compact inline
   launch card, opens the native expanded dashboard modal with the Devvit
   viewport dropdown, and verifies demo scan, policy creation, Apply Policy

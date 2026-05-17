@@ -180,6 +180,21 @@ The Settings page shows live/demo mode, Redis/API status where available, last
 scan context, policy/override counts, demo state, delivery mode, and runtime
 caveats. The default delivery posture remains `log_only`.
 
+### 9. Digest History + Launch Readiness
+
+Wave 9/10 turns the manual digest into a persisted reporting loop and prepares
+the app for submission.
+
+Digest reports are deterministic records built from active policies, policy
+health, override review statuses, recent Apply Policy actions, and last scan
+metadata. A moderator can generate a digest now, preview the report, copy
+Markdown, and see digest history. Mod discussion delivery and weekly scheduling
+remain disabled/unverified unless runtime playtest proves a safe path.
+
+Launch readiness adds app review/data practices documentation, submission copy,
+screenshot/video planning, and a final checklist without publishing or
+submitting anything publicly.
+
 ## Primary Demo
 
 A fake/test community has Rule 2 enforcement drift.
@@ -237,7 +252,8 @@ That is:
 - Toolbox replacement.
 - Automated appeal adjudication.
 - Legal/fairness conclusions.
-- Automatic/scheduled digest delivery.
+- Automatic/scheduled digest delivery unless explicitly opted in and
+  runtime-verified.
 - Calibration Mode.
 - Cross-subreddit comparisons.
 - External analytics.

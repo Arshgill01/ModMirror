@@ -5,6 +5,12 @@ import type {
   CasePacketConsistencyStatus,
   CasePacketOffenseBucket,
   Confidence,
+  DigestDeliveryMode,
+  DigestDeliveryState,
+  DigestOverallStatus,
+  DigestRecommendationSeverity,
+  DigestScheduleCadence,
+  DigestSource,
   EnforcementAction,
   MessageDeliveryMode,
   OverrideReason,
@@ -110,7 +116,47 @@ export const ACTION_SOURCE_VALUES = [
   'modmirror',
 ] as const satisfies readonly ActionSource[];
 
+export const DIGEST_SOURCE_VALUES = [
+  'manual',
+  'scheduled',
+  'demo',
+] as const satisfies readonly DigestSource[];
+
+export const DIGEST_OVERALL_STATUS_VALUES = [
+  'stable',
+  'watch',
+  'at_risk',
+  'needs_review',
+] as const satisfies readonly DigestOverallStatus[];
+
+export const DIGEST_RECOMMENDATION_SEVERITY_VALUES = [
+  'info',
+  'watch',
+  'urgent',
+] as const satisfies readonly DigestRecommendationSeverity[];
+
+export const DIGEST_DELIVERY_MODE_VALUES = [
+  'none',
+  'markdown_copied',
+  'mod_discussion',
+  'scheduled',
+] as const satisfies readonly DigestDeliveryMode[];
+
+export const DIGEST_DELIVERY_STATE_VALUES = [
+  'not_configured',
+  'pending',
+  'sent',
+  'failed',
+  'unavailable',
+] as const satisfies readonly DigestDeliveryState[];
+
+export const DIGEST_SCHEDULE_CADENCE_VALUES = [
+  'weekly',
+] as const satisfies readonly DigestScheduleCadence[];
+
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
+export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
+export const DIGEST_HISTORY_LIMIT = 10;
 export const MINIMUM_ACTIONS_FOR_DRIFT_DISPLAY = 8;
 export const MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY = 3;
 export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
@@ -125,6 +171,10 @@ export const API_ROUTES = {
   overrideSummary: '/api/overrides/summary',
   policyHealth: '/api/policy-health',
   casePacket: '/api/case-packet',
+  digestGenerate: '/api/digest/generate',
+  digestHistory: '/api/digest/history',
+  digestCapabilities: '/api/digest/capabilities',
+  digestSettings: '/api/digest/settings',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',

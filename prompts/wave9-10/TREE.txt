@@ -1,0 +1,24 @@
+modmirror/
+├── docs/
+│   ├── WAVE9_10_EXECUTION_NOTES.md
+│   ├── DIGEST_SPEC.md
+│   ├── LAUNCH_READINESS_CHECKLIST.md
+│   ├── APP_REVIEW_AND_DATA_PRACTICES.md
+│   └── WAVE9_10_FINAL_REPORT_TEMPLATE.md
+├── prompts/
+│   └── wave9-10/
+│       ├── README.md
+│       ├── UI_AND_AGENT_PROCESS.md
+│       ├── WAVE9_10_MASTER_GOAL.md
+│       ├── WAVE9_10_ORCHESTRATOR.md
+│       ├── AGENT_A_DIGEST_CONTRACTS_ENGINE.md
+│       ├── AGENT_B_DIGEST_UI_HISTORY.md
+│       ├── AGENT_C_MOD_DISCUSSION_DELIVERY.md
+│       ├── AGENT_D_SCHEDULER_SETTINGS.md
+│       ├── AGENT_E_LAUNCH_QA_HARDENING.md
+│       ├── AGENT_F_SUBMISSION_ASSETS_DOCS.md
+│       ├── AGENT_G_FINAL_RUNTIME_VISUAL_REVIEW.md
+│       └── MERGE_CHECKLIST.md
+├── scripts/
+│   └── wave9_10_tmux_plan.sh
+└── TREE.txt

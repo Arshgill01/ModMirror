@@ -1061,6 +1061,101 @@ dd {
   resize: vertical;
 }
 
+.digest-workbench,
+.digest-column {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.digest-grid {
+  border-block: 1px solid var(--mm-line);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.digest-grid .digest-column {
+  padding: 16px 0;
+}
+
+.digest-grid .digest-column:first-child {
+  border-right: 1px solid var(--mm-line);
+  padding-right: 16px;
+}
+
+.digest-grid .digest-column:last-child {
+  padding-left: 16px;
+}
+
+.digest-column h4 {
+  color: var(--mm-ink);
+  font-size: 14px;
+  font-weight: 780;
+  margin: 0;
+}
+
+.digest-rule-row,
+.digest-recommendation,
+.history-row {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 7px;
+  padding: 12px 0;
+}
+
+.digest-rule-row > div {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.digest-rule-row span,
+.digest-recommendation span,
+.history-row small {
+  color: var(--mm-muted);
+  font-size: 12px;
+  font-weight: 680;
+  text-transform: uppercase;
+}
+
+.digest-rule-row p,
+.digest-recommendation p {
+  margin: 0;
+}
+
+.digest-rule-row.status-needs_review,
+.digest-rule-row.status-at_risk,
+.digest-recommendation.severity-urgent {
+  border-left: 3px solid var(--mm-danger);
+  padding-left: 12px;
+}
+
+.digest-rule-row.status-watch,
+.digest-recommendation.severity-watch {
+  border-left: 3px solid var(--mm-warning);
+  padding-left: 12px;
+}
+
+.history-row {
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  color: var(--mm-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.history-row:hover,
+.history-row:focus-visible {
+  background: rgb(255 69 0 / 7%);
+  outline: 1px solid var(--mm-accent);
+}
+
 .settings-grid {
   grid-template-columns: 1fr;
 }
@@ -1333,7 +1428,8 @@ dd {
   .metric-grid,
   .confidence-grid,
   .distribution-grid,
-  .case-grid {
+  .case-grid,
+  .digest-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1357,6 +1453,16 @@ dd {
   .distribution-item:last-child,
   .case-grid .action-card:last-child {
     border-bottom: 0;
+  }
+
+  .digest-grid .digest-column:first-child {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .digest-grid .digest-column:last-child {
+    border-top: 1px solid var(--mm-line);
+    padding-left: 0;
   }
 
   .compact-metrics,

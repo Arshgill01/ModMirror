@@ -29,9 +29,9 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Wave 7/8 productization is implemented. The follow-up visual rescue work is on
-`redesign/wave7-8-command-center-ui` pending explicit user approval before it
-is merged back to `master`.
+Wave 7/8 productization and the follow-up visual rescue are merged to
+`master`. Wave 9/10 launch-readiness work is active on
+`integration/wave9-10-launch-readiness`.
 
 The app now opens with a compact Reddit inline launch card instead of rendering
 the full dashboard inside the post. Opening the dashboard uses Reddit's native
@@ -43,7 +43,8 @@ ExampleLearning demo path.
 Implemented product surfaces include Mirror Scan, Policy Agreement Flow, Apply
 Policy simulator, consistency nudges, aggregate override review, immutable
 policy versions, policy health, Case Packets, manual Markdown Digest, and
-runtime Settings. Destructive or externally delivered moderation actions remain
+runtime Settings. Wave 9/10 adds persisted digest history and launch-readiness
+materials. Destructive or externally delivered moderation actions remain
 disabled by default; Apply Policy records are `log_only` until runtime delivery
 behavior is playtest-verified.
 

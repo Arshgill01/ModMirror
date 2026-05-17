@@ -2,30 +2,51 @@
 
 ## Current Phase
 
-Wave 7/8 — Productization + Real Moderation Workflow.
+Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
-Status: Wave 7/8 is merged to `master` and pushed to `origin`.
-The client now starts as a compact inline launch card, opens into the new
-Command Center IA, carries the ExampleLearning demo through scan -> policy ->
-Apply Policy -> review -> Case Packet -> digest, and exposes runtime Settings.
+Status: Wave 7/8 and the redesign rescue branch are merged to `master` and
+pushed to `origin` through PR #11. Wave 9/10 implementation and runtime QA are
+complete on `integration/wave9-10-launch-readiness`; final merge/push is next.
+
+The first Wave 9 slice adds persisted digest contracts, a deterministic server
+digest engine, Redis-backed digest history, digest API routes, an upgraded
+Digest page, and digest capability status in Settings. Manual digest plus
+Markdown copy remains the supported launch path. Mod discussion delivery and
+weekly scheduling are still disabled/unverified until runtime proof exists.
+
 Scheduler, AI/LLM judging, automatic bans, queue-dashboard scope, and external
 analytics remain out of scope.
 
-The local acceptance check set passed after the no-ff merge to `master`, and
-signed-in Reddit playtest reached the productized dashboard flow before merge.
+## Wave 9/10 Launch Checklist
 
-Post-merge UI rescue is active on branch
-`redesign/wave7-8-command-center-ui` because the user rejected the merged UI as
-still too card-heavy/prototype-like. That branch is not merged to `master` yet.
-It replaces the accumulated CSS override stack with an operational workspace
-shell, desktop moderation rail, wrapping mobile nav, ledger/document-style
-Review and Case Packet surfaces, and a global demo-mode banner. Post-redesign
-checks passed on 2026-05-18 and `npm run dev` reached playtest ready at
-`v0.0.1.65` after the expanded-modal restoration and workflow hardening.
-Signed-in Safari rendered the compact inline card in Reddit, Open Dashboard
-opened the native Devvit expanded modal with the `Mobile` viewport dropdown
-restored, and the demo workflow was verified through scan -> policy -> Apply
-Policy -> review -> Case Packet -> digest -> Settings.
+- [x] Wave 7/8 merged to `master` before Wave 9/10 began.
+- [x] Wave 9/10 prompts installed in root `docs/`, `prompts/wave9-10/`, and `scripts/`.
+- [x] Integration branch created: `integration/wave9-10-launch-readiness`.
+- [x] Digest contracts and constants added.
+- [x] Deterministic digest engine added.
+- [x] Digest history persists in Redis data model.
+- [x] Digest API routes added.
+- [x] Digest page upgraded with preview, recommendations, Markdown export, and history.
+- [x] Settings shows digest delivery/scheduler capability status.
+- [x] Mod discussion delivery remains disabled/unverified.
+- [x] Scheduler remains disabled/unverified.
+- [x] Static Digest/Settings visual QA captured.
+- [x] `npm audit` reviewed and documented.
+- [x] Launch readiness checklist filled with local/static/runtime evidence.
+- [x] App listing draft complete.
+- [x] Devpost draft complete.
+- [x] Screenshot/video plan complete.
+- [x] Final Wave 9/10 report complete.
+- [x] Runtime playtest re-run for Wave 9/10.
+- [x] Full final checks pass.
+- [ ] Integration branch merged to `master` and pushed after checks.
+
+## Wave 7/8 Productization Status
+
+Wave 7/8 is complete and merged. The client starts as a compact inline launch
+card, opens into the Command Center IA, carries the ExampleLearning demo through
+scan -> policy -> Apply Policy -> review -> Case Packet -> digest, exposes
+runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 
 ## Wave 7/8 Productization Checklist
 
@@ -48,8 +69,8 @@ Policy -> review -> Case Packet -> digest -> Settings.
 - [x] Redesign branch demo workflow works end-to-end in signed-in Safari playtest.
 - [x] Redesign branch pushed to `origin/redesign/wave7-8-command-center-ui`.
 - [x] Draft PR opened for redesign review: `https://github.com/Arshgill01/ModMirror/pull/11`.
-- [ ] User reviews redesigned UI and gives explicit green light.
-- [ ] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
+- [x] User reviews redesigned UI and gives explicit green light.
+- [x] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
 
 ## Wave 6 Case Packet Checklist
 
