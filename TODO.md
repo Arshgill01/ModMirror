@@ -14,6 +14,15 @@ analytics remain out of scope.
 The local acceptance check set passed after the no-ff merge to `master`, and
 signed-in Reddit playtest reached the productized dashboard flow before merge.
 
+Post-merge UI rescue is active on branch
+`redesign/wave7-8-command-center-ui` because the user rejected the merged UI as
+still too card-heavy/prototype-like. That branch is not merged to `master` yet.
+It replaces the accumulated CSS override stack with an operational workspace
+shell, desktop moderation rail, wrapping mobile nav, ledger/document-style
+Review and Case Packet surfaces, and a global demo-mode banner. Post-redesign
+checks passed on 2026-05-18 and `npm run dev` reached playtest ready at
+`v0.0.1.38`; signed-in Safari rendered the compact inline card in Reddit.
+
 ## Wave 7/8 Productization Checklist
 
 - [x] Compact inline launch/status card implemented.
@@ -27,6 +36,12 @@ signed-in Reddit playtest reached the productized dashboard flow before merge.
 - [x] Full final checks pass.
 - [x] Runtime playtest is re-run for Wave 7/8.
 - [x] Integration branch is merged to `master` and pushed.
+- [x] Post-merge redesign rescue branch created after user rejected visual quality.
+- [x] Redesign branch build/type-check/lint/tests pass.
+- [x] Redesign branch reaches Devvit playtest ready.
+- [x] Redesign branch inline card renders in signed-in Safari Reddit playtest.
+- [ ] User reviews redesigned UI and gives explicit green light.
+- [ ] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
 
 ## Wave 6 Case Packet Checklist
 

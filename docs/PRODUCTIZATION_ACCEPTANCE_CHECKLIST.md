@@ -70,3 +70,31 @@ Wave 7/8 is done only when all applicable items are checked.
   verified Apply Policy preview against the selected demo policy namespace.
 - Static Playwright QA passes through deterministic local demo fallbacks because
   `serve dist/client` cannot reach Devvit `/api/*` routes.
+
+## Post-Merge Redesign Rescue Status
+
+- The user rejected the merged Wave 7/8 visual direction as still too
+  prototype/card-grid-like, so follow-up work is active on branch
+  `redesign/wave7-8-command-center-ui`.
+- Redesign branch commits:
+  - `b7e3ab5 docs: record skill installation audit`
+  - `4186dc7 feat: redesign moderation workspace UI`
+  - `f91d228 docs: record redesigned UI playtest smoke`
+- The redesign branch replaces the accumulated CSS override stack with a single
+  operational workspace shell, desktop moderation rail, wrapping mobile nav,
+  Command Center split surface, ledger-style Review/Case Packet views, and a
+  global demo-mode banner.
+- Post-redesign checks passed on 2026-05-18:
+  `npm run type-check`, `npm run lint`, `npm run build`, and `npm test`
+  (14 files, 65 tests).
+- Post-redesign `npm run dev` reached Playtest ready at
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
+  `v0.0.1.38`.
+- Signed-in Safari rendered the Reddit playtest post and compact inline
+  ModMirror launch card for the redesign branch.
+- Chromium Playwright screenshot of Reddit was blocked by Reddit network
+  security, and automated Safari click-through capture was blocked by macOS
+  automation permissions. Both blockers are documented in `docs/UI_REVIEW.md`.
+- This redesign rescue branch is not merged to `master` yet. Do not mark the
+  goal complete until the user reviews the redesigned UI and explicitly gives
+  the green light.

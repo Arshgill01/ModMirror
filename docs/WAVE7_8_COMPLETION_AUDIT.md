@@ -76,3 +76,33 @@ checks pass.
   future-wave runtime research items.
 - `update_goal` was not called because the user explicitly requested that goal
   completion wait for their satisfaction/green light.
+
+## Post-Merge Redesign Rescue Addendum
+
+Addendum date: 2026-05-18
+
+Branch audited: `redesign/wave7-8-command-center-ui`
+
+Latest audited redesign commit: `f91d228 docs: record redesigned UI playtest smoke`
+
+Reason: after the Wave 7/8 integration branch was merged and pushed, the user
+rejected the visual quality as still too card-heavy/prototype-like. This means
+the original merge audit remains true for the initial Wave 7/8 implementation,
+but the latest user-satisfaction state is not complete until the redesign
+branch is reviewed and approved.
+
+| Requirement | Redesign evidence | Status |
+|---|---|---|
+| Avoid default card-grid/prototype UI | `src/client/styles.css` was replaced with a single operational workspace system; `src/client/main.ts` now renders an `ops-shell`, desktop rail, Command Center split surface, ledgers, and document-style Case Packet flow. | Complete on redesign branch |
+| Use skills/resources | `docs/SKILL_INSTALLATION_REPORT.md` records installed skills from `mattpocock/skills`; `docs/UI_REVIEW.md` records `frontend-design`, `uncodixfy`, Matt Pocock `prototype`, Gemini, and screenshot QA usage. | Complete |
+| Gemini in tmux | Gemini ran in `modmirror-wave7-8:gemini-redesign` with model display `Auto (Gemini 3)`; critique and responses are documented in `docs/UI_REVIEW.md`. | Complete |
+| Sub-agent usage | A sub-agent was spawned for a redesign brief, but failed due to account usage limits. The blocker is documented; local/Gemini fallback was used. | Blocked with fallback |
+| Runtime proof after redesign | `npm run dev` reached Playtest ready at `v0.0.1.38`; signed-in Safari rendered the Reddit playtest post and compact ModMirror inline card. | Partial runtime proof |
+| Expanded dashboard screenshot after redesign | Chromium Playwright was blocked by Reddit network security; automated Safari click-through was blocked by macOS `System Events` error `-25200`. | Blocked |
+| Required checks after redesign | `npm run type-check`, `npm run lint`, `npm run build`, and `npm test` passed on 2026-05-18; tests remain 14 files / 65 tests. | Complete |
+| Merge redesign to master | Not done. The user requested that completion wait until they are satisfied and give a green light. | Pending user approval |
+
+Current status: Wave 7/8 implementation remains merged on `master`, but the
+latest UI rescue branch is intentionally unmerged pending user review. Do not
+call `update_goal` or mark the goal complete until the user explicitly approves
+the redesigned UI.
