@@ -83,8 +83,11 @@ Addendum date: 2026-05-18
 
 Branch audited: `redesign/wave7-8-command-center-ui`
 
-Latest audited redesign commit:
+Latest audited implementation commit:
 `c700eaa fix: normalize settings typography and theme control`
+
+Latest audit-only docs commit:
+`facb5e5 docs: refresh redesign completion audit`
 
 Reason: after the Wave 7/8 integration branch was merged and pushed, the user
 rejected the visual quality as still too card-heavy/prototype-like. This means

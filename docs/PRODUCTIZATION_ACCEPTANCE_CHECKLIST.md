@@ -81,6 +81,7 @@ Wave 7/8 is done only when all applicable items are checked.
   - `4186dc7 feat: redesign moderation workspace UI`
   - `f91d228 docs: record redesigned UI playtest smoke`
   - `c700eaa fix: normalize settings typography and theme control`
+  - `facb5e5 docs: refresh redesign completion audit`
 - The redesign branch replaces the accumulated CSS override stack with a single
   operational workspace shell, desktop moderation rail, wrapping mobile nav,
   Command Center split surface, ledger-style Review/Case Packet views, and a
