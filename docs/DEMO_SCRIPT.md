@@ -72,11 +72,12 @@ Use the same flow, but skip Settings and policy editing:
 7. Generate Case Packet.
 8. Generate manual Digest.
 
-Runtime note: the dashboard can be launched from a moderator-only subreddit
-menu action that opens a confirmation form before creating a custom post.
-Post/comment Apply Policy menu UX remains runtime-unverified. The Wave 7/8 demo
-uses the dashboard simulator and `log_only` records so no unverified Reddit
-moderation action is performed.
+Runtime note: the dashboard starts as a compact inline Reddit card and Open
+Dashboard requests Reddit's native expanded WebView modal, preserving the
+Devvit viewport dropdown for mobile/desktop switching. Post/comment Apply
+Policy menu UX remains runtime-unverified. The Wave 7/8 demo uses the
+dashboard simulator and `log_only` records so no unverified Reddit moderation
+action is performed.
 
 ## 2-minute Demo
 

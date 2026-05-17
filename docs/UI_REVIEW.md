@@ -46,7 +46,9 @@ Remaining critique:
 ## Remaining Accepted Risk
 
 - The UI still uses bordered containers because Devvit WebViews need strong structure in constrained Reddit surfaces. The current treatment is intentionally closer to Reddit mod tooling than a freeform SaaS dashboard.
-- Expanded-mode behavior is type/build verified but not yet Reddit playtest verified. The in-post fallback is implemented.
+- Expanded-mode behavior is runtime verified on the redesign branch in Reddit
+  playtest `v0.0.1.65`. The in-post fallback remains implemented for hosts
+  that ignore the WebView mode request.
 
 ## Cardless Follow-up
 
@@ -212,7 +214,8 @@ Runtime follow-up on 2026-05-18:
   `v0.0.1.38`, on branch `redesign/wave7-8-command-center-ui`.
 - After the Settings theme/typography follow-up, `npm run dev` reached Devvit
   Playtest ready for the same URL at version `v0.0.1.39`, and Safari was
-  opened to the refreshed playtest URL for live review.
+  opened to the refreshed playtest URL for live review. A later expanded-modal
+  restoration reached `v0.0.1.65` and is documented below.
 - Signed-in Safari rendered the Reddit playtest post and the compact inline
   ModMirror launch card.
 - Playwright Chromium capture of the Reddit URL was blocked by Reddit network
@@ -223,3 +226,18 @@ Runtime follow-up on 2026-05-18:
 - Automated click-through to the expanded dashboard was not captured because
   macOS `System Events` click automation returned error `-25200`, and Safari
   `do JavaScript` automation hung before returning DOM access.
+
+Expanded modal restoration follow-up on 2026-05-18:
+
+- The user asked to restore the Devvit viewport dropdown behavior. The app now
+  launches the dashboard through Reddit's native expanded WebView modal again.
+- `npm run dev` reached Devvit Playtest ready at `v0.0.1.65`.
+- Signed-in Safari verified the compact inline launch card, native expanded
+  modal, host `Mobile` viewport dropdown, and native theme control.
+- The host viewport dropdown/theme button are Reddit/Devvit chrome outside
+  ModMirror's DOM. They are intentionally kept for viewport switching, even
+  though their visual style cannot be controlled by the app.
+- The same runtime pass verified the demo workflow end to end: scan, policy
+  creation from drift, Apply Policy preview/confirm with override capture, Case
+  Packet Markdown export, Review inbox/health, Manual Digest generation, and
+  Settings.

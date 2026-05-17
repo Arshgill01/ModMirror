@@ -151,8 +151,10 @@ center.
 
 The app no longer renders a full raw dashboard in the inline post. It starts as
 a compact launch/status card with data mode, top issue, unresolved overrides,
-active policies, and an Open Dashboard action. The expanded/fallback dashboard
-uses this IA:
+active policies, and an Open Dashboard action. Open Dashboard requests Reddit's
+native expanded WebView modal when available, preserving the Devvit viewport
+dropdown for reviewer/device switching, with an in-post fallback if the host
+does not honor the request. The expanded/fallback dashboard uses this IA:
 
 - Command Center
 - Scan

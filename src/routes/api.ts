@@ -125,7 +125,7 @@ api.post('/scan', async (c) => {
 });
 
 api.get('/policies', async (c) => {
-  const subreddit = getCurrentSubreddit();
+  const subreddit = getRequestedSubreddit(c);
 
   try {
     const response: ApiResponse<RulePolicy[]> = {
@@ -204,7 +204,10 @@ api.post('/policies/from-drift', async (c) => {
 });
 
 api.get('/policies/:id', async (c) => {
-  const policy = await getPolicyById(getCurrentSubreddit(), c.req.param('id'));
+  const policy = await getPolicyById(
+    getRequestedSubreddit(c),
+    c.req.param('id')
+  );
   if (!policy) {
     return c.json(
       {
@@ -228,8 +231,9 @@ api.put('/policies/:id', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as PolicyUpdateInput;
 
   try {
+    const subreddit = getRequestedSubreddit(c);
     const policy = await updatePolicy(
-      getCurrentSubreddit(),
+      subreddit,
       c.req.param('id'),
       {
         ...body,
@@ -259,7 +263,7 @@ api.put('/policies/:id', async (c) => {
 });
 
 api.get('/policies/:id/versions', async (c) => {
-  const subreddit = getCurrentSubreddit();
+  const subreddit = getRequestedSubreddit(c);
   const policy = await getPolicyById(subreddit, c.req.param('id'));
   if (!policy) {
     return c.json(
@@ -281,7 +285,7 @@ api.get('/policies/:id/versions', async (c) => {
 });
 
 api.get('/policies/:id/changes', async (c) => {
-  const subreddit = getCurrentSubreddit();
+  const subreddit = getRequestedSubreddit(c);
   const policy = await getPolicyById(subreddit, c.req.param('id'));
   if (!policy) {
     return c.json(
@@ -305,7 +309,7 @@ api.get('/policies/:id/changes', async (c) => {
 api.get('/actions', async (c) => {
   const response: ApiResponse<ActionEvent[]> = {
     ok: true,
-    data: await listRecentActionEvents(getCurrentSubreddit()),
+    data: await listRecentActionEvents(getRequestedSubreddit(c)),
   };
   return c.json(response);
 });
@@ -322,7 +326,7 @@ api.get('/overrides', async (c) => {
   }
 
   const options: Parameters<typeof listOverrideEvents>[0] = {
-    subreddit: getCurrentSubreddit(),
+    subreddit: getRequestedSubreddit(c),
   };
   if (status !== undefined) {
     options.status = status as OverrideReviewStatus;
@@ -339,7 +343,10 @@ api.get('/overrides', async (c) => {
 });
 
 api.get('/overrides/:id', async (c) => {
-  const event = await getOverrideEvent(getCurrentSubreddit(), c.req.param('id'));
+  const event = await getOverrideEvent(
+    getRequestedSubreddit(c),
+    c.req.param('id')
+  );
   if (!event) {
     return c.json(
       {
@@ -375,7 +382,7 @@ api.post('/overrides/:id/review', async (c) => {
     }
 
     const updated = await updateOverrideReview(
-      getCurrentSubreddit(),
+      getRequestedSubreddit(c),
       c.req.param('id'),
       input
     );
@@ -402,7 +409,7 @@ api.post('/overrides/:id/review', async (c) => {
 });
 
 api.get('/overrides/summary', async (c) => {
-  const events = await listRecentAuditEvents(getCurrentSubreddit(), 100);
+  const events = await listRecentAuditEvents(getRequestedSubreddit(c), 100);
   const response: ApiResponse<OverrideSummary> = {
     ok: true,
     data: buildOverrideSummary(events),
@@ -413,13 +420,13 @@ api.get('/overrides/summary', async (c) => {
 api.get('/policy-health', async (c) => {
   const response: ApiResponse<PolicyHealthOverview> = {
     ok: true,
-    data: await getPolicyHealthOverview(getCurrentSubreddit()),
+    data: await getPolicyHealthOverview(getRequestedSubreddit(c)),
   };
   return c.json(response);
 });
 
 api.get('/policies/:id/health', async (c) => {
-  const summaries = await listPolicyHealthSummaries(getCurrentSubreddit());
+  const summaries = await listPolicyHealthSummaries(getRequestedSubreddit(c));
   const summary = summaries.find(
     (item) => item.policyId === c.req.param('id')
   );
@@ -443,13 +450,15 @@ api.get('/policies/:id/health', async (c) => {
 });
 
 api.post('/case-packet', async (c) => {
-  const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateCasePacketRequest>;
+  const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateCasePacketRequest> & {
+    subreddit?: string;
+  };
 
   try {
     const request = normalizeGenerateCasePacketInput(body);
     const options: Parameters<typeof generateCasePacket>[0] = {
       request,
-      subreddit: getCurrentSubreddit(),
+      subreddit: getRequestedBodySubreddit(body),
     };
     if (context.username !== undefined) {
       options.generatedBy = context.username;
@@ -502,6 +511,24 @@ api.post('/apply-policy/confirm', async (c) => {
 
 function getCurrentSubreddit(): string {
   return context.subredditName ?? DEMO_SUBREDDIT_NAME;
+}
+
+function getRequestedSubreddit(c: {
+  req: { query: (name: string) => string | undefined };
+}): string {
+  return normalizeRequestedSubreddit(c.req.query('subreddit'));
+}
+
+function getRequestedBodySubreddit(body: { subreddit?: string }): string {
+  return normalizeRequestedSubreddit(body.subreddit);
+}
+
+function normalizeRequestedSubreddit(subreddit: string | undefined): string {
+  if (subreddit === DEMO_SUBREDDIT_NAME) {
+    return DEMO_SUBREDDIT_NAME;
+  }
+
+  return getCurrentSubreddit();
 }
 
 function policyError(error: unknown): ApiResponse<RulePolicy> {

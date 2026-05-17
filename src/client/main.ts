@@ -91,8 +91,18 @@ type ApplyUiState = {
   confirming: boolean;
   error: string | undefined;
   message: string | undefined;
+  form: ApplyFormState;
   preview: ApplyPolicyPreview | undefined;
   result: ApplyPolicyConfirmResult | undefined;
+};
+
+type ApplyFormState = {
+  ruleKey: string;
+  targetThingId: string;
+  targetAuthor: string;
+  selectedAction: EnforcementAction;
+  overrideReason: OverrideReason | '';
+  overrideNote: string;
 };
 
 type CasePacketUiState = {
@@ -175,17 +185,15 @@ type DigestUiState = {
   message?: string;
 };
 
-type DevvitWebViewGlobal = {
-  entrypoints?: Record<string, string>;
-  token?: string;
-  webViewMode?: number;
-};
-
+const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
-const EFFECT_WEB_VIEW = 9;
+const WEB_VIEW_CLIENT_SCOPE = 0;
 const WEB_VIEW_INLINE_MODE = 1;
 const WEB_VIEW_IMMERSIVE_MODE = 2;
-const THEME_STORAGE_KEY = 'modmirror:theme-preference';
+
+type DevvitWebViewGlobal = {
+  webViewMode?: number;
+};
 
 const pages: Page[] = [
   {
@@ -239,9 +247,8 @@ if (!app) {
 }
 
 const appRoot = app;
-let activePage: ProductPageId = getPageFromHash();
-let dashboardOpen = window.location.hash.length > 1;
-let expandedModeMessage: string | undefined;
+let dashboardOpen = getCurrentWebViewMode() === 'expanded';
+let activePage: ProductPageId = dashboardOpen ? getPageFromHash() : 'command-center';
 let themePreference: ThemePreference = loadThemePreference();
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
@@ -262,6 +269,7 @@ let applyState: ApplyUiState = {
   confirming: false,
   error: undefined,
   message: undefined,
+  form: emptyApplyForm(),
   preview: undefined,
   result: undefined,
 };
@@ -317,6 +325,17 @@ function emptyPolicyForm(): PolicyFormState {
         requireOverrideReasonForDeviation: true,
       },
     ],
+  };
+}
+
+function emptyApplyForm(): ApplyFormState {
+  return {
+    ruleKey: '',
+    targetThingId: 't3_demo_policy_target',
+    targetAuthor: 'learner_1',
+    selectedAction: 'remove',
+    overrideReason: '',
+    overrideNote: '',
   };
 }
 
@@ -383,7 +402,6 @@ function render() {
             ${renderPageAction(page.id)}
           </div>
         </header>
-        ${renderExpandedModeMessage()}
         ${renderPage(page.id)}
       </main>
     </div>
@@ -440,11 +458,6 @@ function renderAppearanceControl() {
         .join('')}
     </div>
   `;
-}
-
-function renderExpandedModeMessage() {
-  void expandedModeMessage;
-  return '';
 }
 
 function renderDemoBanner(dataMode: ProductDataMode) {
@@ -921,33 +934,36 @@ function renderApplyForm() {
     );
   }
 
+  const activePolicies = policyState.policies.filter((policy) => policy.active);
+  const form = getApplyFormState(activePolicies);
+
   return `
     <form class="policy-form apply-form" data-apply-form>
       <label>
         Policy
         <select name="ruleKey">
-          ${policyState.policies
-            .filter((policy) => policy.active)
+          ${activePolicies
             .map(
               (policy) =>
-                `<option value="${policy.ruleKey}">${escapeHtml(policy.ruleName)}</option>`
+                `<option value="${policy.ruleKey}" ${policy.ruleKey === form.ruleKey ? 'selected' : ''}>${escapeHtml(policy.ruleName)}</option>`
             )
             .join('')}
         </select>
       </label>
       <label>
         Target thing ID
-        <input name="targetThingId" value="t3_demo_policy_target" required>
+        <input name="targetThingId" value="${escapeAttribute(form.targetThingId)}" required>
       </label>
       <label>
         Target author
-        <input name="targetAuthor" value="learner_1" required>
+        <input name="targetAuthor" value="${escapeAttribute(form.targetAuthor)}" required>
       </label>
       <label>
         Selected action
         <select name="selectedAction">
           ${ENFORCEMENT_ACTION_VALUES.map(
-            (action) => `<option value="${action}">${formatAction(action)}</option>`
+            (action) =>
+              `<option value="${action}" ${action === form.selectedAction ? 'selected' : ''}>${formatAction(action)}</option>`
           ).join('')}
         </select>
       </label>
@@ -956,13 +972,14 @@ function renderApplyForm() {
         <select name="overrideReason">
           <option value="">Only required on deviation</option>
           ${OVERRIDE_REASON_VALUES.map(
-            (reason) => `<option value="${reason}">${formatAction(reason)}</option>`
+            (reason) =>
+              `<option value="${reason}" ${reason === form.overrideReason ? 'selected' : ''}>${formatAction(reason)}</option>`
           ).join('')}
         </select>
       </label>
       <label>
         Override note
-        <input name="overrideNote" placeholder="Optional context for review">
+        <input name="overrideNote" value="${escapeAttribute(form.overrideNote)}" placeholder="Optional context for review">
       </label>
       <div class="button-row">
         <button class="secondary-button" type="button" data-apply-preview ${applyState.loading ? 'disabled' : ''}>Preview</button>
@@ -970,6 +987,19 @@ function renderApplyForm() {
       </div>
     </form>
   `;
+}
+
+function getApplyFormState(activePolicies: RulePolicy[]): ApplyFormState {
+  const fallbackRuleKey = activePolicies[0]?.ruleKey ?? '';
+  const ruleKey =
+    activePolicies.some((policy) => policy.ruleKey === applyState.form.ruleKey)
+      ? applyState.form.ruleKey
+      : fallbackRuleKey;
+
+  return {
+    ...applyState.form,
+    ruleKey,
+  };
 }
 
 function renderApplyPreview() {
@@ -1784,23 +1814,55 @@ function bindDigestActions() {
   });
 }
 
-function openDashboard(event: MouseEvent) {
-  try {
-    if (getCurrentWebViewMode() === 'inline') {
-      requestExpandedModeFallback(event, 'default');
-      expandedModeMessage =
-        'Expanded dashboard requested. If Reddit keeps this view inline, the full dashboard is available here.';
-    }
-  } catch (error) {
-    expandedModeMessage =
-      error instanceof Error
-        ? `Expanded mode fallback active: ${error.message}`
-        : 'Expanded mode fallback active.';
-  }
+function openDashboard(event?: MouseEvent) {
+  requestExpandedModeFallback(event);
   dashboardOpen = true;
   activePage = 'command-center';
   window.location.hash = '#command-center';
   render();
+}
+
+function getCurrentWebViewMode(): 'inline' | 'expanded' {
+  return getDevvitGlobal()?.webViewMode === WEB_VIEW_IMMERSIVE_MODE
+    ? 'expanded'
+    : 'inline';
+}
+
+function requestExpandedModeFallback(event?: MouseEvent) {
+  if (
+    getCurrentWebViewMode() === 'inline' &&
+    (!event || (event.isTrusted && event.type === 'click'))
+  ) {
+    emitWebViewModeEffect(WEB_VIEW_IMMERSIVE_MODE);
+  }
+}
+
+function requestInlineModeFallback() {
+  if (getCurrentWebViewMode() === 'expanded') {
+    emitWebViewModeEffect(WEB_VIEW_INLINE_MODE);
+  }
+}
+
+function emitWebViewModeEffect(immersiveMode: number) {
+  if (window.parent === window) {
+    return;
+  }
+
+  window.parent.postMessage(
+    {
+      type: DEVVIT_INTERNAL_MESSAGE_TYPE,
+      scope: WEB_VIEW_CLIENT_SCOPE,
+      immersiveMode: {
+        immersiveMode,
+      },
+    },
+    '*'
+  );
+}
+
+function getDevvitGlobal(): DevvitWebViewGlobal | undefined {
+  const candidate = (globalThis as { devvit?: DevvitWebViewGlobal }).devvit;
+  return candidate && typeof candidate === 'object' ? candidate : undefined;
 }
 
 async function runScan(mode: ScanMode) {
@@ -1915,6 +1977,30 @@ function canUseClientDemoFallback() {
     scanState.result?.source === 'demo' ||
     policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
   );
+}
+
+function getWorkspaceSubreddit() {
+  if (scanState.result?.source === 'demo') {
+    return scanState.result.subreddit;
+  }
+  if (
+    policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
+  ) {
+    return DEMO_SUBREDDIT_NAME;
+  }
+  if (applyState.result?.actionEvent.subreddit === DEMO_SUBREDDIT_NAME) {
+    return DEMO_SUBREDDIT_NAME;
+  }
+  return undefined;
+}
+
+function withWorkspaceSubreddit(url: string) {
+  const subreddit = getWorkspaceSubreddit();
+  if (!subreddit) {
+    return url;
+  }
+  const joiner = url.includes('?') ? '&' : '?';
+  return `${url}${joiner}subreddit=${encodeURIComponent(subreddit)}`;
 }
 
 function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
@@ -2271,7 +2357,9 @@ async function loadPolicies() {
   render();
 
   try {
-    const policies = await fetchApi<RulePolicy[]>(API_ROUTES.policies);
+    const policies = await fetchApi<RulePolicy[]>(
+      withWorkspaceSubreddit(API_ROUTES.policies)
+    );
     policyState = {
       ...policyState,
       loading: false,
@@ -2299,12 +2387,16 @@ async function loadGovernance(ruleKey?: string) {
 
   try {
     const [healthOverview, policies, overrides] = await Promise.all([
-      fetchApi<PolicyHealthOverview>(API_ROUTES.policyHealth),
-      fetchApi<RulePolicy[]>(API_ROUTES.policies),
+      fetchApi<PolicyHealthOverview>(
+        withWorkspaceSubreddit(API_ROUTES.policyHealth)
+      ),
+      fetchApi<RulePolicy[]>(withWorkspaceSubreddit(API_ROUTES.policies)),
       fetchApi<ReviewableOverrideEvent[]>(
         ruleKey
-          ? `${API_ROUTES.overrides}?status=unresolved&ruleKey=${encodeURIComponent(ruleKey)}`
-          : `${API_ROUTES.overrides}?status=unresolved`
+          ? withWorkspaceSubreddit(
+              `${API_ROUTES.overrides}?status=unresolved&ruleKey=${encodeURIComponent(ruleKey)}`
+            )
+          : withWorkspaceSubreddit(`${API_ROUTES.overrides}?status=unresolved`)
       ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
@@ -2358,7 +2450,7 @@ async function loadPolicyVersions(
         return [
           policy.id,
           await fetchApi<PolicyVersionSummary[]>(
-            `${API_ROUTES.policies}/${policy.id}/versions`
+            withWorkspaceSubreddit(`${API_ROUTES.policies}/${policy.id}/versions`)
           ),
         ] as const;
       } catch {
@@ -2392,7 +2484,9 @@ async function reviewOverride(
       body.reviewNote = reviewNote;
     }
     const updated = await fetchApi<ReviewableOverrideEvent>(
-      `${API_ROUTES.overrides}/${encodeURIComponent(overrideId)}/review`,
+      withWorkspaceSubreddit(
+        `${API_ROUTES.overrides}/${encodeURIComponent(overrideId)}/review`
+      ),
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -2445,16 +2539,21 @@ async function generateCasePacket(
   render();
 
   try {
+    const body: GenerateCasePacketRequest & { subreddit?: string } = {
+      subject,
+      timeWindowDays: 30,
+      maxComparableCases: 5,
+    };
+    const subreddit = getWorkspaceSubreddit();
+    if (subreddit) {
+      body.subreddit = subreddit;
+    }
     const data = await fetchApi<GenerateCasePacketResponse>(
       API_ROUTES.casePacket,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          timeWindowDays: 30,
-          maxComparableCases: 5,
-        } satisfies GenerateCasePacketRequest),
+        body: JSON.stringify(body),
       }
     );
     casePacketState = {
@@ -2536,6 +2635,8 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       message: `Policy created for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
+    activePage = 'policies';
+    window.location.hash = '#policies';
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const policy = createClientDemoPolicy(candidate);
@@ -2570,7 +2671,9 @@ async function savePolicyForm(formData: FormData) {
   try {
     const url =
       policyState.form.mode === 'edit' && policyState.form.policyId
-        ? `${API_ROUTES.policies}/${policyState.form.policyId}`
+        ? withWorkspaceSubreddit(
+            `${API_ROUTES.policies}/${policyState.form.policyId}`
+          )
         : API_ROUTES.policies;
     const method = policyState.form.mode === 'edit' ? 'PUT' : 'POST';
     const response = await fetch(url, {
@@ -2607,6 +2710,7 @@ async function previewApplyPolicy(formData: FormData) {
     loading: true,
     error: undefined,
     message: undefined,
+    form: applyFormDataToState(formData),
   };
   render();
 
@@ -2654,6 +2758,7 @@ async function confirmApplyPolicy(formData: FormData) {
     confirming: true,
     error: undefined,
     message: undefined,
+    form: applyFormDataToState(formData),
   };
   render();
 
@@ -2787,6 +2892,21 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
   return payload;
 }
 
+function applyFormDataToState(formData: FormData): ApplyFormState {
+  const overrideReason = String(formData.get('overrideReason') ?? '');
+
+  return {
+    ruleKey: String(formData.get('ruleKey') ?? ''),
+    targetThingId: String(formData.get('targetThingId') ?? ''),
+    targetAuthor: String(formData.get('targetAuthor') ?? ''),
+    selectedAction: String(
+      formData.get('selectedAction') ?? 'manual_review'
+    ) as EnforcementAction,
+    overrideReason: overrideReason ? (overrideReason as OverrideReason) : '',
+    overrideNote: String(formData.get('overrideNote') ?? ''),
+  };
+}
+
 function formDataToPolicy(formData: FormData) {
   const steps = policyState.form.steps.map((step, index) => ({
     offenseCount: step.offenseCount,
@@ -2798,7 +2918,7 @@ function formDataToPolicy(formData: FormData) {
       formData.get(`requireOverride-${index}`) === 'on',
   }));
 
-  return {
+  const policy = {
     ruleKey: String(formData.get('ruleKey') ?? '').trim(),
     ruleName: String(formData.get('ruleName') ?? '').trim(),
     defaultMessageMode: String(
@@ -2807,6 +2927,12 @@ function formDataToPolicy(formData: FormData) {
     steps,
     active: true,
   };
+  const subreddit = getWorkspaceSubreddit();
+  if (subreddit) {
+    return { ...policy, subreddit };
+  }
+
+  return policy;
 }
 
 function policyToForm(policy: RulePolicy): PolicyFormState {
@@ -2821,7 +2947,11 @@ function policyToForm(policy: RulePolicy): PolicyFormState {
 }
 
 function upsertPolicy(policies: RulePolicy[], policy: RulePolicy) {
-  const others = policies.filter((item) => item.id !== policy.id);
+  const others = policies.filter(
+    (item) =>
+      item.id !== policy.id &&
+      !(item.subreddit === policy.subreddit && item.ruleKey === policy.ruleKey)
+  );
   return [...others, policy].sort((left, right) =>
     left.ruleName.localeCompare(right.ruleName)
   );
@@ -2966,18 +3096,6 @@ window.addEventListener('hashchange', () => {
   render();
 });
 
-window.addEventListener('focus', () => {
-  try {
-    if (dashboardOpen && getCurrentWebViewMode() === 'inline') {
-      expandedModeMessage =
-        expandedModeMessage ?? 'Dashboard is open in inline fallback mode.';
-    }
-  } catch {
-    expandedModeMessage =
-      expandedModeMessage ?? 'Dashboard is open in local fallback mode.';
-  }
-});
-
 render();
 void loadHealth();
 void loadPolicies();
@@ -2985,65 +3103,9 @@ void loadGovernance();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {
-    try {
-      requestInlineModeFallback();
-    } catch {
-      dashboardOpen = false;
-      window.location.hash = '';
-      render();
-    }
+    requestInlineModeFallback();
+    dashboardOpen = false;
+    window.location.hash = '';
+    render();
   }
 });
-
-function getCurrentWebViewMode(): 'inline' | 'expanded' {
-  return getDevvitGlobal()?.webViewMode === WEB_VIEW_IMMERSIVE_MODE
-    ? 'expanded'
-    : 'inline';
-}
-
-function requestExpandedModeFallback(event: MouseEvent, entry: string): void {
-  if (!event.isTrusted || event.type !== 'click') {
-    throw new Error('Expanded mode requires a trusted click.');
-  }
-  emitWebViewModeEffect(WEB_VIEW_IMMERSIVE_MODE, entry);
-}
-
-function requestInlineModeFallback(): void {
-  emitWebViewModeEffect(WEB_VIEW_INLINE_MODE);
-}
-
-function emitWebViewModeEffect(mode: number, entry?: string): void {
-  const devvitGlobal = getDevvitGlobal();
-  if (!devvitGlobal) {
-    throw new Error('Devvit WebView global unavailable.');
-  }
-
-  let entryUrl: string | undefined;
-  if (entry) {
-    const entrypoint = devvitGlobal.entrypoints?.[entry];
-    if (!entrypoint) {
-      throw new Error(`No Devvit entrypoint named ${entry}.`);
-    }
-    const url = new URL(entrypoint);
-    if (devvitGlobal.token) {
-      url.searchParams.set('token', devvitGlobal.token);
-    }
-    entryUrl = url.toString();
-  }
-
-  const message = {
-    type: DEVVIT_INTERNAL_MESSAGE_TYPE,
-    scope: 0,
-    immersiveMode: {
-      entryUrl,
-      immersiveMode: mode,
-    },
-    effectType: EFFECT_WEB_VIEW,
-  };
-  window.parent.postMessage(message, '*');
-}
-
-function getDevvitGlobal(): DevvitWebViewGlobal | undefined {
-  const candidate = (globalThis as { devvit?: DevvitWebViewGlobal }).devvit;
-  return candidate;
-}

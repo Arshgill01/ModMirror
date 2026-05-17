@@ -64,10 +64,12 @@ Wave 7/8 is done only when all applicable items are checked.
   `v0.0.1.26`.
 - Wave 7/8 was merged to `master` with no-ff commit
   `791c938 merge: Wave 7 8 productization` and pushed to `origin/master`.
-- Signed-in Safari Reddit playtest verification opened the compact inline card,
-  launched the dashboard fallback, rendered Command Center, loaded the
-  ExampleLearning demo, created the Low-effort questions policy from drift, and
-  verified Apply Policy preview against the selected demo policy namespace.
+- Initial signed-in Safari Reddit playtest verification opened the compact
+  inline card, launched the dashboard fallback, rendered Command Center, loaded
+  the ExampleLearning demo, created the Low-effort questions policy from drift,
+  and verified Apply Policy preview against the selected demo policy namespace.
+  The redesign follow-up later verified the native expanded modal on
+  `v0.0.1.65`.
 - Static Playwright QA passes through deterministic local demo fallbacks because
   `serve dist/client` cannot reach Devvit `/api/*` routes.
 
@@ -91,10 +93,17 @@ Wave 7/8 is done only when all applicable items are checked.
   (14 files, 65 tests).
 - Post-redesign `npm run dev` reached Playtest ready at
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
-  `v0.0.1.39` after the Settings theme/typography follow-up. Safari was
-  opened to the same playtest URL for live review.
+  `v0.0.1.65` after the expanded-modal restoration and workflow hardening.
 - Signed-in Safari rendered the Reddit playtest post and compact inline
   ModMirror launch card for the redesign branch.
+- Clicking `Open Dashboard` opened Reddit's native expanded WebView modal with
+  the host `Mobile` viewport dropdown and native theme control restored. That
+  host chrome is intentionally preserved because it is the Devvit viewport
+  switching surface.
+- Runtime workflow proof on `v0.0.1.65` covered demo scan, policy creation from
+  drift, Apply Policy preview/confirm with override capture, Case Packet
+  Markdown export, Review inbox/health, Manual Digest generation, and Settings
+  runtime state.
 - Curated redesign screenshots are committed under
   `docs/screenshots/wave7-8-redesign/` for PR review.
 - A focused follow-up fixed Settings typography drift and added an in-app

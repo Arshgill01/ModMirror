@@ -21,9 +21,11 @@ It replaces the accumulated CSS override stack with an operational workspace
 shell, desktop moderation rail, wrapping mobile nav, ledger/document-style
 Review and Case Packet surfaces, and a global demo-mode banner. Post-redesign
 checks passed on 2026-05-18 and `npm run dev` reached playtest ready at
-`v0.0.1.39` after the Settings theme/typography fix; signed-in Safari rendered
-the compact inline card in Reddit, and Safari was opened to the refreshed
-playtest URL for live review.
+`v0.0.1.65` after the expanded-modal restoration and workflow hardening.
+Signed-in Safari rendered the compact inline card in Reddit, Open Dashboard
+opened the native Devvit expanded modal with the `Mobile` viewport dropdown
+restored, and the demo workflow was verified through scan -> policy -> Apply
+Policy -> review -> Case Packet -> digest -> Settings.
 
 ## Wave 7/8 Productization Checklist
 
@@ -42,6 +44,8 @@ playtest URL for live review.
 - [x] Redesign branch build/type-check/lint/tests pass.
 - [x] Redesign branch reaches Devvit playtest ready.
 - [x] Redesign branch inline card renders in signed-in Safari Reddit playtest.
+- [x] Redesign branch native expanded modal opens with Devvit viewport dropdown.
+- [x] Redesign branch demo workflow works end-to-end in signed-in Safari playtest.
 - [x] Redesign branch pushed to `origin/redesign/wave7-8-command-center-ui`.
 - [x] Draft PR opened for redesign review: `https://github.com/Arshgill01/ModMirror/pull/11`.
 - [ ] User reviews redesigned UI and gives explicit green light.
