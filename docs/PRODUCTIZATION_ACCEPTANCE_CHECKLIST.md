@@ -102,3 +102,5 @@ Wave 7/8 is done only when all applicable items are checked.
   `origin/redesign/wave7-8-command-center-ui` for review. GitHub offered PR
   URL:
   `https://github.com/Arshgill01/ModMirror/pull/new/redesign/wave7-8-command-center-ui`.
+- Draft PR opened for review:
+  `https://github.com/Arshgill01/ModMirror/pull/11`.

@@ -41,6 +41,7 @@ checks passed on 2026-05-18 and `npm run dev` reached playtest ready at
 - [x] Redesign branch reaches Devvit playtest ready.
 - [x] Redesign branch inline card renders in signed-in Safari Reddit playtest.
 - [x] Redesign branch pushed to `origin/redesign/wave7-8-command-center-ui`.
+- [x] Draft PR opened for redesign review: `https://github.com/Arshgill01/ModMirror/pull/11`.
 - [ ] User reviews redesigned UI and gives explicit green light.
 - [ ] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
 
