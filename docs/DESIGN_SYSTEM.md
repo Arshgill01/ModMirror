@@ -1,16 +1,43 @@
 # DESIGN_SYSTEM.md — ModMirror Visual System
 
-This file mirrors the Wave 7/8 design direction in repo-local docs.
-
 ## Direction
 
-ModMirror should feel compact, operational, trustworthy, readable, calm, and
-decisive. It should look like a serious Reddit-native moderation command
-center, not a generic SaaS dashboard or a prototype tab dump.
+ModMirror should feel like a serious Reddit-native moderation command center, not a generic SaaS dashboard and not a default Codex prototype.
 
-## Tokens
+Keywords: compact, operational, trustworthy, readable, calm, decisive.
 
-Use semantic CSS tokens:
+## Visual Hierarchy
+
+Every page should have:
+
+1. Page title
+2. One-line purpose
+3. Primary action
+4. Status/metrics
+5. Detailed cards
+
+## Layout
+
+Use a shell:
+
+```txt
+Header / launch card
+Navigation
+Main content
+```
+
+Preferred max content width:
+
+- expanded dashboard: around 1120px
+- inline card: compact, not a huge scroll dump
+
+## Cards
+
+Cards should have clear title, short description, metric or status, action buttons, subtle border, and consistent padding. Avoid raw tables unless the content truly needs comparison.
+
+## Status Colors
+
+Use status semantically. Suggested tokens:
 
 ```css
 --mm-bg: #f7f7f5;
@@ -27,29 +54,34 @@ Use semantic CSS tokens:
 --mm-info: #2563eb;
 ```
 
-## Layout
-
-- Inline launch card: compact.
-- Expanded dashboard: max width around 1120px.
-- Shell order: header or launch card, navigation, main content.
-- Cards use subtle borders, consistent padding, and 8px radius.
+If dark mode is detected or existing app uses dark, preserve contrast and do not create low-contrast gray-on-gray UI.
 
 ## Typography
 
 Use system fonts.
 
-- App title: 28-34px desktop, 24px mobile.
-- Page title: 24-28px.
-- Card title: 16-18px.
-- Body: 14-16px.
-- Labels: 12-13px.
+Scale:
 
-## Avoid
+- app title: 28-34px desktop, 24px mobile
+- page title: 24-28px
+- card title: 16-18px
+- body: 14-16px
+- labels: 12-13px
 
-- Full raw dashboard in inline mode.
-- Eight flat tabs in a row.
-- Giant empty boxes.
-- Walls of explanatory text.
-- Unlabeled demo data.
-- Tables with no action.
-- Scheduler as a core digest feature.
+## Bad UI Patterns To Avoid
+
+- eight flat tabs in one row,
+- giant empty white boxes,
+- default unstyled forms,
+- unlabeled demo data,
+- tables with no action,
+- walls of text,
+- dashboard where every metric is zero,
+- screenshots that look like raw localhost admin UI,
+- cramped inline-only full app.
+
+## Required UI QA
+
+After implementation, capture screenshots for inline launch card, expanded command center, setup wizard, demo scenario loaded, policy health/review inbox, case packet, digest, settings, and mobile width.
+
+Use available browser automation/playwright/agent-browser skills if present.

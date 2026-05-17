@@ -1,11 +1,20 @@
 # UX_SPEC.md — ModMirror Productized UX
 
-This file mirrors the Wave 7/8 productized UX source prompt so future work can
-reference the spec from `docs/`.
+## Product Experience Principle
+
+Every screen must be action-oriented.
+
+Bad:
+
+> No policies have been created.
+
+Good:
+
+> No policies yet. Create your first policy from a drift candidate or load the demo scenario.
 
 ## Information Architecture
 
-Use these sections:
+Replace prototype tabs with these sections:
 
 1. Command Center
 2. Scan
@@ -15,45 +24,139 @@ Use these sections:
 6. Digest
 7. Settings
 
-The first screen is Command Center. The inline Reddit post starts as a compact
-launch/status card, not the full dashboard.
+### Command Center
 
-## Required Screens
+Purpose: give moderators a one-screen summary of what needs attention.
 
-- Command Center: consistency score, top rule needing review, unresolved
-  overrides, active policies, last scan, data mode, primary next action, and
-  secondary actions.
-- Scan: live scan and demo scan actions, confidence labels, drift candidates,
-  and action-oriented empty states.
-- Policies: create/edit policy ladders, create from drift, manual creation,
-  no-policy fallback.
-- Review: policy health cards and override inbox cards.
-- Case Packets: official/exportable appeal context with Markdown export.
-- Digest: manual Markdown digest generation only.
-- Settings: data mode, runtime status, Redis/source status, last scan, demo
-  state, delivery mode, caveats, and version where available.
+Must show:
 
-## Empty States
+- consistency score,
+- top rule needing review,
+- unresolved overrides,
+- policies active,
+- last scan timestamp,
+- data mode: Live or Demo,
+- primary next action.
 
-Every empty state routes to a useful action such as loading demo data, running a
-scan, creating a policy, reviewing a sample case, or generating a digest.
+Example:
 
-## Demo Scenario
+```txt
+ModMirror Command Center
+Find enforcement drift before your users do.
 
-The demo scenario is `r/ExampleLearning` and tells the Rule 2 low-effort
-question story:
+Consistency Score: 72 / 100
+Rule 2 needs review
+7 unresolved overrides
+3 active policies
+Last scan: 12 minutes ago
+
+[Review Rule 2 Overrides] [Run Scan] [Create Policy] [Generate Digest]
+```
+
+### Inline Launch Card
+
+The inline Reddit post should not contain the full dashboard.
+
+It should be a compact launch/status surface:
+
+```txt
+ModMirror
+Find enforcement drift before your users do.
+
+Rule 2 needs review
+7 unresolved overrides
+3 active policies
+
+[Open Dashboard]
+```
+
+If expanded mode is unavailable, keep the card compact at top and render the full dashboard below only after clicking Open Dashboard.
+
+### Expanded Dashboard
+
+The expanded/full view should be the main product. If Devvit supports `requestExpandedMode()` or equivalent, use it for Open Dashboard after verifying against installed typings/RESEARCH.md.
+
+### Setup Wizard
+
+Show when no policies exist, no live scan has been run, or the user explicitly selects Setup.
+
+Steps:
+
+1. Choose data source: Live scan or Demo scenario.
+2. Map removal reasons/rules where possible.
+3. Create first policy.
+4. Apply policy to a sample case.
+5. Review dashboard.
+
+### Demo Scenario
+
+Demo mode must feel like a guided story.
+
+Scenario: `r/ExampleLearning`
+
+Rules:
+
+- Rule 1: Be civil
+- Rule 2: Low-effort questions
+- Rule 3: Self-promotion
+
+Visible story:
 
 - Rule 2 drift detected.
 - First-time low-effort cases were handled inconsistently.
 - Create policy.
 - Apply policy.
 - Override appears.
-- Policy health changes.
-- Case Packet explains appeal context.
+- Policy Health changes.
+- Case Packet explains an appeal.
 
 Demo mode must always be labeled.
 
-## Mobile
+### Review Inbox
 
-The app must be usable at 390px, tablet width, and desktop width without
-horizontal overflow. Buttons remain tappable and cards stack.
+Overrides should feel like cards in an inbox, not raw rows.
+
+Each card:
+
+- rule,
+- recommended action,
+- selected action,
+- override reason,
+- status,
+- timestamp,
+- target/user context where available,
+- actions: Accept exception, Policy needs update, Needs discussion, No action needed.
+
+### Case Packets
+
+Case packets must look official and exportable.
+
+Must include user/target, rule, action taken, policy version at action time, consistency status, override review status, prior same-rule history, deterministic comparable cases, caveats, and markdown export.
+
+### Digest
+
+Manual digest only in this wave unless scheduler/mod discussion is already proven.
+
+Digest should generate Markdown with policy health, top issue, suggested action, caveats, and data mode label.
+
+### Settings / Runtime
+
+Settings should show data mode, Redis status, Reddit API/source status if available, rules/removal reasons availability, last scan, demo data controls, delivery mode config if available, and build/version label if available.
+
+## Empty State Rules
+
+Every empty state must include an action.
+
+Examples:
+
+- Load demo scenario
+- Run first scan
+- Create policy
+- Review sample case
+- Generate digest
+
+Never leave a screen with only "No data."
+
+## Mobile Rules
+
+The app must be usable at 390px width, tablet width, and desktop width. Cards should stack. Navigation should wrap/collapse. No horizontal overflow. Buttons must remain tappable.
