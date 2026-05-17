@@ -1705,3 +1705,147 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Justification pass: make ledger text and controls align on stable columns. */
+.section-header,
+.card-header,
+.case-header,
+.command-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.section-header > .button-row,
+.card-header > .status-badge,
+.case-header > .status-badge,
+.command-action-row > .button-row {
+  justify-self: end;
+}
+
+.button-row {
+  justify-content: flex-end;
+}
+
+.setup-list li {
+  grid-template-columns: 58px minmax(0, 1fr) 148px;
+}
+
+.setup-list .text-button {
+  justify-self: end;
+  text-align: right;
+}
+
+.compact-metrics,
+.confidence-grid,
+.distribution-grid {
+  gap: 0;
+}
+
+.compact-metrics div,
+.confidence-item,
+.distribution-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.compact-metrics dd,
+.confidence-item strong,
+.distribution-item strong,
+.status-list dd {
+  font-variant-numeric: tabular-nums;
+  justify-self: end;
+  text-align: right;
+}
+
+.status-list div {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(130px, 0.55fr) minmax(0, 1fr);
+}
+
+.card-header p,
+.section-header p,
+.action-card p,
+.inbox-card p,
+.case-header p {
+  max-width: 760px;
+}
+
+.inbox-card > p,
+.action-card > .recommendation {
+  border-top: 1px solid var(--mm-border);
+  padding-top: 10px;
+}
+
+.settings-grid .action-card h3,
+.settings-grid .settings-value,
+.settings-grid .action-card p {
+  align-self: center;
+}
+
+.settings-grid .settings-value {
+  text-align: right;
+}
+
+.case-grid .action-card h3 {
+  min-height: 24px;
+}
+
+.case-grid .status-list {
+  border-top: 1px solid var(--mm-border);
+  gap: 0;
+  padding-top: 8px;
+}
+
+.case-grid .status-list div {
+  border-inline: 0;
+  grid-template-columns: minmax(130px, 0.55fr) minmax(0, 1fr);
+}
+
+.markdown-export {
+  display: block;
+}
+
+@media (max-width: 620px) {
+  .section-header,
+  .card-header,
+  .case-header,
+  .command-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header > .button-row,
+  .card-header > .status-badge,
+  .case-header > .status-badge,
+  .command-action-row > .button-row,
+  .setup-list .text-button {
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  .button-row {
+    justify-content: stretch;
+  }
+
+  .button-row > button {
+    flex: 1 1 140px;
+  }
+
+  .setup-list li,
+  .status-list div,
+  .case-grid .status-list div {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-metrics div,
+  .confidence-item,
+  .distribution-item {
+    grid-template-columns: 1fr auto;
+  }
+
+  .settings-grid .settings-value,
+  .status-list dd {
+    justify-self: start;
+    text-align: left;
+  }
+}
