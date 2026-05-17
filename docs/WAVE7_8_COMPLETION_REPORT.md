@@ -2,9 +2,7 @@
 
 ## Summary
 
-Wave 7/8 is implemented and merge-ready on
-`integration/wave7-8-productization`, pending user visual approval and explicit
-green light for merge/push.
+Wave 7/8 is implemented, merged to `master`, and pushed to `origin`.
 
 The app now opens as a compact Reddit-native launch card and expands/falls back
 into a productized moderation command center. The full dashboard IA is Command
@@ -13,8 +11,8 @@ ExampleLearning demo can carry the scan -> policy -> Apply Policy -> review ->
 case packet -> manual digest story without enabling destructive moderation
 actions.
 
-Final merge to `master` and push to `origin` were intentionally not performed
-because user approval remains the final gate.
+Final merge was completed with no-ff merge commit
+`791c938 merge: Wave 7 8 productization`, then pushed to `origin/master`.
 
 ## Branches / Worktrees
 
@@ -88,6 +86,9 @@ because user approval remains the final gate.
 - `git merge-base --is-ancestor master integration/wave7-8-productization`
 - `git merge-base --is-ancestor origin/master integration/wave7-8-productization`
 - `git merge-tree $(git merge-base master integration/wave7-8-productization) master integration/wave7-8-productization`
+- `git checkout master`
+- `git merge --no-ff integration/wave7-8-productization -m "merge: Wave 7 8 productization"`
+- `git push origin master`
 - `npm install`
 - `npm run build`
 - `npm run type-check`
@@ -120,6 +121,11 @@ because user approval remains the final gate.
   - local `master` is contained in `integration/wave7-8-productization`.
   - `git merge-tree` dry-run produced a clean merge result with no conflict
     sections.
+- PASS: final merge/push
+  - `master` was merged with no-ff commit
+    `791c938 merge: Wave 7 8 productization`.
+  - `origin/master` matches local `master` at
+    `791c938cc08b38838d962be09d9601ebe295cb34`.
 
 ## Runtime Verification
 
@@ -161,7 +167,8 @@ Screenshot files are intentionally ignored and not committed.
 
 ## Known Issues / Open Risks
 
-- Final merge/push is pending user approval.
+- `update_goal` remains intentionally uncalled until the user gives explicit
+  satisfaction/green light.
 - Native expanded-mode behavior is not separately proven in Reddit; fallback is
   verified.
 - Broader Redis smoke routes remain future-wave runtime QA.
@@ -173,10 +180,8 @@ Screenshot files are intentionally ignored and not committed.
 
 ## Next Recommended Wave
 
-- Do a final human visual review in Reddit playtest and approve or request a
-  small polish pass.
-- After approval, merge `integration/wave7-8-productization` into `master` with
-  a no-ff merge commit and push to `origin`.
+- Do a final human visual review in Reddit playtest and request only targeted
+  polish if needed.
 - Next implementation wave should focus on runtime smoke verification:
   Redis smoke route, Reddit API smoke route, menu/form UX, comment delivery
   ordering, and permission checks before enabling any non-log-only delivery.

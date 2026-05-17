@@ -62,6 +62,8 @@ Wave 7/8 is done only when all applicable items are checked.
 - `npm run dev` reached Playtest ready at
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
   `v0.0.1.26`.
+- Wave 7/8 was merged to `master` with no-ff commit
+  `791c938 merge: Wave 7 8 productization` and pushed to `origin/master`.
 - Signed-in Safari Reddit playtest verification opened the compact inline card,
   launched the dashboard fallback, rendered Command Center, loaded the
   ExampleLearning demo, created the Low-effort questions policy from drift, and

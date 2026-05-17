@@ -4,16 +4,15 @@
 
 Wave 7/8 — Productization + Real Moderation Workflow.
 
-Status: Wave 7/8 is implemented on `integration/wave7-8-productization`.
+Status: Wave 7/8 is merged to `master` and pushed to `origin`.
 The client now starts as a compact inline launch card, opens into the new
 Command Center IA, carries the ExampleLearning demo through scan -> policy ->
 Apply Policy -> review -> Case Packet -> digest, and exposes runtime Settings.
 Scheduler, AI/LLM judging, automatic bans, queue-dashboard scope, and external
 analytics remain out of scope.
 
-Final merge to `master` is pending user review/approval. The local acceptance
-check set has passed, and signed-in Reddit playtest reached the productized
-dashboard flow.
+The local acceptance check set passed after the no-ff merge to `master`, and
+signed-in Reddit playtest reached the productized dashboard flow before merge.
 
 ## Wave 7/8 Productization Checklist
 
@@ -27,7 +26,7 @@ dashboard flow.
 - [x] Demo/static-preview fallbacks keep the 3-minute story usable without live API access.
 - [x] Full final checks pass.
 - [x] Runtime playtest is re-run for Wave 7/8.
-- [ ] Integration branch is merged to `master` and pushed.
+- [x] Integration branch is merged to `master` and pushed.
 
 ## Wave 6 Case Packet Checklist
 
