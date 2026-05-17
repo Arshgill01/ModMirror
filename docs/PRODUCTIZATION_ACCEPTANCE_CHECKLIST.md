@@ -64,9 +64,62 @@ Wave 7/8 is done only when all applicable items are checked.
   `v0.0.1.26`.
 - Wave 7/8 was merged to `master` with no-ff commit
   `791c938 merge: Wave 7 8 productization` and pushed to `origin/master`.
-- Signed-in Safari Reddit playtest verification opened the compact inline card,
-  launched the dashboard fallback, rendered Command Center, loaded the
-  ExampleLearning demo, created the Low-effort questions policy from drift, and
-  verified Apply Policy preview against the selected demo policy namespace.
+- Initial signed-in Safari Reddit playtest verification opened the compact
+  inline card, launched the dashboard fallback, rendered Command Center, loaded
+  the ExampleLearning demo, created the Low-effort questions policy from drift,
+  and verified Apply Policy preview against the selected demo policy namespace.
+  The redesign follow-up later verified the native expanded modal on
+  `v0.0.1.65`.
 - Static Playwright QA passes through deterministic local demo fallbacks because
   `serve dist/client` cannot reach Devvit `/api/*` routes.
+
+## Post-Merge Redesign Rescue Status
+
+- The user rejected the merged Wave 7/8 visual direction as still too
+  prototype/card-grid-like, so follow-up work is active on branch
+  `redesign/wave7-8-command-center-ui`.
+- Redesign implementation commits:
+  - `b7e3ab5 docs: record skill installation audit`
+  - `4186dc7 feat: redesign moderation workspace UI`
+  - `f91d228 docs: record redesigned UI playtest smoke`
+  - `c700eaa fix: normalize settings typography and theme control`
+- Later branch commits may be audit-only documentation updates.
+- The redesign branch replaces the accumulated CSS override stack with a single
+  operational workspace shell, desktop moderation rail, wrapping mobile nav,
+  Command Center split surface, ledger-style Review/Case Packet views, and a
+  global demo-mode banner.
+- Post-redesign checks passed on 2026-05-18:
+  `npm run type-check`, `npm run lint`, `npm run build`, and `npm test`
+  (14 files, 65 tests).
+- Post-redesign `npm run dev` reached Playtest ready at
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
+  `v0.0.1.65` after the expanded-modal restoration and workflow hardening.
+- Signed-in Safari rendered the Reddit playtest post and compact inline
+  ModMirror launch card for the redesign branch.
+- Clicking `Open Dashboard` opened Reddit's native expanded WebView modal with
+  the host `Mobile` viewport dropdown and native theme control restored. That
+  host chrome is intentionally preserved because it is the Devvit viewport
+  switching surface.
+- Runtime workflow proof on `v0.0.1.65` covered demo scan, policy creation from
+  drift, Apply Policy preview/confirm with override capture, Case Packet
+  Markdown export, Review inbox/health, Manual Digest generation, and Settings
+  runtime state.
+- Curated redesign screenshots are committed under
+  `docs/screenshots/wave7-8-redesign/` for PR review.
+- A focused follow-up fixed Settings typography drift and added an in-app
+  `System / Light / Dark` appearance control. Static verification confirmed
+  forced light/dark modes change app theme variables even when Reddit's host
+  theme signal is unavailable to the WebView. Review screenshots are committed
+  as `settings-light.png` and `settings-dark.png`.
+- Chromium Playwright screenshot of Reddit was blocked by Reddit network
+  security, and automated Safari click-through capture was blocked by macOS
+  automation permissions. Both blockers are documented in `docs/UI_REVIEW.md`.
+- This redesign rescue branch is not merged to `master` yet. Do not mark the
+  goal complete until the user reviews the redesigned UI and explicitly gives
+  the green light.
+- The redesign rescue branch was pushed to
+  `origin/redesign/wave7-8-command-center-ui` for review. GitHub offered PR
+  URL:
+  `https://github.com/Arshgill01/ModMirror/pull/new/redesign/wave7-8-command-center-ui`.
+- Draft PR opened for review:
+  `https://github.com/Arshgill01/ModMirror/pull/11`.

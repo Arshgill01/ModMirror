@@ -28,7 +28,7 @@ checks pass.
 | Execute AGENT A-H scope | Agent scopes are represented by artifacts: UI implementation plan, visual system CSS, inline launch card, Command Center/setup/demo, governance/case UI, workflow hardening, digest/settings, QA/docs. | Complete |
 | New app shell / IA | `src/client/main.ts` defines pages: Command Center, Scan, Policies, Review, Case Packets, Digest, Settings; Command Center is the first dashboard page. | Complete |
 | Compact inline launch card | `renderInlineCard()` in `src/client/main.ts`; screenshot `output/playwright/wave7-8/final-density-inline.png`. | Complete |
-| Expanded dashboard or fallback | `openDashboard()` attempts Devvit WebView expanded effect and always renders dashboard fallback. `RESEARCH.md` documents native expanded-mode uncertainty and verified fallback. | Complete with documented caveat |
+| Expanded dashboard or fallback | `openDashboard()` requests Devvit expanded mode and keeps an in-post fallback. Initial implementation verified fallback; the redesign follow-up verified the native expanded modal on `v0.0.1.65`. | Complete |
 | Command Center | `renderCommandCenterPage()` shows score, data mode, overrides, policies, last scan, primary action, secondary actions, setup, and demo story. | Complete |
 | Guided setup and ExampleLearning demo | `buildSetupSteps()` in `src/shared/productization.ts`; demo story and setup UI in `src/client/main.ts`; tests in `src/shared/productization.test.ts`. | Complete |
 | Governance UI upgrade | Policy health cards and override inbox are in Review page; CSS final pass uses ledger/workbench styling and unresolved attention rail. | Complete |
@@ -46,7 +46,7 @@ checks pass.
 | Tests for command center summary, digest, setup/demo helpers | `src/shared/productization.test.ts` covers command center summary, cold-start action, setup steps, digest generation, and unresolved override counting. | Complete |
 | Required docs updated | `README.md`, `TODO.md`, `docs/PRODUCT.md`, `docs/DEMO_SCRIPT.md`, `docs/SUBMISSION_NOTES.md`, `docs/DATA_MODEL.md`, `RESEARCH.md`, `docs/UI_REVIEW.md`, and `docs/PRODUCTIZATION_ACCEPTANCE_CHECKLIST.md` are changed on this branch. | Complete |
 | Required commands pass | `npm install`, `npm run build`, `npm run type-check`, `npm test`, `npm run lint` passed on 2026-05-17. | Complete |
-| Runtime playtest | `npm run dev` reached Reddit playtest ready at `v0.0.1.26`; signed-in Safari verified inline card, dashboard fallback, demo load, policy creation, and Apply Policy preview. | Complete |
+| Runtime playtest | Initial Wave 7/8 reached Reddit playtest ready at `v0.0.1.26`; the redesign follow-up reached `v0.0.1.65` and verified inline card, native expanded modal, demo load, policy creation, Apply Policy override capture, Case Packet, Review, Digest, and Settings. | Complete |
 | Final merge/push | Merged to `master` with no-ff commit `791c938 merge: Wave 7 8 productization`; pushed to `origin/master`. | Complete |
 
 ## Command Evidence
@@ -69,10 +69,70 @@ checks pass.
 
 ## Known Remaining Caveats
 
-- Native Devvit expanded-mode effect behavior is not separately proven in
-  Reddit; the dashboard fallback is runtime verified and documented.
+- Native Devvit expanded-mode effect behavior is now proven in Reddit playtest
+  on the redesign branch. The native viewport dropdown/theme button are host
+  chrome and are not app-stylable.
 - Broader Redis smoke routes, comment delivery ordering, modmail/private
   message/native Mod Notes, and exact moderator permission strings remain
   future-wave runtime research items.
 - `update_goal` was not called because the user explicitly requested that goal
   completion wait for their satisfaction/green light.
+
+## Post-Merge Redesign Rescue Addendum
+
+Addendum date: 2026-05-18
+
+Branch audited: `redesign/wave7-8-command-center-ui`
+
+Latest audited implementation commit:
+`c700eaa fix: normalize settings typography and theme control`
+
+Later commits on this branch may be audit-only documentation updates. Treat
+the implementation evidence above and the current PR head as the source of
+truth for review state.
+
+Reason: after the Wave 7/8 integration branch was merged and pushed, the user
+rejected the visual quality as still too card-heavy/prototype-like. This means
+the original merge audit remains true for the initial Wave 7/8 implementation,
+but the latest user-satisfaction state is not complete until the redesign
+branch is reviewed and approved.
+
+| Requirement | Redesign evidence | Status |
+|---|---|---|
+| Avoid default card-grid/prototype UI | `src/client/styles.css` was replaced with a single operational workspace system; `src/client/main.ts` now renders an `ops-shell`, desktop rail, Command Center split surface, ledgers, and document-style Case Packet flow. | Complete on redesign branch |
+| Use skills/resources | `docs/SKILL_INSTALLATION_REPORT.md` records installed skills from `mattpocock/skills`; `docs/UI_REVIEW.md` records `frontend-design`, `uncodixfy`, Matt Pocock `prototype`, Gemini, and screenshot QA usage. | Complete |
+| Gemini in tmux | Gemini ran in `modmirror-wave7-8:gemini-redesign` with model display `Auto (Gemini 3)`; critique and responses are documented in `docs/UI_REVIEW.md`. | Complete |
+| Sub-agent usage | A sub-agent was spawned for a redesign brief, but failed due to account usage limits. The blocker is documented; local/Gemini fallback was used. | Blocked with fallback |
+| Runtime proof after redesign | `npm run dev` reached Playtest ready at `v0.0.1.65` on 2026-05-18 after the expanded-modal restoration and workflow hardening. Signed-in Safari verified the compact inline card, native expanded modal with viewport dropdown, and full demo workflow. | Complete |
+| Expanded dashboard screenshot after redesign | Chromium Playwright was blocked by Reddit network security; automated Safari click-through was blocked by macOS `System Events` error `-25200`. | Blocked |
+| Reviewable screenshot evidence | Curated static screenshots are committed under `docs/screenshots/wave7-8-redesign/` so the redesign can be reviewed from GitHub, not only from ignored local QA artifacts. | Complete |
+| Settings typography/theme follow-up | Settings value typography was normalized to the same 15px ledger scale as other metadata rows; an in-app `System / Light / Dark` control was added. Static verification confirmed forced light/dark CSS variables change and desktop Settings has no horizontal overflow. Screenshots are committed as `docs/screenshots/wave7-8-redesign/settings-light.png` and `docs/screenshots/wave7-8-redesign/settings-dark.png`. | Complete |
+| Required checks after redesign | `npm run type-check`, `npm run lint`, `npm run build`, and `npm test` passed on 2026-05-18; tests remain 14 files / 65 tests. | Complete |
+| Push redesign branch for review | `redesign/wave7-8-command-center-ui` was pushed to `origin/redesign/wave7-8-command-center-ui`; draft PR opened at `https://github.com/Arshgill01/ModMirror/pull/11`. PR body includes the full screenshot set plus the Settings light/dark follow-up evidence. | Complete |
+| GitHub PR checks | `gh pr checks 11` reported no checks configured for the branch; `gh pr view 11` reported open draft PR with empty status check rollup and `mergeable=UNKNOWN`. Local checks remain the verification source for this branch. | Complete with caveat |
+| Local merge-conflict dry run | After `git fetch origin --prune`, `git merge-tree --write-tree --messages origin/master HEAD` exited 0 and produced tree `1d3dac6f2f821a759f540807d345148c6773d107`, indicating no merge conflicts in the dry-run merge. | Complete |
+| Merge redesign to master | Not done. The user requested that completion wait until they are satisfied and give a green light. | Pending user approval |
+
+## Expanded-Modal Runtime Addendum
+
+Addendum date: 2026-05-18
+
+The redesign branch now restores the Devvit expanded/modal launch path after
+the user asked to bring back the native viewport dropdown behavior.
+
+Runtime proof on Devvit playtest `v0.0.1.65`:
+
+- The inline Reddit post starts as the compact ModMirror launch/status card.
+- `Open Dashboard` opens Reddit's native expanded WebView modal.
+- The native host chrome includes the `Mobile` viewport dropdown and native
+  theme control. This chrome is owned by Reddit/Devvit, not by ModMirror, and is
+  intentionally kept so moderators can switch viewport modes.
+- The full demo workflow was verified in the expanded modal: ExampleLearning
+  scan, Low-effort questions policy creation, Apply Policy preview/confirm with
+  override capture, Case Packet Markdown export, Review inbox/health, Manual
+  Digest generation, and Settings runtime state.
+
+Current status: Wave 7/8 implementation remains merged on `master`, but the
+latest UI rescue branch is intentionally unmerged pending user review. Do not
+call `update_goal` or mark the goal complete until the user explicitly approves
+the redesigned UI.

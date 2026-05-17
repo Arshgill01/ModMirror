@@ -129,7 +129,7 @@ Final merge was completed with no-ff merge commit
 
 ## Runtime Verification
 
-Signed-in Safari Reddit playtest verified:
+Initial signed-in Safari Reddit playtest verified:
 
 - compact inline launch card renders in Reddit,
 - Open Dashboard opens the productized dashboard fallback,
@@ -139,8 +139,35 @@ Signed-in Safari Reddit playtest verified:
 - Apply Policy preview finds the selected demo policy namespace and recommends
   the expected team policy action.
 
-Native Devvit expanded-mode effect behavior remains separately unproven; the
-in-post fallback is runtime verified and documented.
+Later redesign-branch proof on `v0.0.1.65` verified native Devvit expanded-mode
+behavior in Reddit. The in-post fallback remains implemented and documented as a
+compatibility path.
+
+### Redesign Branch Follow-up
+
+On 2026-05-18, the redesign branch restored the Devvit expanded/modal launch
+path after user review asked to bring back the native viewport dropdown.
+
+Signed-in Safari Reddit playtest on Devvit version `v0.0.1.65` verified:
+
+- compact inline launch card renders in Reddit,
+- Open Dashboard opens Reddit's native expanded WebView modal,
+- the native `Mobile` viewport dropdown and native theme control are present,
+- ExampleLearning demo scan loads 60 actions, 56 attributed actions, and 4
+  unmatched actions,
+- Low-effort questions policy creation works from drift,
+- Apply Policy preserves a stricter selected action through preview, records a
+  log-only override, and exposes Case Packet generation,
+- Case Packet Markdown export renders for the logged action,
+- Review shows updated policy health and unresolved overrides,
+- Manual Digest generates Markdown,
+- Settings shows demo mode, runtime caveats, policy/override counts, delivery
+  mode, and last scan state.
+
+The expanded modal's viewport dropdown and theme button are Reddit/Devvit host
+chrome, not app DOM. They are intentionally preserved for reviewer/device
+switching, while ModMirror keeps an in-post fallback if the host ignores the
+expanded-mode request.
 
 ## UI Review / Screenshots
 
@@ -169,8 +196,9 @@ Screenshot files are intentionally ignored and not committed.
 
 - `update_goal` remains intentionally uncalled until the user gives explicit
   satisfaction/green light.
-- Native expanded-mode behavior is not separately proven in Reddit; fallback is
-  verified.
+- Native expanded-mode behavior is now proven on the redesign branch in Reddit
+  playtest `v0.0.1.65`; the host chrome is not app-stylable. The in-post
+  fallback remains as a compatibility path.
 - Broader Redis smoke routes remain future-wave runtime QA.
 - Comment delivery ordering, private messages, modmail, native Mod Notes, and
   exact moderator permission strings remain unverified; destructive/external

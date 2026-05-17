@@ -46,7 +46,9 @@ Remaining critique:
 ## Remaining Accepted Risk
 
 - The UI still uses bordered containers because Devvit WebViews need strong structure in constrained Reddit surfaces. The current treatment is intentionally closer to Reddit mod tooling than a freeform SaaS dashboard.
-- Expanded-mode behavior is type/build verified but not yet Reddit playtest verified. The in-post fallback is implemented.
+- Expanded-mode behavior is runtime verified on the redesign branch in Reddit
+  playtest `v0.0.1.65`. The in-post fallback remains implemented for hosts
+  that ignore the WebView mode request.
 
 ## Cardless Follow-up
 
@@ -130,3 +132,112 @@ Final density-pass screenshots:
 Final static overflow checks reported `horizontalOverflow=false` for desktop
 and mobile. The Policies form screenshot was recaptured after widening the
 recommended-action select so `temporary ban suggested` is readable.
+
+## Post-Merge Redesign Rescue Pass
+
+The user rejected the merged UI as still too card-heavy and prototype-like, so a
+new branch `redesign/wave7-8-command-center-ui` replaced the accumulated CSS
+override stack with a single coherent operational workspace system.
+
+Skills/process used:
+
+- `frontend-design`: used for a page-level redesign rather than local component
+  polish.
+- `uncodixfy`: used to reject metric-card grids, soft SaaS chrome, decorative
+  copy, and repeated rounded containers.
+- Matt Pocock `prototype` workflow: used as the design process reference for
+  making structural layout changes rather than color-only tweaks.
+- Gemini CLI: run in actual tmux window
+  `modmirror-wave7-8:gemini-redesign`, model display `Auto (Gemini 3)`, after
+  screenshot capture.
+
+Screenshots captured/reviewed in this pass:
+
+- `output/playwright/wave7-8/redesign-rescue/final-inline.png`
+- `output/playwright/wave7-8/redesign-rescue/final-command-empty.png`
+- `output/playwright/wave7-8/redesign-rescue/final-scan-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-policies-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-review-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-case-demo-v2.png`
+- `output/playwright/wave7-8/redesign-rescue/final-mobile-command.png`
+
+Curated review screenshots are also committed for PR review:
+
+- `docs/screenshots/wave7-8-redesign/inline.png`
+- `docs/screenshots/wave7-8-redesign/command-center.png`
+- `docs/screenshots/wave7-8-redesign/policies.png`
+- `docs/screenshots/wave7-8-redesign/review.png`
+- `docs/screenshots/wave7-8-redesign/case-packet.png`
+- `docs/screenshots/wave7-8-redesign/mobile-command-center.png`
+- `docs/screenshots/wave7-8-redesign/settings-light.png`
+- `docs/screenshots/wave7-8-redesign/settings-dark.png`
+
+Typography/theme follow-up:
+
+- Settings ledger values were reduced from a larger 20px treatment to the same
+  15px operational value scale used elsewhere.
+- Added an in-app `System / Light / Dark` appearance control because Reddit's
+  host theme toggle is not guaranteed to propagate into the Devvit WebView.
+- Static verification confirmed forced light and forced dark modes update CSS
+  variables, Settings value font size remains `15px`, and desktop Settings has
+  no horizontal overflow.
+
+Gemini critique and response:
+
+- Mobile nav showed only a partial `Case Packets` label. Response: changed
+  mobile/tablet nav from horizontal clipping to a wrapping grid so all
+  destinations remain visible.
+- Demo mode labels were scattered. Response: added a global demo banner in the
+  dashboard shell when ExampleLearning data is active.
+- Review decision buttons had equal weight. Response: made the two active
+  governance decisions visually primary and left passive decisions secondary.
+- Case Packet content looked like a dashboard split. Response: converted the
+  packet detail into a single-column document flow.
+- Review nav did not auto-load governance data. Response: Review navigation now
+  triggers governance loading so demo fallback data appears without an extra
+  Refresh click.
+
+Current accepted direction:
+
+- Persistent moderation rail on desktop, compact wrapping nav on mobile.
+- Command Center as an operational split surface: score, next action, signals,
+  then setup/demo workflow.
+- Review and Case Packets use ledgers/document rows instead of repeated
+  decorative cards.
+- The UI still uses some bordered task surfaces for forms and export textareas
+  because those are error-prone workflows inside a constrained Reddit WebView.
+
+Runtime follow-up on 2026-05-18:
+
+- `npm run dev` reached Devvit Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
+  `v0.0.1.38`, on branch `redesign/wave7-8-command-center-ui`.
+- After the Settings theme/typography follow-up, `npm run dev` reached Devvit
+  Playtest ready for the same URL at version `v0.0.1.39`, and Safari was
+  opened to the refreshed playtest URL for live review. A later expanded-modal
+  restoration reached `v0.0.1.65` and is documented below.
+- Signed-in Safari rendered the Reddit playtest post and the compact inline
+  ModMirror launch card.
+- Playwright Chromium capture of the Reddit URL was blocked by Reddit network
+  security; screenshot saved locally at
+  `output/playwright/wave7-8/redesign-rescue-runtime/reddit-playtest.png`.
+- Safari screen capture of the signed-in page was saved locally at
+  `output/playwright/wave7-8/redesign-rescue-runtime/safari-playtest.png`.
+- Automated click-through to the expanded dashboard was not captured because
+  macOS `System Events` click automation returned error `-25200`, and Safari
+  `do JavaScript` automation hung before returning DOM access.
+
+Expanded modal restoration follow-up on 2026-05-18:
+
+- The user asked to restore the Devvit viewport dropdown behavior. The app now
+  launches the dashboard through Reddit's native expanded WebView modal again.
+- `npm run dev` reached Devvit Playtest ready at `v0.0.1.65`.
+- Signed-in Safari verified the compact inline launch card, native expanded
+  modal, host `Mobile` viewport dropdown, and native theme control.
+- The host viewport dropdown/theme button are Reddit/Devvit chrome outside
+  ModMirror's DOM. They are intentionally kept for viewport switching, even
+  though their visual style cannot be controlled by the app.
+- The same runtime pass verified the demo workflow end to end: scan, policy
+  creation from drift, Apply Policy preview/confirm with override capture, Case
+  Packet Markdown export, Review inbox/health, Manual Digest generation, and
+  Settings.

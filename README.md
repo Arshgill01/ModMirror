@@ -29,12 +29,16 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Wave 7/8 productization is implemented on the integration branch.
+Wave 7/8 productization is implemented. The follow-up visual rescue work is on
+`redesign/wave7-8-command-center-ui` pending explicit user approval before it
+is merged back to `master`.
 
 The app now opens with a compact Reddit inline launch card instead of rendering
-the full dashboard inside the post. Opening the dashboard shows a productized
-Command Center with scan status, policy health, unresolved overrides, setup
-progress, and the ExampleLearning demo path.
+the full dashboard inside the post. Opening the dashboard uses Reddit's native
+expanded WebView modal when available, preserving the Devvit viewport dropdown,
+and still has an in-post fallback. The productized Command Center shows scan
+status, policy health, unresolved overrides, setup progress, and the
+ExampleLearning demo path.
 
 Implemented product surfaces include Mirror Scan, Policy Agreement Flow, Apply
 Policy simulator, consistency nudges, aggregate override review, immutable

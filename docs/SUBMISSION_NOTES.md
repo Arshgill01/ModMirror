@@ -38,9 +38,10 @@ history, deterministic comparable cases, caveats, and a Markdown export.
 
 Wave 7/8 productizes the experience into a Reddit-native moderation command
 center. The inline post is now a compact status/launch card instead of a full
-dashboard dump. The expanded dashboard opens to Command Center and guides the
-demo through scan, policy setup, Apply Policy, override review, Case Packet,
-manual Digest, and runtime Settings.
+dashboard dump. Open Dashboard uses Reddit's native expanded WebView modal when
+available, preserving the Devvit viewport dropdown, and opens to Command Center
+to guide the demo through scan, policy setup, Apply Policy, override review,
+Case Packet, manual Digest, and runtime Settings.
 
 ## Project Impact Draft
 
@@ -103,10 +104,10 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Case Packets are evidence packets for moderator review; they do not decide
   appeals or claim perfect fairness.
 - Scheduled digest delivery and Calibration Mode remain future waves.
-- Browser UI proof is signed in, playtest-ready, shows the dashboard launcher,
-  creates the dashboard custom post after confirmation, renders the ModMirror
-  dashboard WebView, and verifies Wave 6 demo Case Packet generation plus
-  Markdown copy/export. Wave 7/8 static screenshot QA verifies the productized
-  inline card, Command Center, demo scan, policy/apply path, review inbox, Case
-  Packet, Digest, Settings, and mobile layout; final Reddit playtest rerun is
-  tracked separately in the acceptance checklist.
+- Browser UI proof is signed in, playtest-ready, shows the compact inline
+  launch card, opens the native expanded dashboard modal with the Devvit
+  viewport dropdown, and verifies demo scan, policy creation, Apply Policy
+  override capture, Case Packet Markdown export, Review inbox/health, Digest,
+  and Settings. Static screenshot QA also verifies the productized inline card,
+  Command Center, demo scan, policy/apply path, review inbox, Case Packet,
+  Digest, Settings, and mobile layout.
