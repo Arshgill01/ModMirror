@@ -2,8 +2,7 @@
 
 ## Summary
 
-Wave 9/10 is complete on `integration/wave9-10-launch-readiness` pending final
-merge to `master`.
+Wave 9/10 is complete and merged to `master`.
 
 Implemented:
 
@@ -26,12 +25,26 @@ Implemented:
 
 ## Branches / Worktrees
 
-- Active branch: `integration/wave9-10-launch-readiness`
+- Integration branch: `integration/wave9-10-launch-readiness`
+- Merge target: `master`
 - Worktrees: none.
 
 ## Files Changed
 
-To be finalized at merge.
+- Digest engine/contracts/API: `src/server/services/digest.ts`,
+  `src/server/services/digest.test.ts`, `src/routes/api.ts`,
+  `src/server/services/redis.ts`, `src/shared/schema.ts`,
+  `src/shared/constants.ts`.
+- Digest UI/settings: `src/client/main.ts`, `src/client/styles.css`.
+- Launch and submission docs: `README.md`, `TODO.md`, `RESEARCH.md`,
+  `docs/APP_LISTING_DRAFT.md`, `docs/APP_REVIEW_AND_DATA_PRACTICES.md`,
+  `docs/DATA_MODEL.md`, `docs/DEMO_SCRIPT.md`, `docs/DEVPOST_DRAFT.md`,
+  `docs/DIGEST_SPEC.md`, `docs/LAUNCH_READINESS_CHECKLIST.md`,
+  `docs/PRODUCT.md`, `docs/SCREENSHOT_AND_VIDEO_PLAN.md`,
+  `docs/SUBMISSION_NOTES.md`, `docs/WAVE9_10_EXECUTION_NOTES.md`,
+  `docs/WAVE9_10_EXEC_PLAN.md`, `docs/WAVE9_10_FINAL_REPORT.md`.
+- Wave prompt pack and helper: `prompts/wave9-10/`,
+  `scripts/wave9_10_tmux_plan.sh`.
 
 ## Commands Run
 
