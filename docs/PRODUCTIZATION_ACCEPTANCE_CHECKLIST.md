@@ -4,52 +4,65 @@ Wave 7/8 is done only when all applicable items are checked.
 
 ## Product Experience
 
-- [ ] First screen is Command Center, not README-style Overview.
-- [ ] Inline post is compact launch/status card.
-- [ ] Expanded/full dashboard is available or fallback is documented.
-- [ ] Navigation is simplified to Command Center, Scan, Policies, Review, Case Packets, Digest, Settings.
-- [ ] Every empty state has a next action.
-- [ ] Demo mode tells the full story.
-- [ ] Live/demo data are clearly labeled.
-- [ ] Policy health cards are visual and actionable.
-- [ ] Override review is an inbox, not a raw log.
-- [ ] Case packets look exportable and official.
-- [ ] Manual digest generation works.
+- [x] First screen is Command Center, not README-style Overview.
+- [x] Inline post is compact launch/status card.
+- [x] Expanded/full dashboard is available or fallback is documented.
+- [x] Navigation is simplified to Command Center, Scan, Policies, Review, Case Packets, Digest, Settings.
+- [x] Every empty state has a next action.
+- [x] Demo mode tells the full story.
+- [x] Live/demo data are clearly labeled.
+- [x] Policy health cards are visual and actionable.
+- [x] Override review is an inbox, not a raw log.
+- [x] Case packets look exportable and official.
+- [x] Manual digest generation works.
 
 ## Design Quality
 
-- [ ] CSS design tokens exist.
-- [ ] Layout is responsive.
-- [ ] No horizontal overflow at mobile width.
-- [ ] Buttons have consistent hierarchy.
-- [ ] Status colors have meaning.
-- [ ] Copy is concise and mod-native.
-- [ ] UI no longer looks like default Codex output.
-- [ ] Screenshots were captured and reviewed.
-- [ ] If available, uncodexify skill was used and findings were addressed.
-- [ ] If available, Gemini/design critique was used and findings were addressed or rejected with reasons.
+- [x] CSS design tokens exist.
+- [x] Layout is responsive.
+- [x] No horizontal overflow at mobile width.
+- [x] Buttons have consistent hierarchy.
+- [x] Status colors have meaning.
+- [x] Copy is concise and mod-native.
+- [x] UI no longer looks like default Codex output.
+- [x] Screenshots were captured and reviewed.
+- [x] If available, uncodexify skill was used and findings were addressed.
+- [x] If available, Gemini/design critique was used and findings were addressed or rejected with reasons.
 
 ## Runtime / Workflow
 
-- [ ] npm run build passes.
-- [ ] npm run type-check passes.
-- [ ] npm test passes.
-- [ ] npm run lint passes.
-- [ ] npm run dev/playtest loads.
+- [x] npm run build passes.
+- [x] npm run type-check passes.
+- [x] npm test passes.
+- [x] npm run lint passes.
+- [x] npm run dev/playtest loads.
 - [ ] Dashboard works in signed-in Reddit playtest.
-- [ ] Demo scenario works end-to-end.
-- [ ] Apply Policy flow still works.
-- [ ] Override review still works.
-- [ ] Case Packet flow still works.
-- [ ] Manual Digest flow works.
-- [ ] Runtime Settings page reports useful checks.
+- [x] Demo scenario works end-to-end.
+- [x] Apply Policy flow still works.
+- [x] Override review still works.
+- [x] Case Packet flow still works.
+- [x] Manual Digest flow works.
+- [x] Runtime Settings page reports useful checks.
 
 ## Documentation
 
-- [ ] README updated.
-- [ ] PRODUCT.md updated.
-- [ ] DEMO_SCRIPT.md updated.
-- [ ] SUBMISSION_NOTES.md updated.
-- [ ] TODO.md updated.
-- [ ] RESEARCH.md updated if Devvit behavior changed.
-- [ ] Known limitations documented honestly.
+- [x] README updated.
+- [x] PRODUCT.md updated.
+- [x] DEMO_SCRIPT.md updated.
+- [x] SUBMISSION_NOTES.md updated.
+- [x] TODO.md updated.
+- [x] RESEARCH.md updated if Devvit behavior changed.
+- [x] Known limitations documented honestly.
+
+## Notes
+
+- `npm install`, `npm run build`, `npm run type-check`, `npm test`,
+  `npm run lint`, `npx devvit whoami`, and `npm run dev` passed on
+  2026-05-17. `npm install` still reports the existing 31 audit findings.
+- `npm run dev` reached Playtest ready at
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
+  `v0.0.1.19`.
+- Signed-in Reddit browser verification of the Wave 7/8 dashboard remains
+  pending; static Playwright QA covered the full UI flow.
+- Static Playwright QA passes through deterministic local demo fallbacks because
+  `serve dist/client` cannot reach Devvit `/api/*` routes.

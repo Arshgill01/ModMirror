@@ -144,6 +144,40 @@ Packet that shows:
 This is not an AI fairness judgment and not appeal automation. It is an
 evidence packet rooted in ModMirror's own policy and consistency records.
 
+### 7. Productized Command Center
+
+Wave 7/8 turns the prototype dashboard into a Reddit-native moderation command
+center.
+
+The app no longer renders a full raw dashboard in the inline post. It starts as
+a compact launch/status card with data mode, top issue, unresolved overrides,
+active policies, and an Open Dashboard action. The expanded/fallback dashboard
+uses this IA:
+
+- Command Center
+- Scan
+- Policies
+- Review
+- Case Packets
+- Digest
+- Settings
+
+The Command Center shows consistency score, top issue, unresolved overrides,
+active policies, last scan, data mode, setup progress, and the next best
+moderation-governance action.
+
+### 8. Manual Digest + Runtime Settings
+
+Wave 7/8 adds a manual Digest page and runtime Settings page.
+
+The Digest page generates deterministic Markdown from Command Center and policy
+health data. It includes data mode, policy health, top recommendations,
+unresolved overrides, and caveats. There is no scheduler in this wave.
+
+The Settings page shows live/demo mode, Redis/API status where available, last
+scan context, policy/override counts, demo state, delivery mode, and runtime
+caveats. The default delivery posture remains `log_only`.
+
 ## Primary Demo
 
 A fake/test community has Rule 2 enforcement drift.
@@ -174,6 +208,11 @@ context packet. ModMirror shows the policy version active at action time, the
 accepted override reason when present, prior same-rule history for that user,
 deterministic comparable cases, and Markdown export.
 
+The 3-minute Wave 7/8 demo starts from the inline launch card, opens Command
+Center, loads the ExampleLearning scenario, creates the Rule 2 policy, applies
+a stricter sample action with an override reason, reviews the exception inbox,
+exports a Case Packet, and generates a manual Digest.
+
 ## Why It Wins
 
 Most tools optimize individual moderator speed.
@@ -196,7 +235,7 @@ That is:
 - Toolbox replacement.
 - Automated appeal adjudication.
 - Legal/fairness conclusions.
-- Digest/scheduler.
+- Automatic/scheduled digest delivery.
 - Calibration Mode.
 - Cross-subreddit comparisons.
 - External analytics.

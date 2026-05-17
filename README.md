@@ -29,13 +29,19 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Wave 5 Governance Core is implemented locally.
+Wave 7/8 productization is implemented on the integration branch.
 
-The app now includes the Wave 0-4 loop locally: Mirror Scan, Policy Agreement,
-Apply Policy simulator, consistency nudges, and aggregate override audit. Wave 5
-adds governance follow-through: immutable policy versions, action snapshots,
-policy health scoring, an override review inbox, and governance dashboard
-surfaces.
+The app now opens with a compact Reddit inline launch card instead of rendering
+the full dashboard inside the post. Opening the dashboard shows a productized
+Command Center with scan status, policy health, unresolved overrides, setup
+progress, and the ExampleLearning demo path.
+
+Implemented product surfaces include Mirror Scan, Policy Agreement Flow, Apply
+Policy simulator, consistency nudges, aggregate override review, immutable
+policy versions, policy health, Case Packets, manual Markdown Digest, and
+runtime Settings. Destructive or externally delivered moderation actions remain
+disabled by default; Apply Policy records are `log_only` until runtime delivery
+behavior is playtest-verified.
 
 ## Local Commands
 

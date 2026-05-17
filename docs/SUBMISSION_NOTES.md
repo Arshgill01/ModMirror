@@ -36,6 +36,12 @@ moderator-facing packet that shows the tracked action, policy version at the
 time, consistency status, override review context, prior same-rule user
 history, deterministic comparable cases, caveats, and a Markdown export.
 
+Wave 7/8 productizes the experience into a Reddit-native moderation command
+center. The inline post is now a compact status/launch card instead of a full
+dashboard dump. The expanded dashboard opens to Command Center and guides the
+demo through scan, policy setup, Apply Policy, override review, Case Packet,
+manual Digest, and runtime Settings.
+
 ## Project Impact Draft
 
 Communities that would benefit:
@@ -79,6 +85,12 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Case Packets generate from demo data or tracked Apply Policy action IDs.
 - Case Packets include deterministic comparable cases with match reasons and
   Markdown export/copy UI.
+- Command Center is the first dashboard screen and summarizes consistency
+  score, top issue, unresolved overrides, policies, last scan, and data mode.
+- Manual Digest generates deterministic team-ready Markdown with policy health,
+  recommendations, caveats, and data mode labels.
+- Runtime Settings shows live/demo state, Redis/API caveats, delivery mode, and
+  demo status.
 
 ## Known Limitations
 
@@ -90,8 +102,11 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
   for sparse communities.
 - Case Packets are evidence packets for moderator review; they do not decide
   appeals or claim perfect fairness.
-- Scheduler/digest and Calibration Mode remain future waves.
+- Scheduled digest delivery and Calibration Mode remain future waves.
 - Browser UI proof is signed in, playtest-ready, shows the dashboard launcher,
   creates the dashboard custom post after confirmation, renders the ModMirror
   dashboard WebView, and verifies Wave 6 demo Case Packet generation plus
-  Markdown copy/export.
+  Markdown copy/export. Wave 7/8 static screenshot QA verifies the productized
+  inline card, Command Center, demo scan, policy/apply path, review inbox, Case
+  Packet, Digest, Settings, and mobile layout; final Reddit playtest rerun is
+  tracked separately in the acceptance checklist.

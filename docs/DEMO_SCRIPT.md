@@ -4,39 +4,47 @@
 
 Most mod tools help moderators act faster. ModMirror helps mod teams act consistently.
 
-## 60-second Demo
+## 3-minute Wave 7/8 Demo
 
-1. Open ModMirror dashboard.
-2. Click "Run Mirror Scan."
-3. Show result:
+1. Start in the Reddit post inline card.
+2. Show that it is compact: tagline, data mode, top issue, unresolved overrides,
+   active policies, and Open Dashboard.
+3. Click "Open Dashboard."
+4. Land on Command Center.
+5. Show:
+   - consistency score,
+   - top issue,
+   - unresolved overrides,
+   - active policies,
+   - last scan,
+   - data mode,
+   - primary next action.
+6. Click "Load Demo" for `r/ExampleLearning`.
+7. Open Scan and show result:
    - "60 recent actions scanned"
    - "Rule 2 drift detected"
    - "First-time low-effort cases were handled three different ways"
-4. Open Rule 2 drift candidate.
-5. Click "Create Team Policy."
-6. Configure:
+8. Open Rule 2 drift candidate.
+9. Click "Create policy from drift."
+10. Configure or show the created policy:
    - first offense: remove + warning
    - second offense: remove + formal note
    - third offense: suggest 3-day ban
    - message delivery: log only until public comment delivery is verified
-7. Save policy.
-8. Open the Apply Policy dashboard simulator.
-9. Select the Rule 2 policy.
-10. Select Rule 2.
-11. Show recommendation:
+11. Open the Apply Policy panel.
+12. Select the Rule 2 policy.
+13. Select a stricter action.
+14. Show recommendation:
     - "Policy recommends remove + warning"
-12. Select a stricter action.
-13. ModMirror shows:
+15. ModMirror shows:
     - "This is stricter than team policy. Continue with override?"
-14. Choose override reason or follow policy.
-15. Return to Governance and show:
+16. Choose an override reason and confirm the log-only action.
+17. Open Review and show:
     - Rule 2 policy health,
     - unresolved override inbox,
     - current policy version.
-16. Mark the override as "Policy needs update."
-17. Edit the Rule 2 policy and show that a new policy version is created.
-18. Open Case Packets.
-19. Click "Generate demo packet."
+18. Mark the override as "Policy needs update" if time allows.
+19. Open Case Packets and click "Generate demo packet."
 20. Show:
     - tracked action,
     - Rule 2 policy version at action time,
@@ -45,12 +53,30 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
     - prior same-rule user history,
     - deterministic comparable cases with match reasons,
     - Markdown export.
+21. Open Digest and click "Generate Now."
+22. Show a team-ready Markdown digest with policy health, recommendations,
+    unresolved overrides, data mode, and caveats.
+23. Open Settings and point out data mode, Redis/API caveats, last scan,
+    delivery mode `log_only`, and demo state.
+
+## 60-second Demo
+
+Use the same flow, but skip Settings and policy editing:
+
+1. Inline launch card -> Open Dashboard.
+2. Command Center -> Load Demo.
+3. Scan -> Rule 2 drift.
+4. Create Rule 2 policy.
+5. Apply stricter sample action and record override.
+6. Review override inbox.
+7. Generate Case Packet.
+8. Generate manual Digest.
 
 Runtime note: the dashboard can be launched from a moderator-only subreddit
 menu action that opens a confirmation form before creating a custom post.
-Post/comment Apply Policy menu UX remains a later browser playtest item. The
-Wave 3/4 demo uses the dashboard simulator so no unverified Reddit moderation
-action is performed.
+Post/comment Apply Policy menu UX remains runtime-unverified. The Wave 7/8 demo
+uses the dashboard simulator and `log_only` records so no unverified Reddit
+moderation action is performed.
 
 ## 2-minute Demo
 
@@ -98,9 +124,11 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 
 ## Screenshot Checklist
 
-- [ ] Dashboard empty state
-- [ ] Demo seed loaded
-- [ ] Mirror Scan result
+- [x] Inline launch card
+- [x] Command Center
+- [x] Setup wizard / demo scenario
+- [x] Demo seed loaded
+- [x] Mirror Scan result
 - [ ] Rule 2 drift detail
 - [x] Policy editor
 - [x] Apply Policy simulator
@@ -111,6 +139,9 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Policy version history summary
 - [x] Case Packet demo generation
 - [x] Markdown export/copy surface
+- [x] Manual Digest page
+- [x] Runtime Settings page
+- [x] Mobile-width Settings screenshot
 
 ## Devpost Opening
 

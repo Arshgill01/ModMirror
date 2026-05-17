@@ -2,14 +2,32 @@
 
 ## Current Phase
 
-Wave 6 — Case Packet / Appeal Context.
+Wave 7/8 — Productization + Real Moderation Workflow.
 
-Status: Wave 6 is implemented locally on the integration branch. Case packet
-contracts, generator logic, deterministic comparable cases, dashboard UI,
-Markdown export, demo packet generation, and tests are in place. After Wave 6,
-the next planned wave is Wave 7: Manual Digest / Governance Report, but do not
-start digest, scheduler, Calibration Mode, AI/LLM, queue dashboard, or
-external-service work from the Wave 6 branch.
+Status: Wave 7/8 is implemented on `integration/wave7-8-productization`.
+The client now starts as a compact inline launch card, opens into the new
+Command Center IA, carries the ExampleLearning demo through scan -> policy ->
+Apply Policy -> review -> Case Packet -> digest, and exposes runtime Settings.
+Scheduler, AI/LLM judging, automatic bans, queue-dashboard scope, and external
+analytics remain out of scope.
+
+Final merge to `master` is pending the full acceptance check set:
+`npm install`, `npm run build`, `npm run type-check`, `npm test`,
+`npm run lint`, `npm run dev`, screenshot QA review, and checklist updates.
+
+## Wave 7/8 Productization Checklist
+
+- [x] Compact inline launch/status card implemented.
+- [x] New IA implemented: Command Center, Scan, Policies, Review, Case Packets, Digest, Settings.
+- [x] Command Center is the first dashboard screen.
+- [x] Setup wizard and ExampleLearning demo scenario are visible from Command Center.
+- [x] Policy health, override inbox, and Case Packet UI are upgraded.
+- [x] Manual Digest generates Markdown without adding scheduler scope.
+- [x] Runtime Settings shows data mode, health caveats, delivery mode, demo state, and last scan context.
+- [x] Demo/static-preview fallbacks keep the 3-minute story usable without live API access.
+- [ ] Full final checks pass.
+- [ ] Runtime playtest is re-run for Wave 7/8.
+- [ ] Integration branch is merged to `master` and pushed.
 
 ## Wave 6 Case Packet Checklist
 

@@ -40,6 +40,21 @@ modmirror:{subreddit}:override:{overrideId}:review
 modmirror:{subreddit}:demo
 ```
 
+## Wave 7/8 Productization Notes
+
+Wave 7/8 does not add a new persisted Redis collection.
+
+- Command Center summary is derived from scan metadata, policies, policy
+  health, and override review state.
+- Manual Digest Markdown is generated on demand from current dashboard state
+  and policy health data; it is not scheduled or stored as a core record.
+- Runtime Settings reads existing health, scan, policy, override, demo, and
+  delivery-mode state.
+- Local static-preview demo fallbacks exist only in the browser client so QA can
+  show the deterministic ExampleLearning story when `/api` is unavailable
+  outside Devvit playtest. Devvit runtime still uses the server APIs and Redis
+  paths.
+
 ## Types
 
 Devvit's current `Rule` type does not expose a stable rule ID. ModMirror uses a
