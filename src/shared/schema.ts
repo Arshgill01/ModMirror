@@ -39,6 +39,42 @@ export type PolicyHealthStatus =
   | 'needs_review'
   | 'insufficient_data';
 
+export type CasePacketSubjectType = 'action' | 'user_rule' | 'demo';
+
+export type CasePacketConsistencyStatus =
+  | 'matched_policy'
+  | 'stricter_than_policy'
+  | 'looser_than_policy'
+  | 'manual_review'
+  | 'policy_unavailable'
+  | 'policy_changed_since_action'
+  | 'insufficient_data';
+
+export type CasePacketActionFamily =
+  | 'approve'
+  | 'remove'
+  | 'warn'
+  | 'note'
+  | 'temporary_ban_suggested'
+  | 'permanent_ban_suggested'
+  | 'manual_review'
+  | 'ignore_reports'
+  | 'unknown';
+
+export type CasePacketOffenseBucket =
+  | 'first_offense'
+  | 'second_offense'
+  | 'third_or_more'
+  | 'unknown';
+
+export type AppealPosture =
+  | 'policy_consistent'
+  | 'justified_override'
+  | 'review_recommended'
+  | 'insufficient_history'
+  | 'policy_changed_since_action'
+  | 'unknown';
+
 export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
@@ -404,6 +440,103 @@ export interface PolicyHealthOverview {
   policiesNeedingReview: number;
   unresolvedOverrides: number;
   summaries: PolicyHealthSummary[];
+}
+
+export interface CasePacketSubject {
+  type: CasePacketSubjectType;
+  actionId?: string;
+  username?: string;
+  ruleKey?: string;
+  targetThingId?: string;
+}
+
+export interface CasePacketAction {
+  actionId?: string;
+  createdAt?: string;
+  moderator?: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  ruleKey?: string;
+  ruleName?: string;
+  recommendedAction?: EnforcementAction;
+  selectedAction?: EnforcementAction;
+  deliveryMode?: MessageDeliveryMode;
+  source?: ActionSource | ApplyPolicySource;
+}
+
+export interface CasePacketPolicyContext {
+  policyId?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  policyVersionStatus?: PolicyVersionStatus;
+  policyName?: string;
+  ruleKey?: string;
+  ruleName?: string;
+  policySnapshot?: PolicySnapshot;
+  activeAtActionTime?: boolean;
+  changedSinceAction?: boolean;
+}
+
+export interface CasePacketOverrideContext {
+  overrideId?: string;
+  reason?: OverrideReason;
+  note?: string;
+  reviewStatus?: OverrideReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+}
+
+export interface CasePacketUserHistoryItem {
+  actionId: string;
+  createdAt: string;
+  ruleKey?: string;
+  ruleName?: string;
+  selectedAction?: EnforcementAction;
+  recommendedAction?: EnforcementAction;
+  consistencyStatus?: CasePacketConsistencyStatus;
+  policyVersionNumber?: number;
+}
+
+export interface ComparableCase {
+  actionId: string;
+  createdAt: string;
+  ruleKey?: string;
+  ruleName?: string;
+  selectedAction?: EnforcementAction;
+  recommendedAction?: EnforcementAction;
+  offenseBucket: CasePacketOffenseBucket;
+  selectedActionFamily: CasePacketActionFamily;
+  recommendedActionFamily: CasePacketActionFamily;
+  targetType?: 'post' | 'comment' | 'unknown';
+  matchReasons: string[];
+  anonymizedTargetAuthor?: string;
+}
+
+export interface CasePacket {
+  id: string;
+  generatedAt: string;
+  generatedBy?: string;
+  subreddit: string;
+  subject: CasePacketSubject;
+  action?: CasePacketAction;
+  policyContext: CasePacketPolicyContext;
+  consistencyStatus: CasePacketConsistencyStatus;
+  overrideContext?: CasePacketOverrideContext;
+  userHistory: CasePacketUserHistoryItem[];
+  comparableCases: ComparableCase[];
+  appealPosture: AppealPosture;
+  caveats: string[];
+  markdown: string;
+}
+
+export interface GenerateCasePacketRequest {
+  subject: CasePacketSubject;
+  timeWindowDays?: number;
+  maxComparableCases?: number;
+}
+
+export interface GenerateCasePacketResponse {
+  packet: CasePacket;
 }
 
 export interface SmallSubredditThresholdStatus {

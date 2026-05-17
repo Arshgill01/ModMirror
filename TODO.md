@@ -2,13 +2,32 @@
 
 ## Current Phase
 
-Wave 5 — Governance Core.
+Wave 6 — Case Packet / Appeal Context.
 
-Status: Wave 5 is implemented and integrated locally. Immutable policy
-versioning, Apply Policy version/snapshot stamping, override review statuses,
-deterministic policy health, and a governance dashboard are in place. After
-Wave 5, the next planned wave is Wave 6: Case Packet / Appeal Context. Do not
-start digest, scheduler, Calibration Mode, AI/LLM, or external-service work.
+Status: Wave 6 is implemented locally on the integration branch. Case packet
+contracts, generator logic, deterministic comparable cases, dashboard UI,
+Markdown export, demo packet generation, and tests are in place. After Wave 6,
+the next planned wave is Wave 7: Manual Digest / Governance Report, but do not
+start digest, scheduler, Calibration Mode, AI/LLM, queue dashboard, or
+external-service work from the Wave 6 branch.
+
+## Wave 6 Case Packet Checklist
+
+- [x] Case packet shared contracts and DTOs exist.
+- [x] Case packet generator works from demo data.
+- [x] Generator can target stored Apply Policy action IDs.
+- [x] Policy version/snapshot at action time is shown when recorded.
+- [x] Policy changes after the action are caveated.
+- [x] Override context and review status appear when present.
+- [x] Prior same-user same-rule history appears when available.
+- [x] Comparable cases use deterministic filters and match reasons.
+- [x] Suggested appeal posture is deterministic and caveated.
+- [x] Markdown export/copy UI exists.
+- [x] Unit tests cover engine, posture, comparables, markdown, missing data,
+  and demo generation.
+- [x] `npm run dev` reaches Devvit Playtest ready.
+- [x] Runtime browser proof of dashboard Case Packet generation from the
+  playtest UI, including Markdown copy/export.
 
 ## Wave 5 Governance Core Checklist
 

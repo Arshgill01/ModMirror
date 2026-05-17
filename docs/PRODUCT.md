@@ -125,6 +125,25 @@ This lets a lead mod answer:
 - Which overrides are unresolved?
 - Which policy version was active when an action was taken?
 
+### 6. Case Packet / Appeal Context
+
+Wave 6 turns governance data into an appeal-support view.
+
+When a user challenges a moderation action, a moderator can generate a Case
+Packet that shows:
+
+- what tracked action happened,
+- which rule and policy version were recorded for that action,
+- whether the selected action matched the policy recommendation,
+- whether an override exists and how it was reviewed,
+- prior tracked same-rule actions for the same user,
+- deterministic comparable cases with match reasons,
+- a caveated suggested appeal posture,
+- a Markdown export for review notes.
+
+This is not an AI fairness judgment and not appeal automation. It is an
+evidence packet rooted in ModMirror's own policy and consistency records.
+
 ## Primary Demo
 
 A fake/test community has Rule 2 enforcement drift.
@@ -150,6 +169,11 @@ ModMirror nudges:
 
 The moderator either follows policy or records an override.
 
+If the user appeals, the moderator opens Case Packets and generates an appeal
+context packet. ModMirror shows the policy version active at action time, the
+accepted override reason when present, prior same-rule history for that user,
+deterministic comparable cases, and Markdown export.
+
 ## Why It Wins
 
 Most tools optimize individual moderator speed.
@@ -170,8 +194,8 @@ That is:
 - Automatic ban execution as primary behavior.
 - Queue dashboard.
 - Toolbox replacement.
-- Full appeal packet generation.
-- Case Packet / Appeal Context before Wave 6.
+- Automated appeal adjudication.
+- Legal/fairness conclusions.
 - Digest/scheduler.
 - Calibration Mode.
 - Cross-subreddit comparisons.
@@ -187,6 +211,8 @@ Safe claims:
 - ModMirror helps teams define rule policies.
 - ModMirror provides consistency nudges.
 - ModMirror helps teams review exceptions and improve policy over time.
+- ModMirror can generate appeal context from policy versions, tracked actions,
+  overrides, and deterministic comparable cases.
 - ModMirror is human-in-the-loop.
 - ModMirror uses deterministic attribution and confidence scoring.
 
@@ -196,5 +222,6 @@ Avoid claims:
 - First ever removal reason tool.
 - First ever strike system.
 - Fully solves moderation fairness.
+- Decides appeals automatically.
 - Automatically detects all rules correctly.
 - Replaces moderators.
