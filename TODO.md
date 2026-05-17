@@ -21,7 +21,9 @@ It replaces the accumulated CSS override stack with an operational workspace
 shell, desktop moderation rail, wrapping mobile nav, ledger/document-style
 Review and Case Packet surfaces, and a global demo-mode banner. Post-redesign
 checks passed on 2026-05-18 and `npm run dev` reached playtest ready at
-`v0.0.1.38`; signed-in Safari rendered the compact inline card in Reddit.
+`v0.0.1.39` after the Settings theme/typography fix; signed-in Safari rendered
+the compact inline card in Reddit, and Safari was opened to the refreshed
+playtest URL for live review.
 
 ## Wave 7/8 Productization Checklist
 

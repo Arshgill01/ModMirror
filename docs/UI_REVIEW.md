@@ -210,6 +210,9 @@ Runtime follow-up on 2026-05-18:
 - `npm run dev` reached Devvit Playtest ready for
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
   `v0.0.1.38`, on branch `redesign/wave7-8-command-center-ui`.
+- After the Settings theme/typography follow-up, `npm run dev` reached Devvit
+  Playtest ready for the same URL at version `v0.0.1.39`, and Safari was
+  opened to the refreshed playtest URL for live review.
 - Signed-in Safari rendered the Reddit playtest post and the compact inline
   ModMirror launch card.
 - Playwright Chromium capture of the Reddit URL was blocked by Reddit network

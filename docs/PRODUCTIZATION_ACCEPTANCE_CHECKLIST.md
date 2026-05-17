@@ -76,12 +76,12 @@ Wave 7/8 is done only when all applicable items are checked.
 - The user rejected the merged Wave 7/8 visual direction as still too
   prototype/card-grid-like, so follow-up work is active on branch
   `redesign/wave7-8-command-center-ui`.
-- Redesign branch commits:
+- Redesign implementation commits:
   - `b7e3ab5 docs: record skill installation audit`
   - `4186dc7 feat: redesign moderation workspace UI`
   - `f91d228 docs: record redesigned UI playtest smoke`
   - `c700eaa fix: normalize settings typography and theme control`
-  - `facb5e5 docs: refresh redesign completion audit`
+- Later branch commits may be audit-only documentation updates.
 - The redesign branch replaces the accumulated CSS override stack with a single
   operational workspace shell, desktop moderation rail, wrapping mobile nav,
   Command Center split surface, ledger-style Review/Case Packet views, and a
@@ -91,7 +91,8 @@ Wave 7/8 is done only when all applicable items are checked.
   (14 files, 65 tests).
 - Post-redesign `npm run dev` reached Playtest ready at
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
-  `v0.0.1.38`.
+  `v0.0.1.39` after the Settings theme/typography follow-up. Safari was
+  opened to the same playtest URL for live review.
 - Signed-in Safari rendered the Reddit playtest post and compact inline
   ModMirror launch card for the redesign branch.
 - Curated redesign screenshots are committed under
