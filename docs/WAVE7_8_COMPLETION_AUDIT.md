@@ -99,6 +99,7 @@ branch is reviewed and approved.
 | Sub-agent usage | A sub-agent was spawned for a redesign brief, but failed due to account usage limits. The blocker is documented; local/Gemini fallback was used. | Blocked with fallback |
 | Runtime proof after redesign | `npm run dev` reached Playtest ready at `v0.0.1.38`; signed-in Safari rendered the Reddit playtest post and compact ModMirror inline card. | Partial runtime proof |
 | Expanded dashboard screenshot after redesign | Chromium Playwright was blocked by Reddit network security; automated Safari click-through was blocked by macOS `System Events` error `-25200`. | Blocked |
+| Reviewable screenshot evidence | Curated static screenshots are committed under `docs/screenshots/wave7-8-redesign/` so the redesign can be reviewed from GitHub, not only from ignored local QA artifacts. | Complete |
 | Required checks after redesign | `npm run type-check`, `npm run lint`, `npm run build`, and `npm test` passed on 2026-05-18; tests remain 14 files / 65 tests. | Complete |
 | Push redesign branch for review | `redesign/wave7-8-command-center-ui` was pushed to `origin/redesign/wave7-8-command-center-ui`; draft PR opened at `https://github.com/Arshgill01/ModMirror/pull/11`. | Complete |
 | GitHub PR checks | `gh pr checks 11` reported no checks configured for the branch; `gh pr view 11` reported open draft PR with empty status check rollup and `mergeable=UNKNOWN`. Local checks remain the verification source for this branch. | Complete with caveat |

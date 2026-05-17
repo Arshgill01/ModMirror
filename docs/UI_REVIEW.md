@@ -159,6 +159,15 @@ Screenshots captured/reviewed in this pass:
 - `output/playwright/wave7-8/redesign-rescue/final-case-demo-v2.png`
 - `output/playwright/wave7-8/redesign-rescue/final-mobile-command.png`
 
+Curated review screenshots are also committed for PR review:
+
+- `docs/screenshots/wave7-8-redesign/inline.png`
+- `docs/screenshots/wave7-8-redesign/command-center.png`
+- `docs/screenshots/wave7-8-redesign/policies.png`
+- `docs/screenshots/wave7-8-redesign/review.png`
+- `docs/screenshots/wave7-8-redesign/case-packet.png`
+- `docs/screenshots/wave7-8-redesign/mobile-command-center.png`
+
 Gemini critique and response:
 
 - Mobile nav showed only a partial `Case Packets` label. Response: changed

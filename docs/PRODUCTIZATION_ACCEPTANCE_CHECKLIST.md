@@ -92,6 +92,8 @@ Wave 7/8 is done only when all applicable items are checked.
   `v0.0.1.38`.
 - Signed-in Safari rendered the Reddit playtest post and compact inline
   ModMirror launch card for the redesign branch.
+- Curated redesign screenshots are committed under
+  `docs/screenshots/wave7-8-redesign/` for PR review.
 - Chromium Playwright screenshot of Reddit was blocked by Reddit network
   security, and automated Safari click-through capture was blocked by macOS
   automation permissions. Both blockers are documented in `docs/UI_REVIEW.md`.
