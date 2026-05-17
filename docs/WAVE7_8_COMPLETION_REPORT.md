@@ -22,6 +22,7 @@ because user approval remains the final gate.
 - Sub-pass branches/worktrees: not used. The Wave 7/8 prompt allowed sequential
   execution on the integration branch when worktrees were impractical.
 - Latest commits:
+  - `7dddcd7 docs: add Wave 7 8 completion report`
   - `68bfee9 docs: add Wave 7 8 completion audit`
   - `a4f5a61 feat: refine Wave 7 8 moderation workbench UI`
   - `6533320 fix: align cardless moderation ledgers`
