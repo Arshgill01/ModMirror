@@ -6,7 +6,7 @@ Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
 Status: Wave 7/8 and the redesign rescue branch are merged to `master` and
 pushed to `origin` through PR #11. Wave 9/10 implementation and runtime QA are
-merged to `master`; push to `origin` is next.
+merged to `master` and pushed to `origin`.
 
 The first Wave 9 slice adds persisted digest contracts, a deterministic server
 digest engine, Redis-backed digest history, digest API routes, an upgraded
@@ -40,7 +40,7 @@ analytics remain out of scope.
 - [x] Runtime playtest re-run for Wave 9/10.
 - [x] Full final checks pass.
 - [x] Integration branch merged to `master` after checks.
-- [ ] `master` pushed to `origin` after Wave 9/10 merge.
+- [x] `master` pushed to `origin` after Wave 9/10 merge.
 
 ## Wave 7/8 Productization Status
 

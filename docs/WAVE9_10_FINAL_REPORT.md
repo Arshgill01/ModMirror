@@ -2,7 +2,7 @@
 
 ## Summary
 
-Wave 9/10 is complete and merged to `master`.
+Wave 9/10 is complete, merged to `master`, and pushed to `origin/master`.
 
 Implemented:
 
