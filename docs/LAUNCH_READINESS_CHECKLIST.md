@@ -7,7 +7,7 @@
 - [x] `npm run type-check`
 - [x] `npm test`
 - [x] `npm run lint`
-- [ ] `npm audit` reviewed and documented
+- [x] `npm audit` reviewed and documented
 
 ## Runtime Checks
 
@@ -81,6 +81,24 @@ Expected:
 - [x] Known limitations clear.
 - [ ] Developer feedback notes drafted.
 - [ ] Final report complete after runtime QA.
+
+## Current Evidence Notes
+
+- Local Wave 9 digest slice checks passed:
+  - `npm run type-check`
+  - `npm run lint`
+  - `npm run build`
+  - `npm test` with 15 files / 67 tests
+- Static Playwright QA captured:
+  - `output/playwright/wave9-10/digest-static.png`
+  - `output/playwright/wave9-10/settings-static.png`
+- Static QA reported no horizontal overflow for Digest or Settings, confirmed
+  Digest History and Markdown Export are visible, and confirmed Settings shows
+  scheduler capability status.
+- `npm audit --audit-level=low` reports existing dependency issues: 31
+  vulnerabilities (3 low, 27 high, 1 critical). Main remediation paths require
+  out-of-range or breaking updates for `hono`, `vite`, and Devvit transitive
+  `protobufjs`; no force remediation has been applied in this wave.
 
 ## Do Not Do Without Human Confirmation
 

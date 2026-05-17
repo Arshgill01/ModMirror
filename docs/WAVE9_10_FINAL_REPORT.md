@@ -39,6 +39,10 @@ To be finalized at merge.
 - `npm run lint` — pass.
 - `npm test` — pass, 15 files / 67 tests.
 - `npm run build` — pass.
+- `npm audit --audit-level=low` — reviewed; exits 1 due existing audit
+  findings.
+- Static Playwright script against `serve dist/client` — pass for Digest and
+  Settings overflow/content checks.
 
 ## Test Results
 
@@ -63,13 +67,24 @@ In progress.
 
 ## Screenshots / Demo Assets
 
-Pending final visual QA.
+- Static artifacts:
+  - `output/playwright/wave9-10/digest-static.png`
+  - `output/playwright/wave9-10/settings-static.png`
+- Static QA result:
+  - Digest horizontal overflow: false.
+  - Settings horizontal overflow: false.
+  - Digest History visible: true.
+  - Markdown Export visible: true.
+  - Settings scheduler capability visible: true.
 
 ## Known Issues
 
 - Redis runtime smoke is still not independently verified in playtest.
 - Mod discussion delivery and scheduler are type-discovered but not
   runtime-verified.
+- `npm audit --audit-level=low` reports 31 existing dependency vulnerabilities
+  (3 low, 27 high, 1 critical). Force remediation would move `hono`, `vite`, or
+  Devvit transitive packages outside the current supported range.
 
 ## Deferred Items
 

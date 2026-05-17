@@ -30,10 +30,12 @@ analytics remain out of scope.
 - [x] Settings shows digest delivery/scheduler capability status.
 - [x] Mod discussion delivery remains disabled/unverified.
 - [x] Scheduler remains disabled/unverified.
-- [ ] Launch readiness checklist filled.
-- [ ] App listing draft complete.
-- [ ] Devpost draft complete.
-- [ ] Screenshot/video plan complete.
+- [x] Static Digest/Settings visual QA captured.
+- [x] `npm audit` reviewed and documented.
+- [x] Launch readiness checklist partially filled with local evidence.
+- [x] App listing draft complete.
+- [x] Devpost draft complete.
+- [x] Screenshot/video plan complete.
 - [ ] Final Wave 9/10 report complete.
 - [ ] Runtime playtest re-run for Wave 9/10.
 - [ ] Full final checks pass.
