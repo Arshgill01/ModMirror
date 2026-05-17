@@ -60,6 +60,10 @@ checks pass and user approval is given.
 - `npm run dev`: reached Playtest ready at
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
   `v0.0.1.26`.
+- `git fetch origin --prune`: passed.
+- Merge readiness: both local `master` and `origin/master` are ancestors of
+  `integration/wave7-8-productization`; `git merge-tree` dry-run produced a
+  clean merge result.
 
 ## Known Remaining Caveats
 

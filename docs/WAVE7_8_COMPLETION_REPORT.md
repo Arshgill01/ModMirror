@@ -82,8 +82,12 @@ because user approval remains the final gate.
 - `git status --short --branch`
 - `git branch --show-current`
 - `git remote -v`
+- `git fetch origin --prune`
 - `git diff --name-only master...HEAD`
 - `git diff --stat master...HEAD`
+- `git merge-base --is-ancestor master integration/wave7-8-productization`
+- `git merge-base --is-ancestor origin/master integration/wave7-8-productization`
+- `git merge-tree $(git merge-base master integration/wave7-8-productization) master integration/wave7-8-productization`
 - `npm install`
 - `npm run build`
 - `npm run type-check`
@@ -111,6 +115,11 @@ because user approval remains the final gate.
   - Reached Devvit Playtest ready at
     `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
     `v0.0.1.26`.
+- PASS: remote/merge readiness
+  - `origin/master` is contained in `integration/wave7-8-productization`.
+  - local `master` is contained in `integration/wave7-8-productization`.
+  - `git merge-tree` dry-run produced a clean merge result with no conflict
+    sections.
 
 ## Runtime Verification
 
