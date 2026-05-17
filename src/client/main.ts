@@ -335,38 +335,49 @@ function render() {
   const summary = buildDashboardSummary();
 
   appRoot.innerHTML = `
-    <div class="mm-shell">
-      <header class="mm-header">
-        <div>
+    <div class="ops-shell">
+      <aside class="ops-rail">
+        <div class="ops-brand">
           <h1>${APP_NAME}</h1>
           <p>${APP_TAGLINE}</p>
         </div>
-        <div class="mode-stack">
-          <span class="status-badge ${summary.dataMode === 'demo' ? 'status-watch' : 'status-neutral'}">${formatDataMode(summary.dataMode)}</span>
-          <span>${escapeHtml(health?.app.version ?? 'local build')}</span>
-        </div>
-      </header>
 
-      <nav class="mm-nav" aria-label="ModMirror sections">
-        ${pages
-          .map(
-            (item) => `
-              <button class="nav-button${item.id === page.id ? ' active' : ''}" data-page="${item.id}" type="button">
-                ${item.label}
-              </button>
-            `
-          )
-          .join('')}
-      </nav>
+        <nav class="ops-nav" aria-label="ModMirror sections">
+          ${pages
+            .map(
+              (item) => `
+                <button class="nav-button${item.id === page.id ? ' active' : ''}" data-page="${item.id}" type="button">
+                  ${item.label}
+                </button>
+              `
+            )
+            .join('')}
+        </nav>
 
-      <main class="mm-main page-${page.id}">
-        <section class="page-heading">
+        <dl class="rail-status" aria-label="Workspace status">
+          ${renderCommandSignal('Mode', formatDataMode(summary.dataMode))}
+          ${renderCommandSignal('Open overrides', summary.unresolvedOverrideCount.toString())}
+          ${renderCommandSignal('Policies', summary.activePolicyCount.toString())}
+          ${renderCommandSignal('Build', health?.app.version ?? 'local build')}
+        </dl>
+      </aside>
+
+      <main class="ops-main page-${page.id}">
+        ${renderDemoBanner(summary.dataMode)}
+        <header class="workspace-header">
           <div>
             <h2>${page.title}</h2>
             <p>${page.purpose}</p>
           </div>
-          ${renderPageAction(page.id)}
-        </section>
+          <div class="workspace-tools">
+            ${
+              summary.dataMode === 'demo'
+                ? ''
+                : `<span class="status-badge status-neutral">${formatDataMode(summary.dataMode)}</span>`
+            }
+            ${renderPageAction(page.id)}
+          </div>
+        </header>
         ${renderExpandedModeMessage()}
         ${renderPage(page.id)}
       </main>
@@ -382,12 +393,10 @@ function renderInlineLaunchCard() {
     <main class="inline-shell">
       <section class="inline-card" aria-label="ModMirror launch card">
         <div class="inline-card-main">
-          <div>
-            <h1>${APP_NAME}</h1>
-            <p>${APP_TAGLINE}</p>
-          </div>
+          <h1>${APP_NAME}</h1>
           <span class="status-badge ${summary.dataMode === 'demo' ? 'status-watch' : 'status-neutral'}">${formatDataMode(summary.dataMode)}</span>
         </div>
+        <p>${APP_TAGLINE}</p>
         <dl class="inline-stats">
           <div><dt>Top issue</dt><dd>${escapeHtml(summary.topIssue)}</dd></div>
           <div><dt>Unresolved overrides</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
@@ -413,6 +422,18 @@ function renderPageAction(pageId: ProductPageId) {
 function renderExpandedModeMessage() {
   void expandedModeMessage;
   return '';
+}
+
+function renderDemoBanner(dataMode: ProductDataMode) {
+  if (dataMode !== 'demo') {
+    return '';
+  }
+  return `
+    <aside class="demo-banner" aria-label="Demo data mode">
+      <strong>Demo data active</strong>
+      <span>ExampleLearning is loaded for review, screenshots, and the 3-minute walkthrough. Live subreddit data remains separate.</span>
+    </aside>
+  `;
 }
 
 function renderPage(pageId: ProductPageId) {
@@ -449,29 +470,29 @@ function renderCommandCenterPage() {
   const setupSteps = buildSetupSteps(setupInput);
 
   return `
-    <section class="command-board">
-      <div class="command-overview">
-        <div class="score-block">
-          <span>Consistency score</span>
-          <strong>${summary.consistencyScore}</strong>
+    <section class="command-board" aria-label="Command center summary">
+      <div class="command-primary">
+        <div class="score-block" style="--score: ${summary.consistencyScore}%">
+          <span class="score-label">Consistency score</span>
+          <strong>${summary.consistencyScore}<span>/100</span></strong>
           <p>${escapeHtml(summary.topIssue)}</p>
-          <span class="score-meter" style="--score: ${summary.consistencyScore}%"></span>
         </div>
+
+        <div class="next-action">
+          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
+          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
+          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+        </div>
+      </div>
+
+      <div class="command-secondary">
         <dl class="signal-list">
           ${renderCommandSignal('Data mode', formatDataMode(summary.dataMode))}
           ${renderCommandSignal('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
           ${renderCommandSignal('Active policies', summary.activePolicyCount.toString())}
           ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
         </dl>
-      </div>
-
-      <div class="command-action-row">
-        <div>
-          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
-          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
-        </div>
-        <div class="button-row">
-          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+        <div class="secondary-actions">
           ${summary.secondaryActions
             .map(
               (action) =>
@@ -1115,8 +1136,12 @@ function renderReviewButton(
   status: OverrideReviewStatus,
   label: string
 ) {
+  const buttonClass =
+    status === 'accepted_exception' || status === 'policy_needs_update'
+      ? 'primary-button compact-button'
+      : 'secondary-button compact-button';
   return `
-    <button class="secondary-button compact-button" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''} type="button">
+    <button class="${buttonClass}" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''} type="button">
       ${label}
     </button>
   `;
@@ -1488,6 +1513,10 @@ function bindNavigation() {
       if (nextPage && pages.some((page) => page.id === nextPage)) {
         activePage = nextPage as ProductPageId;
         window.location.hash = `#${activePage}`;
+        if (activePage === 'review') {
+          void loadGovernance();
+          return;
+        }
         render();
       }
     });

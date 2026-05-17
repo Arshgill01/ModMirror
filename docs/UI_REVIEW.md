@@ -130,3 +130,56 @@ Final density-pass screenshots:
 Final static overflow checks reported `horizontalOverflow=false` for desktop
 and mobile. The Policies form screenshot was recaptured after widening the
 recommended-action select so `temporary ban suggested` is readable.
+
+## Post-Merge Redesign Rescue Pass
+
+The user rejected the merged UI as still too card-heavy and prototype-like, so a
+new branch `redesign/wave7-8-command-center-ui` replaced the accumulated CSS
+override stack with a single coherent operational workspace system.
+
+Skills/process used:
+
+- `frontend-design`: used for a page-level redesign rather than local component
+  polish.
+- `uncodixfy`: used to reject metric-card grids, soft SaaS chrome, decorative
+  copy, and repeated rounded containers.
+- Matt Pocock `prototype` workflow: used as the design process reference for
+  making structural layout changes rather than color-only tweaks.
+- Gemini CLI: run in actual tmux window
+  `modmirror-wave7-8:gemini-redesign`, model display `Auto (Gemini 3)`, after
+  screenshot capture.
+
+Screenshots captured/reviewed in this pass:
+
+- `output/playwright/wave7-8/redesign-rescue/final-inline.png`
+- `output/playwright/wave7-8/redesign-rescue/final-command-empty.png`
+- `output/playwright/wave7-8/redesign-rescue/final-scan-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-policies-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-review-demo.png`
+- `output/playwright/wave7-8/redesign-rescue/final-case-demo-v2.png`
+- `output/playwright/wave7-8/redesign-rescue/final-mobile-command.png`
+
+Gemini critique and response:
+
+- Mobile nav showed only a partial `Case Packets` label. Response: changed
+  mobile/tablet nav from horizontal clipping to a wrapping grid so all
+  destinations remain visible.
+- Demo mode labels were scattered. Response: added a global demo banner in the
+  dashboard shell when ExampleLearning data is active.
+- Review decision buttons had equal weight. Response: made the two active
+  governance decisions visually primary and left passive decisions secondary.
+- Case Packet content looked like a dashboard split. Response: converted the
+  packet detail into a single-column document flow.
+- Review nav did not auto-load governance data. Response: Review navigation now
+  triggers governance loading so demo fallback data appears without an extra
+  Refresh click.
+
+Current accepted direction:
+
+- Persistent moderation rail on desktop, compact wrapping nav on mobile.
+- Command Center as an operational split surface: score, next action, signals,
+  then setup/demo workflow.
+- Review and Case Packets use ledgers/document rows instead of repeated
+  decorative cards.
+- The UI still uses some bordered task surfaces for forms and export textareas
+  because those are error-prone workflows inside a constrained Reddit WebView.
