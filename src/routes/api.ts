@@ -10,6 +10,8 @@ import type {
   ApplyPolicyPreview,
   ApplyPolicyPreviewInput,
   ApiResponse,
+  GenerateCasePacketRequest,
+  GenerateCasePacketResponse,
   DriftCandidate,
   MirrorScan,
   OverrideEvent,
@@ -46,6 +48,7 @@ import {
   getPolicyHealthOverview,
   listPolicyHealthSummaries,
 } from '../server/services/policyHealth';
+import { generateCasePacket } from '../server/services/casePacket';
 
 export const api = new Hono();
 
@@ -439,6 +442,28 @@ api.get('/policies/:id/health', async (c) => {
   } satisfies ApiResponse<PolicyHealthSummary>);
 });
 
+api.post('/case-packet', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateCasePacketRequest>;
+
+  try {
+    const request = normalizeGenerateCasePacketInput(body);
+    const options: Parameters<typeof generateCasePacket>[0] = {
+      request,
+      subreddit: getCurrentSubreddit(),
+    };
+    if (context.username !== undefined) {
+      options.generatedBy = context.username;
+    }
+    const response: ApiResponse<GenerateCasePacketResponse> = {
+      ok: true,
+      data: await generateCasePacket(options),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(casePacketError(error), 400);
+  }
+});
+
 api.post('/apply-policy/preview', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyPreviewInput>;
 
@@ -511,6 +536,41 @@ function normalizeApplyPreviewInput(
   return input;
 }
 
+function normalizeGenerateCasePacketInput(
+  body: Partial<GenerateCasePacketRequest>
+): GenerateCasePacketRequest {
+  if (!body.subject) {
+    throw new Error('subject is required');
+  }
+
+  const request: GenerateCasePacketRequest = {
+    subject: {
+      type: body.subject.type ?? 'demo',
+    },
+  };
+
+  if (body.subject.actionId !== undefined) {
+    request.subject.actionId = body.subject.actionId;
+  }
+  if (body.subject.username !== undefined) {
+    request.subject.username = body.subject.username;
+  }
+  if (body.subject.ruleKey !== undefined) {
+    request.subject.ruleKey = body.subject.ruleKey;
+  }
+  if (body.subject.targetThingId !== undefined) {
+    request.subject.targetThingId = body.subject.targetThingId;
+  }
+  if (body.timeWindowDays !== undefined) {
+    request.timeWindowDays = body.timeWindowDays;
+  }
+  if (body.maxComparableCases !== undefined) {
+    request.maxComparableCases = body.maxComparableCases;
+  }
+
+  return request;
+}
+
 function normalizeApplyConfirmInput(
   body: Partial<ApplyPolicyConfirmInput>
 ): ApplyPolicyConfirmInput {
@@ -553,6 +613,19 @@ function overrideError(error: unknown): ApiResponse<OverrideEvent[]> {
       code: 'override_review_failed',
       message:
         error instanceof Error ? error.message : 'Override review failed',
+    },
+  };
+}
+
+function casePacketError(
+  error: unknown
+): ApiResponse<GenerateCasePacketResponse> {
+  return {
+    ok: false,
+    error: {
+      code: 'case_packet_failed',
+      message:
+        error instanceof Error ? error.message : 'Case packet request failed',
     },
   };
 }

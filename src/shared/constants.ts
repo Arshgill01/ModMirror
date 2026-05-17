@@ -1,5 +1,9 @@
 import type {
   ActionSource,
+  AppealPosture,
+  CasePacketActionFamily,
+  CasePacketConsistencyStatus,
+  CasePacketOffenseBucket,
   Confidence,
   EnforcementAction,
   MessageDeliveryMode,
@@ -62,6 +66,44 @@ export const POLICY_HEALTH_STATUS_VALUES = [
   'insufficient_data',
 ] as const satisfies readonly PolicyHealthStatus[];
 
+export const CASE_PACKET_CONSISTENCY_STATUS_VALUES = [
+  'matched_policy',
+  'stricter_than_policy',
+  'looser_than_policy',
+  'manual_review',
+  'policy_unavailable',
+  'policy_changed_since_action',
+  'insufficient_data',
+] as const satisfies readonly CasePacketConsistencyStatus[];
+
+export const CASE_PACKET_ACTION_FAMILY_VALUES = [
+  'approve',
+  'remove',
+  'warn',
+  'note',
+  'temporary_ban_suggested',
+  'permanent_ban_suggested',
+  'manual_review',
+  'ignore_reports',
+  'unknown',
+] as const satisfies readonly CasePacketActionFamily[];
+
+export const CASE_PACKET_OFFENSE_BUCKET_VALUES = [
+  'first_offense',
+  'second_offense',
+  'third_or_more',
+  'unknown',
+] as const satisfies readonly CasePacketOffenseBucket[];
+
+export const APPEAL_POSTURE_VALUES = [
+  'policy_consistent',
+  'justified_override',
+  'review_recommended',
+  'insufficient_history',
+  'policy_changed_since_action',
+  'unknown',
+] as const satisfies readonly AppealPosture[];
+
 export const ACTION_SOURCE_VALUES = [
   'live',
   'demo',
@@ -82,6 +124,7 @@ export const API_ROUTES = {
   overrides: '/api/overrides',
   overrideSummary: '/api/overrides/summary',
   policyHealth: '/api/policy-health',
+  casePacket: '/api/case-packet',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',

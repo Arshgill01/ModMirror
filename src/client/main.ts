@@ -16,9 +16,12 @@ import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
   ApiResponse,
+  CasePacket,
   Confidence,
   DriftCandidate,
   EnforcementAction,
+  GenerateCasePacketRequest,
+  GenerateCasePacketResponse,
   MessageDeliveryMode,
   MirrorScan,
   OverrideReason,
@@ -33,6 +36,7 @@ type PageId =
   | 'mirror-scan'
   | 'policies'
   | 'apply-policy'
+  | 'case-packets'
   | 'overrides'
   | 'demo-mode';
 type ScanMode = 'live' | 'demo';
@@ -89,6 +93,13 @@ type ApplyUiState = {
   message: string | undefined;
   preview: ApplyPolicyPreview | undefined;
   result: ApplyPolicyConfirmResult | undefined;
+};
+
+type CasePacketUiState = {
+  loading: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  packet: CasePacket | undefined;
 };
 
 type PolicyHealthSummary = {
@@ -192,6 +203,12 @@ const pages: Page[] = [
     body: 'Use the dashboard simulator while Reddit menu actions remain runtime-unverified. Confirmed actions are logged with log-only delivery.',
   },
   {
+    id: 'case-packets',
+    label: 'Case Packets',
+    title: 'Case Packets',
+    body: 'Generate appeal context rooted in policy versions, tracked action history, overrides, and deterministic comparable cases.',
+  },
+  {
     id: 'overrides',
     label: 'Overrides',
     title: 'Overrides',
@@ -234,6 +251,12 @@ let applyState: ApplyUiState = {
   message: undefined,
   preview: undefined,
   result: undefined,
+};
+let casePacketState: CasePacketUiState = {
+  loading: false,
+  error: undefined,
+  message: undefined,
+  packet: undefined,
 };
 let governanceState: GovernanceUiState = {
   loading: false,
@@ -325,6 +348,7 @@ function render() {
   bindScanActions();
   bindPolicyActions();
   bindApplyPolicyActions();
+  bindCasePacketActions();
   bindGovernanceActions();
 }
 
@@ -337,6 +361,9 @@ function renderPage(page: Page) {
   }
   if (page.id === 'apply-policy') {
     return renderApplyPolicyPage();
+  }
+  if (page.id === 'case-packets') {
+    return renderCasePacketPage();
   }
   if (page.id === 'governance' || page.id === 'overrides') {
     return renderGovernancePage();
@@ -980,10 +1007,192 @@ function renderApplyPreview() {
       <p class="muted">${escapeHtml(recommendation.message)}</p>
       ${
         result
-          ? `<p class="inline-success">Policy action logged${result.overrideEvent ? ' with override reason' : ''}.</p>`
+          ? `<p class="inline-success">Policy action logged${result.overrideEvent ? ' with override reason' : ''}.</p>
+             <button class="secondary-button" data-case-from-action="${escapeAttribute(result.actionEvent.id)}">Generate case packet</button>`
           : ''
       }
     </section>
+  `;
+}
+
+function renderCasePacketPage() {
+  return `
+    <section class="section policy-layout" aria-labelledby="current-page-title">
+      <div>
+        <h3 id="current-page-title">Case Packet / Appeal Context</h3>
+        <p>${pages.find((page) => page.id === 'case-packets')?.body ?? ''}</p>
+        ${renderCasePacketMessage()}
+      </div>
+      <div class="policy-actions">
+        <button class="primary-button" data-generate-demo-case ${casePacketState.loading ? 'disabled' : ''}>Generate demo packet</button>
+      </div>
+    </section>
+
+    <section class="section policy-form-section" aria-label="Generate case packet from action">
+      <form class="policy-form" data-case-action-form>
+        <label>
+          Tracked action ID
+          <input name="actionId" placeholder="Paste an Apply Policy action ID">
+        </label>
+        <div class="policy-actions left">
+          <button class="secondary-button" type="submit" ${casePacketState.loading ? 'disabled' : ''}>Generate from action</button>
+          ${
+            applyState.result
+              ? `<button class="secondary-button" type="button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}">Use latest logged action</button>`
+              : ''
+          }
+        </div>
+      </form>
+    </section>
+
+    ${renderCasePacketDetail()}
+  `;
+}
+
+function renderCasePacketMessage() {
+  if (casePacketState.error) {
+    return `<p class="inline-error">${escapeHtml(casePacketState.error)}</p>`;
+  }
+  if (casePacketState.message) {
+    return `<p class="inline-success">${escapeHtml(casePacketState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderCasePacketDetail() {
+  if (casePacketState.loading && !casePacketState.packet) {
+    return `
+      <section class="section loading-state">
+        <h3>Generating packet</h3>
+        <p class="muted">Reading action history, policy version context, overrides, and deterministic comparable cases.</p>
+      </section>
+    `;
+  }
+
+  const packet = casePacketState.packet;
+  if (!packet) {
+    return `
+      <section class="section empty-scan-state">
+        <h3>No packet generated yet</h3>
+        <p>Generate the demo packet for screenshots, or generate from an Apply Policy action ID after recording a log-only action.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="scan-summary-grid" aria-label="Case packet summary">
+      ${renderMetricCard('Posture', formatAction(packet.appealPosture))}
+      ${renderMetricCard('Consistency', formatAction(packet.consistencyStatus))}
+      ${renderMetricCard('Policy version', packet.policyContext.policyVersionNumber?.toString() ?? 'Unavailable')}
+      ${renderMetricCard('Comparables', packet.comparableCases.length.toString())}
+    </section>
+
+    <section class="case-packet-grid" aria-label="Case packet detail">
+      ${renderCasePacketAction(packet)}
+      ${renderCasePacketPolicy(packet)}
+      ${renderCasePacketOverride(packet)}
+      ${renderCasePacketLists(packet)}
+    </section>
+
+    <section class="section policy-form-section">
+      <div class="policy-form-header">
+        <div>
+          <h3>Markdown Export</h3>
+          <p>Copy this into the team review thread or appeal notes. It is deterministic context, not an automated judgment.</p>
+        </div>
+        <button class="secondary-button" data-copy-case-markdown>Copy Markdown</button>
+      </div>
+      <textarea class="markdown-export" readonly>${escapeHtml(packet.markdown)}</textarea>
+    </section>
+  `;
+}
+
+function renderCasePacketAction(packet: CasePacket) {
+  const action = packet.action;
+  return `
+    <article class="panel">
+      <h3>Action Summary</h3>
+      <dl class="status-list">
+        <div><dt>Action ID</dt><dd>${escapeHtml(action?.actionId ?? 'Unavailable')}</dd></div>
+        <div><dt>Created</dt><dd>${escapeHtml(action?.createdAt ? formatDate(action.createdAt) : 'Unavailable')}</dd></div>
+        <div><dt>Rule</dt><dd>${escapeHtml(action?.ruleName ?? action?.ruleKey ?? 'Unavailable')}</dd></div>
+        <div><dt>Recommended</dt><dd>${escapeHtml(formatAction(action?.recommendedAction ?? 'unavailable'))}</dd></div>
+        <div><dt>Selected</dt><dd>${escapeHtml(formatAction(action?.selectedAction ?? 'unavailable'))}</dd></div>
+        <div><dt>Target author</dt><dd>${escapeHtml(action?.targetAuthor ?? 'Not captured')}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function renderCasePacketPolicy(packet: CasePacket) {
+  const policy = packet.policyContext;
+  return `
+    <article class="panel">
+      <h3>Policy Context</h3>
+      <dl class="status-list">
+        <div><dt>Policy</dt><dd>${escapeHtml(policy.policyName ?? policy.policyId ?? 'Unavailable')}</dd></div>
+        <div><dt>Version</dt><dd>${policy.policyVersionNumber ?? 'Unavailable'}</dd></div>
+        <div><dt>Status</dt><dd>${escapeHtml(formatAction(policy.policyVersionStatus ?? 'unavailable'))}</dd></div>
+        <div><dt>Changed since action</dt><dd>${policy.changedSinceAction ? 'Yes' : 'No'}</dd></div>
+      </dl>
+    </article>
+  `;
+}
+
+function renderCasePacketOverride(packet: CasePacket) {
+  const override = packet.overrideContext;
+  return `
+    <article class="panel">
+      <h3>Override Context</h3>
+      ${
+        override
+          ? `<dl class="status-list">
+              <div><dt>Reason</dt><dd>${escapeHtml(formatAction(override.reason ?? 'unavailable'))}</dd></div>
+              <div><dt>Review</dt><dd>${escapeHtml(formatAction(override.reviewStatus ?? 'unavailable'))}</dd></div>
+              <div><dt>Reviewed by</dt><dd>${escapeHtml(override.reviewedBy ?? 'Not reviewed')}</dd></div>
+              <div><dt>Note</dt><dd>${escapeHtml(override.note ?? 'None')}</dd></div>
+            </dl>`
+          : '<p>No matching override record was found for this action.</p>'
+      }
+    </article>
+  `;
+}
+
+function renderCasePacketLists(packet: CasePacket) {
+  return `
+    <article class="panel">
+      <h3>History And Comparables</h3>
+      <div class="case-list-block">
+        <strong>Prior same-rule user history</strong>
+        ${
+          packet.userHistory.length > 0
+            ? `<ul>${packet.userHistory
+                .map(
+                  (item) =>
+                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${escapeHtml(formatAction(item.selectedAction ?? 'unavailable'))}</li>`
+                )
+                .join('')}</ul>`
+            : '<p class="muted">No prior tracked same-rule history for this user.</p>'
+        }
+      </div>
+      <div class="case-list-block">
+        <strong>Deterministic comparable cases</strong>
+        ${
+          packet.comparableCases.length > 0
+            ? `<ul>${packet.comparableCases
+                .map(
+                  (item) =>
+                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${escapeHtml(formatAction(item.selectedAction ?? 'unavailable'))} — ${escapeHtml(item.matchReasons.join(', '))}</li>`
+                )
+                .join('')}</ul>`
+            : '<p class="muted">No comparable cases found in the configured window.</p>'
+        }
+      </div>
+      <div class="case-list-block">
+        <strong>Caveats</strong>
+        <ul>${packet.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join('')}</ul>
+      </div>
+    </article>
   `;
 }
 
@@ -1260,6 +1469,44 @@ function bindApplyPolicyActions() {
       void confirmApplyPolicy(new FormData(event.currentTarget as HTMLFormElement));
     }
   );
+}
+
+function bindCasePacketActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-generate-demo-case]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void generateCasePacket({ type: 'demo' });
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-case-from-action]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const actionId = button.dataset.caseFromAction;
+        if (actionId) {
+          void generateCasePacket({ type: 'action', actionId });
+        }
+      });
+    });
+
+  document
+    .querySelector<HTMLFormElement>('[data-case-action-form]')
+    ?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget as HTMLFormElement);
+      const actionId = String(formData.get('actionId') ?? '').trim();
+      if (actionId) {
+        void generateCasePacket({ type: 'action', actionId });
+      }
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-copy-case-markdown]')
+    .forEach((button) => {
+      button.addEventListener('click', () => void copyCasePacketMarkdown());
+    });
 }
 
 function bindGovernanceActions() {
@@ -1559,6 +1806,74 @@ async function fetchApi<T>(
     throw new Error(payload.error.message);
   }
   return payload.data;
+}
+
+async function generateCasePacket(
+  subject: GenerateCasePacketRequest['subject']
+) {
+  casePacketState = {
+    ...casePacketState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  activePage = 'case-packets';
+  window.location.hash = '#case-packets';
+  render();
+
+  try {
+    const data = await fetchApi<GenerateCasePacketResponse>(
+      API_ROUTES.casePacket,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          timeWindowDays: 30,
+          maxComparableCases: 5,
+        } satisfies GenerateCasePacketRequest),
+      }
+    );
+    casePacketState = {
+      loading: false,
+      error: undefined,
+      message: 'Case packet generated.',
+      packet: data.packet,
+    };
+  } catch (error) {
+    casePacketState = {
+      ...casePacketState,
+      loading: false,
+      error:
+        error instanceof Error ? error.message : 'Case packet generation failed',
+    };
+  }
+
+  render();
+}
+
+async function copyCasePacketMarkdown() {
+  const markdown = casePacketState.packet?.markdown;
+  if (!markdown) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(markdown);
+    casePacketState = {
+      ...casePacketState,
+      message: 'Markdown copied to clipboard.',
+      error: undefined,
+    };
+  } catch {
+    casePacketState = {
+      ...casePacketState,
+      message: 'Markdown is ready in the export textarea.',
+      error: undefined,
+    };
+  }
+
+  render();
 }
 
 async function createPolicyFromDrift(candidate: DriftCandidate) {

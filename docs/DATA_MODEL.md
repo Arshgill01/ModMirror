@@ -426,3 +426,41 @@ Post/comment menu UX remains runtime-unverified in browser playtest.
 - `modmail` is allowed as a future private delivery path because SDK typings expose modmail creation. It is not runtime-verified.
 - `private_message` is intentionally excluded from the preferred model because subreddit private message sending is deprecated in the installed typings.
 - Per-mod aggregate analytics should not be added to shared response types until permission gating is runtime-verified.
+
+## Wave 6 Additions
+
+Case Packets are generated views, not a new persisted Redis record. They reuse
+tracked `ActionEvent`, `OverrideEvent`, `RulePolicy`, `PolicySnapshot`, and
+policy version fields from Waves 3-5.
+
+New shared contracts in `src/shared/schema.ts` include:
+
+- `CasePacket`
+- `CasePacketSubject`
+- `CasePacketAction`
+- `CasePacketPolicyContext`
+- `CasePacketConsistencyStatus`
+- `CasePacketOverrideContext`
+- `CasePacketUserHistoryItem`
+- `ComparableCase`
+- `AppealPosture`
+- `GenerateCasePacketRequest`
+- `GenerateCasePacketResponse`
+
+The generator resolves:
+
+- the tracked action, when present,
+- the policy snapshot/version recorded at action time,
+- whether the current active policy version differs,
+- selected versus recommended action consistency,
+- matching override/review context,
+- prior same-user same-rule ModMirror actions,
+- deterministic comparable cases.
+
+Comparable cases are explainable filters only. They require the same rule, a
+matching offense bucket when available, a matching selected or recommended
+action family, and a configured time window. They do not use embeddings, LLMs,
+or vague semantic similarity.
+
+Case Packet markdown is produced from the structured packet response so the UI
+can copy/export the same content moderators see in the dashboard.

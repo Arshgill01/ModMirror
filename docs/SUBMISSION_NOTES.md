@@ -30,6 +30,12 @@ Wave 5 expands this from a detection-and-nudge loop into a governance loop:
 ModMirror does not just detect inconsistency. It gives teams a feedback loop:
 detect drift, set policy, enforce, review exceptions, and improve policy.
 
+Wave 6 adds Case Packet / Appeal Context:
+when a user appeals or challenges an action, ModMirror can generate a
+moderator-facing packet that shows the tracked action, policy version at the
+time, consistency status, override review context, prior same-rule user
+history, deterministic comparable cases, caveats, and a Markdown export.
+
 ## Project Impact Draft
 
 Communities that would benefit:
@@ -70,6 +76,9 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Policy health uses deterministic thresholds to flag rules that look stable,
   at risk, or in need of review.
 - Overrides can be reviewed without exposing per-mod performance analytics.
+- Case Packets generate from demo data or tracked Apply Policy action IDs.
+- Case Packets include deterministic comparable cases with match reasons and
+  Markdown export/copy UI.
 
 ## Known Limitations
 
@@ -79,8 +88,10 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 - Live public comment/private message/modmail/native Mod Notes delivery is not enabled by default.
 - Policy health depends on tracked action volume and may show insufficient data
   for sparse communities.
-- Scheduler/digest, Calibration Mode, and Case Packet / Appeal Context are
-  future waves, not Wave 5 behavior.
+- Case Packets are evidence packets for moderator review; they do not decide
+  appeals or claim perfect fairness.
+- Scheduler/digest and Calibration Mode remain future waves.
 - Browser UI proof is signed in, playtest-ready, shows the dashboard launcher,
-  creates the dashboard custom post after confirmation, and renders the
-  ModMirror dashboard WebView.
+  creates the dashboard custom post after confirmation, renders the ModMirror
+  dashboard WebView, and verifies Wave 6 demo Case Packet generation plus
+  Markdown copy/export.

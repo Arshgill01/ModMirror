@@ -35,6 +35,16 @@ Most mod tools help moderators act faster. ModMirror helps mod teams act consist
     - current policy version.
 16. Mark the override as "Policy needs update."
 17. Edit the Rule 2 policy and show that a new policy version is created.
+18. Open Case Packets.
+19. Click "Generate demo packet."
+20. Show:
+    - tracked action,
+    - Rule 2 policy version at action time,
+    - consistency status,
+    - accepted override context,
+    - prior same-rule user history,
+    - deterministic comparable cases with match reasons,
+    - Markdown export.
 
 Runtime note: the dashboard can be launched from a moderator-only subreddit
 menu action that opens a confirmation form before creating a custom post.
@@ -53,6 +63,7 @@ Use the 60-second demo plus:
 - override review inbox,
 - policy health,
 - policy version history,
+- Case Packet / Appeal Context,
 - no-policy fallback.
 
 ## Demo Data
@@ -98,6 +109,8 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Governance dashboard policy health cards
 - [x] Override review inbox
 - [x] Policy version history summary
+- [x] Case Packet demo generation
+- [x] Markdown export/copy surface
 
 ## Devpost Opening
 
