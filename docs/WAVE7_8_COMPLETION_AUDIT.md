@@ -4,7 +4,11 @@ Audit date: 2026-05-17
 
 Branch audited: `integration/wave7-8-productization`
 
-Latest audited commit: `7dddcd7 docs: add Wave 7 8 completion report`
+Latest audited implementation commit:
+`a4f5a61 feat: refine Wave 7 8 moderation workbench UI`
+
+Completion evidence docs were added after implementation and are intentionally
+not treated as implementation scope.
 
 ## Objective
 
