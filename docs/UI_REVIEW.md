@@ -183,3 +183,19 @@ Current accepted direction:
   decorative cards.
 - The UI still uses some bordered task surfaces for forms and export textareas
   because those are error-prone workflows inside a constrained Reddit WebView.
+
+Runtime follow-up on 2026-05-18:
+
+- `npm run dev` reached Devvit Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
+  `v0.0.1.38`, on branch `redesign/wave7-8-command-center-ui`.
+- Signed-in Safari rendered the Reddit playtest post and the compact inline
+  ModMirror launch card.
+- Playwright Chromium capture of the Reddit URL was blocked by Reddit network
+  security; screenshot saved locally at
+  `output/playwright/wave7-8/redesign-rescue-runtime/reddit-playtest.png`.
+- Safari screen capture of the signed-in page was saved locally at
+  `output/playwright/wave7-8/redesign-rescue-runtime/safari-playtest.png`.
+- Automated click-through to the expanded dashboard was not captured because
+  macOS `System Events` click automation returned error `-25200`, and Safari
+  `do JavaScript` automation hung before returning DOM access.
