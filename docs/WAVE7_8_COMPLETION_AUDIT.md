@@ -83,7 +83,8 @@ Addendum date: 2026-05-18
 
 Branch audited: `redesign/wave7-8-command-center-ui`
 
-Latest audited redesign commit: `f91d228 docs: record redesigned UI playtest smoke`
+Latest audited redesign commit:
+`c700eaa fix: normalize settings typography and theme control`
 
 Reason: after the Wave 7/8 integration branch was merged and pushed, the user
 rejected the visual quality as still too card-heavy/prototype-like. This means
@@ -100,9 +101,9 @@ branch is reviewed and approved.
 | Runtime proof after redesign | `npm run dev` reached Playtest ready at `v0.0.1.38`; signed-in Safari rendered the Reddit playtest post and compact ModMirror inline card. | Partial runtime proof |
 | Expanded dashboard screenshot after redesign | Chromium Playwright was blocked by Reddit network security; automated Safari click-through was blocked by macOS `System Events` error `-25200`. | Blocked |
 | Reviewable screenshot evidence | Curated static screenshots are committed under `docs/screenshots/wave7-8-redesign/` so the redesign can be reviewed from GitHub, not only from ignored local QA artifacts. | Complete |
-| Settings typography/theme follow-up | Settings value typography was normalized to the same 15px ledger scale as other metadata rows; an in-app `System / Light / Dark` control was added. Static verification confirmed forced light/dark CSS variables change and desktop Settings has no horizontal overflow. | Complete |
+| Settings typography/theme follow-up | Settings value typography was normalized to the same 15px ledger scale as other metadata rows; an in-app `System / Light / Dark` control was added. Static verification confirmed forced light/dark CSS variables change and desktop Settings has no horizontal overflow. Screenshots are committed as `docs/screenshots/wave7-8-redesign/settings-light.png` and `docs/screenshots/wave7-8-redesign/settings-dark.png`. | Complete |
 | Required checks after redesign | `npm run type-check`, `npm run lint`, `npm run build`, and `npm test` passed on 2026-05-18; tests remain 14 files / 65 tests. | Complete |
-| Push redesign branch for review | `redesign/wave7-8-command-center-ui` was pushed to `origin/redesign/wave7-8-command-center-ui`; draft PR opened at `https://github.com/Arshgill01/ModMirror/pull/11`. | Complete |
+| Push redesign branch for review | `redesign/wave7-8-command-center-ui` was pushed to `origin/redesign/wave7-8-command-center-ui`; draft PR opened at `https://github.com/Arshgill01/ModMirror/pull/11`. PR body includes the full screenshot set plus the Settings light/dark follow-up evidence. | Complete |
 | GitHub PR checks | `gh pr checks 11` reported no checks configured for the branch; `gh pr view 11` reported open draft PR with empty status check rollup and `mergeable=UNKNOWN`. Local checks remain the verification source for this branch. | Complete with caveat |
 | Local merge-conflict dry run | After `git fetch origin --prune`, `git merge-tree --write-tree --messages origin/master HEAD` exited 0 and produced tree `1d3dac6f2f821a759f540807d345148c6773d107`, indicating no merge conflicts in the dry-run merge. | Complete |
 | Merge redesign to master | Not done. The user requested that completion wait until they are satisfied and give a green light. | Pending user approval |

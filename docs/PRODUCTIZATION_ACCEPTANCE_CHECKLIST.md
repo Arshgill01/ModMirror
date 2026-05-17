@@ -80,6 +80,7 @@ Wave 7/8 is done only when all applicable items are checked.
   - `b7e3ab5 docs: record skill installation audit`
   - `4186dc7 feat: redesign moderation workspace UI`
   - `f91d228 docs: record redesigned UI playtest smoke`
+  - `c700eaa fix: normalize settings typography and theme control`
 - The redesign branch replaces the accumulated CSS override stack with a single
   operational workspace shell, desktop moderation rail, wrapping mobile nav,
   Command Center split surface, ledger-style Review/Case Packet views, and a
@@ -97,7 +98,8 @@ Wave 7/8 is done only when all applicable items are checked.
 - A focused follow-up fixed Settings typography drift and added an in-app
   `System / Light / Dark` appearance control. Static verification confirmed
   forced light/dark modes change app theme variables even when Reddit's host
-  theme signal is unavailable to the WebView.
+  theme signal is unavailable to the WebView. Review screenshots are committed
+  as `settings-light.png` and `settings-dark.png`.
 - Chromium Playwright screenshot of Reddit was blocked by Reddit network
   security, and automated Safari click-through capture was blocked by macOS
   automation permissions. Both blockers are documented in `docs/UI_REVIEW.md`.
