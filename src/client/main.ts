@@ -20,6 +20,7 @@ import {
   type ProductPageId,
   type SetupStep,
 } from '../shared/productization';
+import { DEMO_POLICY } from '../shared/demoData';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -405,31 +406,13 @@ function renderInlineLaunchCard() {
 }
 
 function renderPageAction(pageId: ProductPageId) {
-  if (pageId === 'scan') {
-    return `<button class="primary-button" data-run-scan="live" type="button">Run Scan</button>`;
-  }
-  if (pageId === 'policies') {
-    return `<button class="primary-button" data-reset-policy-form type="button">Create Policy</button>`;
-  }
-  if (pageId === 'review') {
-    return `<button class="secondary-button" data-load-governance type="button">Refresh Review</button>`;
-  }
-  if (pageId === 'case-packets') {
-    return `<button class="primary-button" data-generate-demo-case type="button">Generate Demo Packet</button>`;
-  }
-  if (pageId === 'digest') {
-    return `<button class="primary-button" data-generate-digest type="button">Generate Now</button>`;
-  }
-  if (pageId === 'settings') {
-    return `<button class="secondary-button" data-load-health type="button">Refresh Status</button>`;
-  }
+  void pageId;
   return '';
 }
 
 function renderExpandedModeMessage() {
-  return expandedModeMessage
-    ? `<p class="inline-note">${escapeHtml(expandedModeMessage)}</p>`
-    : '';
+  void expandedModeMessage;
+  return '';
 }
 
 function renderPage(pageId: ProductPageId) {
@@ -466,41 +449,58 @@ function renderCommandCenterPage() {
   const setupSteps = buildSetupSteps(setupInput);
 
   return `
-    <section class="command-grid">
-      <article class="command-score">
-        <span>Consistency Score</span>
-        <strong>${summary.consistencyScore}</strong>
-        <p>${escapeHtml(summary.topIssue)}</p>
-      </article>
-      ${renderMetricCard('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
-      ${renderMetricCard('Active policies', summary.activePolicyCount.toString())}
-      ${renderMetricCard('Last scan', formatDate(summary.lastScanLabel))}
+    <section class="command-board">
+      <div class="command-overview">
+        <div class="score-block">
+          <span>Consistency score</span>
+          <strong>${summary.consistencyScore}</strong>
+          <p>${escapeHtml(summary.topIssue)}</p>
+          <span class="score-meter" style="--score: ${summary.consistencyScore}%"></span>
+        </div>
+        <dl class="signal-list">
+          ${renderCommandSignal('Data mode', formatDataMode(summary.dataMode))}
+          ${renderCommandSignal('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
+          ${renderCommandSignal('Active policies', summary.activePolicyCount.toString())}
+          ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
+        </dl>
+      </div>
+
+      <div class="command-action-row">
+        <div>
+          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
+          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+          ${summary.secondaryActions
+            .map(
+              (action) =>
+                `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
+            )
+            .join('')}
+        </div>
+      </div>
     </section>
 
-    <section class="action-strip">
-      <div>
-        <h3>${escapeHtml(summary.primaryAction.label)}</h3>
-        <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
-      </div>
-      <div class="button-row">
-        <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
-        ${summary.secondaryActions
-          .map(
-            (action) =>
-              `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
-          )
-          .join('')}
-      </div>
+    <section class="workflow-board">
+      ${renderSetupWizard(setupSteps)}
+      ${renderDemoScenario()}
     </section>
+  `;
+}
 
-    ${renderSetupWizard(setupSteps)}
-    ${renderDemoScenario()}
+function renderCommandSignal(label: string, value: string) {
+  return `
+    <div>
+      <dt>${escapeHtml(label)}</dt>
+      <dd>${escapeHtml(value)}</dd>
+    </div>
   `;
 }
 
 function renderSetupWizard(steps: SetupStep[]) {
   return `
-    <section class="section-panel">
+    <div class="setup-workflow">
       <div class="section-header">
         <div>
           <h3>Guided Setup</h3>
@@ -524,13 +524,13 @@ function renderSetupWizard(steps: SetupStep[]) {
           )
           .join('')}
       </ol>
-    </section>
+    </div>
   `;
 }
 
 function renderDemoScenario() {
   return `
-    <section class="section-panel demo-story">
+    <aside class="demo-story">
       <div>
         <h3>ExampleLearning Demo Scenario</h3>
         <p>Rule 2 first-time low-effort questions show warnings, removal-only actions, and temporary-ban suggestions. The demo is labeled and separate from live subreddit data.</p>
@@ -542,7 +542,7 @@ function renderDemoScenario() {
         <span>Review override</span>
         <span>Export case context</span>
       </div>
-    </section>
+    </aside>
   `;
 }
 
@@ -1754,15 +1754,427 @@ async function runScan(mode: ScanMode) {
       warnings: payload.warnings,
     };
   } catch (error) {
+    if (mode === 'demo') {
+      const payload = createClientPreviewDemoScan();
+      scanState = {
+        loading: false,
+        mode,
+        result: payload,
+        warnings: payload.warnings,
+      };
+      render();
+      return;
+    }
+
     scanState = {
       loading: false,
       mode,
-      error: error instanceof Error ? error.message : 'Unknown scan error',
+      error: normalizeClientError(error, 'Scan could not reach the ModMirror API.'),
       warnings: [],
     };
   }
 
   render();
+}
+
+function createClientPreviewDemoScan(): MirrorScan {
+  return {
+    id: `client-demo-scan-${Date.now()}`,
+    subreddit: DEMO_SUBREDDIT_NAME,
+    createdAt: new Date().toISOString(),
+    createdBy: 'local-preview',
+    source: 'demo',
+    totalActionsScanned: 60,
+    attributedCount: 52,
+    unmatchedCount: 8,
+    confidenceBreakdown: {
+      high: 31,
+      medium: 14,
+      low: 7,
+      unmatched: 8,
+    },
+    driftCandidates: [
+      {
+        ruleKey: 'low-effort-questions-2',
+        ruleName: 'Low-effort questions',
+        confidence: 'high',
+        summary:
+          'Rule 2 first-time cases are split across warnings, removals, and temporary-ban suggestions.',
+        totalActions: 24,
+        actionDistribution: {
+          warn: 9,
+          remove: 10,
+          temporary_ban_suggested: 5,
+        },
+        recommendation:
+          'Create the Rule 2 ladder and review stricter-than-policy exceptions.',
+      },
+      {
+        ruleKey: 'self-promotion-3',
+        ruleName: 'Self-promotion',
+        confidence: 'medium',
+        summary:
+          'Rule 3 is mostly consistent, with a small number of manual-review outcomes.',
+        totalActions: 18,
+        actionDistribution: {
+          remove: 15,
+          manual_review: 3,
+        },
+        recommendation:
+          'Keep monitoring; this rule can serve as the comparison baseline.',
+      },
+    ],
+    smallSubredditStatus: {
+      meetsThreshold: true,
+      observedActions: 60,
+      minimumActions: 20,
+      message: 'Enough demo actions to show drift candidates.',
+    },
+    warnings: [
+      'Demo mode: ExampleLearning seed data is labeled and separate from live subreddit data.',
+      'Local static preview could not reach the ModMirror API, so the deterministic demo scan is rendered in memory.',
+    ],
+  };
+}
+
+function canUseClientDemoFallback() {
+  return (
+    scanState.result?.source === 'demo' ||
+    policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
+  );
+}
+
+function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
+  const now = new Date().toISOString();
+  return {
+    ...DEMO_POLICY,
+    id: DEMO_POLICY.id,
+    ruleKey: candidate?.ruleKey ?? DEMO_POLICY.ruleKey,
+    ruleName: candidate?.ruleName ?? DEMO_POLICY.ruleName,
+    activeVersionId: 'demo-policy-low-effort-v2',
+    activeVersionNumber: 2,
+    createdAt: DEMO_POLICY.createdAt,
+    updatedAt: now,
+  };
+}
+
+function createClientDemoHealth(
+  overrideEvent?: ApplyPolicyConfirmResult['overrideEvent']
+): PolicyHealthOverview {
+  const overrideCount = overrideEvent ? 4 : 3;
+  return {
+    totalPolicies: 1,
+    stablePolicies: 0,
+    policiesNeedingReview: 1,
+    unresolvedOverrides: 1,
+    summaries: [
+      {
+        policyId: DEMO_POLICY.id,
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        status: 'needs_review',
+        totalActions: 12,
+        followedPolicyCount: 8,
+        overrideCount,
+        unresolvedOverrideCount: 1,
+        policySeemsWrongCount: 1,
+        adherenceRate: 8 / 12,
+        overrideRate: overrideCount / 12,
+        reasons: [
+          'Rule 2 first-time cases still have stricter-than-policy outcomes.',
+        ],
+        recommendations: [
+          'Review unresolved Rule 2 overrides and decide whether the ladder should change.',
+        ],
+        sampleWarning:
+          'One temporary-ban suggestion deviates from the first-offense warning policy.',
+      },
+    ],
+  };
+}
+
+function createClientDemoOverrides(
+  latestOverride?: ApplyPolicyConfirmResult['overrideEvent']
+): ReviewableOverrideEvent[] {
+  const now = new Date().toISOString();
+  const overrides: ReviewableOverrideEvent[] = [
+    {
+      id: 'demo-override-r2-appeal',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetThingId: 't3_demo_case_r2_appeal',
+      targetAuthor: 'learner_1',
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      policyId: DEMO_POLICY.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      recommendedAction: 'warn',
+      selectedAction: 'temporary_ban_suggested',
+      overrideReason: 'severe_context',
+      overrideNote:
+        'Moderator saw repeat low-effort pattern that was not captured by the first-offense window.',
+      reviewStatus: 'unresolved',
+      createdAt: now,
+    },
+  ];
+
+  if (latestOverride) {
+    const reviewable: ReviewableOverrideEvent = {
+      id: latestOverride.id,
+      subreddit: latestOverride.subreddit,
+      ruleKey: latestOverride.ruleKey,
+      recommendedAction: latestOverride.recommendedAction,
+      selectedAction: latestOverride.selectedAction,
+      overrideReason: latestOverride.overrideReason,
+      reviewStatus: latestOverride.reviewStatus,
+      createdAt: latestOverride.createdAt,
+    };
+    if (latestOverride.targetThingId) {
+      reviewable.targetThingId = latestOverride.targetThingId;
+    }
+    if (latestOverride.targetAuthor) {
+      reviewable.targetAuthor = latestOverride.targetAuthor;
+    }
+    if (latestOverride.ruleName) {
+      reviewable.ruleName = latestOverride.ruleName;
+    }
+    if (latestOverride.policyId) {
+      reviewable.policyId = latestOverride.policyId;
+    }
+    if (latestOverride.policyVersionId) {
+      reviewable.policyVersionId = latestOverride.policyVersionId;
+    }
+    if (latestOverride.policyVersionNumber) {
+      reviewable.policyVersionNumber = latestOverride.policyVersionNumber;
+    }
+    if (latestOverride.overrideNote) {
+      reviewable.overrideNote = latestOverride.overrideNote;
+    }
+    overrides.unshift(reviewable);
+  }
+
+  return overrides;
+}
+
+function createClientDemoVersions(): Record<string, PolicyVersionSummary[]> {
+  return {
+    [DEMO_POLICY.id]: [
+      {
+        id: 'demo-policy-low-effort-v1',
+        policyId: DEMO_POLICY.id,
+        versionNumber: 1,
+        ruleName: DEMO_POLICY.ruleName,
+        createdAt: '2026-05-15T18:30:00.000Z',
+        createdBy: 'demo-lead-mod',
+        changeSummary: 'Initial Rule 2 ladder drafted from Mirror Scan drift.',
+      },
+      {
+        id: 'demo-policy-low-effort-v2',
+        policyId: DEMO_POLICY.id,
+        versionNumber: 2,
+        ruleName: DEMO_POLICY.ruleName,
+        createdAt: '2026-05-16T10:30:00.000Z',
+        createdBy: 'demo-lead-mod',
+        changeSummary: 'Kept first offense at warning and required override reasons.',
+      },
+    ],
+  };
+}
+
+function createClientDemoApplyPreview(
+  payload: ReturnType<typeof applyFormDataToPayload>
+): ApplyPolicyPreview {
+  const policy =
+    policyState.policies.find((item) => item.ruleKey === payload.ruleKey) ??
+    createClientDemoPolicy();
+  const recommendedAction = policy.steps[0]?.recommendedAction ?? 'warn';
+  const deviatesFromPolicy = payload.selectedAction !== recommendedAction;
+
+  return {
+    policy,
+    recommendation: {
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      policyId: policy.id,
+      offenseCount: 1,
+      recommendedAction,
+      messageDeliveryMode: policy.defaultMessageMode,
+      requiresOverrideReason: true,
+      selectedAction: payload.selectedAction,
+      deviatesFromPolicy,
+      fallbackReason: 'policy_found',
+      message: deviatesFromPolicy
+        ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
+        : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
+    },
+  };
+}
+
+function createClientDemoApplyResult(
+  payload: ReturnType<typeof applyFormDataToPayload>
+): ApplyPolicyConfirmResult {
+  const preview = createClientDemoApplyPreview(payload);
+  const policy = preview.policy ?? createClientDemoPolicy();
+  const now = new Date().toISOString();
+  const actionEvent = {
+    id: `demo-action-${Date.now()}`,
+    subreddit: DEMO_SUBREDDIT_NAME,
+    modUsername: 'demo_mod_2',
+    targetThingId: payload.targetThingId,
+    targetAuthor: payload.targetAuthor,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    policyId: policy.id,
+    policyVersionId: 'demo-policy-low-effort-v2',
+    policyVersionNumber: 2,
+    policyVersionStatus: 'active' as const,
+    recommendedAction: preview.recommendation.recommendedAction,
+    selectedAction: payload.selectedAction,
+    deliveryMode: 'log_only' as const,
+    source: 'simulator' as const,
+    createdAt: now,
+  };
+
+  const result: ApplyPolicyConfirmResult = {
+    recommendation: preview.recommendation,
+    actionEvent,
+  };
+
+  if (preview.recommendation.deviatesFromPolicy) {
+    result.overrideEvent = {
+      id: `demo-override-${Date.now()}`,
+      subreddit: DEMO_SUBREDDIT_NAME,
+      modUsername: 'demo_mod_2',
+      targetThingId: payload.targetThingId,
+      targetAuthor: payload.targetAuthor,
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      policyId: policy.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      policyVersionStatus: 'active',
+      recommendedAction: preview.recommendation.recommendedAction,
+      selectedAction: payload.selectedAction,
+      overrideReason: payload.overrideReason ?? 'severe_context',
+      overrideNote:
+        payload.overrideNote || 'Demo override recorded for review workflow.',
+      reviewStatus: 'unresolved',
+      updatedAt: now,
+      createdAt: now,
+    };
+  }
+
+  return result;
+}
+
+function createClientDemoCasePacket(): CasePacket {
+  const generatedAt = new Date().toISOString();
+  const markdown = [
+    '# ModMirror Case Packet',
+    '',
+    `Generated: ${generatedAt}`,
+    `Subreddit: r/${DEMO_SUBREDDIT_NAME}`,
+    'Rule: Low-effort questions',
+    'Recommended action: warn',
+    'Selected action: temporary ban suggested',
+    'Posture: review recommended',
+    '',
+    '## Caveats',
+    '- This packet uses demo seed data, not real subreddit history.',
+    '- Comparable cases are deterministic matches, not automated appeal judgment.',
+  ].join('\n');
+
+  return {
+    id: 'client-demo-case-packet',
+    generatedAt,
+    generatedBy: 'local-preview',
+    subreddit: DEMO_SUBREDDIT_NAME,
+    subject: {
+      type: 'demo',
+      targetThingId: 't3_demo_case_r2_appeal',
+      ruleKey: DEMO_POLICY.ruleKey,
+    },
+    action: {
+      actionId: 'demo-case-r2-appeal',
+      createdAt: '2026-05-16T19:15:00.000Z',
+      moderator: 'demo_mod_2',
+      targetThingId: 't3_demo_case_r2_appeal',
+      targetAuthor: 'learner_1',
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      recommendedAction: 'warn',
+      selectedAction: 'temporary_ban_suggested',
+      deliveryMode: 'log_only',
+      source: 'demo',
+    },
+    policyContext: {
+      policyId: DEMO_POLICY.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      policyVersionStatus: 'active',
+      policyName: DEMO_POLICY.ruleName,
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      activeAtActionTime: true,
+      changedSinceAction: false,
+    },
+    consistencyStatus: 'stricter_than_policy',
+    overrideContext: {
+      overrideId: 'demo-override-r2-appeal',
+      reason: 'severe_context',
+      note: 'Moderator cited repeat pattern outside the tracked first-offense window.',
+      reviewStatus: 'unresolved',
+    },
+    userHistory: [
+      {
+        actionId: 'demo-case-r2-prior-learner-1',
+        createdAt: '2026-05-10T16:00:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'warn',
+        recommendedAction: 'warn',
+        consistencyStatus: 'matched_policy',
+        policyVersionNumber: 2,
+      },
+    ],
+    comparableCases: [
+      {
+        actionId: 'demo-case-r2-comparable-followed',
+        createdAt: '2026-05-14T11:30:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'warn',
+        recommendedAction: 'warn',
+        offenseBucket: 'first_offense',
+        selectedActionFamily: 'warn',
+        recommendedActionFamily: 'warn',
+        targetType: 'post',
+        matchReasons: ['same rule', 'first offense', 'same policy version'],
+        anonymizedTargetAuthor: 'learner_*',
+      },
+      {
+        actionId: 'demo-case-r2-comparable-strict',
+        createdAt: '2026-05-15T09:15:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'remove',
+        recommendedAction: 'warn',
+        offenseBucket: 'first_offense',
+        selectedActionFamily: 'remove',
+        recommendedActionFamily: 'warn',
+        targetType: 'post',
+        matchReasons: ['same rule', 'first offense', 'stricter outcome'],
+        anonymizedTargetAuthor: 'learner_*',
+      },
+    ],
+    appealPosture: 'review_recommended',
+    caveats: [
+      'This packet uses demo seed data, not real subreddit history.',
+      'Comparable cases are deterministic matches, not automated appeal judgment.',
+      'Historical attribution remains confidence-scored and may be incomplete.',
+    ],
+    markdown,
+  };
 }
 
 async function loadHealth() {
@@ -1775,7 +2187,7 @@ async function loadHealth() {
     healthError = undefined;
   } catch (error) {
     healthError =
-      error instanceof Error ? error.message : 'Unknown health fetch error';
+      normalizeClientError(error, 'Health status is unavailable in this preview.');
   }
 
   render();
@@ -1796,7 +2208,7 @@ async function loadPolicies() {
     policyState = {
       ...policyState,
       loading: false,
-      error: error instanceof Error ? error.message : 'Policy fetch failed',
+      error: normalizeClientError(error, 'Policies are unavailable in this preview.'),
     };
   }
 
@@ -1835,13 +2247,29 @@ async function loadGovernance(ruleKey?: string) {
       versionsByPolicy,
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const demoOverrides = createClientDemoOverrides();
+      governanceState = {
+        ...governanceState,
+        loading: false,
+        health: createClientDemoHealth(),
+        overrides: ruleKey
+          ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
+          : demoOverrides,
+        versionsByPolicy: createClientDemoVersions(),
+        error: undefined,
+      };
+      render();
+      return;
+    }
+
     governanceState = {
       ...governanceState,
       loading: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Governance data fetch failed',
+      error: normalizeClientError(
+        error,
+        'Review data is unavailable in this preview.'
+      ),
     };
   }
 
@@ -1910,8 +2338,10 @@ async function reviewOverride(
     governanceState = {
       ...governanceState,
       savingOverrideId: undefined,
-      error:
-        error instanceof Error ? error.message : 'Override review update failed',
+      error: normalizeClientError(
+        error,
+        'Override review update failed.'
+      ),
     };
   }
 
@@ -1961,11 +2391,24 @@ async function generateCasePacket(
       packet: data.packet,
     };
   } catch (error) {
+    if (subject.type === 'demo' && canUseClientDemoFallback()) {
+      casePacketState = {
+        loading: false,
+        error: undefined,
+        message: 'Demo case packet generated.',
+        packet: createClientDemoCasePacket(),
+      };
+      render();
+      return;
+    }
+
     casePacketState = {
       ...casePacketState,
       loading: false,
-      error:
-        error instanceof Error ? error.message : 'Case packet generation failed',
+      error: normalizeClientError(
+        error,
+        'Case Packet generation is unavailable in this preview.'
+      ),
     };
   }
 
@@ -2021,11 +2464,25 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       form: policyToForm(payload.data),
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = createClientDemoPolicy(candidate);
+      policyState = {
+        ...policyState,
+        saving: false,
+        policies: upsertPolicy(policyState.policies, policy),
+        message: `Demo policy created for ${policy.ruleName}.`,
+        form: policyToForm(policy),
+      };
+      activePage = 'policies';
+      window.location.hash = '#policies';
+      render();
+      return;
+    }
+
     policyState = {
       ...policyState,
       saving: false,
-      error:
-        error instanceof Error ? error.message : 'Create-from-drift failed',
+      error: normalizeClientError(error, 'Create-from-drift failed.'),
     };
   }
 
@@ -2063,7 +2520,7 @@ async function savePolicyForm(formData: FormData) {
     policyState = {
       ...policyState,
       saving: false,
-      error: error instanceof Error ? error.message : 'Policy save failed',
+      error: normalizeClientError(error, 'Policy save failed.'),
     };
   }
 
@@ -2071,6 +2528,7 @@ async function savePolicyForm(formData: FormData) {
 }
 
 async function previewApplyPolicy(formData: FormData) {
+  const payload = applyFormDataToPayload(formData, false);
   applyState = {
     ...applyState,
     loading: true,
@@ -2085,7 +2543,7 @@ async function previewApplyPolicy(formData: FormData) {
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(applyFormDataToPayload(formData, false)),
+        body: JSON.stringify(payload),
       }
     );
     applyState = {
@@ -2095,11 +2553,21 @@ async function previewApplyPolicy(formData: FormData) {
       result: undefined,
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      applyState = {
+        ...applyState,
+        loading: false,
+        preview: createClientDemoApplyPreview(payload),
+        result: undefined,
+      };
+      render();
+      return;
+    }
+
     applyState = {
       ...applyState,
       loading: false,
-      error:
-        error instanceof Error ? error.message : 'Apply Policy preview failed',
+      error: normalizeClientError(error, 'Apply Policy preview failed.'),
     };
   }
 
@@ -2107,6 +2575,7 @@ async function previewApplyPolicy(formData: FormData) {
 }
 
 async function confirmApplyPolicy(formData: FormData) {
+  const payload = applyFormDataToPayload(formData, true);
   applyState = {
     ...applyState,
     confirming: true,
@@ -2121,7 +2590,7 @@ async function confirmApplyPolicy(formData: FormData) {
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(applyFormDataToPayload(formData, true)),
+        body: JSON.stringify(payload),
       }
     );
     applyState = {
@@ -2135,11 +2604,33 @@ async function confirmApplyPolicy(formData: FormData) {
     };
     await loadGovernance();
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const result = createClientDemoApplyResult(payload);
+      applyState = {
+        ...applyState,
+        confirming: false,
+        preview: {
+          recommendation: result.recommendation,
+        },
+        result,
+        message: 'Demo policy action recorded in log-only mode.',
+      };
+      governanceState = {
+        ...governanceState,
+        error: undefined,
+        message: undefined,
+        health: createClientDemoHealth(result.overrideEvent),
+        overrides: createClientDemoOverrides(result.overrideEvent),
+        versionsByPolicy: createClientDemoVersions(),
+      };
+      render();
+      return;
+    }
+
     applyState = {
       ...applyState,
       confirming: false,
-      error:
-        error instanceof Error ? error.message : 'Apply Policy confirm failed',
+      error: normalizeClientError(error, 'Apply Policy confirm failed.'),
     };
     render();
   }
@@ -2338,6 +2829,18 @@ function escapeHtml(value: string) {
 
 function escapeAttribute(value: string) {
   return escapeHtml(value);
+}
+
+function normalizeClientError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : '';
+  if (
+    message.includes('Unexpected token') ||
+    message.includes('<!DOCTYPE') ||
+    message.includes('returned 404')
+  ) {
+    return `${fallback} Run the app through Devvit playtest for live API data.`;
+  }
+  return message || fallback;
 }
 
 window.addEventListener('hashchange', () => {
