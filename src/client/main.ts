@@ -359,7 +359,7 @@ function render() {
           .join('')}
       </nav>
 
-      <main class="mm-main">
+      <main class="mm-main page-${page.id}">
         <section class="page-heading">
           <div>
             <h2>${page.title}</h2>
@@ -684,8 +684,10 @@ function renderPoliciesPage() {
     ${renderPolicyFallback()}
     ${renderPolicyList()}
     ${renderDriftPolicyPanel()}
-    ${renderPolicyForm()}
-    ${renderApplyPolicyPanel()}
+    <section class="policy-workbench">
+      ${renderPolicyForm()}
+      ${renderApplyPolicyPanel()}
+    </section>
   `;
 }
 
@@ -1080,8 +1082,9 @@ function renderOverrideInbox() {
 }
 
 function renderOverrideCard(event: ReviewableOverrideEvent) {
+  const attentionClass = event.reviewStatus === 'unresolved' ? ' status-needs-attention' : '';
   return `
-    <article class="inbox-card">
+    <article class="inbox-card${attentionClass}">
       <div class="card-header">
         <div>
           <h3>${escapeHtml(event.ruleName ?? event.ruleKey)}</h3>
@@ -1218,7 +1221,7 @@ function renderCasePacketDetail() {
     return renderEmptyState(
       'No packet generated yet',
       'Generate the demo packet for the full ExampleLearning appeal context, or use a tracked action ID.',
-      [{ label: 'Generate Demo Packet', page: 'case-packets', intent: 'review_policy' }]
+      [{ label: 'Review Policy Context', page: 'review', intent: 'review_policy' }]
     );
   }
 
@@ -1230,11 +1233,11 @@ function renderCasePacketDetail() {
       </div>
       <span class="status-badge status-neutral">${formatAction(packet.appealPosture)}</span>
     </section>
-    <section class="metric-grid" aria-label="Case packet summary">
-      ${renderMetricCard('Posture', formatAction(packet.appealPosture))}
-      ${renderMetricCard('Consistency', formatAction(packet.consistencyStatus))}
-      ${renderMetricCard('Policy version', packet.policyContext.policyVersionNumber?.toString() ?? 'Unavailable')}
-      ${renderMetricCard('Comparables', packet.comparableCases.length.toString())}
+    <section class="packet-summary-strip" aria-label="Case packet summary">
+      <strong>${formatAction(packet.consistencyStatus)}</strong>
+      <span>posture ${formatAction(packet.appealPosture)}</span>
+      <span>policy v${packet.policyContext.policyVersionNumber?.toString() ?? 'unavailable'}</span>
+      <span>${packet.comparableCases.length} deterministic comparables</span>
     </section>
     <section class="case-grid">
       ${renderCasePacketAction(packet)}
@@ -2674,7 +2677,9 @@ async function copyDigestMarkdown() {
 }
 
 function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
+  const ruleKey = String(formData.get('ruleKey') ?? '');
   const payload: {
+    subreddit?: string;
     ruleKey: string;
     targetThingId: string;
     targetAuthor: string;
@@ -2683,7 +2688,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     overrideReason?: OverrideReason;
     overrideNote?: string;
   } = {
-    ruleKey: String(formData.get('ruleKey') ?? ''),
+    ruleKey,
     targetThingId: String(formData.get('targetThingId') ?? ''),
     targetAuthor: String(formData.get('targetAuthor') ?? ''),
     selectedAction: String(
@@ -2691,6 +2696,12 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     ) as EnforcementAction,
     source: 'simulator',
   };
+  const selectedPolicy = policyState.policies.find(
+    (policy) => policy.ruleKey === ruleKey
+  );
+  if (selectedPolicy !== undefined) {
+    payload.subreddit = selectedPolicy.subreddit;
+  }
 
   if (includeOverride) {
     const overrideReason = String(formData.get('overrideReason') ?? '');

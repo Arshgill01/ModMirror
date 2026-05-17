@@ -49,7 +49,12 @@ export async function getPolicyByRule(
   ruleKey: string
 ): Promise<RulePolicy | undefined> {
   const policy = await readJson<RulePolicy>(redisKeys.policy(subreddit, ruleKey));
-  return policy ? ensurePolicyVersioned(policy, 'legacy_migrated') : undefined;
+  if (policy) {
+    return ensurePolicyVersioned(policy, 'legacy_migrated');
+  }
+
+  const policies = await listPolicies(subreddit);
+  return policies.find((item) => item.ruleKey === ruleKey);
 }
 
 export async function getPolicyById(

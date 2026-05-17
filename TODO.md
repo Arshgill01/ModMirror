@@ -11,9 +11,9 @@ Apply Policy -> review -> Case Packet -> digest, and exposes runtime Settings.
 Scheduler, AI/LLM judging, automatic bans, queue-dashboard scope, and external
 analytics remain out of scope.
 
-Final merge to `master` is pending the full acceptance check set:
-`npm install`, `npm run build`, `npm run type-check`, `npm test`,
-`npm run lint`, `npm run dev`, screenshot QA review, and checklist updates.
+Final merge to `master` is pending user review/approval. The local acceptance
+check set has passed, and signed-in Reddit playtest reached the productized
+dashboard flow.
 
 ## Wave 7/8 Productization Checklist
 
@@ -25,8 +25,8 @@ Final merge to `master` is pending the full acceptance check set:
 - [x] Manual Digest generates Markdown without adding scheduler scope.
 - [x] Runtime Settings shows data mode, health caveats, delivery mode, demo state, and last scan context.
 - [x] Demo/static-preview fallbacks keep the 3-minute story usable without live API access.
-- [ ] Full final checks pass.
-- [ ] Runtime playtest is re-run for Wave 7/8.
+- [x] Full final checks pass.
+- [x] Runtime playtest is re-run for Wave 7/8.
 - [ ] Integration branch is merged to `master` and pushed.
 
 ## Wave 6 Case Packet Checklist

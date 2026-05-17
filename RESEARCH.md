@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 7/8 Productization implementation complete locally; Devvit app identity exists and previous waves reached Playtest ready. Final Wave 7/8 playtest rerun is pending.
+Status: Wave 7/8 Productization implementation complete locally; Devvit app identity exists; signed-in Wave 7/8 playtest reached the compact inline card and dashboard fallback on Reddit.
 
 Last updated: 2026-05-17
 
@@ -54,7 +54,8 @@ Updated by: Codex
 | Verified | Wave 5 policy versioning, override review statuses, policy health scoring, and governance dashboard build and test locally. | On 2026-05-17, `npm install`, `npm run build`, `npm run type-check`, `npm run lint`, `npm test`, and `npx devvit whoami` passed in the integration worktree. `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.15`. |
 | Verified | Installed typings expose a WebView expanded-mode effect helper. | `node_modules/@devvit/client/effects/web-view-mode.d.ts` exports `requestExpandedMode(event, entry)`. |
 | Verified | Wave 7/8 productized UI builds locally with compact inline launch card, Command Center IA, manual Digest, Settings, and static-preview demo fallbacks. | `npm run build`, `npm run type-check`, `npm run lint`, targeted productization tests, and Playwright static screenshots passed locally on 2026-05-17. |
-| Unverified | Expanded mode request behavior in Reddit playtest. | Type finding exists, but direct `@devvit/web/client` import resolves awkwardly in this repo's mixed server/client TypeScript setup; client emits the Devvit WebView effect manually and falls back to in-post dashboard rendering after click. Runtime playtest rerun still needed. |
+| Verified | Signed-in Wave 7/8 Reddit playtest opens the compact inline card and dashboard fallback. | `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.26`; Safari opened the compact inline card, launched Dashboard, loaded ExampleLearning demo, created the Low-effort questions policy from drift, and showed Apply Policy preview for that policy. |
+| Unverified | Native expanded-mode request behavior in Reddit playtest. | Type finding exists, but direct `@devvit/web/client` import resolves awkwardly in this repo's mixed server/client TypeScript setup; client emits the Devvit WebView effect manually and falls back to in-post dashboard rendering after click. The fallback is runtime verified; whether Reddit honored the native expanded-mode effect separately remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -71,6 +72,7 @@ Updated by: Codex
 - Wave 3/4 adds dashboard Apply Policy simulator as the safe primary surface because post/comment menu action UX remains browser/runtime-unverified. CLI playtest reaches ready, Safari is signed in, and the playtest subreddit opens. The dashboard launcher appears in the subreddit moderator overflow menu, opens a confirmation form, creates custom post `t3_1teywdj`, and renders the dashboard WebView.
 - Wave 7/8 inline behavior is productized as a compact launch/status card. Open Dashboard attempts expanded mode when the Devvit WebView global is available, then always renders the full dashboard in place as a robust fallback.
 - The installed `@devvit/client/effects/web-view-mode` typings expose `requestExpandedMode`, but importing `@devvit/web/client` directly from this repo's TypeScript build resolved package conditions inconsistently with the server build. The client therefore emits the equivalent WebView effect through `globalThis.devvit` when present. This is type/build verified but not yet Reddit playtest verified.
+- Wave 7/8 playtest reached `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on Devvit version `v0.0.1.26`. Signed-in Safari verification opened the compact inline card, used Open Dashboard, loaded demo data, created a policy from drift, and confirmed Apply Policy preview reads the selected demo policy namespace. This caught and fixed a namespace mismatch where demo policies under `ExampleLearning` were not being sent with the dashboard Apply Policy payload.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.
 - `npm audit` still reports 31 vulnerabilities: 3 low, 27 high, 1 critical. Key items are `hono` and `vite` fixes that require out-of-range/force updates, and Devvit transitive `protobufjs` advisories with no fix available through the installed Devvit package chain.
 

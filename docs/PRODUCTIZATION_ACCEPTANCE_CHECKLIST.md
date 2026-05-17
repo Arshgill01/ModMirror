@@ -36,7 +36,7 @@ Wave 7/8 is done only when all applicable items are checked.
 - [x] npm test passes.
 - [x] npm run lint passes.
 - [x] npm run dev/playtest loads.
-- [ ] Dashboard works in signed-in Reddit playtest.
+- [x] Dashboard works in signed-in Reddit playtest.
 - [x] Demo scenario works end-to-end.
 - [x] Apply Policy flow still works.
 - [x] Override review still works.
@@ -61,8 +61,10 @@ Wave 7/8 is done only when all applicable items are checked.
   2026-05-17. `npm install` still reports the existing 31 audit findings.
 - `npm run dev` reached Playtest ready at
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, version
-  `v0.0.1.19`.
-- Signed-in Reddit browser verification of the Wave 7/8 dashboard remains
-  pending; static Playwright QA covered the full UI flow.
+  `v0.0.1.26`.
+- Signed-in Safari Reddit playtest verification opened the compact inline card,
+  launched the dashboard fallback, rendered Command Center, loaded the
+  ExampleLearning demo, created the Low-effort questions policy from drift, and
+  verified Apply Policy preview against the selected demo policy namespace.
 - Static Playwright QA passes through deterministic local demo fallbacks because
   `serve dist/client` cannot reach Devvit `/api/*` routes.
