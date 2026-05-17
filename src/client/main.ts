@@ -14,7 +14,6 @@ import {
 import {
   buildCommandCenterSummary,
   buildSetupSteps,
-  generateManualDigest,
   type CommandCenterAction,
   type ProductDataMode,
   type ProductPageId,
@@ -27,10 +26,15 @@ import type {
   ApiResponse,
   CasePacket,
   Confidence,
+  DigestCapabilities,
+  DigestHistoryResponse,
+  DigestReport,
+  DigestSettings,
   DriftCandidate,
   EnforcementAction,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
+  GenerateDigestResponse,
   MessageDeliveryMode,
   MirrorScan,
   OverrideReason,
@@ -180,9 +184,13 @@ type GovernanceUiState = {
 };
 
 type DigestUiState = {
-  markdown: string;
-  generatedAt?: string;
-  message?: string;
+  loading: boolean;
+  error: string | undefined;
+  report?: DigestReport;
+  history: DigestReport[];
+  capabilities?: DigestCapabilities;
+  settings?: DigestSettings;
+  message: string | undefined;
 };
 
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
@@ -289,7 +297,10 @@ let governanceState: GovernanceUiState = {
   versionsByPolicy: {},
 };
 let digestState: DigestUiState = {
-  markdown: '',
+  loading: false,
+  error: undefined,
+  history: [],
+  message: undefined,
 };
 
 function getPageFromHash(): ProductPageId {
@@ -1426,27 +1437,167 @@ function renderCasePacketLists(packet: CasePacket) {
 }
 
 function renderDigestPage() {
+  const report = digestState.report ?? digestState.history[0];
+  const rulesNeedingAttention =
+    report?.ruleHealth.filter((item) =>
+      ['needs_review', 'at_risk', 'watch'].includes(item.status)
+    ) ?? [];
+  const stableRules =
+    report?.ruleHealth.filter((item) => item.status === 'stable') ?? [];
+
   return `
     <section class="section-panel">
       <div class="section-header">
         <div>
-          <h3>Manual Digest</h3>
-          <p>Generate a team-ready Markdown summary. Scheduler is intentionally out of scope for this wave.</p>
+          <h3>ModMirror Digest</h3>
+          <p>Generate a team-ready report from policy health, override review, Apply Policy logs, and scan context.</p>
           ${digestState.message ? `<p class="inline-success">${escapeHtml(digestState.message)}</p>` : ''}
+          ${digestState.error ? `<p class="inline-error">${escapeHtml(digestState.error)}</p>` : ''}
         </div>
         <div class="button-row">
-          <button class="primary-button" data-generate-digest type="button">Generate Now</button>
-          <button class="secondary-button" data-copy-digest type="button" ${digestState.markdown ? '' : 'disabled'}>Copy Markdown</button>
+          <button class="primary-button" data-generate-digest type="button" ${digestState.loading ? 'disabled' : ''}>Generate Now</button>
+          <button class="secondary-button" data-copy-digest type="button" ${report?.markdown ? '' : 'disabled'}>Copy Markdown</button>
         </div>
       </div>
+      ${renderDigestCapabilities()}
+      ${report ? renderDigestReport(report, rulesNeedingAttention, stableRules) : renderEmptyState(
+        'No digest generated yet',
+        'Generate a manual digest after loading demo data or running a scan.',
+        [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+      )}
+      ${renderDigestHistory()}
+    </section>
+  `;
+}
+
+function renderDigestCapabilities() {
+  const capabilities = digestState.capabilities;
+  const settings = digestState.settings;
+  if (!capabilities && !settings) {
+    return '';
+  }
+
+  return `
+    <div class="status-list">
+      ${capabilities ? renderStatusItem('Mod discussion', capabilities.modDiscussion.state, capabilities.modDiscussion.detail) : ''}
+      ${capabilities ? renderStatusItem('Scheduler', capabilities.scheduler.state, capabilities.scheduler.detail) : ''}
+      ${settings ? renderStatusItem('Delivery', formatAction(settings.deliveryMode), settings.scheduleEnabled ? `Weekly digest scheduling requested. Last generated ${formatDate(settings.lastGeneratedAt ?? 'Not generated yet')}.` : 'Manual copy is the active launch path.') : ''}
+    </div>
+  `;
+}
+
+function renderStatusItem(label: string, value: string, detail: string) {
+  return `
+    <div class="status-item">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(detail)}</small>
+    </div>
+  `;
+}
+
+function renderDigestReport(
+  report: DigestReport,
+  rulesNeedingAttention: DigestReport['ruleHealth'],
+  stableRules: DigestReport['ruleHealth']
+) {
+  return `
+    <div class="digest-workbench">
+      <div class="signal-ledger">
+        <div>
+          <span>Period</span>
+          <strong>${escapeHtml(formatDate(report.periodStart))} - ${escapeHtml(formatDate(report.periodEnd))}</strong>
+        </div>
+        <div>
+          <span>Overall status</span>
+          <strong>${escapeHtml(formatAction(report.overallStatus))}</strong>
+        </div>
+        <div>
+          <span>Active policies</span>
+          <strong>${report.summary.activePolicies}</strong>
+        </div>
+        <div>
+          <span>Tracked actions</span>
+          <strong>${report.summary.policyTrackedActions}</strong>
+        </div>
+        <div>
+          <span>Unresolved overrides</span>
+          <strong>${report.summary.unresolvedOverrides}</strong>
+        </div>
+      </div>
+      <div class="digest-grid">
+        <section class="digest-column">
+          <h4>Rules Needing Attention</h4>
+          ${
+            rulesNeedingAttention.length > 0
+              ? rulesNeedingAttention.map(renderDigestRule).join('')
+              : '<p>No rule needs immediate attention in this digest period.</p>'
+          }
+        </section>
+        <section class="digest-column">
+          <h4>Stable Rules</h4>
+          ${
+            stableRules.length > 0
+              ? stableRules.map(renderDigestRule).join('')
+              : '<p>No stable rule signal yet. Keep using Apply Policy to build history.</p>'
+          }
+        </section>
+      </div>
+      <section class="digest-column">
+        <h4>Recommended Actions</h4>
+        ${report.recommendations.map(
+          (item) => `
+            <div class="digest-recommendation severity-${item.severity}">
+              <strong>${escapeHtml(item.title)}</strong>
+              <p>${escapeHtml(item.detail)}</p>
+              ${item.actionLabel ? `<span>${escapeHtml(item.actionLabel)}</span>` : ''}
+            </div>
+          `
+        ).join('')}
+      </section>
+      <section class="digest-column">
+        <h4>Markdown Export</h4>
+        <textarea class="markdown-export" readonly>${escapeHtml(report.markdown)}</textarea>
+      </section>
+    </div>
+  `;
+}
+
+function renderDigestRule(item: DigestReport['ruleHealth'][number]) {
+  return `
+    <article class="digest-rule-row status-${item.status}">
+      <div>
+        <strong>${escapeHtml(item.ruleName)}</strong>
+        <span>${escapeHtml(formatAction(item.status))}</span>
+      </div>
+      <div>
+        <span>Adherence ${escapeHtml(formatPercent(item.adherenceRate ?? 0))}</span>
+        <span>${item.overrideCount} overrides</span>
+        <span>${item.unresolvedOverrideCount} unresolved</span>
+      </div>
+      <p>${escapeHtml(item.recommendation)}</p>
+    </article>
+  `;
+}
+
+function renderDigestHistory() {
+  return `
+    <section class="digest-column">
+      <h4>Digest History</h4>
       ${
-        digestState.markdown
-          ? `<textarea class="markdown-export" readonly>${escapeHtml(digestState.markdown)}</textarea>`
-          : renderEmptyState(
-              'No digest generated yet',
-              'Generate a manual digest after loading demo data or running a scan.',
-              [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
-            )
+        digestState.history.length > 0
+          ? digestState.history
+              .map(
+                (item) => `
+                  <button class="history-row" data-open-digest="${escapeAttribute(item.id)}" type="button">
+                    <span>${escapeHtml(formatDate(item.generatedAt))}</span>
+                    <strong>${escapeHtml(formatAction(item.overallStatus))}</strong>
+                    <small>${item.summary.unresolvedOverrides} unresolved overrides</small>
+                  </button>
+                `
+              )
+              .join('')
+          : '<p>No saved digest history yet.</p>'
       }
     </section>
   `;
@@ -1636,7 +1787,7 @@ function handleActionIntent(intent: string | undefined) {
   if (intent === 'generate_digest') {
     activePage = 'digest';
     window.location.hash = '#digest';
-    generateDigest();
+    void generateDigest();
   }
 }
 
@@ -1804,12 +1955,26 @@ function bindGovernanceActions() {
 function bindDigestActions() {
   document.querySelectorAll<HTMLButtonElement>('[data-generate-digest]').forEach((button) => {
     button.addEventListener('click', () => {
-      generateDigest();
+      void generateDigest();
     });
   });
   document.querySelectorAll<HTMLButtonElement>('[data-copy-digest]').forEach((button) => {
     button.addEventListener('click', () => {
       void copyDigestMarkdown();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-open-digest]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const digestId = button.dataset.openDigest;
+      const report = digestState.history.find((item) => item.id === digestId);
+      if (report) {
+        digestState = {
+          ...digestState,
+          report,
+          message: `Opened digest from ${formatDate(report.generatedAt)}.`,
+        };
+        render();
+      }
     });
   });
 }
@@ -2001,6 +2166,132 @@ function withWorkspaceSubreddit(url: string) {
   }
   const joiner = url.includes('?') ? '&' : '?';
   return `${url}${joiner}subreddit=${encodeURIComponent(subreddit)}`;
+}
+
+function createClientDigestCapabilities(): DigestCapabilities {
+  return {
+    modDiscussion: {
+      state: 'unverified',
+      label: 'Mod discussion delivery',
+      detail:
+        'Delivery requires Devvit runtime verification. Manual copy remains available.',
+    },
+    scheduler: {
+      state: 'unverified',
+      label: 'Weekly scheduler',
+      detail:
+        'Scheduled digest delivery is not enabled in static preview or unverified runtime.',
+    },
+  };
+}
+
+function createClientDigestSettings(): DigestSettings {
+  return {
+    subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+    updatedAt: new Date(0).toISOString(),
+    deliveryMode: 'none',
+    scheduleEnabled: false,
+    scheduleCadence: 'weekly',
+  };
+}
+
+function createClientDemoDigestReport(): DigestReport {
+  const generatedAt = new Date().toISOString();
+  const health = governanceState.health ?? createClientDemoHealth();
+  const summary = buildDashboardSummary();
+  const ruleHealth = health.summaries.map((item) => ({
+    ruleKey: item.ruleKey,
+    ruleName: item.ruleName,
+    status: item.status,
+    adherenceRate: item.adherenceRate,
+    trackedActions: item.totalActions,
+    overrideCount: item.overrideCount,
+    unresolvedOverrideCount: item.unresolvedOverrideCount,
+    topOverrideReason: 'severe_context' as const,
+    recommendation: item.recommendations[0] ?? 'Continue monitoring.',
+  }));
+  const digestSummary: DigestReport['summary'] = {
+    activePolicies: summary.activePolicyCount,
+    policyTrackedActions: 12,
+    unresolvedOverrides: summary.unresolvedOverrideCount,
+    rulesNeedingReview: health.policiesNeedingReview,
+  };
+  if (scanState.result?.createdAt !== undefined) {
+    digestSummary.lastScanAt = scanState.result.createdAt;
+  }
+  const markdown = [
+    `# ModMirror Digest - r/${DEMO_SUBREDDIT_NAME}`,
+    '',
+    `Period: ${formatDate(generatedAt)} - ${formatDate(generatedAt)}`,
+    '',
+    '## Summary',
+    '',
+    '- Overall consistency: needs review',
+    `- Active policies: ${summary.activePolicyCount}`,
+    '- Policy-tracked actions: 12',
+    `- Unresolved overrides: ${summary.unresolvedOverrideCount}`,
+    `- Rules needing review: ${health.policiesNeedingReview}`,
+    '',
+    '## Rules Needing Attention',
+    '',
+    '### Low-effort questions',
+    'Status: needs review',
+    'Adherence: 67%',
+    'Overrides: 3',
+    'Recommended next step:',
+    'Review unresolved Rule 2 overrides and decide whether the ladder should change.',
+    '',
+    '## Suggested Actions',
+    '',
+    '1. Resolve open overrides before changing the policy.',
+    '2. Generate case packets for contested Rule 2 actions.',
+    '',
+    '## Caveats',
+    '',
+    '- Demo data is labeled and separate from live subreddit data.',
+    '- Recommendations are deterministic and do not use AI.',
+  ].join('\n');
+
+  return {
+    id: `client-demo-digest-${Date.now()}`,
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt,
+    generatedBy: 'local-preview',
+    source: 'demo',
+    periodStart: generatedAt,
+    periodEnd: generatedAt,
+    overallStatus: 'needs_review',
+    summary: digestSummary,
+    ruleHealth,
+    overrideSummary: {
+      total: 3,
+      unresolved: summary.unresolvedOverrideCount,
+      acceptedExceptions: 0,
+      policyNeedsUpdate: 1,
+      needsDiscussion: 0,
+    },
+    recommendations: [
+      {
+        id: 'demo-review-rule-2',
+        severity: 'urgent',
+        title: 'Review Low-effort questions',
+        detail:
+          'Rule 2 still has unresolved stricter-than-policy exceptions.',
+        actionLabel: 'Open Review',
+        targetRuleKey: DEMO_POLICY.ruleKey,
+      },
+    ],
+    caveats: [
+      'Demo data is labeled and separate from live subreddit data.',
+      'Recommendations are deterministic and do not use AI.',
+    ],
+    markdown,
+    delivery: {
+      mode: 'none',
+      status: 'not_configured',
+      message: 'Manual copy is the active delivery path.',
+    },
+  };
 }
 
 function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
@@ -2441,6 +2732,27 @@ async function loadGovernance(ruleKey?: string) {
   render();
 }
 
+async function loadDigestHistory() {
+  try {
+    const data = await fetchApi<DigestHistoryResponse>(
+      withWorkspaceSubreddit(API_ROUTES.digestHistory)
+    );
+    digestState = {
+      ...digestState,
+      history: data.history,
+      capabilities: data.capabilities,
+      settings: data.settings,
+    };
+    render();
+  } catch {
+    digestState = {
+      ...digestState,
+      capabilities: createClientDigestCapabilities(),
+      settings: createClientDigestSettings(),
+    };
+  }
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -2814,36 +3126,76 @@ async function confirmApplyPolicy(formData: FormData) {
   }
 }
 
-function generateDigest() {
-  const generatedAt = new Date().toISOString();
-  const summary = buildDashboardSummary();
-  const digestInput: Parameters<typeof generateManualDigest>[0] = {
-    generatedAt,
-    dataMode: summary.dataMode,
-    summary,
-    caveats: [
-      'Historical moderation-log attribution is inferred and confidence-scored.',
-      'Delivery remains log-only until public comment behavior is playtest-verified.',
-      'Digest is generated manually; no scheduler is enabled in this wave.',
-    ],
-  };
-  if (governanceState.health !== undefined) {
-    digestInput.health = governanceState.health;
-  }
+async function generateDigest() {
   digestState = {
-    generatedAt,
-    markdown: generateManualDigest(digestInput),
-    message: 'Manual digest generated.',
+    ...digestState,
+    loading: true,
+    error: undefined,
+    message: undefined,
   };
+  render();
+
+  try {
+    const body: { subreddit?: string; source: 'manual' | 'demo'; periodDays: number } = {
+      source: buildDashboardSummary().dataMode === 'demo' ? 'demo' : 'manual',
+      periodDays: 7,
+    };
+    const subreddit = getWorkspaceSubreddit();
+    if (subreddit) {
+      body.subreddit = subreddit;
+    }
+    const data = await fetchApi<GenerateDigestResponse>(
+      API_ROUTES.digestGenerate,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    digestState = {
+      loading: false,
+      error: undefined,
+      report: data.report,
+      history: data.history,
+      capabilities: data.capabilities,
+      settings: data.settings,
+      message: 'Manual digest generated and saved to history.',
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const report = createClientDemoDigestReport();
+      digestState = {
+        loading: false,
+        error: undefined,
+        report,
+        history: [report, ...digestState.history.filter((item) => item.id !== report.id)],
+        capabilities: createClientDigestCapabilities(),
+        settings: {
+          ...createClientDigestSettings(),
+          lastGeneratedAt: report.generatedAt,
+        },
+        message: 'Demo digest generated locally for preview.',
+      };
+      render();
+      return;
+    }
+
+    digestState = {
+      ...digestState,
+      loading: false,
+      error: normalizeClientError(error, 'Digest generation failed.'),
+    };
+  }
   render();
 }
 
 async function copyDigestMarkdown() {
-  if (!digestState.markdown) {
+  const markdown = digestState.report?.markdown ?? digestState.history[0]?.markdown;
+  if (!markdown) {
     return;
   }
   try {
-    await navigator.clipboard.writeText(digestState.markdown);
+    await navigator.clipboard.writeText(markdown);
     digestState = { ...digestState, message: 'Digest copied to clipboard.' };
   } catch {
     digestState = { ...digestState, message: 'Digest is ready in the textarea.' };
@@ -3100,6 +3452,7 @@ render();
 void loadHealth();
 void loadPolicies();
 void loadGovernance();
+void loadDigestHistory();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

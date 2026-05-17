@@ -10,8 +10,13 @@ import type {
   ApplyPolicyPreview,
   ApplyPolicyPreviewInput,
   ApiResponse,
+  DigestCapabilities,
+  DigestHistoryResponse,
+  DigestSettings,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
+  GenerateDigestRequest,
+  GenerateDigestResponse,
   DriftCandidate,
   MirrorScan,
   OverrideEvent,
@@ -49,6 +54,13 @@ import {
   listPolicyHealthSummaries,
 } from '../server/services/policyHealth';
 import { generateCasePacket } from '../server/services/casePacket';
+import {
+  generateDigestReport,
+  getDigestCapabilities,
+  getDigestSettings,
+  listDigestHistory,
+  updateDigestSettings,
+} from '../server/services/digest';
 
 export const api = new Hono();
 
@@ -473,6 +485,80 @@ api.post('/case-packet', async (c) => {
   }
 });
 
+api.post('/digest/generate', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateDigestRequest>;
+
+  try {
+    const response: ApiResponse<GenerateDigestResponse> = {
+      ok: true,
+      data: await generateDigestReport({
+        subreddit: getRequestedBodySubreddit(body),
+        generatedBy: context.username ?? 'unknown',
+        request: {
+          ...body,
+          source: body.source ?? 'manual',
+        },
+      }),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(digestError(error), 400);
+  }
+});
+
+api.get('/digest/history', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const response: ApiResponse<DigestHistoryResponse> = {
+    ok: true,
+    data: {
+      history: await listDigestHistory(subreddit),
+      capabilities: getDigestCapabilities(),
+      settings: await getDigestSettings(subreddit),
+    },
+  };
+  return c.json(response);
+});
+
+api.get('/digest/capabilities', (c) => {
+  const response: ApiResponse<DigestCapabilities> = {
+    ok: true,
+    data: getDigestCapabilities(),
+  };
+  return c.json(response);
+});
+
+api.get('/digest/settings', async (c) => {
+  const response: ApiResponse<DigestSettings> = {
+    ok: true,
+    data: await getDigestSettings(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.put('/digest/settings', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<DigestSettings>;
+
+  try {
+    const input: Parameters<typeof updateDigestSettings>[0] = {
+      subreddit: getRequestedBodySubreddit(body),
+      updatedBy: context.username ?? 'unknown',
+    };
+    if (body.deliveryMode !== undefined) {
+      input.deliveryMode = body.deliveryMode;
+    }
+    if (body.scheduleEnabled !== undefined) {
+      input.scheduleEnabled = body.scheduleEnabled;
+    }
+    const response: ApiResponse<DigestSettings> = {
+      ok: true,
+      data: await updateDigestSettings(input),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(digestSettingsError(error), 400);
+  }
+});
+
 api.post('/apply-policy/preview', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyPreviewInput>;
 
@@ -537,6 +623,28 @@ function policyError(error: unknown): ApiResponse<RulePolicy> {
     error: {
       code: 'policy_validation_failed',
       message: error instanceof Error ? error.message : 'Policy request failed',
+    },
+  };
+}
+
+function digestError(error: unknown): ApiResponse<GenerateDigestResponse> {
+  return {
+    ok: false,
+    error: {
+      code: 'digest_generation_failed',
+      message:
+        error instanceof Error ? error.message : 'Digest generation failed',
+    },
+  };
+}
+
+function digestSettingsError(error: unknown): ApiResponse<DigestSettings> {
+  return {
+    ok: false,
+    error: {
+      code: 'digest_settings_failed',
+      message:
+        error instanceof Error ? error.message : 'Digest settings update failed',
     },
   };
 }

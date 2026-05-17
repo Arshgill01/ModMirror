@@ -26,6 +26,10 @@ export const redisKeys = {
   overrides: (subreddit: string) => mmKey(subreddit, 'overrides'),
   overrideReview: (subreddit: string, overrideId: string) =>
     mmKey(subreddit, `override:${overrideId}:review`),
+  digestHistory: (subreddit: string) => mmKey(subreddit, 'digests'),
+  digest: (subreddit: string, digestId: string) =>
+    mmKey(subreddit, `digest:${digestId}`),
+  digestSettings: (subreddit: string) => mmKey(subreddit, 'digest:settings'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 
