@@ -101,6 +101,7 @@ branch is reviewed and approved.
 | Expanded dashboard screenshot after redesign | Chromium Playwright was blocked by Reddit network security; automated Safari click-through was blocked by macOS `System Events` error `-25200`. | Blocked |
 | Required checks after redesign | `npm run type-check`, `npm run lint`, `npm run build`, and `npm test` passed on 2026-05-18; tests remain 14 files / 65 tests. | Complete |
 | Push redesign branch for review | `redesign/wave7-8-command-center-ui` was pushed to `origin/redesign/wave7-8-command-center-ui`; draft PR opened at `https://github.com/Arshgill01/ModMirror/pull/11`. | Complete |
+| GitHub PR checks | `gh pr checks 11` reported no checks configured for the branch; `gh pr view 11` reported open draft PR with empty status check rollup and `mergeable=UNKNOWN`. Local checks remain the verification source for this branch. | Complete with caveat |
 | Merge redesign to master | Not done. The user requested that completion wait until they are satisfied and give a green light. | Pending user approval |
 
 Current status: Wave 7/8 implementation remains merged on `master`, but the
