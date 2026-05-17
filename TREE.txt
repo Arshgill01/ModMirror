@@ -1,48 +1,23 @@
-.codex/skills/demo-seed-data/SKILL.md
-.codex/skills/demo-seed-data/agents/openai.yaml
-.codex/skills/devvit-playtest-qa/SKILL.md
-.codex/skills/devvit-playtest-qa/agents/openai.yaml
-.codex/skills/devvit-research/SKILL.md
-.codex/skills/devvit-research/agents/openai.yaml
-.codex/skills/hackathon-submission/SKILL.md
-.codex/skills/hackathon-submission/agents/openai.yaml
-.codex/skills/mirror-scan-attribution/SKILL.md
-.codex/skills/mirror-scan-attribution/agents/openai.yaml
-.codex/skills/modmirror-product-guardrails/SKILL.md
-.codex/skills/modmirror-product-guardrails/agents/openai.yaml
-.codex/skills/policy-flow/SKILL.md
-.codex/skills/policy-flow/agents/openai.yaml
-.codex/skills/wave-execution/SKILL.md
-.codex/skills/wave-execution/agents/openai.yaml
-.github/dependabot.yml
-.gitignore
-.prettierrc
-.vscode/settings.json
-AGENTS.md
-LICENSE
-PLAN.md
-README.md
-RESEARCH.md
-TODO.md
-TREE.txt
-devvit.json
-docs/DATA_MODEL.md
-docs/DECISIONS.md
-docs/DEMO_SCRIPT.md
-docs/DEVVIT_RESEARCH_QUESTIONS.md
-docs/PRODUCT.md
-docs/SUBMISSION_NOTES.md
-eslint.config.js
-package-lock.json
-package.json
-prompts/WAVE0_GOAL.md
-scripts/bootstrap_dirs.sh
-src/core/smoke.ts
-src/index.ts
-src/routes/api.ts
-src/routes/forms.ts
-src/routes/menu.ts
-src/routes/triggers.ts
-tsconfig.json
-vite.config.ts
-vitest.config.ts
+modmirror-wave7-8-mega-prompts/
+├── docs/
+│   ├── WAVE7_8_EXECUTION_NOTES.md
+│   ├── UX_SPEC.md
+│   ├── DESIGN_SYSTEM.md
+│   └── PRODUCTIZATION_ACCEPTANCE_CHECKLIST.md
+├── prompts/
+│   └── wave7-8/
+│       ├── README.md
+│       ├── UI_FRONTEND_PROCESS.md
+│       ├── WAVE7_8_MASTER_GOAL.md
+│       ├── WAVE7_8_ORCHESTRATOR.md
+│       ├── AGENT_A_UX_ARCHITECTURE_AND_DESIGN_AUDIT.md
+│       ├── AGENT_B_VISUAL_SYSTEM_AND_COMPONENT_SHELL.md
+│       ├── AGENT_C_INLINE_CARD_EXPANDED_MODE.md
+│       ├── AGENT_D_COMMAND_CENTER_SETUP_DEMO.md
+│       ├── AGENT_E_GOVERNANCE_CASE_PACKET_UI.md
+│       ├── AGENT_F_REAL_MOD_WORKFLOW_HARDENING.md
+│       ├── AGENT_G_MANUAL_DIGEST_RUNTIME_SETTINGS.md
+│       ├── AGENT_H_QA_DOCS_SUBMISSION_READY.md
+│       └── MERGE_CHECKLIST.md
+└── scripts/
+    └── wave7_8_tmux_plan.sh
