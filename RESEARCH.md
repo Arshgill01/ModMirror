@@ -447,3 +447,35 @@ Conclusion:
 
 - Devvit CLI template registry: `https://developers.reddit.com/templates.json`
 - Official template archive: `https://github.com/reddit/devvit-template-mod-tool-devvit-web/archive/refs/heads/main.zip`
+
+## Wave 9/10 Runtime Findings
+
+Date: 2026-05-18
+
+Commands:
+
+- `npx devvit whoami` returned `Logged in as u/BrightyBrainiac`.
+- `npm run dev` reached playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on version
+  `v0.0.1.70`.
+
+Safari/Computer Use runtime observations:
+
+- The refreshed Reddit playtest WebView used app version `0.0.1.70`.
+- The inline launch card rendered inside the Reddit post before dashboard open.
+- `Open Dashboard` entered the Devvit expanded modal and loaded Command Center.
+- The Devvit modal toolbar/viewport dropdown is present and exposes `Mobile`,
+  `Desktop`, and `Fullscreen`; ModMirror should not replace this with an
+  in-app duplicate.
+- ExampleLearning demo scan completed in runtime with 60 actions and labeled
+  demo state.
+- Manual Digest generated in runtime, rendered Markdown Export, enabled Copy
+  Markdown, and added a Digest History row.
+- Runtime Settings showed Digest History plus `unverified` capability states for
+  mod discussion delivery and scheduler.
+
+Digest delivery/scheduler status:
+
+- Manual Markdown copy remains the verified launch path.
+- Mod discussion delivery is still unverified and disabled.
+- Scheduler execution is still unverified and disabled.

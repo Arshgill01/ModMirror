@@ -2,7 +2,7 @@
 
 ## Local Checks
 
-- [ ] `npm install`
+- [x] `npm install`
 - [x] `npm run build`
 - [x] `npm run type-check`
 - [x] `npm test`
@@ -11,54 +11,54 @@
 
 ## Runtime Checks
 
-- [ ] Devvit app identity valid.
-- [ ] Playtest starts.
-- [ ] Inline card works.
-- [ ] Expanded dashboard works.
-- [ ] Command Center works.
-- [ ] Demo scenario works.
-- [ ] Live empty state is useful.
-- [ ] Mirror Scan works or degrades gracefully.
+- [x] Devvit app identity valid.
+- [x] Playtest starts.
+- [x] Inline card works.
+- [x] Expanded dashboard works.
+- [x] Command Center works.
+- [x] Demo scenario works.
+- [x] Live empty state is useful.
+- [x] Mirror Scan works or degrades gracefully.
 - [ ] Policies create/edit.
 - [ ] Apply Policy works.
 - [ ] Override review works.
 - [ ] Case Packet works.
-- [x] Manual Digest works locally.
-- [x] Markdown copy/export works locally.
-- [x] Runtime Settings shows capability status locally.
+- [x] Manual Digest works locally and in playtest.
+- [x] Markdown copy/export works locally and renders in playtest.
+- [x] Runtime Settings shows capability status locally and in playtest.
 
 ## Role Checks
 
-- [ ] app owner/developer
-- [ ] subreddit moderator
+- [x] app owner/developer
+- [x] subreddit moderator
 - [ ] regular user/non-mod if possible
 
 Expected:
 
 - [ ] non-mods cannot access sensitive mod workflows.
 - [ ] mod-only actions are hidden or blocked.
-- [ ] aggregate data is safe.
-- [ ] per-mod data is gated or omitted.
+- [x] aggregate data is safe.
+- [x] per-mod data is gated or omitted.
 
 ## Device Checks
 
-- [ ] desktop web
-- [ ] narrow viewport
+- [x] desktop web
+- [x] narrow viewport
 - [ ] mobile web if possible
 - [ ] Reddit mobile app if possible
-- [ ] dark Reddit UI
+- [x] dark Reddit UI
 
 ## UX Checks
 
-- [ ] first screen explains value in < 10 seconds.
-- [ ] no dead-end empty states.
-- [ ] demo mode is obvious.
-- [ ] primary CTAs are clear.
-- [ ] loading states exist.
-- [ ] error states are useful.
-- [ ] copy avoids unsupported claims.
-- [ ] no generic card-grid AI slop.
-- [ ] visual hierarchy is strong.
+- [x] first screen explains value in < 10 seconds.
+- [x] no dead-end empty states.
+- [x] demo mode is obvious.
+- [x] primary CTAs are clear.
+- [x] loading states exist.
+- [x] error states are useful.
+- [x] copy avoids unsupported claims.
+- [x] no generic card-grid AI slop.
+- [x] visual hierarchy is strong.
 
 ## Data Practices
 
@@ -76,15 +76,16 @@ Expected:
 - [x] App listing draft complete.
 - [x] Devpost draft complete.
 - [x] Project impact copy complete.
-- [ ] Screenshots captured.
+- [x] Screenshots captured.
 - [x] Demo video script complete.
 - [x] Known limitations clear.
-- [ ] Developer feedback notes drafted.
-- [ ] Final report complete after runtime QA.
+- [x] Developer feedback notes drafted.
+- [x] Final report complete after runtime QA.
 
 ## Current Evidence Notes
 
-- Local Wave 9 digest slice checks passed:
+- Final Wave 9/10 local checks passed:
+  - `npm install`
   - `npm run type-check`
   - `npm run lint`
   - `npm run build`
@@ -95,6 +96,22 @@ Expected:
 - Static QA reported no horizontal overflow for Digest or Settings, confirmed
   Digest History and Markdown Export are visible, and confirmed Settings shows
   scheduler capability status.
+- Runtime playtest reached ready at:
+  - URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+  - Version: `v0.0.1.70`
+- Safari/Computer Use runtime QA verified:
+  - Inline launch card renders in the Reddit post before dashboard open.
+  - Open Dashboard enters the Devvit expanded modal.
+  - Devvit viewport dropdown is present and exposes `Mobile`, `Desktop`, and
+    `Fullscreen`.
+  - Command Center loads as first dashboard screen.
+  - ExampleLearning demo scan loads with 60 actions and labeled demo state.
+  - Manual Digest generates in playtest, renders Markdown Export, and writes a
+    Digest History row.
+  - Settings page shows Digest History, Digest mod discussion `unverified`, and
+    Digest scheduler `unverified` in playtest.
+- Runtime screenshot captured:
+  - `output/playwright/wave9-10/runtime-safari-digest-v0.0.1.70.png`
 - `npm audit --audit-level=low` reports existing dependency issues: 31
   vulnerabilities (3 low, 27 high, 1 critical). Main remediation paths require
   out-of-range or breaking updates for `hono`, `vite`, and Devvit transitive

@@ -5,8 +5,8 @@
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
 Status: Wave 7/8 and the redesign rescue branch are merged to `master` and
-pushed to `origin` through PR #11. Wave 9/10 is active on
-`integration/wave9-10-launch-readiness`.
+pushed to `origin` through PR #11. Wave 9/10 implementation and runtime QA are
+complete on `integration/wave9-10-launch-readiness`; final merge/push is next.
 
 The first Wave 9 slice adds persisted digest contracts, a deterministic server
 digest engine, Redis-backed digest history, digest API routes, an upgraded
@@ -32,13 +32,13 @@ analytics remain out of scope.
 - [x] Scheduler remains disabled/unverified.
 - [x] Static Digest/Settings visual QA captured.
 - [x] `npm audit` reviewed and documented.
-- [x] Launch readiness checklist partially filled with local evidence.
+- [x] Launch readiness checklist filled with local/static/runtime evidence.
 - [x] App listing draft complete.
 - [x] Devpost draft complete.
 - [x] Screenshot/video plan complete.
-- [ ] Final Wave 9/10 report complete.
-- [ ] Runtime playtest re-run for Wave 9/10.
-- [ ] Full final checks pass.
+- [x] Final Wave 9/10 report complete.
+- [x] Runtime playtest re-run for Wave 9/10.
+- [x] Full final checks pass.
 - [ ] Integration branch merged to `master` and pushed after checks.
 
 ## Wave 7/8 Productization Status
@@ -69,8 +69,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Redesign branch demo workflow works end-to-end in signed-in Safari playtest.
 - [x] Redesign branch pushed to `origin/redesign/wave7-8-command-center-ui`.
 - [x] Draft PR opened for redesign review: `https://github.com/Arshgill01/ModMirror/pull/11`.
-- [ ] User reviews redesigned UI and gives explicit green light.
-- [ ] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
+- [x] User reviews redesigned UI and gives explicit green light.
+- [x] Merge `redesign/wave7-8-command-center-ui` to `master` if approved.
 
 ## Wave 6 Case Packet Checklist
 
