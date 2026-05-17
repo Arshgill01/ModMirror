@@ -167,6 +167,18 @@ Curated review screenshots are also committed for PR review:
 - `docs/screenshots/wave7-8-redesign/review.png`
 - `docs/screenshots/wave7-8-redesign/case-packet.png`
 - `docs/screenshots/wave7-8-redesign/mobile-command-center.png`
+- `docs/screenshots/wave7-8-redesign/settings-light.png`
+- `docs/screenshots/wave7-8-redesign/settings-dark.png`
+
+Typography/theme follow-up:
+
+- Settings ledger values were reduced from a larger 20px treatment to the same
+  15px operational value scale used elsewhere.
+- Added an in-app `System / Light / Dark` appearance control because Reddit's
+  host theme toggle is not guaranteed to propagate into the Devvit WebView.
+- Static verification confirmed forced light and forced dark modes update CSS
+  variables, Settings value font size remains `15px`, and desktop Settings has
+  no horizontal overflow.
 
 Gemini critique and response:
 

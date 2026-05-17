@@ -307,6 +307,37 @@ dd {
   justify-content: flex-end;
 }
 
+.appearance-toggle {
+  align-items: center;
+  border: 1px solid var(--mm-line);
+  display: inline-flex;
+  min-height: 34px;
+}
+
+.appearance-toggle button {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--mm-line);
+  color: var(--mm-muted);
+  font-size: 12px;
+  font-weight: 720;
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+.appearance-toggle button:last-child {
+  border-right: 0;
+}
+
+.appearance-toggle button:hover {
+  color: var(--mm-ink);
+}
+
+.appearance-toggle button.active {
+  background: var(--mm-ink);
+  color: var(--mm-paper);
+}
+
 .primary-button,
 .secondary-button,
 .text-button {
@@ -1052,13 +1083,21 @@ dd {
 }
 
 .settings-grid .action-card p {
+  font-size: 14px;
+  line-height: 1.42;
   margin-top: 0;
+}
+
+.settings-grid .action-card h3 {
+  font-size: 14px;
+  font-weight: 740;
 }
 
 .settings-value {
   color: var(--mm-ink);
-  font-size: 20px;
-  font-weight: 770;
+  font-size: 15px;
+  font-weight: 740;
+  line-height: 1.25;
   overflow-wrap: anywhere;
   text-align: right;
 }
@@ -1095,6 +1134,48 @@ dd {
   .status-badge {
     background: #20252a;
   }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --mm-bg: #f6f7f8;
+  --mm-paper: #ffffff;
+  --mm-ink: #0f1419;
+  --mm-text: #1f2328;
+  --mm-muted: #66717d;
+  --mm-faint: #8a949e;
+  --mm-line: #d7dadc;
+  --mm-line-strong: #a9b1b9;
+  --mm-rail: #111827;
+  --mm-rail-muted: #c6ccd4;
+}
+
+:root[data-theme="light"] .policy-form input[readonly],
+:root[data-theme="light"] .review-note-input,
+:root[data-theme="light"] .inline-note,
+:root[data-theme="light"] .status-badge {
+  background: #f2f4f6;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mm-bg: #0f1113;
+  --mm-paper: #171a1d;
+  --mm-ink: #f2f4f6;
+  --mm-text: #e2e5e8;
+  --mm-muted: #aab3bd;
+  --mm-faint: #87919b;
+  --mm-line: #343a40;
+  --mm-line-strong: #5d6670;
+  --mm-rail: #090b0d;
+  --mm-rail-muted: #aeb6c0;
+}
+
+:root[data-theme="dark"] .policy-form input[readonly],
+:root[data-theme="dark"] .review-note-input,
+:root[data-theme="dark"] .inline-note,
+:root[data-theme="dark"] .status-badge {
+  background: #20252a;
 }
 
 @media (max-width: 980px) {

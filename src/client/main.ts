@@ -40,6 +40,7 @@ import type {
 import './styles.css';
 
 type ScanMode = 'live' | 'demo';
+type ThemePreference = 'system' | 'light' | 'dark';
 type PolicyHealthStatus =
   | 'stable'
   | 'watch'
@@ -184,6 +185,7 @@ const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const EFFECT_WEB_VIEW = 9;
 const WEB_VIEW_INLINE_MODE = 1;
 const WEB_VIEW_IMMERSIVE_MODE = 2;
+const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 
 const pages: Page[] = [
   {
@@ -240,6 +242,7 @@ const appRoot = app;
 let activePage: ProductPageId = getPageFromHash();
 let dashboardOpen = window.location.hash.length > 1;
 let expandedModeMessage: string | undefined;
+let themePreference: ThemePreference = loadThemePreference();
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
 let scanState: ScanUiState = {
@@ -333,6 +336,7 @@ function render() {
         'A one-screen view of drift, policy health, and the next moderation governance action.',
     } satisfies Page);
   const summary = buildDashboardSummary();
+  applyThemePreference();
 
   appRoot.innerHTML = `
     <div class="ops-shell">
@@ -375,6 +379,7 @@ function render() {
                 ? ''
                 : `<span class="status-badge status-neutral">${formatDataMode(summary.dataMode)}</span>`
             }
+            ${renderAppearanceControl()}
             ${renderPageAction(page.id)}
           </div>
         </header>
@@ -389,6 +394,7 @@ function render() {
 
 function renderInlineLaunchCard() {
   const summary = buildDashboardSummary();
+  applyThemePreference();
   appRoot.innerHTML = `
     <main class="inline-shell">
       <section class="inline-card" aria-label="ModMirror launch card">
@@ -417,6 +423,23 @@ function renderInlineLaunchCard() {
 function renderPageAction(pageId: ProductPageId) {
   void pageId;
   return '';
+}
+
+function renderAppearanceControl() {
+  const options: ThemePreference[] = ['system', 'light', 'dark'];
+  return `
+    <div class="appearance-toggle" role="group" aria-label="Appearance">
+      ${options
+        .map(
+          (option) => `
+            <button class="${option === themePreference ? 'active' : ''}" data-theme-option="${option}" type="button" aria-pressed="${option === themePreference}">
+              ${capitalize(option)}
+            </button>
+          `
+        )
+        .join('')}
+    </div>
+  `;
 }
 
 function renderExpandedModeMessage() {
@@ -1403,6 +1426,7 @@ function renderSettingsPage() {
   const summary = buildDashboardSummary();
   return `
     <section class="settings-grid">
+      ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
       ${renderSettingsCard('Data mode', formatDataMode(summary.dataMode), summary.dataMode === 'demo' ? 'Demo data is labeled and separate from live subreddit data.' : 'Live scans depend on Reddit API availability.')}
       ${renderSettingsCard('Redis status', health?.redis.smokeStatus ?? 'not checked', health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.')}
       ${renderSettingsCard('Reddit source status', health?.environment.playtestStatus ?? 'not runtime verified', 'Rules, removal reasons, and mod log reads are type/build-verified; broader runtime smoke is still documented in RESEARCH.md.')}
@@ -1490,6 +1514,7 @@ function renderLoadingState(title: string, body: string) {
 
 function bindAllActions() {
   bindNavigation();
+  bindAppearanceActions();
   bindActionIntents();
   bindScanActions();
   bindPolicyActions();
@@ -1502,6 +1527,22 @@ function bindAllActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         void loadHealth();
+      });
+    });
+}
+
+function bindAppearanceActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-theme-option]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const option = button.dataset.themeOption;
+        if (option === 'system' || option === 'light' || option === 'dark') {
+          themePreference = option;
+          saveThemePreference(option);
+          applyThemePreference();
+          render();
+        }
       });
     });
 }
@@ -2800,6 +2841,36 @@ function buildDashboardSummary() {
   return buildCommandCenterSummary(input);
 }
 
+function loadThemePreference(): ThemePreference {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'system' || stored === 'light' || stored === 'dark') {
+      return stored;
+    }
+  } catch {
+    // Storage can be unavailable in some embedded WebView/privacy modes.
+  }
+  return 'system';
+}
+
+function saveThemePreference(preference: ThemePreference) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, preference);
+  } catch {
+    // Keep the in-memory preference for this render if storage is blocked.
+  }
+}
+
+function applyThemePreference() {
+  if (themePreference === 'system') {
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.dataset.themePreference = 'system';
+    return;
+  }
+  document.documentElement.dataset.theme = themePreference;
+  document.documentElement.dataset.themePreference = themePreference;
+}
+
 function getPrimaryActionCopy(intent: CommandCenterAction['intent']) {
   if (intent === 'load_demo') {
     return 'Start with ExampleLearning so the whole scan-policy-override-case story is visible immediately.';
@@ -2837,6 +2908,10 @@ function formatPercent(value: number) {
 
 function formatDataMode(mode: ProductDataMode) {
   return mode === 'demo' ? 'Demo data' : mode === 'live' ? 'Live data' : 'No data';
+}
+
+function capitalize(value: string) {
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
 function formatDate(value: string) {

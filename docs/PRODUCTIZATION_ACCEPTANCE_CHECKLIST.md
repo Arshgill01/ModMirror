@@ -94,6 +94,10 @@ Wave 7/8 is done only when all applicable items are checked.
   ModMirror launch card for the redesign branch.
 - Curated redesign screenshots are committed under
   `docs/screenshots/wave7-8-redesign/` for PR review.
+- A focused follow-up fixed Settings typography drift and added an in-app
+  `System / Light / Dark` appearance control. Static verification confirmed
+  forced light/dark modes change app theme variables even when Reddit's host
+  theme signal is unavailable to the WebView.
 - Chromium Playwright screenshot of Reddit was blocked by Reddit network
   security, and automated Safari click-through capture was blocked by macOS
   automation permissions. Both blockers are documented in `docs/UI_REVIEW.md`.
