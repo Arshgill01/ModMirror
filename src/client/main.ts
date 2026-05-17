@@ -1,17 +1,26 @@
 import {
   APP_NAME,
-  APP_SUMMARY,
   APP_TAGLINE,
-  WAVE_1_FEATURE_STATUSES,
   type HealthResponse,
 } from '../shared/status';
 import {
   API_ROUTES,
   CONFIDENCE_VALUES,
+  DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
 } from '../shared/constants';
+import {
+  buildCommandCenterSummary,
+  buildSetupSteps,
+  generateManualDigest,
+  type CommandCenterAction,
+  type ProductDataMode,
+  type ProductPageId,
+  type SetupStep,
+} from '../shared/productization';
+import { DEMO_POLICY } from '../shared/demoData';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -30,17 +39,7 @@ import type {
 } from '../shared/schema';
 import './styles.css';
 
-type PageId =
-  | 'overview'
-  | 'governance'
-  | 'mirror-scan'
-  | 'policies'
-  | 'apply-policy'
-  | 'case-packets'
-  | 'overrides'
-  | 'demo-mode';
 type ScanMode = 'live' | 'demo';
-type FeatureStatusState = (typeof WAVE_1_FEATURE_STATUSES)[number]['state'];
 type PolicyHealthStatus =
   | 'stable'
   | 'watch'
@@ -54,10 +53,10 @@ type OverrideReviewStatus =
   | 'no_action_needed';
 
 type Page = {
-  id: PageId;
+  id: ProductPageId;
   label: string;
   title: string;
-  body: string;
+  purpose: string;
 };
 
 type ScanUiState = {
@@ -169,56 +168,65 @@ type GovernanceUiState = {
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
 };
 
-const overviewPage: Page = {
-  id: 'overview',
-  label: 'Overview',
-  title: 'Overview',
-  body: 'The dashboard shows scan, policy, and audit readiness without claiming unverified enforcement delivery.',
+type DigestUiState = {
+  markdown: string;
+  generatedAt?: string;
+  message?: string;
 };
 
+type DevvitWebViewGlobal = {
+  entrypoints?: Record<string, string>;
+  token?: string;
+  webViewMode?: number;
+};
+
+const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
+const EFFECT_WEB_VIEW = 9;
+const WEB_VIEW_INLINE_MODE = 1;
+const WEB_VIEW_IMMERSIVE_MODE = 2;
+
 const pages: Page[] = [
-  overviewPage,
   {
-    id: 'governance',
-    label: 'Governance',
-    title: 'Governance',
-    body: 'Review policy health, unresolved overrides, and policy version history as a team feedback loop.',
+    id: 'command-center',
+    label: 'Command Center',
+    title: 'Command Center',
+    purpose: 'A one-screen view of drift, policy health, and the next moderation governance action.',
   },
   {
-    id: 'mirror-scan',
-    label: 'Mirror Scan',
+    id: 'scan',
+    label: 'Scan',
     title: 'Mirror Scan',
-    body: 'Run a scan to compare recent moderation actions against subreddit rules and removal reasons with honest confidence labels.',
+    purpose: 'Compare recent moderation actions against rules and removal reasons with confidence labels.',
   },
   {
     id: 'policies',
     label: 'Policies',
     title: 'Policies',
-    body: 'Turn drift findings into explicit team policy ladders. Delivery defaults to log only until live comment behavior is verified.',
+    purpose: 'Turn drift findings into explicit rule policy ladders that moderators can apply.',
   },
   {
-    id: 'apply-policy',
-    label: 'Apply Policy',
-    title: 'Apply Policy',
-    body: 'Use the dashboard simulator while Reddit menu actions remain runtime-unverified. Confirmed actions are logged with log-only delivery.',
+    id: 'review',
+    label: 'Review',
+    title: 'Review',
+    purpose: 'Review policy health and resolve exceptions without individual blame.',
   },
   {
     id: 'case-packets',
     label: 'Case Packets',
     title: 'Case Packets',
-    body: 'Generate appeal context rooted in policy versions, tracked action history, overrides, and deterministic comparable cases.',
+    purpose: 'Generate appeal context rooted in policy versions, tracked actions, and deterministic comparable cases.',
   },
   {
-    id: 'overrides',
-    label: 'Overrides',
-    title: 'Overrides',
-    body: 'Override Audit remains neutral and aggregate-first; per-mod breakdowns stay hidden until permission gating is verified.',
+    id: 'digest',
+    label: 'Digest',
+    title: 'Digest',
+    purpose: 'Generate a manual Markdown governance digest for the mod team.',
   },
   {
-    id: 'demo-mode',
-    label: 'Demo Mode',
-    title: 'Demo Mode',
-    body: 'Demo data is clearly labeled so screenshots and cold-start review do not look like real subreddit history.',
+    id: 'settings',
+    label: 'Settings',
+    title: 'Settings',
+    purpose: 'Inspect runtime status, data mode, delivery caveats, and demo state.',
   },
 ];
 
@@ -229,7 +237,9 @@ if (!app) {
 }
 
 const appRoot = app;
-let activePage: PageId = getPageFromHash();
+let activePage: ProductPageId = getPageFromHash();
+let dashboardOpen = window.location.hash.length > 1;
+let expandedModeMessage: string | undefined;
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
 let scanState: ScanUiState = {
@@ -267,12 +277,15 @@ let governanceState: GovernanceUiState = {
   overrides: [],
   versionsByPolicy: {},
 };
+let digestState: DigestUiState = {
+  markdown: '',
+};
 
-function getPageFromHash(): PageId {
+function getPageFromHash(): ProductPageId {
   const candidate = window.location.hash.replace('#', '');
   return pages.some((page) => page.id === candidate)
-    ? (candidate as PageId)
-    : 'overview';
+    ? (candidate as ProductPageId)
+    : 'command-center';
 }
 
 function emptyPolicyForm(): PolicyFormState {
@@ -305,378 +318,376 @@ function emptyPolicyForm(): PolicyFormState {
 }
 
 function render() {
-  const page = pages.find((item) => item.id === activePage) ?? overviewPage;
+  if (!dashboardOpen) {
+    renderInlineLaunchCard();
+    return;
+  }
+
+  const page =
+    pages.find((item) => item.id === activePage) ??
+    ({
+      id: 'command-center',
+      label: 'Command Center',
+      title: 'Command Center',
+      purpose:
+        'A one-screen view of drift, policy health, and the next moderation governance action.',
+    } satisfies Page);
+  const summary = buildDashboardSummary();
 
   appRoot.innerHTML = `
-    <div class="shell">
-      <aside class="sidebar">
-        <div class="brand">
+    <div class="mm-shell">
+      <header class="mm-header">
+        <div>
           <h1>${APP_NAME}</h1>
           <p>${APP_TAGLINE}</p>
         </div>
-        <nav class="nav" aria-label="Dashboard sections">
-          ${pages
-            .map(
-              (item) => `
-                <a href="#${item.id}" class="nav-link${item.id === page.id ? ' active' : ''}" data-page="${item.id}">
-                  ${item.label}
-                </a>
-              `
-            )
-            .join('')}
-        </nav>
-      </aside>
+        <div class="mode-stack">
+          <span class="status-badge ${summary.dataMode === 'demo' ? 'status-watch' : 'status-neutral'}">${formatDataMode(summary.dataMode)}</span>
+          <span>${escapeHtml(health?.app.version ?? 'local build')}</span>
+        </div>
+      </header>
 
-      <main class="content">
-        <header class="topbar">
+      <nav class="mm-nav" aria-label="ModMirror sections">
+        ${pages
+          .map(
+            (item) => `
+              <button class="nav-button${item.id === page.id ? ' active' : ''}" data-page="${item.id}" type="button">
+                ${item.label}
+              </button>
+            `
+          )
+          .join('')}
+      </nav>
+
+      <main class="mm-main page-${page.id}">
+        <section class="page-heading">
           <div>
             <h2>${page.title}</h2>
-            <p>${APP_SUMMARY}</p>
+            <p>${page.purpose}</p>
           </div>
-          <div class="demo-control" aria-label="Demo mode status">
-            <span class="demo-state">${health?.demoMode.enabled ? 'Demo on' : 'Demo available'}</span>
-            <span class="muted">Demo data stays labeled and separate from live scan mode.</span>
-          </div>
-        </header>
-
-        ${renderPage(page)}
+          ${renderPageAction(page.id)}
+        </section>
+        ${renderExpandedModeMessage()}
+        ${renderPage(page.id)}
       </main>
     </div>
   `;
 
-  bindNavigation();
-  bindScanActions();
-  bindPolicyActions();
-  bindApplyPolicyActions();
-  bindCasePacketActions();
-  bindGovernanceActions();
+  bindAllActions();
 }
 
-function renderPage(page: Page) {
-  if (page.id === 'mirror-scan') {
-    return renderMirrorScanPage();
-  }
-  if (page.id === 'policies') {
-    return renderPoliciesPage();
-  }
-  if (page.id === 'apply-policy') {
-    return renderApplyPolicyPage();
-  }
-  if (page.id === 'case-packets') {
-    return renderCasePacketPage();
-  }
-  if (page.id === 'governance' || page.id === 'overrides') {
-    return renderGovernancePage();
-  }
-
-  return renderPlaceholderPage(page);
-}
-
-function renderGovernancePage() {
-  return `
-    <section class="section policy-layout" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">Governance Core</h3>
-        <p>${pages.find((page) => page.id === 'governance')?.body ?? ''}</p>
-        ${renderGovernanceMessage()}
-      </div>
-      <div class="policy-actions">
-        <button class="secondary-button" data-load-governance ${governanceState.loading ? 'disabled' : ''}>Refresh governance</button>
-      </div>
-    </section>
-
-    ${renderGovernanceOverview()}
-    ${renderPolicyHealthCards()}
-    ${renderOverrideInbox()}
-    ${renderPolicyVersionSummary()}
+function renderInlineLaunchCard() {
+  const summary = buildDashboardSummary();
+  appRoot.innerHTML = `
+    <main class="inline-shell">
+      <section class="inline-card" aria-label="ModMirror launch card">
+        <div class="inline-card-main">
+          <div>
+            <h1>${APP_NAME}</h1>
+            <p>${APP_TAGLINE}</p>
+          </div>
+          <span class="status-badge ${summary.dataMode === 'demo' ? 'status-watch' : 'status-neutral'}">${formatDataMode(summary.dataMode)}</span>
+        </div>
+        <dl class="inline-stats">
+          <div><dt>Top issue</dt><dd>${escapeHtml(summary.topIssue)}</dd></div>
+          <div><dt>Unresolved overrides</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
+          <div><dt>Active policies</dt><dd>${summary.activePolicyCount}</dd></div>
+        </dl>
+        <button class="primary-button" data-open-dashboard type="button">Open Dashboard</button>
+      </section>
+    </main>
   `;
+
+  document
+    .querySelector<HTMLButtonElement>('[data-open-dashboard]')
+    ?.addEventListener('click', (event) => {
+      openDashboard(event);
+    });
 }
 
-function renderGovernanceMessage() {
-  if (governanceState.error) {
-    return `<p class="inline-error">${escapeHtml(governanceState.error)}</p>`;
-  }
-  if (governanceState.message) {
-    return `<p class="inline-success">${escapeHtml(governanceState.message)}</p>`;
-  }
+function renderPageAction(pageId: ProductPageId) {
+  void pageId;
   return '';
 }
 
-function renderGovernanceOverview() {
-  const health = governanceState.health;
-  if (governanceState.loading && !health) {
-    return `
-      <section class="section loading-state">
-        <h3>Loading governance data</h3>
-        <p class="muted">Reading policy health, reviewable overrides, and version summaries.</p>
-      </section>
-    `;
+function renderExpandedModeMessage() {
+  void expandedModeMessage;
+  return '';
+}
+
+function renderPage(pageId: ProductPageId) {
+  switch (pageId) {
+    case 'command-center':
+      return renderCommandCenterPage();
+    case 'scan':
+      return renderScanPage();
+    case 'policies':
+      return renderPoliciesPage();
+    case 'review':
+      return renderReviewPage();
+    case 'case-packets':
+      return renderCasePacketPage();
+    case 'digest':
+      return renderDigestPage();
+    case 'settings':
+      return renderSettingsPage();
   }
-  if (!health) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No governance data yet</h3>
-        <p>Create a policy and record Apply Policy actions. ModMirror will start showing health and review signals as data accumulates.</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="scan-summary-grid" aria-label="Governance overview">
-      ${renderMetricCard('Active policies', health.totalPolicies.toString())}
-      ${renderMetricCard('Stable policies', health.stablePolicies.toString())}
-      ${renderMetricCard('Need review', health.policiesNeedingReview.toString())}
-      ${renderMetricCard('Unresolved overrides', health.unresolvedOverrides.toString())}
-    </section>
-  `;
 }
 
-function renderPolicyHealthCards() {
-  const summaries = governanceState.health?.summaries ?? [];
-  if (summaries.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>Policy health</h3>
-        <p>Not enough tracked policy data yet. Create policies now; health status will appear after Apply Policy actions are logged.</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="health-card-grid" aria-label="Policy health cards">
-      ${summaries.map(renderPolicyHealthCard).join('')}
-    </section>
-  `;
-}
-
-function renderPolicyHealthCard(summary: PolicyHealthSummary) {
-  const topReason = summary.reasons[0] ?? 'No issue detected.';
-  const recommendation =
-    summary.recommendations[0] ?? 'Continue reviewing new exceptions.';
-
-  return `
-    <article class="health-card status-${summary.status}">
-      <div class="health-card-header">
-        <div>
-          <h3>${escapeHtml(summary.ruleName)}</h3>
-          <p>${escapeHtml(summary.ruleKey)}</p>
-        </div>
-        <span>${formatHealthStatus(summary.status)}</span>
-      </div>
-      <dl class="compact-metrics">
-        <div><dt>Actions</dt><dd>${summary.totalActions}</dd></div>
-        <div><dt>Adherence</dt><dd>${formatPercent(summary.adherenceRate)}</dd></div>
-        <div><dt>Overrides</dt><dd>${summary.overrideCount}</dd></div>
-        <div><dt>Unresolved</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
-      </dl>
-      <p><strong>Top issue:</strong> ${escapeHtml(topReason)}</p>
-      <p><strong>Recommendation:</strong> ${escapeHtml(recommendation)}</p>
-      <div class="policy-actions left">
-        <button class="secondary-button" data-filter-overrides="${escapeAttribute(summary.ruleKey)}">Review overrides</button>
-        <button class="secondary-button" data-edit-policy="${escapeAttribute(summary.policyId)}">Edit policy</button>
-      </div>
-    </article>
-  `;
-}
-
-function renderOverrideInbox() {
-  const overrides = [...governanceState.overrides].sort((left, right) =>
-    left.reviewStatus === right.reviewStatus
-      ? Date.parse(right.createdAt) - Date.parse(left.createdAt)
-      : left.reviewStatus === 'unresolved'
-        ? -1
-        : 1
-  );
-
-  if (overrides.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>Override review inbox</h3>
-        <p>No unresolved overrides. Your team has no policy exceptions waiting for review.</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="inbox-list" aria-label="Override review inbox">
-      ${overrides.map(renderOverrideRow).join('')}
-    </section>
-  `;
-}
-
-function renderOverrideRow(event: ReviewableOverrideEvent) {
-  const label = event.ruleName ?? event.ruleKey;
-  const version = event.policyVersionNumber
-    ? `Policy v${event.policyVersionNumber}`
-    : 'Policy version unavailable';
-
-  return `
-    <article class="inbox-row">
-      <div class="inbox-row-main">
-        <div>
-          <h3>${escapeHtml(label)}</h3>
-          <p>${formatAction(event.recommendedAction)} recommended; ${formatAction(event.selectedAction)} selected.</p>
-        </div>
-        <span class="review-pill">${formatAction(event.reviewStatus)}</span>
-      </div>
-      <dl class="compact-metrics">
-        <div><dt>Reason</dt><dd>${formatAction(event.overrideReason)}</dd></div>
-        <div><dt>Created</dt><dd>${formatDate(event.createdAt)}</dd></div>
-        <div><dt>Version</dt><dd>${escapeHtml(version)}</dd></div>
-        <div><dt>Target</dt><dd>${escapeHtml(event.targetThingId ?? 'not captured')}</dd></div>
-      </dl>
-      ${event.overrideNote ? `<p class="muted">${escapeHtml(event.overrideNote)}</p>` : ''}
-      <input class="review-note-input" data-review-note="${escapeAttribute(event.id)}" placeholder="Optional review note" value="${escapeAttribute(event.reviewNote ?? '')}">
-      <div class="policy-actions left">
-        ${renderReviewButton(event, 'accepted_exception', 'Accept exception')}
-        ${renderReviewButton(event, 'policy_needs_update', 'Policy needs update')}
-        ${renderReviewButton(event, 'needs_team_discussion', 'Team discussion')}
-        ${renderReviewButton(event, 'no_action_needed', 'No action needed')}
-      </div>
-    </article>
-  `;
-}
-
-function renderReviewButton(
-  event: ReviewableOverrideEvent,
-  status: OverrideReviewStatus,
-  label: string
-) {
-  return `
-    <button class="secondary-button table-button" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''}>
-      ${label}
-    </button>
-  `;
-}
-
-function renderPolicyVersionSummary() {
-  const policies = policyState.policies;
-  if (policies.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>Policy versions</h3>
-        <p>No policies have been created yet. Version history begins with each policy's first saved version.</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="version-list" aria-label="Policy version history">
-      ${policies.map(renderPolicyVersionCard).join('')}
-    </section>
-  `;
-}
-
-function renderPolicyVersionCard(policy: RulePolicy) {
-  const versionedPolicy = policy as RulePolicy & {
-    activeVersionNumber?: number;
-    activeVersionId?: string;
+function renderCommandCenterPage() {
+  const summary = buildDashboardSummary();
+  const setupInput: Parameters<typeof buildSetupSteps>[0] = {
+    policies: policyState.policies,
+    hasAppliedPolicy: applyState.result !== undefined,
+    hasReviewedOverride: governanceState.overrides.some(
+      (event) => event.reviewStatus !== 'unresolved'
+    ),
   };
-  const versions = governanceState.versionsByPolicy[policy.id] ?? [];
-  const latest = versions.at(-1);
-  const versionNumber =
-    versionedPolicy.activeVersionNumber ?? latest?.versionNumber ?? 1;
+  if (scanState.result !== undefined) {
+    setupInput.scan = scanState.result;
+  }
+  const setupSteps = buildSetupSteps(setupInput);
 
   return `
-    <article class="version-card">
-      <div class="health-card-header">
-        <div>
-          <h3>${escapeHtml(policy.ruleName)}</h3>
-          <p>Current version ${versionNumber}</p>
+    <section class="command-board">
+      <div class="command-overview">
+        <div class="score-block">
+          <span>Consistency score</span>
+          <strong>${summary.consistencyScore}</strong>
+          <p>${escapeHtml(summary.topIssue)}</p>
+          <span class="score-meter" style="--score: ${summary.consistencyScore}%"></span>
         </div>
-        <span>${policy.active ? 'Active' : 'Inactive'}</span>
+        <dl class="signal-list">
+          ${renderCommandSignal('Data mode', formatDataMode(summary.dataMode))}
+          ${renderCommandSignal('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
+          ${renderCommandSignal('Active policies', summary.activePolicyCount.toString())}
+          ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
+        </dl>
       </div>
-      ${
-        versions.length > 0
-          ? `<ol>${versions
-              .map(
-                (version) => `
-                  <li>
-                    <strong>v${version.versionNumber}</strong>
-                    <span>${formatDate(version.createdAt)} by ${escapeHtml(version.createdBy)}</span>
-                    ${version.changeSummary ? `<p>${escapeHtml(version.changeSummary)}</p>` : ''}
-                  </li>
-                `
-              )
-              .join('')}</ol>`
-          : '<p class="muted">Version API not available yet or no versions have been recorded.</p>'
-      }
-    </article>
-  `;
-}
 
-function renderPlaceholderPage(page: Page) {
-  return `
-    <section class="section intro-section" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">${page.title}</h3>
-        <p>${page.body}</p>
-      </div>
-      <div class="empty-state">
-        <strong>${page.id === 'overrides' ? 'Audit summary arrives after Apply Policy' : 'Demo-first workflow ready'}</strong>
-        <span>${page.id === 'overrides' ? 'Wave 4 records aggregate policy exceptions without individual blame.' : 'Run demo scan, create Rule 2 policy, then apply it from the policy loop.'}</span>
+      <div class="command-action-row">
+        <div>
+          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
+          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+          ${summary.secondaryActions
+            .map(
+              (action) =>
+                `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
+            )
+            .join('')}
+        </div>
       </div>
     </section>
 
-    <section class="status-grid" aria-label="Wave status cards">
-      ${WAVE_1_FEATURE_STATUSES.map(
-        (feature) => `
-          <article class="status-card">
-            <div class="status-card-header">
-              <h3>${feature.name}</h3>
-              <span>${formatState(feature.state)}</span>
-            </div>
-            <p>${feature.description}</p>
-            <p class="next-step">${feature.next}</p>
-          </article>
-        `
-      ).join('')}
-    </section>
-
-    <section class="section details-grid">
-      ${renderHealthCard()}
-      ${renderDemoCard()}
+    <section class="workflow-board">
+      ${renderSetupWizard(setupSteps)}
+      ${renderDemoScenario()}
     </section>
   `;
 }
 
-function renderMirrorScanPage() {
+function renderCommandSignal(label: string, value: string) {
   return `
-    <section class="section scan-hero" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">Mirror Scan</h3>
-        <p>Run your first Mirror Scan to see how your team has been enforcing rules.</p>
-        <p>No rich history? Try demo mode to create the Rule 2 policy loop from seeded drift.</p>
+    <div>
+      <dt>${escapeHtml(label)}</dt>
+      <dd>${escapeHtml(value)}</dd>
+    </div>
+  `;
+}
+
+function renderSetupWizard(steps: SetupStep[]) {
+  return `
+    <div class="setup-workflow">
+      <div class="section-header">
+        <div>
+          <h3>Guided Setup</h3>
+          <p>Use live subreddit data or the ExampleLearning demo scenario to complete the consistency loop.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-run-scan="live" type="button">Live Scan</button>
+          <button class="primary-button" data-run-scan="demo" type="button">Load Demo</button>
+        </div>
       </div>
-      <div class="scan-actions">
-        <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''}>Run Mirror Scan</button>
-        <button class="secondary-button" data-run-scan="demo" ${scanState.loading ? 'disabled' : ''}>Use Demo Data</button>
+      <ol class="setup-list">
+        ${steps
+          .map(
+            (step) => `
+              <li class="${step.status}">
+                <span>${formatStepStatus(step.status)}</span>
+                <strong>${escapeHtml(step.title)}</strong>
+                <button class="text-button" data-action-intent="${step.action.intent}" type="button">${escapeHtml(step.action.label)}</button>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+    </div>
+  `;
+}
+
+function renderDemoScenario() {
+  return `
+    <aside class="demo-story">
+      <div>
+        <h3>ExampleLearning Demo Scenario</h3>
+        <p>Rule 2 first-time low-effort questions show warnings, removal-only actions, and temporary-ban suggestions. The demo is labeled and separate from live subreddit data.</p>
+      </div>
+      <div class="story-steps">
+        <span>Scan drift</span>
+        <span>Create Rule 2 policy</span>
+        <span>Apply sample</span>
+        <span>Review override</span>
+        <span>Export case context</span>
+      </div>
+    </aside>
+  `;
+}
+
+function renderScanPage() {
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Run Mirror Scan</h3>
+          <p>Live scans use Reddit sources when available. Demo scans use deterministic ExampleLearning data.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-run-scan="demo" ${scanState.loading ? 'disabled' : ''} type="button">Use Demo Data</button>
+          <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''} type="button">Run Live Scan</button>
+        </div>
       </div>
     </section>
-
     ${renderScanWarnings()}
     ${renderScanBody()}
   `;
 }
 
-function renderPoliciesPage() {
+function renderScanWarnings() {
+  if (scanState.warnings.length === 0) {
+    return '';
+  }
   return `
-    <section class="section policy-layout" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">Policy Agreement</h3>
-        <p>${pages.find((page) => page.id === 'policies')?.body ?? ''}</p>
-        ${renderPolicyMessage()}
+    <section class="notice-list" aria-label="Scan warnings">
+      ${scanState.warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join('')}
+    </section>
+  `;
+}
+
+function renderScanBody() {
+  if (scanState.loading) {
+    return renderLoadingState('Scanning moderation history', 'Loading actions, rules, removal reasons, and deterministic attribution output.');
+  }
+  if (scanState.error) {
+    return renderEmptyState('Scan could not complete', scanState.error, [
+      { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' },
+    ]);
+  }
+  if (!scanState.result) {
+    return renderEmptyState(
+      'No scan yet',
+      'Run a live scan or load the demo scenario to see drift candidates and confidence labels.',
+      [
+        { label: 'Run Scan', page: 'scan', intent: 'run_scan' },
+        { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' },
+      ]
+    );
+  }
+
+  return `
+    ${renderScanSummary(scanState.result)}
+    ${renderDriftCandidates(scanState.result.driftCandidates)}
+  `;
+}
+
+function renderScanSummary(scan: MirrorScan) {
+  return `
+    <section class="metric-grid" aria-label="Scan summary">
+      ${renderMetricCard('Source', formatDataMode(scan.source as ProductDataMode))}
+      ${renderMetricCard('Actions scanned', scan.totalActionsScanned.toString())}
+      ${renderMetricCard('Attributed', scan.attributedCount.toString())}
+      ${renderMetricCard('Unmatched', scan.unmatchedCount.toString())}
+    </section>
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Confidence Breakdown</h3>
+          <p>Historical rule labels remain inferred and confidence-scored.</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(scan.smallSubredditStatus.message)}</span>
       </div>
-      <div class="policy-actions">
-        <button class="secondary-button" data-load-policies ${policyState.loading ? 'disabled' : ''}>Refresh policies</button>
-        <button class="primary-button" data-reset-policy-form>Create manual policy</button>
+      <div class="confidence-grid">
+        ${CONFIDENCE_VALUES.map((confidence) =>
+          renderConfidenceItem(confidence, scan.confidenceBreakdown[confidence])
+        ).join('')}
       </div>
     </section>
+  `;
+}
 
+function renderDriftCandidates(candidates: DriftCandidate[]) {
+  if (candidates.length === 0) {
+    return renderEmptyState(
+      'No drift candidates yet',
+      'Create a policy now or keep scanning as more moderation history accumulates.',
+      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+    );
+  }
+
+  return `
+    <section class="card-list" aria-label="Drift candidates">
+      ${candidates.map(renderDriftCandidate).join('')}
+    </section>
+  `;
+}
+
+function renderDriftCandidate(candidate: DriftCandidate, index?: number) {
+  return `
+    <article class="action-card">
+      <div class="card-header">
+        <div>
+          <h3>${escapeHtml(candidate.ruleName)}</h3>
+          <p>${escapeHtml(candidate.summary)}</p>
+        </div>
+        <span class="status-badge confidence-${candidate.confidence}">${candidate.confidence}</span>
+      </div>
+      <div class="distribution-grid">
+        ${Object.entries(candidate.actionDistribution)
+          .map(([action, count]) =>
+            renderDistributionItem(action as EnforcementAction, count ?? 0)
+          )
+          .join('')}
+      </div>
+      <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
+      <button class="secondary-button" data-create-from-drift="${index ?? ''}" type="button">Create policy from drift</button>
+    </article>
+  `;
+}
+
+function renderPoliciesPage() {
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Policy Agreement Flow</h3>
+          <p>Policies are versioned and use local rule keys because Devvit rule IDs are not stable in current typings.</p>
+          ${renderPolicyMessage()}
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-load-policies type="button">Refresh</button>
+          <button class="primary-button" data-reset-policy-form type="button">Manual Policy</button>
+        </div>
+      </div>
+    </section>
     ${renderPolicyFallback()}
     ${renderPolicyList()}
     ${renderDriftPolicyPanel()}
-    ${renderPolicyForm()}
+    <section class="policy-workbench">
+      ${renderPolicyForm()}
+      ${renderApplyPolicyPanel()}
+    </section>
   `;
 }
 
@@ -691,133 +702,88 @@ function renderPolicyMessage() {
 }
 
 function renderPolicyFallback() {
-  const scan = scanState.result;
   if (policyState.policies.length > 0) {
     return '';
   }
-
-  const copy =
-    scan && !scan.smallSubredditStatus.meetsThreshold
-      ? 'Not enough history for reliable drift detection yet. Set your team policy now; ModMirror will start measuring consistency from today.'
-      : 'No team policy exists for this rule yet. Create one now.';
-
-  return `
-    <section class="section empty-scan-state">
-      <h3>No active policies yet</h3>
-      <p>${escapeHtml(copy)}</p>
-    </section>
-  `;
+  return renderEmptyState(
+    'No policies yet',
+    'Create your first policy from a drift candidate or load the ExampleLearning demo scenario.',
+    [
+      { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' },
+      { label: 'Create Policy', page: 'policies', intent: 'create_policy' },
+    ]
+  );
 }
 
 function renderPolicyList() {
   if (policyState.loading) {
-    return `
-      <section class="section loading-state">
-        <h3>Loading policies</h3>
-        <p class="muted">Reading the subreddit policy ladder list.</p>
-      </section>
-    `;
+    return renderLoadingState('Loading policies', 'Reading subreddit policy ladders.');
   }
-
   if (policyState.policies.length === 0) {
     return '';
   }
 
   return `
-    <section class="policy-table-section" aria-label="Saved policies">
-      <table class="policy-table">
-        <thead>
-          <tr>
-            <th>Rule</th>
-            <th>Steps</th>
-            <th>Delivery</th>
-            <th>Status</th>
-            <th>Updated</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${policyState.policies.map(renderPolicyRow).join('')}
-        </tbody>
-      </table>
+    <section class="card-list" aria-label="Saved policies">
+      ${policyState.policies.map(renderPolicyCard).join('')}
     </section>
   `;
 }
 
-function renderPolicyRow(policy: RulePolicy) {
+function renderPolicyCard(policy: RulePolicy) {
   return `
-    <tr>
-      <td>
-        <strong>${escapeHtml(policy.ruleName)}</strong>
-        <span>${escapeHtml(policy.ruleKey)}</span>
-      </td>
-      <td>${policy.steps.length}</td>
-      <td>${formatAction(policy.defaultMessageMode)}</td>
-      <td>${policy.active ? 'Active' : 'Inactive'}</td>
-      <td>${formatDate(policy.updatedAt)}</td>
-      <td><button class="secondary-button table-button" data-edit-policy="${escapeHtml(policy.id)}">Edit</button></td>
-    </tr>
+    <article class="action-card">
+      <div class="card-header">
+        <div>
+          <h3>${escapeHtml(policy.ruleName)}</h3>
+          <p>${escapeHtml(policy.ruleKey)}</p>
+        </div>
+        <span class="status-badge ${policy.active ? 'status-good' : 'status-neutral'}">${policy.active ? 'Active' : 'Inactive'}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Steps</dt><dd>${policy.steps.length}</dd></div>
+        <div><dt>Delivery</dt><dd>${formatAction(policy.defaultMessageMode)}</dd></div>
+        <div><dt>Version</dt><dd>${policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Updated</dt><dd>${formatDate(policy.updatedAt)}</dd></div>
+      </dl>
+      <div class="button-row">
+        <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">Edit policy</button>
+        <button class="secondary-button" data-action-intent="review_policy" type="button">Review health</button>
+      </div>
+    </article>
   `;
 }
 
 function renderDriftPolicyPanel() {
   const candidates = scanState.result?.driftCandidates ?? [];
   if (candidates.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>Create from drift</h3>
-        <p>Run a scan or use demo data to create a policy directly from a drift candidate.</p>
-      </section>
-    `;
+    return '';
   }
-
   return `
-    <section class="drift-list" aria-label="Create policy from drift candidates">
-      ${candidates.map(renderDriftPolicyCard).join('')}
-    </section>
-  `;
-}
-
-function renderDriftPolicyCard(candidate: DriftCandidate, index: number) {
-  const existing = policyState.policies.some(
-    (policy) => policy.ruleKey === candidate.ruleKey
-  );
-
-  return `
-    <article class="drift-card">
-      <div class="drift-card-header">
+    <section class="section-panel">
+      <div class="section-header">
         <div>
-          <h3>${escapeHtml(candidate.ruleName)}</h3>
-          <p>${escapeHtml(candidate.summary)}</p>
+          <h3>Create From Drift</h3>
+          <p>Convert scan findings into explicit team policy.</p>
         </div>
-        <span class="confidence-pill confidence-${candidate.confidence}">${candidate.confidence}</span>
       </div>
-      <div class="distribution-grid">
-        ${Object.entries(candidate.actionDistribution)
-          .map(([action, count]) =>
-            renderDistributionItem(action as EnforcementAction, count ?? 0)
-          )
-          .join('')}
+      <div class="card-list compact">
+        ${candidates.map((candidate, index) => renderDriftCandidate(candidate, index)).join('')}
       </div>
-      <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
-      <button class="primary-button" data-create-from-drift="${index}" ${existing || policyState.saving ? 'disabled' : ''}>
-        ${existing ? 'Policy exists' : 'Create team policy'}
-      </button>
-    </article>
+    </section>
   `;
 }
 
 function renderPolicyForm() {
   const form = policyState.form;
-
   return `
-    <section class="section policy-form-section" aria-label="Policy editor">
-      <div class="policy-form-header">
+    <section class="section-panel policy-form-section" aria-label="Policy editor">
+      <div class="section-header">
         <div>
-          <h3>${form.mode === 'edit' ? 'Edit Policy' : 'Manual Policy Creation'}</h3>
-          <p>Use local rule keys because the installed Devvit rule type does not expose stable rule IDs.</p>
+          <h3>${form.mode === 'edit' ? 'Edit Policy' : 'Policy Editor'}</h3>
+          <p>Use log-only delivery until public comment behavior is playtest-verified.</p>
         </div>
-        <button class="secondary-button" data-reset-policy-form>Reset</button>
+        <button class="secondary-button" data-reset-policy-form type="button">Reset</button>
       </div>
 
       <form class="policy-form" data-policy-form>
@@ -833,17 +799,14 @@ function renderPolicyForm() {
           Delivery mode
           <select name="defaultMessageMode">
             ${MESSAGE_DELIVERY_MODE_VALUES.map(
-              (mode) => `
-                <option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>
-              `
+              (mode) =>
+                `<option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>`
             ).join('')}
           </select>
         </label>
-
         <div class="step-grid">
           ${form.steps.map(renderStepEditor).join('')}
         </div>
-
         <button class="primary-button" type="submit" ${policyState.saving ? 'disabled' : ''}>
           ${form.mode === 'edit' ? 'Save policy' : 'Create policy'}
         </button>
@@ -865,9 +828,8 @@ function renderStepEditor(step: PolicyStep, index: number) {
         Recommended action
         <select name="recommendedAction-${index}">
           ${ENFORCEMENT_ACTION_VALUES.map(
-            (action) => `
-              <option value="${action}" ${action === step.recommendedAction ? 'selected' : ''}>${formatAction(action)}</option>
-            `
+            (action) =>
+              `<option value="${action}" ${action === step.recommendedAction ? 'selected' : ''}>${formatAction(action)}</option>`
           ).join('')}
         </select>
       </label>
@@ -879,21 +841,20 @@ function renderStepEditor(step: PolicyStep, index: number) {
   `;
 }
 
-function renderApplyPolicyPage() {
+function renderApplyPolicyPanel() {
   return `
-    <section class="section policy-layout" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">Apply Policy Simulator</h3>
-        <p>${pages.find((page) => page.id === 'apply-policy')?.body ?? ''}</p>
-        ${renderApplyMessage()}
+    <section class="section-panel" aria-label="Apply policy workflow">
+      <div class="section-header">
+        <div>
+          <h3>Apply Policy</h3>
+          <p>Simulator actions are logged as log-only records; no hidden destructive moderation action is performed.</p>
+          ${renderApplyMessage()}
+        </div>
+        <button class="secondary-button" data-load-policies type="button">Refresh policies</button>
       </div>
-      <div class="policy-actions">
-        <button class="secondary-button" data-load-policies ${policyState.loading ? 'disabled' : ''}>Refresh policies</button>
-      </div>
+      ${renderApplyForm()}
+      ${renderApplyPreview()}
     </section>
-
-    ${renderApplyForm()}
-    ${renderApplyPreview()}
   `;
 }
 
@@ -909,133 +870,325 @@ function renderApplyMessage() {
 
 function renderApplyForm() {
   if (policyState.policies.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No policy available</h3>
-        <p>No team policy exists for this rule yet. Create one from the Policies page before applying it.</p>
-        <button class="primary-button" data-go-policies>Create policy</button>
-      </section>
-    `;
+    return renderEmptyState(
+      'No policy available',
+      'Create a policy before applying it to a sample case.',
+      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+    );
   }
 
   return `
-    <section class="section policy-form-section" aria-label="Apply Policy simulator">
-      <form class="policy-form" data-apply-form>
-        <label>
-          Policy
-          <select name="ruleKey">
-            ${policyState.policies
-              .filter((policy) => policy.active)
-              .map(
-                (policy) => `
-                  <option value="${policy.ruleKey}">${escapeHtml(policy.ruleName)}</option>
-                `
-              )
-              .join('')}
-          </select>
-        </label>
-        <label>
-          Target thing ID
-          <input name="targetThingId" value="t3_demo_policy_target" required>
-        </label>
-        <label>
-          Target author
-          <input name="targetAuthor" value="learner_1" required>
-        </label>
-        <label>
-          Selected action
-          <select name="selectedAction">
-            ${ENFORCEMENT_ACTION_VALUES.map(
-              (action) => `
-                <option value="${action}">${formatAction(action)}</option>
-              `
-            ).join('')}
-          </select>
-        </label>
-        <label>
-          Override reason
-          <select name="overrideReason">
-            <option value="">Only required on deviation</option>
-            ${OVERRIDE_REASON_VALUES.map(
-              (reason) => `
-                <option value="${reason}">${formatAction(reason)}</option>
-              `
-            ).join('')}
-          </select>
-        </label>
-        <label>
-          Override note
-          <input name="overrideNote" placeholder="Optional context for policy review">
-        </label>
-        <div class="policy-actions left">
-          <button class="secondary-button" type="button" data-apply-preview ${applyState.loading ? 'disabled' : ''}>Preview recommendation</button>
-          <button class="primary-button" type="submit" ${applyState.confirming ? 'disabled' : ''}>Confirm log-only action</button>
-        </div>
-      </form>
-    </section>
+    <form class="policy-form apply-form" data-apply-form>
+      <label>
+        Policy
+        <select name="ruleKey">
+          ${policyState.policies
+            .filter((policy) => policy.active)
+            .map(
+              (policy) =>
+                `<option value="${policy.ruleKey}">${escapeHtml(policy.ruleName)}</option>`
+            )
+            .join('')}
+        </select>
+      </label>
+      <label>
+        Target thing ID
+        <input name="targetThingId" value="t3_demo_policy_target" required>
+      </label>
+      <label>
+        Target author
+        <input name="targetAuthor" value="learner_1" required>
+      </label>
+      <label>
+        Selected action
+        <select name="selectedAction">
+          ${ENFORCEMENT_ACTION_VALUES.map(
+            (action) => `<option value="${action}">${formatAction(action)}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>
+        Override reason
+        <select name="overrideReason">
+          <option value="">Only required on deviation</option>
+          ${OVERRIDE_REASON_VALUES.map(
+            (reason) => `<option value="${reason}">${formatAction(reason)}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>
+        Override note
+        <input name="overrideNote" placeholder="Optional context for review">
+      </label>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-apply-preview ${applyState.loading ? 'disabled' : ''}>Preview</button>
+        <button class="primary-button" type="submit" ${applyState.confirming ? 'disabled' : ''}>Confirm log-only action</button>
+      </div>
+    </form>
   `;
 }
 
 function renderApplyPreview() {
-  const preview = applyState.preview;
-  const result = applyState.result;
-
-  if (!preview && !result) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No preview yet</h3>
-        <p>Preview shows the policy recommendation, offense count, delivery mode, and whether an override reason is required.</p>
-      </section>
-    `;
-  }
-
-  const recommendation = result?.recommendation ?? preview?.recommendation;
+  const recommendation =
+    applyState.result?.recommendation ?? applyState.preview?.recommendation;
   if (!recommendation) {
-    return '';
+    return renderEmptyState(
+      'No recommendation preview',
+      'Preview a sample action to see whether it matches team policy.',
+      []
+    );
   }
 
   return `
-    <section class="section apply-preview">
-      <h3>Recommendation</h3>
-      <dl class="status-list">
+    <article class="action-card apply-preview">
+      <div class="card-header">
+        <div>
+          <h3>Recommendation</h3>
+          <p>${escapeHtml(recommendation.message)}</p>
+        </div>
+        <span class="status-badge ${recommendation.deviatesFromPolicy ? 'status-risk' : 'status-good'}">${recommendation.deviatesFromPolicy ? 'Override required' : 'Matches policy'}</span>
+      </div>
+      <dl class="compact-metrics">
         <div><dt>Rule</dt><dd>${escapeHtml(recommendation.ruleName ?? recommendation.ruleKey)}</dd></div>
-        <div><dt>Offense count</dt><dd>${recommendation.offenseCount}</dd></div>
-        <div><dt>Recommended action</dt><dd>${formatAction(recommendation.recommendedAction)}</dd></div>
-        <div><dt>Delivery mode</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
-        <div><dt>Deviation</dt><dd>${recommendation.deviatesFromPolicy ? 'Override required' : 'Matches policy'}</dd></div>
+        <div><dt>Offense</dt><dd>${recommendation.offenseCount}</dd></div>
+        <div><dt>Recommended</dt><dd>${formatAction(recommendation.recommendedAction)}</dd></div>
+        <div><dt>Delivery</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
       </dl>
-      <p class="muted">${escapeHtml(recommendation.message)}</p>
       ${
-        result
-          ? `<p class="inline-success">Policy action logged${result.overrideEvent ? ' with override reason' : ''}.</p>
-             <button class="secondary-button" data-case-from-action="${escapeAttribute(result.actionEvent.id)}">Generate case packet</button>`
+        applyState.result
+          ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}.</p>
+             <button class="secondary-button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}" type="button">Generate case packet</button>`
           : ''
       }
+    </article>
+  `;
+}
+
+function renderReviewPage() {
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Governance Review</h3>
+          <p>Policy health and exception review stay aggregate-first. Per-mod analytics remain hidden.</p>
+          ${renderGovernanceMessage()}
+        </div>
+        <button class="secondary-button" data-load-governance type="button">Refresh</button>
+      </div>
     </section>
+    ${renderGovernanceOverview()}
+    ${renderPolicyHealthCards()}
+    ${renderOverrideInbox()}
+    ${renderPolicyVersionSummary()}
+  `;
+}
+
+function renderGovernanceMessage() {
+  if (governanceState.error) {
+    return `<p class="inline-error">${escapeHtml(governanceState.error)}</p>`;
+  }
+  if (governanceState.message) {
+    return `<p class="inline-success">${escapeHtml(governanceState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderGovernanceOverview() {
+  const health = governanceState.health;
+  if (governanceState.loading && !health) {
+    return renderLoadingState('Loading review data', 'Reading policy health, overrides, and version summaries.');
+  }
+  if (!health) {
+    return renderEmptyState(
+      'No review data yet',
+      'Create policies and log Apply Policy actions. Review cards will appear as exceptions accumulate.',
+      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+    );
+  }
+
+  return `
+    <section class="metric-grid" aria-label="Governance overview">
+      ${renderMetricCard('Active policies', health.totalPolicies.toString())}
+      ${renderMetricCard('Stable policies', health.stablePolicies.toString())}
+      ${renderMetricCard('Need review', health.policiesNeedingReview.toString())}
+      ${renderMetricCard('Unresolved overrides', health.unresolvedOverrides.toString())}
+    </section>
+  `;
+}
+
+function renderPolicyHealthCards() {
+  const summaries = governanceState.health?.summaries ?? [];
+  if (summaries.length === 0) {
+    return renderEmptyState(
+      'Policy health has no signal yet',
+      'Run the policy workflow to create enough tracked actions for health scoring.',
+      [{ label: 'Apply Sample', page: 'policies', intent: 'review_policy' }]
+    );
+  }
+  return `
+    <section class="card-list" aria-label="Policy health cards">
+      ${summaries.map(renderPolicyHealthCard).join('')}
+    </section>
+  `;
+}
+
+function renderPolicyHealthCard(summary: PolicyHealthSummary) {
+  return `
+    <article class="action-card health-card status-${summary.status}">
+      <div class="card-header">
+        <div>
+          <h3>${escapeHtml(summary.ruleName)}</h3>
+          <p>${escapeHtml(summary.reasons[0] ?? 'Policy health needs monitoring.')}</p>
+        </div>
+        <span class="status-badge">${formatHealthStatus(summary.status)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Actions</dt><dd>${summary.totalActions}</dd></div>
+        <div><dt>Adherence</dt><dd>${formatPercent(summary.adherenceRate)}</dd></div>
+        <div><dt>Overrides</dt><dd>${summary.overrideCount}</dd></div>
+        <div><dt>Unresolved</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
+      </dl>
+      <p class="recommendation">${escapeHtml(summary.recommendations[0] ?? 'Continue monitoring.')}</p>
+      <div class="button-row">
+        <button class="secondary-button" data-filter-overrides="${escapeAttribute(summary.ruleKey)}" type="button">Review overrides</button>
+        <button class="secondary-button" data-edit-policy="${escapeAttribute(summary.policyId)}" type="button">Edit policy</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderOverrideInbox() {
+  const overrides = [...governanceState.overrides].sort((left, right) =>
+    left.reviewStatus === right.reviewStatus
+      ? Date.parse(right.createdAt) - Date.parse(left.createdAt)
+      : left.reviewStatus === 'unresolved'
+        ? -1
+        : 1
+  );
+
+  if (overrides.length === 0) {
+    return renderEmptyState(
+      'Override inbox is clear',
+      'No unresolved exceptions are waiting for team review.',
+      [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+    );
+  }
+
+  return `
+    <section class="card-list" aria-label="Override inbox">
+      ${overrides.map(renderOverrideCard).join('')}
+    </section>
+  `;
+}
+
+function renderOverrideCard(event: ReviewableOverrideEvent) {
+  const attentionClass = event.reviewStatus === 'unresolved' ? ' status-needs-attention' : '';
+  return `
+    <article class="inbox-card${attentionClass}">
+      <div class="card-header">
+        <div>
+          <h3>${escapeHtml(event.ruleName ?? event.ruleKey)}</h3>
+          <p>${formatAction(event.recommendedAction)} recommended; ${formatAction(event.selectedAction)} selected.</p>
+        </div>
+        <span class="status-badge ${event.reviewStatus === 'unresolved' ? 'status-risk' : 'status-good'}">${formatAction(event.reviewStatus)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Reason</dt><dd>${formatAction(event.overrideReason)}</dd></div>
+        <div><dt>Created</dt><dd>${formatDate(event.createdAt)}</dd></div>
+        <div><dt>Policy</dt><dd>${event.policyVersionNumber ? `v${event.policyVersionNumber}` : 'Unavailable'}</dd></div>
+        <div><dt>Target</dt><dd>${escapeHtml(event.targetThingId ?? 'Not captured')}</dd></div>
+      </dl>
+      ${event.overrideNote ? `<p>${escapeHtml(event.overrideNote)}</p>` : ''}
+      <input class="review-note-input" data-review-note="${escapeAttribute(event.id)}" placeholder="Optional review note" value="${escapeAttribute(event.reviewNote ?? '')}">
+      <div class="button-row">
+        ${renderReviewButton(event, 'accepted_exception', 'Accept exception')}
+        ${renderReviewButton(event, 'policy_needs_update', 'Policy needs update')}
+        ${renderReviewButton(event, 'needs_team_discussion', 'Needs discussion')}
+        ${renderReviewButton(event, 'no_action_needed', 'No action needed')}
+      </div>
+    </article>
+  `;
+}
+
+function renderReviewButton(
+  event: ReviewableOverrideEvent,
+  status: OverrideReviewStatus,
+  label: string
+) {
+  return `
+    <button class="secondary-button compact-button" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''} type="button">
+      ${label}
+    </button>
+  `;
+}
+
+function renderPolicyVersionSummary() {
+  if (policyState.policies.length === 0) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Policy Versions</h3>
+          <p>Every edit creates a version so Case Packets can explain what policy was active at action time.</p>
+        </div>
+      </div>
+      <div class="version-list">
+        ${policyState.policies.map(renderPolicyVersionCard).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderPolicyVersionCard(policy: RulePolicy) {
+  const versions = governanceState.versionsByPolicy[policy.id] ?? [];
+  return `
+    <article class="version-card">
+      <div class="card-header">
+        <div>
+          <h3>${escapeHtml(policy.ruleName)}</h3>
+          <p>Current version ${policy.activeVersionNumber ?? versions.at(-1)?.versionNumber ?? 1}</p>
+        </div>
+        <span class="status-badge status-neutral">${policy.active ? 'Active' : 'Inactive'}</span>
+      </div>
+      ${
+        versions.length > 0
+          ? `<ol>${versions
+              .map(
+                (version) => `
+                  <li>
+                    <strong>v${version.versionNumber}</strong>
+                    <span>${formatDate(version.createdAt)} by ${escapeHtml(version.createdBy)}</span>
+                    ${version.changeSummary ? `<p>${escapeHtml(version.changeSummary)}</p>` : ''}
+                  </li>
+                `
+              )
+              .join('')}</ol>`
+          : '<p>No version records returned yet.</p>'
+      }
+    </article>
   `;
 }
 
 function renderCasePacketPage() {
   return `
-    <section class="section policy-layout" aria-labelledby="current-page-title">
-      <div>
-        <h3 id="current-page-title">Case Packet / Appeal Context</h3>
-        <p>${pages.find((page) => page.id === 'case-packets')?.body ?? ''}</p>
-        ${renderCasePacketMessage()}
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Appeal Context Packet</h3>
+          <p>Exportable context for moderator review. This is not automated appeal judgment.</p>
+          ${renderCasePacketMessage()}
+        </div>
+        <button class="primary-button" data-generate-demo-case type="button">Generate Demo Packet</button>
       </div>
-      <div class="policy-actions">
-        <button class="primary-button" data-generate-demo-case ${casePacketState.loading ? 'disabled' : ''}>Generate demo packet</button>
-      </div>
-    </section>
-
-    <section class="section policy-form-section" aria-label="Generate case packet from action">
-      <form class="policy-form" data-case-action-form>
+      <form class="policy-form action-id-form" data-case-action-form>
         <label>
           Tracked action ID
           <input name="actionId" placeholder="Paste an Apply Policy action ID">
         </label>
-        <div class="policy-actions left">
-          <button class="secondary-button" type="submit" ${casePacketState.loading ? 'disabled' : ''}>Generate from action</button>
+        <div class="button-row">
+          <button class="secondary-button" type="submit">Generate from action</button>
           ${
             applyState.result
               ? `<button class="secondary-button" type="button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}">Use latest logged action</button>`
@@ -1044,7 +1197,6 @@ function renderCasePacketPage() {
         </div>
       </form>
     </section>
-
     ${renderCasePacketDetail()}
   `;
 }
@@ -1061,46 +1213,45 @@ function renderCasePacketMessage() {
 
 function renderCasePacketDetail() {
   if (casePacketState.loading && !casePacketState.packet) {
-    return `
-      <section class="section loading-state">
-        <h3>Generating packet</h3>
-        <p class="muted">Reading action history, policy version context, overrides, and deterministic comparable cases.</p>
-      </section>
-    `;
+    return renderLoadingState('Generating packet', 'Reading action history, policy versions, overrides, and comparable cases.');
   }
 
   const packet = casePacketState.packet;
   if (!packet) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No packet generated yet</h3>
-        <p>Generate the demo packet for screenshots, or generate from an Apply Policy action ID after recording a log-only action.</p>
-      </section>
-    `;
+    return renderEmptyState(
+      'No packet generated yet',
+      'Generate the demo packet for the full ExampleLearning appeal context, or use a tracked action ID.',
+      [{ label: 'Review Policy Context', page: 'review', intent: 'review_policy' }]
+    );
   }
 
   return `
-    <section class="scan-summary-grid" aria-label="Case packet summary">
-      ${renderMetricCard('Posture', formatAction(packet.appealPosture))}
-      ${renderMetricCard('Consistency', formatAction(packet.consistencyStatus))}
-      ${renderMetricCard('Policy version', packet.policyContext.policyVersionNumber?.toString() ?? 'Unavailable')}
-      ${renderMetricCard('Comparables', packet.comparableCases.length.toString())}
+    <section class="case-header">
+      <div>
+        <h3>Official Case Packet</h3>
+        <p>Generated ${formatDate(packet.generatedAt)} for r/${escapeHtml(packet.subreddit)}</p>
+      </div>
+      <span class="status-badge status-neutral">${formatAction(packet.appealPosture)}</span>
     </section>
-
-    <section class="case-packet-grid" aria-label="Case packet detail">
+    <section class="packet-summary-strip" aria-label="Case packet summary">
+      <strong>${formatAction(packet.consistencyStatus)}</strong>
+      <span>posture ${formatAction(packet.appealPosture)}</span>
+      <span>policy v${packet.policyContext.policyVersionNumber?.toString() ?? 'unavailable'}</span>
+      <span>${packet.comparableCases.length} deterministic comparables</span>
+    </section>
+    <section class="case-grid">
       ${renderCasePacketAction(packet)}
       ${renderCasePacketPolicy(packet)}
       ${renderCasePacketOverride(packet)}
       ${renderCasePacketLists(packet)}
     </section>
-
-    <section class="section policy-form-section">
-      <div class="policy-form-header">
+    <section class="section-panel">
+      <div class="section-header">
         <div>
           <h3>Markdown Export</h3>
-          <p>Copy this into the team review thread or appeal notes. It is deterministic context, not an automated judgment.</p>
+          <p>Use this in review notes or an internal mod-team thread.</p>
         </div>
-        <button class="secondary-button" data-copy-case-markdown>Copy Markdown</button>
+        <button class="secondary-button" data-copy-case-markdown type="button">Copy Markdown</button>
       </div>
       <textarea class="markdown-export" readonly>${escapeHtml(packet.markdown)}</textarea>
     </section>
@@ -1110,14 +1261,14 @@ function renderCasePacketDetail() {
 function renderCasePacketAction(packet: CasePacket) {
   const action = packet.action;
   return `
-    <article class="panel">
+    <article class="action-card">
       <h3>Action Summary</h3>
       <dl class="status-list">
         <div><dt>Action ID</dt><dd>${escapeHtml(action?.actionId ?? 'Unavailable')}</dd></div>
         <div><dt>Created</dt><dd>${escapeHtml(action?.createdAt ? formatDate(action.createdAt) : 'Unavailable')}</dd></div>
         <div><dt>Rule</dt><dd>${escapeHtml(action?.ruleName ?? action?.ruleKey ?? 'Unavailable')}</dd></div>
-        <div><dt>Recommended</dt><dd>${escapeHtml(formatAction(action?.recommendedAction ?? 'unavailable'))}</dd></div>
-        <div><dt>Selected</dt><dd>${escapeHtml(formatAction(action?.selectedAction ?? 'unavailable'))}</dd></div>
+        <div><dt>Recommended</dt><dd>${formatAction(action?.recommendedAction ?? 'unavailable')}</dd></div>
+        <div><dt>Selected</dt><dd>${formatAction(action?.selectedAction ?? 'unavailable')}</dd></div>
         <div><dt>Target author</dt><dd>${escapeHtml(action?.targetAuthor ?? 'Not captured')}</dd></div>
       </dl>
     </article>
@@ -1127,12 +1278,12 @@ function renderCasePacketAction(packet: CasePacket) {
 function renderCasePacketPolicy(packet: CasePacket) {
   const policy = packet.policyContext;
   return `
-    <article class="panel">
+    <article class="action-card">
       <h3>Policy Context</h3>
       <dl class="status-list">
         <div><dt>Policy</dt><dd>${escapeHtml(policy.policyName ?? policy.policyId ?? 'Unavailable')}</dd></div>
         <div><dt>Version</dt><dd>${policy.policyVersionNumber ?? 'Unavailable'}</dd></div>
-        <div><dt>Status</dt><dd>${escapeHtml(formatAction(policy.policyVersionStatus ?? 'unavailable'))}</dd></div>
+        <div><dt>Status</dt><dd>${formatAction(policy.policyVersionStatus ?? 'unavailable')}</dd></div>
         <div><dt>Changed since action</dt><dd>${policy.changedSinceAction ? 'Yes' : 'No'}</dd></div>
       </dl>
     </article>
@@ -1142,13 +1293,13 @@ function renderCasePacketPolicy(packet: CasePacket) {
 function renderCasePacketOverride(packet: CasePacket) {
   const override = packet.overrideContext;
   return `
-    <article class="panel">
+    <article class="action-card">
       <h3>Override Context</h3>
       ${
         override
           ? `<dl class="status-list">
-              <div><dt>Reason</dt><dd>${escapeHtml(formatAction(override.reason ?? 'unavailable'))}</dd></div>
-              <div><dt>Review</dt><dd>${escapeHtml(formatAction(override.reviewStatus ?? 'unavailable'))}</dd></div>
+              <div><dt>Reason</dt><dd>${formatAction(override.reason ?? 'unavailable')}</dd></div>
+              <div><dt>Review</dt><dd>${formatAction(override.reviewStatus ?? 'unavailable')}</dd></div>
               <div><dt>Reviewed by</dt><dd>${escapeHtml(override.reviewedBy ?? 'Not reviewed')}</dd></div>
               <div><dt>Note</dt><dd>${escapeHtml(override.note ?? 'None')}</dd></div>
             </dl>`
@@ -1160,7 +1311,7 @@ function renderCasePacketOverride(packet: CasePacket) {
 
 function renderCasePacketLists(packet: CasePacket) {
   return `
-    <article class="panel">
+    <article class="action-card wide-card">
       <h3>History And Comparables</h3>
       <div class="case-list-block">
         <strong>Prior same-rule user history</strong>
@@ -1169,10 +1320,10 @@ function renderCasePacketLists(packet: CasePacket) {
             ? `<ul>${packet.userHistory
                 .map(
                   (item) =>
-                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${escapeHtml(formatAction(item.selectedAction ?? 'unavailable'))}</li>`
+                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${formatAction(item.selectedAction ?? 'unavailable')}</li>`
                 )
                 .join('')}</ul>`
-            : '<p class="muted">No prior tracked same-rule history for this user.</p>'
+            : '<p>No prior tracked same-rule history for this user.</p>'
         }
       </div>
       <div class="case-list-block">
@@ -1182,10 +1333,10 @@ function renderCasePacketLists(packet: CasePacket) {
             ? `<ul>${packet.comparableCases
                 .map(
                   (item) =>
-                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${escapeHtml(formatAction(item.selectedAction ?? 'unavailable'))} — ${escapeHtml(item.matchReasons.join(', '))}</li>`
+                    `<li>${escapeHtml(formatDate(item.createdAt))}: ${formatAction(item.selectedAction ?? 'unavailable')} - ${escapeHtml(item.matchReasons.join(', '))}</li>`
                 )
                 .join('')}</ul>`
-            : '<p class="muted">No comparable cases found in the configured window.</p>'
+            : '<p>No comparable cases found in the configured window.</p>'
         }
       </div>
       <div class="case-list-block">
@@ -1196,79 +1347,56 @@ function renderCasePacketLists(packet: CasePacket) {
   `;
 }
 
-function renderScanWarnings() {
-  const warnings = scanState.warnings;
-
-  if (warnings.length === 0) {
-    return '';
-  }
-
+function renderDigestPage() {
   return `
-    <section class="notice-list" aria-label="Scan warnings">
-      ${warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join('')}
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Manual Digest</h3>
+          <p>Generate a team-ready Markdown summary. Scheduler is intentionally out of scope for this wave.</p>
+          ${digestState.message ? `<p class="inline-success">${escapeHtml(digestState.message)}</p>` : ''}
+        </div>
+        <div class="button-row">
+          <button class="primary-button" data-generate-digest type="button">Generate Now</button>
+          <button class="secondary-button" data-copy-digest type="button" ${digestState.markdown ? '' : 'disabled'}>Copy Markdown</button>
+        </div>
+      </div>
+      ${
+        digestState.markdown
+          ? `<textarea class="markdown-export" readonly>${escapeHtml(digestState.markdown)}</textarea>`
+          : renderEmptyState(
+              'No digest generated yet',
+              'Generate a manual digest after loading demo data or running a scan.',
+              [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+            )
+      }
     </section>
   `;
 }
 
-function renderScanBody() {
-  if (scanState.loading) {
-    return `
-      <section class="section loading-state">
-        <h3>Scanning moderation history</h3>
-        <p class="muted">Loading actions, rules, removal reasons, and attribution output.</p>
-      </section>
-    `;
-  }
-
-  if (scanState.error) {
-    return `
-      <section class="section error-state">
-        <h3>Scan could not complete</h3>
-        <p>${escapeHtml(scanState.error)}</p>
-      </section>
-    `;
-  }
-
-  if (!scanState.result) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No scan has run yet</h3>
-        <p>Run a live scan or use demo data to see scan summary, confidence breakdown, unmatched count, and drift candidates.</p>
-      </section>
-    `;
-  }
-
+function renderSettingsPage() {
+  const summary = buildDashboardSummary();
   return `
-    ${renderScanSummary(scanState.result)}
-    ${renderDriftCandidates(scanState.result.driftCandidates)}
+    <section class="settings-grid">
+      ${renderSettingsCard('Data mode', formatDataMode(summary.dataMode), summary.dataMode === 'demo' ? 'Demo data is labeled and separate from live subreddit data.' : 'Live scans depend on Reddit API availability.')}
+      ${renderSettingsCard('Redis status', health?.redis.smokeStatus ?? 'not checked', health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.')}
+      ${renderSettingsCard('Reddit source status', health?.environment.playtestStatus ?? 'not runtime verified', 'Rules, removal reasons, and mod log reads are type/build-verified; broader runtime smoke is still documented in RESEARCH.md.')}
+      ${renderSettingsCard('Last scan', formatDate(summary.lastScanLabel), `${scanState.result?.totalActionsScanned ?? 0} actions scanned in current dashboard state.`)}
+      ${renderSettingsCard('Policies', summary.activePolicyCount.toString(), `${policyState.policies.length} policies loaded in this session.`)}
+      ${renderSettingsCard('Overrides', summary.unresolvedOverrideCount.toString(), 'Unresolved override count is aggregate-first.')}
+      ${renderSettingsCard('Delivery mode', 'log only', 'Public comments, private messages, modmail, and native Mod Notes remain disabled as default delivery until playtest-verified.')}
+      ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
+    </section>
   `;
 }
 
-function renderScanSummary(scan: MirrorScan) {
+function renderSettingsCard(title: string, value: string, detail: string) {
   return `
-    <section class="scan-summary-grid" aria-label="Scan summary">
-      ${renderMetricCard('Source', scan.source)}
-      ${renderMetricCard('Actions scanned', scan.totalActionsScanned.toString())}
-      ${renderMetricCard('Attributed', scan.attributedCount.toString())}
-      ${renderMetricCard('Unmatched', scan.unmatchedCount.toString())}
-    </section>
-
-    <section class="section breakdown-section">
-      <div>
-        <h3>Confidence Breakdown</h3>
-        <p>Inferred rule labels stay confidence-scored because historical mod logs do not expose perfect rule attribution.</p>
-      </div>
-      <div class="confidence-grid">
-        ${CONFIDENCE_VALUES.map((confidence) =>
-          renderConfidenceItem(confidence, scan.confidenceBreakdown[confidence])
-        ).join('')}
-      </div>
-    </section>
-
-    <section class="section small-subreddit-section">
-      <h3>History Depth</h3>
-      <p>${escapeHtml(scan.smallSubredditStatus.message)}</p>
-    </section>
+    <article class="action-card">
+      <h3>${escapeHtml(title)}</h3>
+      <strong class="settings-value">${escapeHtml(value)}</strong>
+      <p>${escapeHtml(detail)}</p>
+    </article>
   `;
 }
 
@@ -1290,65 +1418,126 @@ function renderConfidenceItem(confidence: Confidence, count: number) {
   `;
 }
 
-function renderDriftCandidates(candidates: DriftCandidate[]) {
-  if (candidates.length === 0) {
-    return `
-      <section class="section empty-scan-state">
-        <h3>No drift candidates yet</h3>
-        <p>Not enough attributed history was found for reliable drift detection.</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="drift-list" aria-label="Drift candidates">
-      ${candidates.map(renderDriftCandidate).join('')}
-    </section>
-  `;
-}
-
-function renderDriftCandidate(candidate: DriftCandidate) {
-  return `
-    <article class="drift-card">
-      <div class="drift-card-header">
-        <div>
-          <h3>${escapeHtml(candidate.ruleName)}</h3>
-          <p>${escapeHtml(candidate.summary)}</p>
-        </div>
-        <span class="confidence-pill confidence-${candidate.confidence}">${candidate.confidence}</span>
-      </div>
-      <div class="distribution-grid">
-        ${Object.entries(candidate.actionDistribution)
-          .map(([action, count]) =>
-            renderDistributionItem(action as EnforcementAction, count ?? 0)
-          )
-          .join('')}
-      </div>
-      <p class="recommendation">${escapeHtml(candidate.recommendation)}</p>
-      <button class="secondary-button" data-open-policy-page>Open policy flow</button>
-    </article>
-  `;
-}
-
 function renderDistributionItem(action: EnforcementAction, count: number) {
   return `
     <div class="distribution-item">
-      <span>${escapeHtml(formatAction(action))}</span>
+      <span>${formatAction(action)}</span>
       <strong>${count}</strong>
     </div>
   `;
 }
 
+function renderEmptyState(
+  title: string,
+  body: string,
+  actions: CommandCenterAction[]
+) {
+  return `
+    <section class="empty-state">
+      <div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(body)}</p>
+      </div>
+      ${
+        actions.length > 0
+          ? `<div class="button-row">${actions
+              .map(
+                (action) =>
+                  `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
+              )
+              .join('')}</div>`
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderLoadingState(title: string, body: string) {
+  return `
+    <section class="empty-state">
+      <div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(body)}</p>
+      </div>
+    </section>
+  `;
+}
+
+function bindAllActions() {
+  bindNavigation();
+  bindActionIntents();
+  bindScanActions();
+  bindPolicyActions();
+  bindApplyPolicyActions();
+  bindCasePacketActions();
+  bindGovernanceActions();
+  bindDigestActions();
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-health]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadHealth();
+      });
+    });
+}
+
 function bindNavigation() {
-  document.querySelectorAll<HTMLAnchorElement>('[data-page]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const nextPage = link.dataset.page;
+  document.querySelectorAll<HTMLButtonElement>('[data-page]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextPage = button.dataset.page;
       if (nextPage && pages.some((page) => page.id === nextPage)) {
-        activePage = nextPage as PageId;
+        activePage = nextPage as ProductPageId;
+        window.location.hash = `#${activePage}`;
         render();
       }
     });
   });
+}
+
+function bindActionIntents() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action-intent]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        handleActionIntent(button.dataset.actionIntent);
+      });
+    });
+}
+
+function handleActionIntent(intent: string | undefined) {
+  if (intent === 'load_demo') {
+    void runScan('demo');
+    return;
+  }
+  if (intent === 'run_scan') {
+    activePage = 'scan';
+    window.location.hash = '#scan';
+    render();
+    return;
+  }
+  if (intent === 'create_policy') {
+    activePage = 'policies';
+    window.location.hash = '#policies';
+    render();
+    return;
+  }
+  if (intent === 'review_overrides') {
+    activePage = 'review';
+    window.location.hash = '#review';
+    void loadGovernance();
+    return;
+  }
+  if (intent === 'review_policy') {
+    activePage = 'review';
+    window.location.hash = '#review';
+    render();
+    return;
+  }
+  if (intent === 'generate_digest') {
+    activePage = 'digest';
+    window.location.hash = '#digest';
+    generateDigest();
+  }
 }
 
 function bindScanActions() {
@@ -1360,23 +1549,15 @@ function bindScanActions() {
         void runScan(mode);
       });
     });
-
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-open-policy-page]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        activePage = 'policies';
-        window.location.hash = '#policies';
-        render();
-      });
-    });
 }
 
 function bindPolicyActions() {
   document
     .querySelectorAll<HTMLButtonElement>('[data-load-policies]')
     .forEach((button) => {
-      button.addEventListener('click', () => void loadPolicies());
+      button.addEventListener('click', () => {
+        void loadPolicies();
+      });
     });
 
   document
@@ -1389,35 +1570,30 @@ function bindPolicyActions() {
           error: undefined,
           message: undefined,
         };
+        activePage = 'policies';
+        window.location.hash = '#policies';
         render();
       });
     });
 
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-edit-policy]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        const policy = policyState.policies.find(
-          (item) => item.id === button.dataset.editPolicy
-        );
-        if (policy) {
-          policyState = {
-            ...policyState,
-            form: {
-              mode: 'edit',
-              policyId: policy.id,
-              ruleKey: policy.ruleKey,
-              ruleName: policy.ruleName,
-              defaultMessageMode: policy.defaultMessageMode,
-              steps: policy.steps.map((step) => ({ ...step })),
-            },
-            error: undefined,
-            message: undefined,
-          };
-          render();
-        }
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-edit-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policy = policyState.policies.find(
+        (item) => item.id === button.dataset.editPolicy
+      );
+      if (policy) {
+        policyState = {
+          ...policyState,
+          form: policyToForm(policy),
+          error: undefined,
+          message: undefined,
+        };
+        activePage = 'policies';
+        window.location.hash = '#policies';
+        render();
+      }
     });
+  });
 
   document
     .querySelectorAll<HTMLButtonElement>('[data-create-from-drift]')
@@ -1441,26 +1617,14 @@ function bindPolicyActions() {
 }
 
 function bindApplyPolicyActions() {
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-go-policies]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        activePage = 'policies';
-        window.location.hash = '#policies';
-        render();
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-apply-preview]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
+      if (form) {
+        void previewApplyPolicy(new FormData(form));
+      }
     });
-
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-apply-preview]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
-        if (form) {
-          void previewApplyPolicy(new FormData(form));
-        }
-      });
-    });
+  });
 
   document.querySelector<HTMLFormElement>('[data-apply-form]')?.addEventListener(
     'submit',
@@ -1472,24 +1636,20 @@ function bindApplyPolicyActions() {
 }
 
 function bindCasePacketActions() {
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-generate-demo-case]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        void generateCasePacket({ type: 'demo' });
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-generate-demo-case]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void generateCasePacket({ type: 'demo' });
     });
+  });
 
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-case-from-action]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        const actionId = button.dataset.caseFromAction;
-        if (actionId) {
-          void generateCasePacket({ type: 'action', actionId });
-        }
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-case-from-action]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const actionId = button.dataset.caseFromAction;
+      if (actionId) {
+        void generateCasePacket({ type: 'action', actionId });
+      }
     });
+  });
 
   document
     .querySelector<HTMLFormElement>('[data-case-action-form]')
@@ -1502,101 +1662,75 @@ function bindCasePacketActions() {
       }
     });
 
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-copy-case-markdown]')
-    .forEach((button) => {
-      button.addEventListener('click', () => void copyCasePacketMarkdown());
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-case-markdown]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void copyCasePacketMarkdown();
     });
+  });
 }
 
 function bindGovernanceActions() {
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-load-governance]')
-    .forEach((button) => {
-      button.addEventListener('click', () => void loadGovernance());
+  document.querySelectorAll<HTMLButtonElement>('[data-load-governance]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void loadGovernance();
     });
+  });
 
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-filter-overrides]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        activePage = 'governance';
-        window.location.hash = '#governance';
-        void loadGovernance(button.dataset.filterOverrides);
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-filter-overrides]').forEach((button) => {
+    button.addEventListener('click', () => {
+      activePage = 'review';
+      window.location.hash = '#review';
+      void loadGovernance(button.dataset.filterOverrides);
     });
+  });
 
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-review-override]')
-    .forEach((button) => {
-      button.addEventListener('click', () => {
-        const overrideId = button.dataset.reviewOverride;
-        const status = button.dataset.reviewStatus as
-          | OverrideReviewStatus
-          | undefined;
-        if (!overrideId || !status) {
-          return;
-        }
-        const noteInput = document.querySelector<HTMLInputElement>(
-          `[data-review-note="${cssEscape(overrideId)}"]`
-        );
-        void reviewOverride(overrideId, status, noteInput?.value.trim());
-      });
+  document.querySelectorAll<HTMLButtonElement>('[data-review-override]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const overrideId = button.dataset.reviewOverride;
+      const status = button.dataset.reviewStatus as
+        | OverrideReviewStatus
+        | undefined;
+      if (!overrideId || !status) {
+        return;
+      }
+      const noteInput = document.querySelector<HTMLInputElement>(
+        `[data-review-note="${cssEscape(overrideId)}"]`
+      );
+      void reviewOverride(overrideId, status, noteInput?.value.trim());
     });
+  });
 }
 
-function formatState(state: FeatureStatusState) {
-  return state === 'ready-for-integration' ? 'Ready for integration' : 'Placeholder';
+function bindDigestActions() {
+  document.querySelectorAll<HTMLButtonElement>('[data-generate-digest]').forEach((button) => {
+    button.addEventListener('click', () => {
+      generateDigest();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-digest]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void copyDigestMarkdown();
+    });
+  });
 }
 
-function renderHealthCard() {
-  if (healthError) {
-    return `
-      <article class="panel">
-        <h3>Health Status</h3>
-        <dl class="status-list">
-          <div><dt>API</dt><dd>Unavailable</dd></div>
-          <div><dt>Detail</dt><dd>${escapeHtml(healthError)}</dd></div>
-        </dl>
-      </article>
-    `;
+function openDashboard(event: MouseEvent) {
+  try {
+    if (getCurrentWebViewMode() === 'inline') {
+      requestExpandedModeFallback(event, 'default');
+      expandedModeMessage =
+        'Expanded dashboard requested. If Reddit keeps this view inline, the full dashboard is available here.';
+    }
+  } catch (error) {
+    expandedModeMessage =
+      error instanceof Error
+        ? `Expanded mode fallback active: ${error.message}`
+        : 'Expanded mode fallback active.';
   }
-
-  if (!health) {
-    return `
-      <article class="panel">
-        <h3>Health Status</h3>
-        <p class="muted">Loading server status from /api/health.</p>
-      </article>
-    `;
-  }
-
-  return `
-    <article class="panel">
-      <h3>Health Status</h3>
-      <dl class="status-list">
-        <div><dt>App</dt><dd>${escapeHtml(health.app.name)}</dd></div>
-        <div><dt>Runtime</dt><dd>${escapeHtml(health.environment.runtime)}</dd></div>
-        <div><dt>Playtest</dt><dd>${escapeHtml(health.environment.playtestStatus)}</dd></div>
-        <div><dt>Subreddit</dt><dd>${escapeHtml(health.subreddit.name ?? health.subreddit.id ?? 'Unavailable in this context')}</dd></div>
-        <div><dt>Redis</dt><dd>${escapeHtml(health.redis.smokeStatus)}</dd></div>
-      </dl>
-      <p class="muted">${escapeHtml(health.redis.detail)}</p>
-    </article>
-  `;
-}
-
-function renderDemoCard() {
-  return `
-    <article class="panel">
-      <h3>Demo Mode</h3>
-      <p>Demo scans use deterministic seeded actions and stay clearly labeled as non-live data.</p>
-      <div class="placeholder-row">
-        <span>Seed source</span>
-        <strong>${escapeHtml(health?.demoMode.source ?? 'placeholder')}</strong>
-      </div>
-    </article>
-  `;
+  dashboardOpen = true;
+  activePage = 'command-center';
+  window.location.hash = '#command-center';
+  render();
 }
 
 async function runScan(mode: ScanMode) {
@@ -1605,39 +1739,445 @@ async function runScan(mode: ScanMode) {
     mode,
     warnings: [],
   };
-  activePage = 'mirror-scan';
+  dashboardOpen = true;
+  activePage = 'scan';
+  window.location.hash = '#scan';
   render();
 
   try {
-    const response = await fetch(API_ROUTES.scan, {
+    const payload = await fetchApi<MirrorScan>(API_ROUTES.scan, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ mode }),
     });
-    const payload = (await response.json()) as ApiResponse<MirrorScan>;
-
-    if (!payload.ok) {
-      throw new Error(payload.error.message);
+    scanState = {
+      loading: false,
+      mode,
+      result: payload,
+      warnings: payload.warnings,
+    };
+  } catch (error) {
+    if (mode === 'demo') {
+      const payload = createClientPreviewDemoScan();
+      scanState = {
+        loading: false,
+        mode,
+        result: payload,
+        warnings: payload.warnings,
+      };
+      render();
+      return;
     }
 
     scanState = {
       loading: false,
       mode,
-      result: payload.data,
-      warnings: payload.data.warnings,
-    };
-  } catch (error) {
-    scanState = {
-      loading: false,
-      mode,
-      error: error instanceof Error ? error.message : 'Unknown scan error',
+      error: normalizeClientError(error, 'Scan could not reach the ModMirror API.'),
       warnings: [],
     };
   }
 
   render();
+}
+
+function createClientPreviewDemoScan(): MirrorScan {
+  return {
+    id: `client-demo-scan-${Date.now()}`,
+    subreddit: DEMO_SUBREDDIT_NAME,
+    createdAt: new Date().toISOString(),
+    createdBy: 'local-preview',
+    source: 'demo',
+    totalActionsScanned: 60,
+    attributedCount: 52,
+    unmatchedCount: 8,
+    confidenceBreakdown: {
+      high: 31,
+      medium: 14,
+      low: 7,
+      unmatched: 8,
+    },
+    driftCandidates: [
+      {
+        ruleKey: 'low-effort-questions-2',
+        ruleName: 'Low-effort questions',
+        confidence: 'high',
+        summary:
+          'Rule 2 first-time cases are split across warnings, removals, and temporary-ban suggestions.',
+        totalActions: 24,
+        actionDistribution: {
+          warn: 9,
+          remove: 10,
+          temporary_ban_suggested: 5,
+        },
+        recommendation:
+          'Create the Rule 2 ladder and review stricter-than-policy exceptions.',
+      },
+      {
+        ruleKey: 'self-promotion-3',
+        ruleName: 'Self-promotion',
+        confidence: 'medium',
+        summary:
+          'Rule 3 is mostly consistent, with a small number of manual-review outcomes.',
+        totalActions: 18,
+        actionDistribution: {
+          remove: 15,
+          manual_review: 3,
+        },
+        recommendation:
+          'Keep monitoring; this rule can serve as the comparison baseline.',
+      },
+    ],
+    smallSubredditStatus: {
+      meetsThreshold: true,
+      observedActions: 60,
+      minimumActions: 20,
+      message: 'Enough demo actions to show drift candidates.',
+    },
+    warnings: [
+      'Demo mode: ExampleLearning seed data is labeled and separate from live subreddit data.',
+      'Local static preview could not reach the ModMirror API, so the deterministic demo scan is rendered in memory.',
+    ],
+  };
+}
+
+function canUseClientDemoFallback() {
+  return (
+    scanState.result?.source === 'demo' ||
+    policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
+  );
+}
+
+function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
+  const now = new Date().toISOString();
+  return {
+    ...DEMO_POLICY,
+    id: DEMO_POLICY.id,
+    ruleKey: candidate?.ruleKey ?? DEMO_POLICY.ruleKey,
+    ruleName: candidate?.ruleName ?? DEMO_POLICY.ruleName,
+    activeVersionId: 'demo-policy-low-effort-v2',
+    activeVersionNumber: 2,
+    createdAt: DEMO_POLICY.createdAt,
+    updatedAt: now,
+  };
+}
+
+function createClientDemoHealth(
+  overrideEvent?: ApplyPolicyConfirmResult['overrideEvent']
+): PolicyHealthOverview {
+  const overrideCount = overrideEvent ? 4 : 3;
+  return {
+    totalPolicies: 1,
+    stablePolicies: 0,
+    policiesNeedingReview: 1,
+    unresolvedOverrides: 1,
+    summaries: [
+      {
+        policyId: DEMO_POLICY.id,
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        status: 'needs_review',
+        totalActions: 12,
+        followedPolicyCount: 8,
+        overrideCount,
+        unresolvedOverrideCount: 1,
+        policySeemsWrongCount: 1,
+        adherenceRate: 8 / 12,
+        overrideRate: overrideCount / 12,
+        reasons: [
+          'Rule 2 first-time cases still have stricter-than-policy outcomes.',
+        ],
+        recommendations: [
+          'Review unresolved Rule 2 overrides and decide whether the ladder should change.',
+        ],
+        sampleWarning:
+          'One temporary-ban suggestion deviates from the first-offense warning policy.',
+      },
+    ],
+  };
+}
+
+function createClientDemoOverrides(
+  latestOverride?: ApplyPolicyConfirmResult['overrideEvent']
+): ReviewableOverrideEvent[] {
+  const now = new Date().toISOString();
+  const overrides: ReviewableOverrideEvent[] = [
+    {
+      id: 'demo-override-r2-appeal',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetThingId: 't3_demo_case_r2_appeal',
+      targetAuthor: 'learner_1',
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      policyId: DEMO_POLICY.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      recommendedAction: 'warn',
+      selectedAction: 'temporary_ban_suggested',
+      overrideReason: 'severe_context',
+      overrideNote:
+        'Moderator saw repeat low-effort pattern that was not captured by the first-offense window.',
+      reviewStatus: 'unresolved',
+      createdAt: now,
+    },
+  ];
+
+  if (latestOverride) {
+    const reviewable: ReviewableOverrideEvent = {
+      id: latestOverride.id,
+      subreddit: latestOverride.subreddit,
+      ruleKey: latestOverride.ruleKey,
+      recommendedAction: latestOverride.recommendedAction,
+      selectedAction: latestOverride.selectedAction,
+      overrideReason: latestOverride.overrideReason,
+      reviewStatus: latestOverride.reviewStatus,
+      createdAt: latestOverride.createdAt,
+    };
+    if (latestOverride.targetThingId) {
+      reviewable.targetThingId = latestOverride.targetThingId;
+    }
+    if (latestOverride.targetAuthor) {
+      reviewable.targetAuthor = latestOverride.targetAuthor;
+    }
+    if (latestOverride.ruleName) {
+      reviewable.ruleName = latestOverride.ruleName;
+    }
+    if (latestOverride.policyId) {
+      reviewable.policyId = latestOverride.policyId;
+    }
+    if (latestOverride.policyVersionId) {
+      reviewable.policyVersionId = latestOverride.policyVersionId;
+    }
+    if (latestOverride.policyVersionNumber) {
+      reviewable.policyVersionNumber = latestOverride.policyVersionNumber;
+    }
+    if (latestOverride.overrideNote) {
+      reviewable.overrideNote = latestOverride.overrideNote;
+    }
+    overrides.unshift(reviewable);
+  }
+
+  return overrides;
+}
+
+function createClientDemoVersions(): Record<string, PolicyVersionSummary[]> {
+  return {
+    [DEMO_POLICY.id]: [
+      {
+        id: 'demo-policy-low-effort-v1',
+        policyId: DEMO_POLICY.id,
+        versionNumber: 1,
+        ruleName: DEMO_POLICY.ruleName,
+        createdAt: '2026-05-15T18:30:00.000Z',
+        createdBy: 'demo-lead-mod',
+        changeSummary: 'Initial Rule 2 ladder drafted from Mirror Scan drift.',
+      },
+      {
+        id: 'demo-policy-low-effort-v2',
+        policyId: DEMO_POLICY.id,
+        versionNumber: 2,
+        ruleName: DEMO_POLICY.ruleName,
+        createdAt: '2026-05-16T10:30:00.000Z',
+        createdBy: 'demo-lead-mod',
+        changeSummary: 'Kept first offense at warning and required override reasons.',
+      },
+    ],
+  };
+}
+
+function createClientDemoApplyPreview(
+  payload: ReturnType<typeof applyFormDataToPayload>
+): ApplyPolicyPreview {
+  const policy =
+    policyState.policies.find((item) => item.ruleKey === payload.ruleKey) ??
+    createClientDemoPolicy();
+  const recommendedAction = policy.steps[0]?.recommendedAction ?? 'warn';
+  const deviatesFromPolicy = payload.selectedAction !== recommendedAction;
+
+  return {
+    policy,
+    recommendation: {
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      policyId: policy.id,
+      offenseCount: 1,
+      recommendedAction,
+      messageDeliveryMode: policy.defaultMessageMode,
+      requiresOverrideReason: true,
+      selectedAction: payload.selectedAction,
+      deviatesFromPolicy,
+      fallbackReason: 'policy_found',
+      message: deviatesFromPolicy
+        ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
+        : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
+    },
+  };
+}
+
+function createClientDemoApplyResult(
+  payload: ReturnType<typeof applyFormDataToPayload>
+): ApplyPolicyConfirmResult {
+  const preview = createClientDemoApplyPreview(payload);
+  const policy = preview.policy ?? createClientDemoPolicy();
+  const now = new Date().toISOString();
+  const actionEvent = {
+    id: `demo-action-${Date.now()}`,
+    subreddit: DEMO_SUBREDDIT_NAME,
+    modUsername: 'demo_mod_2',
+    targetThingId: payload.targetThingId,
+    targetAuthor: payload.targetAuthor,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    policyId: policy.id,
+    policyVersionId: 'demo-policy-low-effort-v2',
+    policyVersionNumber: 2,
+    policyVersionStatus: 'active' as const,
+    recommendedAction: preview.recommendation.recommendedAction,
+    selectedAction: payload.selectedAction,
+    deliveryMode: 'log_only' as const,
+    source: 'simulator' as const,
+    createdAt: now,
+  };
+
+  const result: ApplyPolicyConfirmResult = {
+    recommendation: preview.recommendation,
+    actionEvent,
+  };
+
+  if (preview.recommendation.deviatesFromPolicy) {
+    result.overrideEvent = {
+      id: `demo-override-${Date.now()}`,
+      subreddit: DEMO_SUBREDDIT_NAME,
+      modUsername: 'demo_mod_2',
+      targetThingId: payload.targetThingId,
+      targetAuthor: payload.targetAuthor,
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      policyId: policy.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      policyVersionStatus: 'active',
+      recommendedAction: preview.recommendation.recommendedAction,
+      selectedAction: payload.selectedAction,
+      overrideReason: payload.overrideReason ?? 'severe_context',
+      overrideNote:
+        payload.overrideNote || 'Demo override recorded for review workflow.',
+      reviewStatus: 'unresolved',
+      updatedAt: now,
+      createdAt: now,
+    };
+  }
+
+  return result;
+}
+
+function createClientDemoCasePacket(): CasePacket {
+  const generatedAt = new Date().toISOString();
+  const markdown = [
+    '# ModMirror Case Packet',
+    '',
+    `Generated: ${generatedAt}`,
+    `Subreddit: r/${DEMO_SUBREDDIT_NAME}`,
+    'Rule: Low-effort questions',
+    'Recommended action: warn',
+    'Selected action: temporary ban suggested',
+    'Posture: review recommended',
+    '',
+    '## Caveats',
+    '- This packet uses demo seed data, not real subreddit history.',
+    '- Comparable cases are deterministic matches, not automated appeal judgment.',
+  ].join('\n');
+
+  return {
+    id: 'client-demo-case-packet',
+    generatedAt,
+    generatedBy: 'local-preview',
+    subreddit: DEMO_SUBREDDIT_NAME,
+    subject: {
+      type: 'demo',
+      targetThingId: 't3_demo_case_r2_appeal',
+      ruleKey: DEMO_POLICY.ruleKey,
+    },
+    action: {
+      actionId: 'demo-case-r2-appeal',
+      createdAt: '2026-05-16T19:15:00.000Z',
+      moderator: 'demo_mod_2',
+      targetThingId: 't3_demo_case_r2_appeal',
+      targetAuthor: 'learner_1',
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      recommendedAction: 'warn',
+      selectedAction: 'temporary_ban_suggested',
+      deliveryMode: 'log_only',
+      source: 'demo',
+    },
+    policyContext: {
+      policyId: DEMO_POLICY.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      policyVersionStatus: 'active',
+      policyName: DEMO_POLICY.ruleName,
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      activeAtActionTime: true,
+      changedSinceAction: false,
+    },
+    consistencyStatus: 'stricter_than_policy',
+    overrideContext: {
+      overrideId: 'demo-override-r2-appeal',
+      reason: 'severe_context',
+      note: 'Moderator cited repeat pattern outside the tracked first-offense window.',
+      reviewStatus: 'unresolved',
+    },
+    userHistory: [
+      {
+        actionId: 'demo-case-r2-prior-learner-1',
+        createdAt: '2026-05-10T16:00:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'warn',
+        recommendedAction: 'warn',
+        consistencyStatus: 'matched_policy',
+        policyVersionNumber: 2,
+      },
+    ],
+    comparableCases: [
+      {
+        actionId: 'demo-case-r2-comparable-followed',
+        createdAt: '2026-05-14T11:30:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'warn',
+        recommendedAction: 'warn',
+        offenseBucket: 'first_offense',
+        selectedActionFamily: 'warn',
+        recommendedActionFamily: 'warn',
+        targetType: 'post',
+        matchReasons: ['same rule', 'first offense', 'same policy version'],
+        anonymizedTargetAuthor: 'learner_*',
+      },
+      {
+        actionId: 'demo-case-r2-comparable-strict',
+        createdAt: '2026-05-15T09:15:00.000Z',
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        selectedAction: 'remove',
+        recommendedAction: 'warn',
+        offenseBucket: 'first_offense',
+        selectedActionFamily: 'remove',
+        recommendedActionFamily: 'warn',
+        targetType: 'post',
+        matchReasons: ['same rule', 'first offense', 'stricter outcome'],
+        anonymizedTargetAuthor: 'learner_*',
+      },
+    ],
+    appealPosture: 'review_recommended',
+    caveats: [
+      'This packet uses demo seed data, not real subreddit history.',
+      'Comparable cases are deterministic matches, not automated appeal judgment.',
+      'Historical attribution remains confidence-scored and may be incomplete.',
+    ],
+    markdown,
+  };
 }
 
 async function loadHealth() {
@@ -1647,9 +2187,10 @@ async function loadHealth() {
       throw new Error(`Health endpoint returned ${response.status}`);
     }
     health = (await response.json()) as HealthResponse;
+    healthError = undefined;
   } catch (error) {
     healthError =
-      error instanceof Error ? error.message : 'Unknown health fetch error';
+      normalizeClientError(error, 'Health status is unavailable in this preview.');
   }
 
   render();
@@ -1660,21 +2201,17 @@ async function loadPolicies() {
   render();
 
   try {
-    const response = await fetch(API_ROUTES.policies);
-    const payload = (await response.json()) as ApiResponse<RulePolicy[]>;
-    if (!payload.ok) {
-      throw new Error(payload.error.message);
-    }
+    const policies = await fetchApi<RulePolicy[]>(API_ROUTES.policies);
     policyState = {
       ...policyState,
       loading: false,
-      policies: payload.data,
+      policies,
     };
   } catch (error) {
     policyState = {
       ...policyState,
       loading: false,
-      error: error instanceof Error ? error.message : 'Policy fetch failed',
+      error: normalizeClientError(error, 'Policies are unavailable in this preview.'),
     };
   }
 
@@ -1691,13 +2228,13 @@ async function loadGovernance(ruleKey?: string) {
   render();
 
   try {
-    const [health, policies, overrides] = await Promise.all([
-      fetchApi<PolicyHealthOverview>('/api/policy-health'),
+    const [healthOverview, policies, overrides] = await Promise.all([
+      fetchApi<PolicyHealthOverview>(API_ROUTES.policyHealth),
       fetchApi<RulePolicy[]>(API_ROUTES.policies),
       fetchApi<ReviewableOverrideEvent[]>(
         ruleKey
-          ? `/api/overrides?status=unresolved&ruleKey=${encodeURIComponent(ruleKey)}`
-          : '/api/overrides?status=unresolved'
+          ? `${API_ROUTES.overrides}?status=unresolved&ruleKey=${encodeURIComponent(ruleKey)}`
+          : `${API_ROUTES.overrides}?status=unresolved`
       ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
@@ -1708,18 +2245,34 @@ async function loadGovernance(ruleKey?: string) {
     governanceState = {
       ...governanceState,
       loading: false,
-      health,
+      health: healthOverview,
       overrides,
       versionsByPolicy,
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const demoOverrides = createClientDemoOverrides();
+      governanceState = {
+        ...governanceState,
+        loading: false,
+        health: createClientDemoHealth(),
+        overrides: ruleKey
+          ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
+          : demoOverrides,
+        versionsByPolicy: createClientDemoVersions(),
+        error: undefined,
+      };
+      render();
+      return;
+    }
+
     governanceState = {
       ...governanceState,
       loading: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Governance data fetch failed',
+      error: normalizeClientError(
+        error,
+        'Review data is unavailable in this preview.'
+      ),
     };
   }
 
@@ -1769,7 +2322,7 @@ async function reviewOverride(
       body.reviewNote = reviewNote;
     }
     const updated = await fetchApi<ReviewableOverrideEvent>(
-      `/api/overrides/${encodeURIComponent(overrideId)}/review`,
+      `${API_ROUTES.overrides}/${encodeURIComponent(overrideId)}/review`,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -1788,18 +2341,17 @@ async function reviewOverride(
     governanceState = {
       ...governanceState,
       savingOverrideId: undefined,
-      error:
-        error instanceof Error ? error.message : 'Override review update failed',
+      error: normalizeClientError(
+        error,
+        'Override review update failed.'
+      ),
     };
   }
 
   render();
 }
 
-async function fetchApi<T>(
-  url: string,
-  init?: RequestInit
-): Promise<T> {
+async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   const payload = (await response.json()) as ApiResponse<T>;
   if (!payload.ok) {
@@ -1817,6 +2369,7 @@ async function generateCasePacket(
     error: undefined,
     message: undefined,
   };
+  dashboardOpen = true;
   activePage = 'case-packets';
   window.location.hash = '#case-packets';
   render();
@@ -1841,11 +2394,24 @@ async function generateCasePacket(
       packet: data.packet,
     };
   } catch (error) {
+    if (subject.type === 'demo' && canUseClientDemoFallback()) {
+      casePacketState = {
+        loading: false,
+        error: undefined,
+        message: 'Demo case packet generated.',
+        packet: createClientDemoCasePacket(),
+      };
+      render();
+      return;
+    }
+
     casePacketState = {
       ...casePacketState,
       loading: false,
-      error:
-        error instanceof Error ? error.message : 'Case packet generation failed',
+      error: normalizeClientError(
+        error,
+        'Case Packet generation is unavailable in this preview.'
+      ),
     };
   }
 
@@ -1901,11 +2467,25 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       form: policyToForm(payload.data),
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = createClientDemoPolicy(candidate);
+      policyState = {
+        ...policyState,
+        saving: false,
+        policies: upsertPolicy(policyState.policies, policy),
+        message: `Demo policy created for ${policy.ruleName}.`,
+        form: policyToForm(policy),
+      };
+      activePage = 'policies';
+      window.location.hash = '#policies';
+      render();
+      return;
+    }
+
     policyState = {
       ...policyState,
       saving: false,
-      error:
-        error instanceof Error ? error.message : 'Create-from-drift failed',
+      error: normalizeClientError(error, 'Create-from-drift failed.'),
     };
   }
 
@@ -1943,7 +2523,7 @@ async function savePolicyForm(formData: FormData) {
     policyState = {
       ...policyState,
       saving: false,
-      error: error instanceof Error ? error.message : 'Policy save failed',
+      error: normalizeClientError(error, 'Policy save failed.'),
     };
   }
 
@@ -1951,6 +2531,7 @@ async function savePolicyForm(formData: FormData) {
 }
 
 async function previewApplyPolicy(formData: FormData) {
+  const payload = applyFormDataToPayload(formData, false);
   applyState = {
     ...applyState,
     loading: true,
@@ -1960,27 +2541,36 @@ async function previewApplyPolicy(formData: FormData) {
   render();
 
   try {
-    const response = await fetch(API_ROUTES.applyPolicyPreview, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(applyFormDataToPayload(formData, false)),
-    });
-    const payload = (await response.json()) as ApiResponse<ApplyPolicyPreview>;
-    if (!payload.ok) {
-      throw new Error(payload.error.message);
-    }
+    const preview = await fetchApi<ApplyPolicyPreview>(
+      API_ROUTES.applyPolicyPreview,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
     applyState = {
       ...applyState,
       loading: false,
-      preview: payload.data,
+      preview,
       result: undefined,
     };
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      applyState = {
+        ...applyState,
+        loading: false,
+        preview: createClientDemoApplyPreview(payload),
+        result: undefined,
+      };
+      render();
+      return;
+    }
+
     applyState = {
       ...applyState,
       loading: false,
-      error:
-        error instanceof Error ? error.message : 'Apply Policy preview failed',
+      error: normalizeClientError(error, 'Apply Policy preview failed.'),
     };
   }
 
@@ -1988,6 +2578,7 @@ async function previewApplyPolicy(formData: FormData) {
 }
 
 async function confirmApplyPolicy(formData: FormData) {
+  const payload = applyFormDataToPayload(formData, true);
   applyState = {
     ...applyState,
     confirming: true,
@@ -1997,39 +2588,98 @@ async function confirmApplyPolicy(formData: FormData) {
   render();
 
   try {
-    const response = await fetch(API_ROUTES.applyPolicyConfirm, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(applyFormDataToPayload(formData, true)),
-    });
-    const payload =
-      (await response.json()) as ApiResponse<ApplyPolicyConfirmResult>;
-    if (!payload.ok) {
-      throw new Error(payload.error.message);
-    }
+    const result = await fetchApi<ApplyPolicyConfirmResult>(
+      API_ROUTES.applyPolicyConfirm,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
     applyState = {
       ...applyState,
       confirming: false,
       preview: {
-        recommendation: payload.data.recommendation,
+        recommendation: result.recommendation,
       },
-      result: payload.data,
+      result,
       message: 'Policy action recorded in log-only mode.',
     };
+    await loadGovernance();
   } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const result = createClientDemoApplyResult(payload);
+      applyState = {
+        ...applyState,
+        confirming: false,
+        preview: {
+          recommendation: result.recommendation,
+        },
+        result,
+        message: 'Demo policy action recorded in log-only mode.',
+      };
+      governanceState = {
+        ...governanceState,
+        error: undefined,
+        message: undefined,
+        health: createClientDemoHealth(result.overrideEvent),
+        overrides: createClientDemoOverrides(result.overrideEvent),
+        versionsByPolicy: createClientDemoVersions(),
+      };
+      render();
+      return;
+    }
+
     applyState = {
       ...applyState,
       confirming: false,
-      error:
-        error instanceof Error ? error.message : 'Apply Policy confirm failed',
+      error: normalizeClientError(error, 'Apply Policy confirm failed.'),
     };
+    render();
   }
+}
 
+function generateDigest() {
+  const generatedAt = new Date().toISOString();
+  const summary = buildDashboardSummary();
+  const digestInput: Parameters<typeof generateManualDigest>[0] = {
+    generatedAt,
+    dataMode: summary.dataMode,
+    summary,
+    caveats: [
+      'Historical moderation-log attribution is inferred and confidence-scored.',
+      'Delivery remains log-only until public comment behavior is playtest-verified.',
+      'Digest is generated manually; no scheduler is enabled in this wave.',
+    ],
+  };
+  if (governanceState.health !== undefined) {
+    digestInput.health = governanceState.health;
+  }
+  digestState = {
+    generatedAt,
+    markdown: generateManualDigest(digestInput),
+    message: 'Manual digest generated.',
+  };
+  render();
+}
+
+async function copyDigestMarkdown() {
+  if (!digestState.markdown) {
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(digestState.markdown);
+    digestState = { ...digestState, message: 'Digest copied to clipboard.' };
+  } catch {
+    digestState = { ...digestState, message: 'Digest is ready in the textarea.' };
+  }
   render();
 }
 
 function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
+  const ruleKey = String(formData.get('ruleKey') ?? '');
   const payload: {
+    subreddit?: string;
     ruleKey: string;
     targetThingId: string;
     targetAuthor: string;
@@ -2038,7 +2688,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     overrideReason?: OverrideReason;
     overrideNote?: string;
   } = {
-    ruleKey: String(formData.get('ruleKey') ?? ''),
+    ruleKey,
     targetThingId: String(formData.get('targetThingId') ?? ''),
     targetAuthor: String(formData.get('targetAuthor') ?? ''),
     selectedAction: String(
@@ -2046,6 +2696,12 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     ) as EnforcementAction,
     source: 'simulator',
   };
+  const selectedPolicy = policyState.policies.find(
+    (policy) => policy.ruleKey === ruleKey
+  );
+  if (selectedPolicy !== undefined) {
+    payload.subreddit = selectedPolicy.subreddit;
+  }
 
   if (includeOverride) {
     const overrideReason = String(formData.get('overrideReason') ?? '');
@@ -2101,13 +2757,62 @@ function upsertPolicy(policies: RulePolicy[], policy: RulePolicy) {
   );
 }
 
+function buildDashboardSummary() {
+  const input: Parameters<typeof buildCommandCenterSummary>[0] = {
+    policies: policyState.policies,
+    overrides: governanceState.overrides,
+  };
+  if (scanState.result !== undefined) {
+    input.scan = scanState.result;
+  }
+  if (governanceState.health !== undefined) {
+    input.health = governanceState.health;
+  }
+  return buildCommandCenterSummary(input);
+}
+
+function getPrimaryActionCopy(intent: CommandCenterAction['intent']) {
+  if (intent === 'load_demo') {
+    return 'Start with ExampleLearning so the whole scan-policy-override-case story is visible immediately.';
+  }
+  if (intent === 'create_policy') {
+    return 'Turn the strongest drift signal into an explicit team policy ladder.';
+  }
+  if (intent === 'review_overrides') {
+    return 'Resolve exceptions so the team can decide whether policy or practice should change.';
+  }
+  if (intent === 'review_policy') {
+    return 'Inspect policy health before changing the ladder.';
+  }
+  if (intent === 'generate_digest') {
+    return 'Share the current governance status with the team.';
+  }
+  return 'Run a fresh Mirror Scan.';
+}
+
 function formatAction(action: string) {
-  return action.replaceAll('_', ' ');
+  return escapeHtml(action.replaceAll('_', ' '));
+}
+
+function formatHealthStatus(status: PolicyHealthStatus) {
+  return status.replaceAll('_', ' ');
+}
+
+function formatStepStatus(status: SetupStep['status']) {
+  return status === 'complete' ? 'Done' : status === 'current' ? 'Now' : 'Next';
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatDataMode(mode: ProductDataMode) {
+  return mode === 'demo' ? 'Demo data' : mode === 'live' ? 'Live data' : 'No data';
 }
 
 function formatDate(value: string) {
   const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) {
+  if (value === 'Not run yet' || Number.isNaN(timestamp)) {
     return value;
   }
   return new Intl.DateTimeFormat(undefined, {
@@ -2118,16 +2823,10 @@ function formatDate(value: string) {
   }).format(timestamp);
 }
 
-function formatHealthStatus(status: PolicyHealthStatus) {
-  return status.replaceAll('_', ' ');
-}
-
-function formatPercent(value: number) {
-  return `${Math.round(value * 100)}%`;
-}
-
 function cssEscape(value: string) {
-  return window.CSS?.escape ? window.CSS.escape(value) : value.replaceAll('"', '\\"');
+  return window.CSS?.escape
+    ? window.CSS.escape(value)
+    : value.replaceAll('"', '\\"');
 }
 
 function escapeHtml(value: string) {
@@ -2143,12 +2842,104 @@ function escapeAttribute(value: string) {
   return escapeHtml(value);
 }
 
+function normalizeClientError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : '';
+  if (
+    message.includes('Unexpected token') ||
+    message.includes('<!DOCTYPE') ||
+    message.includes('returned 404')
+  ) {
+    return `${fallback} Run the app through Devvit playtest for live API data.`;
+  }
+  return message || fallback;
+}
+
 window.addEventListener('hashchange', () => {
   activePage = getPageFromHash();
+  if (window.location.hash.length > 1) {
+    dashboardOpen = true;
+  }
   render();
+});
+
+window.addEventListener('focus', () => {
+  try {
+    if (dashboardOpen && getCurrentWebViewMode() === 'inline') {
+      expandedModeMessage =
+        expandedModeMessage ?? 'Dashboard is open in inline fallback mode.';
+    }
+  } catch {
+    expandedModeMessage =
+      expandedModeMessage ?? 'Dashboard is open in local fallback mode.';
+  }
 });
 
 render();
 void loadHealth();
 void loadPolicies();
 void loadGovernance();
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && dashboardOpen) {
+    try {
+      requestInlineModeFallback();
+    } catch {
+      dashboardOpen = false;
+      window.location.hash = '';
+      render();
+    }
+  }
+});
+
+function getCurrentWebViewMode(): 'inline' | 'expanded' {
+  return getDevvitGlobal()?.webViewMode === WEB_VIEW_IMMERSIVE_MODE
+    ? 'expanded'
+    : 'inline';
+}
+
+function requestExpandedModeFallback(event: MouseEvent, entry: string): void {
+  if (!event.isTrusted || event.type !== 'click') {
+    throw new Error('Expanded mode requires a trusted click.');
+  }
+  emitWebViewModeEffect(WEB_VIEW_IMMERSIVE_MODE, entry);
+}
+
+function requestInlineModeFallback(): void {
+  emitWebViewModeEffect(WEB_VIEW_INLINE_MODE);
+}
+
+function emitWebViewModeEffect(mode: number, entry?: string): void {
+  const devvitGlobal = getDevvitGlobal();
+  if (!devvitGlobal) {
+    throw new Error('Devvit WebView global unavailable.');
+  }
+
+  let entryUrl: string | undefined;
+  if (entry) {
+    const entrypoint = devvitGlobal.entrypoints?.[entry];
+    if (!entrypoint) {
+      throw new Error(`No Devvit entrypoint named ${entry}.`);
+    }
+    const url = new URL(entrypoint);
+    if (devvitGlobal.token) {
+      url.searchParams.set('token', devvitGlobal.token);
+    }
+    entryUrl = url.toString();
+  }
+
+  const message = {
+    type: DEVVIT_INTERNAL_MESSAGE_TYPE,
+    scope: 0,
+    immersiveMode: {
+      entryUrl,
+      immersiveMode: mode,
+    },
+    effectType: EFFECT_WEB_VIEW,
+  };
+  window.parent.postMessage(message, '*');
+}
+
+function getDevvitGlobal(): DevvitWebViewGlobal | undefined {
+  const candidate = (globalThis as { devvit?: DevvitWebViewGlobal }).devvit;
+  return candidate;
+}

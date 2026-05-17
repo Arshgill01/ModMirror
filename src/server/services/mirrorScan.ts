@@ -117,7 +117,7 @@ function buildDriftCandidate(
     summary: `${ruleName} has ${group.length} attributed actions split across ${distinctActions} enforcement outcomes.`,
     totalActions: group.length,
     actionDistribution,
-    recommendation: 'Create a policy for this rule in Wave 3.',
+    recommendation: 'Create a team policy for this rule.',
   };
   const ruleKey = group[0]?.inferredRuleKey;
   if (ruleKey) {

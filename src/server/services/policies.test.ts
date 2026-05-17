@@ -139,6 +139,35 @@ describe('policy version history', () => {
     expect(versions[0]?.changeReason).toBe('legacy_policy_fallback');
   });
 
+  it('finds a policy from the policy index if the direct rule key is missing', async () => {
+    const { getPolicyByRule } = await import('./policies');
+    const indexedPolicy: RulePolicy = {
+      id: 'policy-indexed-only',
+      subreddit: 'ExampleLearning',
+      ruleKey: 'low-effort-questions-2',
+      ruleName: 'Low-effort questions',
+      activeVersionId: 'version-1',
+      activeVersionNumber: 1,
+      createdAt: '2026-05-16T00:00:00.000Z',
+      updatedAt: '2026-05-16T00:00:00.000Z',
+      createdBy: 'leadmod',
+      steps: [baseStep],
+      defaultMessageMode: 'log_only',
+      active: true,
+    };
+    redisState.hashes.set('modmirror:ExampleLearning:policies', {
+      [indexedPolicy.ruleKey]: JSON.stringify(indexedPolicy),
+    });
+
+    const policy = await getPolicyByRule(
+      indexedPolicy.subreddit,
+      indexedPolicy.ruleKey
+    );
+
+    expect(policy?.id).toBe(indexedPolicy.id);
+    expect(policy?.ruleName).toBe(indexedPolicy.ruleName);
+  });
+
   it('captures action snapshots from the active policy version', async () => {
     const { capturePolicySnapshot, createPolicy } = await import('./policies');
     const policy = await createPolicy({
