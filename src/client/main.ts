@@ -1067,12 +1067,32 @@ function renderApplyPreview() {
       ${renderApplyPreviewEvidence()}
       ${
         applyState.result
-          ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}.</p>
+          ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
              <button class="secondary-button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}" type="button">Generate case packet</button>`
           : ''
       }
     </article>
   `;
+}
+
+function formatExecutionResult(result: ApplyPolicyConfirmResult): string {
+  const execution = result.execution;
+  if (execution.executionResult === 'success') {
+    return `Reddit ${formatExecutionOperation(execution.redditOperation)} succeeded.`;
+  }
+  if (execution.executionResult === 'failure') {
+    return execution.errorMessage
+      ? `Reddit action failed: ${execution.errorMessage}`
+      : 'Reddit action failed.';
+  }
+  if (execution.capabilityState === 'not_applicable') {
+    return 'No Reddit action was applicable.';
+  }
+  return execution.errorMessage ?? 'Reddit execution was skipped.';
+}
+
+function formatExecutionOperation(operation: string): string {
+  return operation.replaceAll('_', ' ');
 }
 
 function renderApplyPreviewEvidence() {
@@ -2571,6 +2591,18 @@ function createClientDemoApplyResult(
   const preview = createClientDemoApplyPreview(payload);
   const policy = preview.policy ?? createClientDemoPolicy();
   const now = new Date().toISOString();
+  const execution = {
+    executionMode: 'log_only' as const,
+    executionAttempted: false,
+    executionResult: 'skipped' as const,
+    redditOperation: 'none' as const,
+    selectedAction: payload.selectedAction,
+    targetThingId: payload.targetThingId,
+    targetType: preview.targetSnapshot.targetType,
+    capabilityState: 'not_applicable' as const,
+    startedAt: now,
+    completedAt: now,
+  };
   const actionEvent = {
     id: `demo-action-${Date.now()}`,
     subreddit: DEMO_SUBREDDIT_NAME,
@@ -2587,12 +2619,14 @@ function createClientDemoApplyResult(
     selectedAction: payload.selectedAction,
     deliveryMode: 'log_only' as const,
     source: 'simulator' as const,
+    execution,
     createdAt: now,
   };
 
   const result: ApplyPolicyConfirmResult = {
     recommendation: preview.recommendation,
     actionEvent,
+    execution,
   };
 
   if (preview.recommendation.deviatesFromPolicy) {
@@ -3321,6 +3355,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     targetAuthor: string;
     selectedAction: EnforcementAction;
     source: ApplyPolicySource;
+    confirmed?: boolean;
     overrideReason?: OverrideReason;
     overrideNote?: string;
   } = {
@@ -3340,6 +3375,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
   }
 
   if (includeOverride) {
+    payload.confirmed = true;
     const overrideReason = String(formData.get('overrideReason') ?? '');
     const overrideNote = String(formData.get('overrideNote') ?? '').trim();
     if (overrideReason) {

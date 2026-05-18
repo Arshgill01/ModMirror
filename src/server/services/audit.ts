@@ -89,6 +89,9 @@ export async function saveActionEvent(
   if (input.policySnapshot !== undefined) {
     event.policySnapshot = input.policySnapshot;
   }
+  if (input.execution !== undefined) {
+    event.execution = input.execution;
+  }
 
   const createdAtScore = Date.parse(event.createdAt);
   const score = Number.isNaN(createdAtScore) ? Date.now() : createdAtScore;
@@ -381,6 +384,7 @@ export function createLogOnlyActionInput(options: {
   selectedAction: EnforcementAction;
   deliveryMode?: MessageDeliveryMode;
   source?: ActionEvent['source'];
+  execution?: ActionEvent['execution'];
 }): ActionEventInput {
   const input: ActionEventInput = {
     subreddit: options.subreddit,
@@ -417,6 +421,9 @@ export function createLogOnlyActionInput(options: {
   }
   if (options.policySnapshot !== undefined) {
     input.policySnapshot = options.policySnapshot;
+  }
+  if (options.execution !== undefined) {
+    input.execution = options.execution;
   }
 
   return input;

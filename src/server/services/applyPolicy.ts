@@ -2,6 +2,7 @@ import {
   APPLY_POLICY_SOURCE_VALUES,
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
+  MODERATION_EXECUTION_MODE_VALUES,
 } from '../../shared/constants';
 import { recommendPolicyAction } from '../../shared/scoring';
 import type {
@@ -12,6 +13,7 @@ import type {
   ApplyPolicyPreviewInput,
   ApplyPolicyTargetSnapshot,
   AttributedModAction,
+  ModerationExecutionResult,
   PolicyRecommendation,
 } from '../../shared/schema';
 import {
@@ -20,6 +22,11 @@ import {
   saveActionEvent,
   saveOverrideEvent,
 } from './audit';
+import {
+  executeModerationAction,
+  getRedditOperation,
+  type ModerationExecutionDependencies,
+} from './moderationExecution';
 import { capturePolicySnapshot, getPolicyByRule } from './policies';
 import { getTargetType } from './targetContext';
 
@@ -74,7 +81,10 @@ export async function previewApplyPolicy(
 export async function confirmApplyPolicy(options: {
   input: ApplyPolicyConfirmInput;
   modUsername?: string;
+  executionDependencies?: ModerationExecutionDependencies;
 }): Promise<ApplyPolicyConfirmResult> {
+  validateConfirmInput(options.input);
+
   const preview = await previewApplyPolicy(options.input);
   const recommendation = preview.recommendation;
 
@@ -87,18 +97,35 @@ export async function confirmApplyPolicy(options: {
 
   const subreddit = options.input.subreddit ?? DEMO_SUBREDDIT_NAME;
   const policySnapshot = preview.policySnapshot;
+  const executionInput: Parameters<typeof executeModerationAction>[0] = {
+    selectedAction: options.input.selectedAction,
+    targetType: preview.targetSnapshot.targetType,
+    confirmed: options.input.confirmed,
+  };
+  if (options.input.targetThingId !== undefined) {
+    executionInput.targetThingId = options.input.targetThingId;
+  }
+  if (options.input.executionMode !== undefined) {
+    executionInput.executionMode = options.input.executionMode;
+  }
+  const execution = await executeModerationAction(
+    executionInput,
+    options.executionDependencies
+  );
   const actionInput = createLogOnlyActionInput(createActionOptions(
     subreddit,
     recommendation,
     options.input,
     options.modUsername,
-    policySnapshot
+    policySnapshot,
+    execution
   ));
   const actionEvent = await saveActionEvent(actionInput);
 
   const result: ApplyPolicyConfirmResult = {
     recommendation,
     actionEvent,
+    execution,
   };
 
   if (recommendation.deviatesFromPolicy && options.input.overrideReason) {
@@ -143,7 +170,8 @@ function createActionOptions(
   recommendation: PolicyRecommendation,
   input: ApplyPolicyConfirmInput,
   modUsername?: string,
-  policySnapshot?: ReturnType<typeof capturePolicySnapshot>
+  policySnapshot?: ReturnType<typeof capturePolicySnapshot>,
+  execution?: ModerationExecutionResult
 ): Parameters<typeof createLogOnlyActionInput>[0] {
   const actionInput: Parameters<typeof createLogOnlyActionInput>[0] = {
     subreddit,
@@ -177,6 +205,9 @@ function createActionOptions(
     actionInput.policySnapshot = policySnapshot;
   } else {
     actionInput.policyVersionStatus = 'missing';
+  }
+  if (execution !== undefined) {
+    actionInput.execution = execution;
   }
 
   return actionInput;
@@ -245,6 +276,18 @@ function validatePreviewInput(input: ApplyPolicyPreviewInput): void {
     ) {
       throw new Error('targetType does not match targetThingId');
     }
+  }
+}
+
+function validateConfirmInput(input: ApplyPolicyConfirmInput): void {
+  if (input.confirmed !== true) {
+    throw new Error('Explicit confirmation is required');
+  }
+  if (
+    input.executionMode !== undefined &&
+    !MODERATION_EXECUTION_MODE_VALUES.includes(input.executionMode)
+  ) {
+    throw new Error('executionMode is invalid');
   }
 }
 
@@ -354,13 +397,21 @@ function buildPreviewEvidence(options: {
 function buildConfirmationPreview(
   recommendation: PolicyRecommendation
 ): ApplyPolicyPreview['confirmation'] {
+  const redditOperation = getRedditOperation(
+    recommendation.selectedAction ?? recommendation.recommendedAction
+  );
+  const executionMode =
+    redditOperation === 'none' ? 'log_only' : 'unverified_disabled';
+
   return {
-    executionMode: 'log_only',
+    executionMode,
     willExecuteRedditAction: false,
     actionLabel: recommendation.selectedAction ?? recommendation.recommendedAction,
     requiresOverrideReason: recommendation.requiresOverrideReason,
     message:
-      'Confirming will write a ModMirror log-only action and optional override record. No Reddit moderation action will be attempted.',
+      redditOperation === 'none'
+        ? 'Confirming will write a ModMirror log-only action and optional override record. No Reddit moderation action will be attempted.'
+        : 'This Reddit action is previewed but live execution is disabled until receipts and runtime proof are in place.',
     caveats: [
       'Live Reddit execution is disabled until the moderation execution and receipt waves add safety gates and runtime proof.',
       'Offense count only includes ModMirror-tracked Apply Policy actions.',

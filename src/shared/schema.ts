@@ -83,6 +83,27 @@ export type HealthState = 'ok' | 'degraded' | 'blocked';
 
 export type ModerationTargetType = 'post' | 'comment' | 'unknown';
 
+export type ModerationExecutionMode =
+  | 'live'
+  | 'log_only'
+  | 'dry_run'
+  | 'unverified_disabled';
+
+export type ModerationExecutionStatus = 'success' | 'failure' | 'skipped';
+
+export type RedditModerationOperation =
+  | 'remove'
+  | 'approve'
+  | 'ignore_reports'
+  | 'none';
+
+export type ModerationExecutionCapabilityState =
+  | 'enabled'
+  | 'disabled'
+  | 'unverified_disabled'
+  | 'receipt_required'
+  | 'not_applicable';
+
 export type DigestSource = 'manual' | 'scheduled' | 'demo';
 
 export type DigestOverallStatus =
@@ -244,8 +265,8 @@ export interface ApplyPolicyPreviewEvidence {
 }
 
 export interface ApplyPolicyConfirmationPreview {
-  executionMode: 'log_only';
-  willExecuteRedditAction: false;
+  executionMode: ModerationExecutionMode;
+  willExecuteRedditAction: boolean;
   actionLabel: string;
   requiresOverrideReason: boolean;
   message: string;
@@ -296,6 +317,8 @@ export interface ApplyPolicyPreview {
 
 export interface ApplyPolicyConfirmInput extends ApplyPolicyPreviewInput {
   selectedAction: EnforcementAction;
+  confirmed: boolean;
+  executionMode?: ModerationExecutionMode;
   overrideReason?: OverrideReason;
   overrideNote?: string;
 }
@@ -303,6 +326,7 @@ export interface ApplyPolicyConfirmInput extends ApplyPolicyPreviewInput {
 export interface ApplyPolicyConfirmResult {
   recommendation: PolicyRecommendation;
   actionEvent: ActionEvent;
+  execution: ModerationExecutionResult;
   overrideEvent?: OverrideEvent;
 }
 
@@ -493,7 +517,24 @@ export interface ActionEvent {
   selectedAction: EnforcementAction;
   deliveryMode: MessageDeliveryMode;
   source: ApplyPolicySource;
+  execution?: ModerationExecutionResult;
   createdAt: string;
+}
+
+export interface ModerationExecutionResult {
+  executionMode: ModerationExecutionMode;
+  executionAttempted: boolean;
+  executionResult: ModerationExecutionStatus;
+  redditOperation: RedditModerationOperation;
+  selectedAction: EnforcementAction;
+  targetThingId?: string;
+  targetType: ModerationTargetType;
+  capabilityState: ModerationExecutionCapabilityState;
+  errorCode?: string;
+  errorMessage?: string;
+  redditResultMetadata?: Record<string, string | number | boolean>;
+  startedAt: string;
+  completedAt: string;
 }
 
 export interface OverrideSummary {

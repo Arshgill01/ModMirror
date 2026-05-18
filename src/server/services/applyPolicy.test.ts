@@ -181,19 +181,46 @@ describe('apply policy service', () => {
         subreddit: 'ExampleLearning',
         ruleKey: policy.ruleKey,
         selectedAction: 'warn',
+        confirmed: true,
       },
     });
 
     expect(result.actionEvent.id).toBe('action-1');
+    expect(result.execution).toEqual(
+      expect.objectContaining({
+        executionMode: 'log_only',
+        executionAttempted: false,
+        executionResult: 'skipped',
+        redditOperation: 'none',
+      })
+    );
     expect(saveActionEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         policyId: policy.id,
         policyVersionId: 'policy-version-1',
         policyVersionNumber: 1,
         policyVersionStatus: 'active',
+        execution: expect.objectContaining({
+          executionMode: 'log_only',
+          redditOperation: 'none',
+        }),
       })
     );
     expect(saveOverrideEvent).not.toHaveBeenCalled();
+  });
+
+  it('rejects confirm requests without explicit confirmation', async () => {
+    const { confirmApplyPolicy } = await import('./applyPolicy');
+    await expect(
+      confirmApplyPolicy({
+        input: {
+          subreddit: 'ExampleLearning',
+          ruleKey: policy.ruleKey,
+          selectedAction: 'warn',
+          confirmed: false,
+        },
+      })
+    ).rejects.toThrow(/Explicit confirmation is required/);
   });
 
   it('rejects deviation without override reason', async () => {
@@ -204,6 +231,7 @@ describe('apply policy service', () => {
           subreddit: 'ExampleLearning',
           ruleKey: policy.ruleKey,
           selectedAction: 'manual_review',
+          confirmed: true,
         },
       })
     ).rejects.toThrow(/Override reason is required/);
@@ -217,6 +245,7 @@ describe('apply policy service', () => {
         subreddit: 'ExampleLearning',
         ruleKey: policy.ruleKey,
         selectedAction: 'manual_review',
+        confirmed: true,
         overrideReason: 'edge_case_mod_discretion',
       },
     });

@@ -14,9 +14,13 @@ import type {
   DigestSource,
   EnforcementAction,
   MessageDeliveryMode,
+  ModerationExecutionCapabilityState,
+  ModerationExecutionMode,
+  ModerationExecutionStatus,
   OverrideReason,
   OverrideReviewStatus,
   PolicyHealthStatus,
+  RedditModerationOperation,
 } from './schema';
 
 export const APP_NAME = 'ModMirror';
@@ -122,6 +126,34 @@ export const APPLY_POLICY_SOURCE_VALUES = [
   'demo',
   'simulator',
 ] as const satisfies readonly ApplyPolicySource[];
+
+export const MODERATION_EXECUTION_MODE_VALUES = [
+  'live',
+  'log_only',
+  'dry_run',
+  'unverified_disabled',
+] as const satisfies readonly ModerationExecutionMode[];
+
+export const MODERATION_EXECUTION_STATUS_VALUES = [
+  'success',
+  'failure',
+  'skipped',
+] as const satisfies readonly ModerationExecutionStatus[];
+
+export const REDDIT_MODERATION_OPERATION_VALUES = [
+  'remove',
+  'approve',
+  'ignore_reports',
+  'none',
+] as const satisfies readonly RedditModerationOperation[];
+
+export const MODERATION_EXECUTION_CAPABILITY_STATE_VALUES = [
+  'enabled',
+  'disabled',
+  'unverified_disabled',
+  'receipt_required',
+  'not_applicable',
+] as const satisfies readonly ModerationExecutionCapabilityState[];
 
 export const DIGEST_SOURCE_VALUES = [
   'manual',

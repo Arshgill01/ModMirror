@@ -728,8 +728,12 @@ function normalizeApplyConfirmInput(
   const input: ApplyPolicyConfirmInput = {
     ...normalizeApplyPreviewInput(body),
     selectedAction: body.selectedAction,
+    confirmed: body.confirmed === true,
   };
 
+  if (body.executionMode !== undefined) {
+    input.executionMode = body.executionMode;
+  }
   if (body.overrideReason !== undefined) {
     input.overrideReason = body.overrideReason;
   }
