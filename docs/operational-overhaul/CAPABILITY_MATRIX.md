@@ -30,13 +30,13 @@ Status labels:
 | True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
 | Apply Policy target-aware preview | verified locally | `applyPolicy.ts`, `applyPolicy.test.ts`, `schema.ts`, client rendering | Preserve as W03 execution preview foundation. |
 | Apply Policy confirm log-only | verified locally | `applyPolicy.ts`, `audit.ts`, tests | Preserve fallback while adding execution gates. |
-| Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when all gates are enabled; default config blocks live execution | Add W04 receipts, then runtime-proof on safe test content before enabling. |
-| Ignore reports execution | disabled with local engine tests | W03 `moderationExecution.ts` uses target model `ignoreReports()` only when all gates are enabled; default config blocks live execution | Runtime-proof on safe test content before enabling. |
+| Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
+| Ignore reports execution | disabled with local engine tests | W03 `moderationExecution.ts` uses target model `ignoreReports()` only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
 | Public comment delivery | disabled/unverified | `RESEARCH.md` says unknown ordering | Keep disabled until runtime proof. |
 | Modmail/mod discussion delivery | disabled/unverified | Digest capabilities are `unverified` | Spike only, preview-first. |
 | Native Mod Notes | disabled/unverified | Typings only | Spike only after runtime proof. |
 | Scheduler | disabled/unverified | Digest capabilities are `unverified` | Spike only after runtime proof. |
-| Action receipts | gap | `ActionEvent` lacks execution result fields | Add W04 receipt ledger. |
+| Action receipts | verified locally | W04 `receipts.ts`, `receipts.test.ts`, Apply Policy confirm integration | Runtime-smoke Redis persistence in Devvit playtest. |
 | Override audit/review | verified locally | `audit.ts`, tests | Integrate with receipts. |
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets | verified locally/demo runtime | `casePacket.ts`, tests, runtime reports | Upgrade to receipt-backed v2 in W09. |

@@ -208,3 +208,40 @@ W03 validation:
 Runtime playtest was not run in W03. The Reddit execution code path is covered
 by installed typings and mocked tests only; live execution must remain disabled
 until W04 receipts and safe playtest proof are complete.
+
+### 2026-05-18 - W04 Action Receipts Ledger
+
+Created worktree:
+
+- `git worktree add ../modmirror-w04-receipts-ledger -b overhaul/w04-receipts-ledger overhaul/w03-moderation-execution`
+
+Implemented W04:
+
+- Added `ActionReceipt` shared schema with target snapshot, policy snapshot,
+  recommendation, selected action, override context, execution result, Reddit
+  operation, capability state, and timestamp fields.
+- Added Redis receipt keys for global receipt ledger, receipt detail, and
+  per-target receipt indexes.
+- Added `src/server/services/receipts.ts` for receipt input creation,
+  persistence, detail lookup, subreddit listing, and target listing.
+- Updated Apply Policy confirm to create a receipt for every confirmed action.
+- Added `/api/receipts`, `/api/receipts/:id`, and
+  `/api/receipts/target/:targetThingId`.
+- Updated the dashboard confirmation result copy to display receipt IDs and
+  execution outcome.
+- Updated W03 execution capability defaults so receipt availability is true by
+  default after W04 unless explicitly disabled.
+
+W04 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/receipts.test.ts src/server/services/applyPolicy.test.ts` - passed, 10 tests.
+- `npm test` - passed, 18 files and 84 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W04. Receipt persistence is locally verified
+with mocked Redis only; live Reddit execution remains disabled unless runtime
+proof flags are explicitly enabled.

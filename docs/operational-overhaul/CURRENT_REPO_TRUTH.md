@@ -21,6 +21,9 @@ It currently supports:
 - A W03 gated moderation execution engine with typed success, failure, and
   skipped results. Product-integrated live Reddit actions remain disabled by
   default until receipts and runtime proof exist.
+- W04 action receipts for every confirmed Apply Policy operation, with target
+  snapshot, policy snapshot, recommendation, selected action, override context,
+  and execution result.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -31,8 +34,8 @@ It does not yet support:
 
 - Default-enabled safe execution of Reddit moderation actions from Apply
   Policy. W03 added the gated engine, but live execution remains disabled.
-- Action receipts that distinguish live, failed, skipped, dry-run, and log-only
-  outcomes.
+- Runtime-verified action receipts in Devvit playtest. Receipt storage is
+  locally tested only.
 - Full attributed scan history persistence.
 - Drift-over-time or policy-impact analytics from persisted scan/receipt data.
 - True multi-mod policy proposal/review/adoption.
@@ -53,6 +56,9 @@ It does not yet support:
   remove/approve/ignore-reports SDK methods only when confirmation, runtime
   proof, feature flags, and receipt availability gates all pass. Current
   product defaults keep this path disabled.
+- W04 `src/server/services/receipts.ts` persists receipts in Redis sorted sets,
+  per-receipt keys, and per-target indexes. Apply Policy confirm writes a
+  receipt after action/override events.
 - `src/server/services/scans.ts` persists `LastScanMetadata`, not complete
   attributed scan records.
 - `src/server/services/redditSources.ts` defaults live moderation-log reads to

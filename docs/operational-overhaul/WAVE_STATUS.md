@@ -17,6 +17,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w02-recommendation-core`
 - `overhaul/w03-moderation-execution` at
   `/Users/arshdeepsingh/Developer/modmirror-w03-moderation-execution`
+- `overhaul/w04-receipts-ledger` at
+  `/Users/arshdeepsingh/Developer/modmirror-w04-receipts-ledger`
 
 Planned critical path:
 
@@ -51,7 +53,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W01 Entrypoints/context | complete | Committed as `4e28b6c docs: record W01 entrypoint verification`; replaced smoke menus; added target context and dashboard handoff; no execution. |
 | W02 Recommendation core | complete | Added target-aware preview snapshots, evidence, confirmation caveats, and validation; still log-only. |
 | W03 Moderation execution | complete | Added gated execution engine and confirm integration; live Reddit actions remain disabled until receipts/runtime proof. |
-| W04 Receipts ledger | pending | Immutable action receipt schema/storage/API. |
+| W04 Receipts ledger | complete | Added receipt schema, Redis storage, list/detail APIs, and Apply Policy receipt writes. |
 | W05 Scan persistence | pending | Full scan records with retention. |
 | W06 Deep scan | pending | Pagination/depth research and safe caps. |
 | W07 Drift analytics | pending | Trends and policy impact from scans/receipts. |

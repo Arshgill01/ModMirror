@@ -516,3 +516,27 @@ Runtime status:
 - Not playtest-verified in W03.
 - Do not claim remove/approve/ignore-reports behavior beyond installed typings
   and mocked local tests until safe playtest proof is recorded.
+
+## Operational Overhaul W04 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- W04 adds Redis-backed receipt storage under namespaced keys:
+  `modmirror:{subreddit}:receipts`,
+  `modmirror:{subreddit}:receipt:{receiptId}`, and
+  `modmirror:{subreddit}:receipts:target:{targetThingId}`.
+- Local tests cover receipt creation, detail lookup, subreddit listing, and
+  per-target listing.
+
+Decision:
+
+- `MODMIRROR_ACTION_RECEIPTS_AVAILABLE` now defaults to available unless set to
+  `false`, because the receipt service exists. Live Reddit execution still also
+  requires explicit live-action and runtime-verified flags.
+
+Runtime status:
+
+- Receipt persistence is locally tested with mocked Redis only.
+- No Devvit playtest was run for W04 receipt storage.
