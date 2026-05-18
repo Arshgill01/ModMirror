@@ -461,6 +461,13 @@ dd {
   color: var(--mm-good) !important;
 }
 
+.helper-text {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+
 .notice-list {
   display: grid;
   gap: 8px;

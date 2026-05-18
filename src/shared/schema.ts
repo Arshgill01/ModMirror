@@ -216,7 +216,8 @@ export type TeamDeliveryChannel =
 
 export type TeamDeliverySubjectType =
   | 'digest'
-  | 'policy_proposal';
+  | 'policy_proposal'
+  | 'case_packet';
 
 export type TeamDeliveryCapabilityState =
   | 'unavailable'

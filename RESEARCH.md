@@ -74,6 +74,7 @@ Updated by: Codex
 | Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
 | Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
+| Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -721,6 +722,40 @@ Runtime status:
 - Runtime proof still requires a safe playtest that confirms internal-only
   destination, permission failure shape, receipt persistence, and no accidental
   user-facing message.
+
+## Wave 25 Appeal / Case Packet Delivery
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit ModMailService docs expose
+  `reddit.modMail.createModDiscussionConversation({ subject, bodyMarkdown, subredditId })`
+  as an internal Mod Discussions conversation API for installed subreddits:
+  `https://developers.reddit.com/docs/api/redditapi/models/classes/ModMailService`.
+- Installed typings in `node_modules/@devvit/reddit/models/ModMail.d.ts` expose
+  `createConversation`, `createModDiscussionConversation`,
+  `createModInboxConversation`, `createModNotification`, and reply/archive
+  operations.
+- Installed `RedditClient.d.ts` exposes `get modMail(): ModMailService`.
+
+Decision:
+
+- W25 does not add a product-route live Modmail adapter.
+- Case packets can now be wrapped as delivery drafts with
+  `subjectType: case_packet`.
+- Manual Markdown delivery remains the supported path.
+- Saving a Mod Discussion draft receipt through the UI records a skipped
+  delivery receipt; it does not send a Reddit message in default/product routes.
+
+Runtime status:
+
+- No Modmail or Mod Discussion message was sent in W25.
+- Case packet delivery draft generation is locally tested.
+- Delivery receipt storage is locally tested with mocked Redis only.
+- Runtime proof still requires safe playtest verification of internal-only
+  destination, permission failure shape, and Redis receipt persistence before
+  any live send adapter is exposed.
 
 ## Operational Overhaul W13 Runtime Findings
 

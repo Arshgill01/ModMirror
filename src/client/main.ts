@@ -23,6 +23,7 @@ import {
 } from '../shared/productization';
 import { DEMO_POLICY } from '../shared/demoData';
 import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
+import { buildCasePacketDeliveryDraft } from '../shared/casePacketDelivery';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -58,7 +59,9 @@ import type {
   PolicyReplayResult,
   ResponseTemplateKind,
   RulePolicy,
+  TeamDeliveryChannel,
   TeamDeliveryCapabilities,
+  TeamDeliveryConfirmResponse,
 } from '../shared/schema';
 import './styles.css';
 
@@ -148,8 +151,11 @@ type ApplyFormState = {
 
 type CasePacketUiState = {
   loading: boolean;
+  deliverySaving: boolean;
   error: string | undefined;
   message: string | undefined;
+  deliveryReceiptId: string | undefined;
+  deliveryStatus: string | undefined;
   packet: CasePacket | undefined;
 };
 
@@ -344,8 +350,11 @@ let applyState: ApplyUiState = {
 };
 let casePacketState: CasePacketUiState = {
   loading: false,
+  deliverySaving: false,
   error: undefined,
   message: undefined,
+  deliveryReceiptId: undefined,
+  deliveryStatus: undefined,
   packet: undefined,
 };
 let governanceState: GovernanceUiState = {
@@ -2007,6 +2016,14 @@ function renderCasePacketDetail() {
       [{ label: 'Review Policy Context', page: 'review', intent: 'review_policy' }]
     );
   }
+  const manualDeliveryLabel = casePacketState.deliverySaving
+    ? 'Saving receipt'
+    : 'Save manual receipt';
+  const modDiscussionLabel = casePacketState.deliverySaving
+    ? 'Saving draft'
+    : 'Save mod discussion draft';
+  const modDiscussionCapability =
+    teamDeliveryState.capabilities?.modDiscussion;
 
   return `
     <section class="case-header">
@@ -2034,9 +2051,19 @@ function renderCasePacketDetail() {
         <div>
           <h3>Markdown Export</h3>
           <p>Use this in review notes or an internal mod-team thread.</p>
+          ${
+            casePacketState.deliveryReceiptId
+              ? `<p class="inline-success">Delivery receipt ${escapeHtml(casePacketState.deliveryReceiptId)} recorded as ${formatAction(casePacketState.deliveryStatus ?? 'unknown')}.</p>`
+              : ''
+          }
         </div>
-        <button class="secondary-button" data-copy-case-markdown type="button">Copy Markdown</button>
+        <div class="button-row">
+          <button class="secondary-button" data-copy-case-markdown type="button">Copy Markdown</button>
+          <button class="secondary-button" data-save-case-delivery="manual_markdown" type="button" ${casePacketState.deliverySaving ? 'disabled' : ''}>${manualDeliveryLabel}</button>
+          <button class="secondary-button" data-save-case-delivery="mod_discussion" type="button" ${casePacketState.deliverySaving ? 'disabled' : ''}>${modDiscussionLabel}</button>
+        </div>
       </div>
+      <p class="helper-text">Manual copy is the supported path. Mod Discussion delivery is ${escapeHtml(modDiscussionCapability?.state ?? 'unverified')} and stores a draft receipt unless runtime delivery is explicitly proven and enabled.</p>
       <textarea class="markdown-export" readonly>${escapeHtml(packet.markdown)}</textarea>
     </section>
   `;
@@ -2732,6 +2759,15 @@ function bindCasePacketActions() {
   document.querySelectorAll<HTMLButtonElement>('[data-copy-case-markdown]').forEach((button) => {
     button.addEventListener('click', () => {
       void copyCasePacketMarkdown();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-save-case-delivery]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const channel = button.dataset.saveCaseDelivery;
+      if (channel === 'manual_markdown' || channel === 'mod_discussion') {
+        void saveCasePacketDeliveryReceipt(channel);
+      }
     });
   });
 }
@@ -4394,8 +4430,11 @@ async function generateCasePacket(
   casePacketState = {
     ...casePacketState,
     loading: true,
+    deliverySaving: false,
     error: undefined,
     message: undefined,
+    deliveryReceiptId: undefined,
+    deliveryStatus: undefined,
   };
   dashboardOpen = true;
   activePage = 'prove';
@@ -4422,16 +4461,22 @@ async function generateCasePacket(
     );
     casePacketState = {
       loading: false,
+      deliverySaving: false,
       error: undefined,
       message: 'Case packet generated.',
+      deliveryReceiptId: undefined,
+      deliveryStatus: undefined,
       packet: data.packet,
     };
   } catch (error) {
     if (subject.type === 'demo' && canUseClientDemoFallback()) {
       casePacketState = {
         loading: false,
+        deliverySaving: false,
         error: undefined,
         message: 'Demo case packet generated.',
+        deliveryReceiptId: undefined,
+        deliveryStatus: undefined,
         packet: createClientDemoCasePacket(),
       };
       render();
@@ -4441,6 +4486,7 @@ async function generateCasePacket(
     casePacketState = {
       ...casePacketState,
       loading: false,
+      deliverySaving: false,
       error: normalizeClientError(
         error,
         'Case Packet generation is unavailable in this preview.'
@@ -4469,6 +4515,62 @@ async function copyCasePacketMarkdown() {
       ...casePacketState,
       message: 'Markdown is ready in the export textarea.',
       error: undefined,
+    };
+  }
+
+  render();
+}
+
+async function saveCasePacketDeliveryReceipt(channel: TeamDeliveryChannel) {
+  const packet = casePacketState.packet;
+  if (!packet) {
+    return;
+  }
+
+  casePacketState = {
+    ...casePacketState,
+    deliverySaving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const draft = buildCasePacketDeliveryDraft(packet, channel);
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      ...draft,
+      confirmed: true,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const response = await fetchApi<TeamDeliveryConfirmResponse>(
+      API_ROUTES.teamDeliveryConfirm,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+
+    casePacketState = {
+      ...casePacketState,
+      deliverySaving: false,
+      deliveryReceiptId: response.receipt.id,
+      deliveryStatus: response.receipt.status,
+      message:
+        response.receipt.status === 'manual_ready'
+          ? 'Manual delivery receipt saved. Copy the Markdown into your review thread.'
+          : 'Mod Discussion draft receipt saved. No Reddit message was sent.',
+      error: undefined,
+    };
+  } catch (error) {
+    casePacketState = {
+      ...casePacketState,
+      deliverySaving: false,
+      error: normalizeClientError(
+        error,
+        'Case packet delivery receipt could not be saved.'
+      ),
     };
   }
 

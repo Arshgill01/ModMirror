@@ -2,15 +2,32 @@
 
 ## Current Phase
 
-Expansion Wave 24 — Native Mod Notes is locally implemented on
-`expansion/w24-mod-notes` after W23 response templates. Continue with Wave 25
-appeal/modmail next.
+Expansion Wave 25 — Appeal Modmail / Case Packet Delivery is locally
+implemented on `expansion/w25-appeal-modmail` after W24 native Mod Notes.
+Continue with Wave 26 evidence board next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 25 Checklist
+
+- [x] Re-check Devvit ModMail / Mod Discussion support in installed typings and
+      official docs.
+- [x] Add `case_packet` as a team delivery subject type.
+- [x] Add a shared Case Packet delivery draft model.
+- [x] Add Prove-page controls to copy Markdown and store manual delivery
+      receipts.
+- [x] Add Prove-page control to store a Mod Discussion draft receipt without
+      sending a Reddit message.
+- [x] Add tests for case packet delivery draft generation and delivery receipt
+      subject storage.
+- [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
+      before enabling any real send path.
+- [ ] Runtime-verify delivery receipt persistence through Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 24 Checklist
 

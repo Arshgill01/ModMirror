@@ -283,6 +283,7 @@ export const TEAM_DELIVERY_CHANNEL_VALUES = [
 export const TEAM_DELIVERY_SUBJECT_TYPE_VALUES = [
   'digest',
   'policy_proposal',
+  'case_packet',
 ] as const satisfies readonly TeamDeliverySubjectType[];
 
 export const MODQUEUE_CONTENT_TYPE_VALUES = [

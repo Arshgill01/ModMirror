@@ -76,7 +76,8 @@ describe('team delivery service', () => {
       request: {
         confirmed: true,
         channel: 'manual_markdown',
-        subjectType: 'digest',
+        subjectType: 'case_packet',
+        subjectId: 'case-packet-1',
         title: 'Weekly ModMirror digest',
         markdown: '# Digest\n\nRule 2 needs review.',
       },
@@ -84,6 +85,8 @@ describe('team delivery service', () => {
     const receipts = await listTeamDeliveryReceipts('ExampleLearning');
 
     expect(response.receipt.status).toBe('manual_ready');
+    expect(response.receipt.subjectType).toBe('case_packet');
+    expect(response.receipt.subjectId).toBe('case-packet-1');
     expect(response.receipt.deliveryAttempted).toBe(false);
     expect(receipts[0]?.id).toBe(response.receipt.id);
   });
