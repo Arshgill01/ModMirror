@@ -24,6 +24,8 @@ It currently supports:
 - W04 action receipts for every confirmed Apply Policy operation, with target
   snapshot, policy snapshot, recommendation, selected action, override context,
   and execution result.
+- W05 full scan record persistence with attributed actions, unmatched actions,
+  drift candidates, warnings, retention metadata, and scan compare APIs.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -36,7 +38,8 @@ It does not yet support:
   Policy. W03 added the gated engine, but live execution remains disabled.
 - Runtime-verified action receipts in Devvit playtest. Receipt storage is
   locally tested only.
-- Full attributed scan history persistence.
+- Runtime-verified full attributed scan history persistence. W05 local tests
+  cover the Redis storage shape.
 - Drift-over-time or policy-impact analytics from persisted scan/receipt data.
 - True multi-mod policy proposal/review/adoption.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
@@ -59,6 +62,9 @@ It does not yet support:
 - W04 `src/server/services/receipts.ts` persists receipts in Redis sorted sets,
   per-receipt keys, and per-target indexes. Apply Policy confirm writes a
   receipt after action/override events.
+- W05 `src/server/services/scans.ts` stores full `MirrorScanRecord` values and
+  capped scan metadata indexes by subreddit/source, plus rule and anonymized
+  author indexes for later analytics.
 - `src/server/services/scans.ts` persists `LastScanMetadata`, not complete
   attributed scan records.
 - `src/server/services/redditSources.ts` defaults live moderation-log reads to

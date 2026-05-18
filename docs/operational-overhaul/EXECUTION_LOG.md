@@ -245,3 +245,35 @@ W04 validation:
 Runtime playtest was not run in W04. Receipt persistence is locally verified
 with mocked Redis only; live Reddit execution remains disabled unless runtime
 proof flags are explicitly enabled.
+
+### 2026-05-18 - W05 Full Scan Persistence
+
+Created worktree:
+
+- `git worktree add ../modmirror-w05-scan-persistence -b overhaul/w05-scan-persistence overhaul/w04-receipts-ledger`
+
+Implemented W05:
+
+- Added `MirrorScanRecord` and `MirrorScanComparison` shared schema.
+- Added `SCAN_HISTORY_LIMIT`.
+- Added full scan record storage in `src/server/services/scans.ts`.
+- Persisted attributed actions, unmatched actions, drift candidates, warnings,
+  confidence evidence, and retention metadata.
+- Added capped metadata indexes by subreddit and scan source.
+- Added rule and anonymized target-author indexes for future analytics.
+- Updated `runMirrorScan` to save full records instead of metadata only.
+- Added `/api/scans`, `/api/scans/:id`, and `/api/scans/compare`.
+- Added local scan persistence tests for demo/live separation and comparison.
+
+W05 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/scans.test.ts src/server/services/mirrorScan.test.ts` - passed, 5 tests.
+- `npm test` - passed, 19 files and 86 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W05. Full scan persistence is locally verified
+with mocked Redis only.

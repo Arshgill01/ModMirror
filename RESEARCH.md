@@ -540,3 +540,22 @@ Runtime status:
 
 - Receipt persistence is locally tested with mocked Redis only.
 - No Devvit playtest was run for W04 receipt storage.
+
+## Operational Overhaul W05 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- W05 adds full scan record persistence with `MirrorScanRecord` under
+  `modmirror:{subreddit}:scan:{scanId}`.
+- W05 adds capped metadata indexes under
+  `modmirror:{subreddit}:scans` and
+  `modmirror:{subreddit}:scans:source:{source}`.
+- W05 adds rule and target-author hash indexes for future analytics.
+
+Runtime status:
+
+- Scan persistence is locally tested with mocked Redis only.
+- No Devvit playtest was run for W05 scan storage, list, detail, or compare
+  routes.

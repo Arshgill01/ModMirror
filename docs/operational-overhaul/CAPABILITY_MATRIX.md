@@ -24,7 +24,7 @@ Status labels:
 | Moderator-only menu visibility | type/build-only | `forUserType: "moderator"` | Runtime-verify and add server-side checks. |
 | Mirror Scan demo mode | verified | `mirrorScan.test.ts`, runtime demo reports | Preserve clear demo labeling. |
 | Mirror Scan live source adapters | type/build-only | `redditSources.ts`, installed typings | Runtime-smoke and capture warnings. |
-| Full scan history persistence | gap | `scans.ts` stores metadata only | Add W05 persistence with retention. |
+| Full scan history persistence | verified locally | W05 `MirrorScanRecord`, `scans.ts`, `scans.test.ts` | Runtime-smoke Redis persistence in Devvit playtest. |
 | Deep scan pagination | gap | Live source defaults to shallow fetch | Research/implement W06. |
 | Policy CRUD/versioning | verified locally | `policies.ts`, tests | Extend to agreement lifecycle later. |
 | True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
