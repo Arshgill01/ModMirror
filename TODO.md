@@ -2,10 +2,31 @@
 
 ## Current Phase
 
-Operational Overhaul W09 — Case Packets v2 is complete locally on
-`overhaul/w09-case-packets-v2`. W10 AI Advisory Spike is the next recommended
-wave. The operational overhaul remains build-only/type-verified for W01-W09
-runtime paths unless a wave report explicitly says playtest was run.
+Expansion Wave 16 — Live Context Intake and Content Snapshotting is in
+progress on `expansion/w16-context-intake` after operational W00-W14
+integration.
+
+The operational overhaul remains build-only/type-verified for several runtime
+paths unless a wave report explicitly says playtest was run. Post/comment
+Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
+execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
+non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 16 Checklist
+
+- [x] Create `docs/expansion-waves/REPO_CONTEXT_RELOAD.md` before production
+      coding.
+- [x] Add content snapshot schema/types.
+- [x] Add content snapshot server service.
+- [x] Capture target snapshots in Apply Policy previews.
+- [x] Persist snapshots on action receipts.
+- [x] Surface receipt-backed snapshots in Case Packets.
+- [x] Add content snapshot tests for post, comment, failed fetch, and missing
+      target.
+- [x] Add Wave 16 implementation report.
+- [x] Run full W16 validation gate.
+- [ ] Runtime-verify snapshots through real post/comment menu entrypoints in
+      Devvit playtest.
 
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
