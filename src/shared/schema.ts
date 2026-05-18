@@ -146,11 +146,49 @@ export interface SubredditRuleRef {
   ruleKind?: 'all' | 'link' | 'comment';
 }
 
+export type PolicyLifecycleState =
+  | 'draft'
+  | 'proposed'
+  | 'under_review'
+  | 'adopted'
+  | 'superseded'
+  | 'archived';
+
+export type PolicyReviewDecision =
+  | 'approve'
+  | 'request_changes'
+  | 'abstain';
+
+export interface PolicyProposalSource {
+  scanId?: string;
+  driftRuleKey?: string;
+  driftRuleName?: string;
+  driftCandidateSummary?: string;
+}
+
+export interface PolicyReviewRecord {
+  id: string;
+  reviewer: string;
+  decision: PolicyReviewDecision;
+  createdAt: string;
+  note?: string;
+}
+
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
   activeVersionId?: string;
   activeVersionNumber?: number;
+  proposedVersionId?: string;
+  proposedVersionNumber?: number;
+  lifecycleState?: PolicyLifecycleState;
+  proposedBy?: string;
+  proposedAt?: string;
+  proposalRationale?: string;
+  proposalSource?: PolicyProposalSource;
+  reviewRecords?: PolicyReviewRecord[];
+  adoptedBy?: string;
+  adoptedAt?: string;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -166,6 +204,8 @@ export interface PolicyCreateInput extends SubredditRuleRef {
   steps: PolicyStep[];
   defaultMessageMode?: MessageDeliveryMode;
   active?: boolean;
+  proposalRationale?: string;
+  proposalSource?: PolicyProposalSource;
 }
 
 export interface PolicyUpdateInput {
@@ -178,6 +218,28 @@ export interface PolicyUpdateInput {
   updatedBy?: string;
   changeReason?: string;
   changeSummary?: string;
+  proposalRationale?: string;
+  proposalSource?: PolicyProposalSource;
+}
+
+export interface PolicyReviewInput {
+  reviewer: string;
+  decision: PolicyReviewDecision;
+  note?: string;
+  policyVersionId?: string;
+}
+
+export interface PolicyProposeInput {
+  proposedBy: string;
+  note?: string;
+  policyVersionId?: string;
+}
+
+export interface PolicyAdoptInput {
+  adoptedBy: string;
+  policyVersionId?: string;
+  note?: string;
+  quickAdoption?: boolean;
 }
 
 export interface PolicyVersion extends SubredditRuleRef {
@@ -192,6 +254,17 @@ export interface PolicyVersion extends SubredditRuleRef {
   createdBy: string;
   changeReason?: string;
   changeSummary?: string;
+  lifecycleState?: PolicyLifecycleState;
+  proposedBy?: string;
+  proposedAt?: string;
+  proposalRationale?: string;
+  proposalSource?: PolicyProposalSource;
+  reviewRecords?: PolicyReviewRecord[];
+  adoptedBy?: string;
+  adoptedAt?: string;
+  supersededByVersionId?: string;
+  supersededAt?: string;
+  supersededBy?: string;
 }
 
 export interface PolicyChangeEvent {
@@ -202,7 +275,14 @@ export interface PolicyChangeEvent {
   subreddit: string;
   ruleKey: string;
   ruleName: string;
-  changeType: 'created' | 'updated' | 'legacy_migrated';
+  changeType:
+    | 'created'
+    | 'updated'
+    | 'reviewed'
+    | 'adopted'
+    | 'superseded'
+    | 'archived'
+    | 'legacy_migrated';
   changedAt: string;
   changedBy: string;
   changeReason?: string;

@@ -832,6 +832,8 @@ function renderPolicyList() {
 }
 
 function renderPolicyCard(policy: RulePolicy) {
+  const lifecycle = policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+  const reviews = policy.reviewRecords ?? [];
   return `
     <article class="action-card">
       <div class="card-header">
@@ -839,20 +841,38 @@ function renderPolicyCard(policy: RulePolicy) {
           <h3>${escapeHtml(policy.ruleName)}</h3>
           <p>${escapeHtml(policy.ruleKey)}</p>
         </div>
-        <span class="status-badge ${policy.active ? 'status-good' : 'status-neutral'}">${policy.active ? 'Active' : 'Inactive'}</span>
+        <span class="status-badge ${policy.active ? 'status-good' : 'status-neutral'}">${escapeHtml(formatAction(lifecycle))}</span>
       </div>
       <dl class="compact-metrics">
         <div><dt>Steps</dt><dd>${policy.steps.length}</dd></div>
         <div><dt>Delivery</dt><dd>${formatAction(policy.defaultMessageMode)}</dd></div>
-        <div><dt>Version</dt><dd>${policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Version</dt><dd>${policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Reviews</dt><dd>${reviews.length}</dd></div>
         <div><dt>Updated</dt><dd>${formatDate(policy.updatedAt)}</dd></div>
       </dl>
       <div class="button-row">
-        <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">Edit policy</button>
+        <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">${policy.active ? 'Draft revision' : 'Edit draft'}</button>
+        ${renderPolicyLifecycleButtons(policy)}
         <button class="secondary-button" data-action-intent="review_policy" type="button">Review health</button>
       </div>
     </article>
   `;
+}
+
+function renderPolicyLifecycleButtons(policy: RulePolicy) {
+  const lifecycle = policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+  const policyId = escapeAttribute(policy.id);
+  if (lifecycle === 'draft') {
+    return `<button class="secondary-button" data-propose-policy="${policyId}" type="button">Propose</button>`;
+  }
+  if (lifecycle === 'proposed' || lifecycle === 'under_review') {
+    return `
+      <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="approve" type="button">Approve</button>
+      <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="request_changes" type="button">Request changes</button>
+      <button class="primary-button" data-adopt-policy="${policyId}" type="button">Quick adopt</button>
+    `;
+  }
+  return '';
 }
 
 function renderDriftPolicyPanel() {
@@ -882,7 +902,7 @@ function renderPolicyForm() {
       <div class="section-header">
         <div>
           <h3>${form.mode === 'edit' ? 'Edit Policy' : 'Policy Editor'}</h3>
-          <p>Use log-only delivery until public comment behavior is playtest-verified.</p>
+          <p>Saving creates a draft. Adopted versions are the only policies used by Apply Policy.</p>
         </div>
         <button class="secondary-button" data-reset-policy-form type="button">Reset</button>
       </div>
@@ -909,7 +929,7 @@ function renderPolicyForm() {
           ${form.steps.map(renderStepEditor).join('')}
         </div>
         <button class="primary-button" type="submit" ${policyState.saving ? 'disabled' : ''}>
-          ${form.mode === 'edit' ? 'Save policy' : 'Create policy'}
+          ${form.mode === 'edit' ? 'Save draft' : 'Create draft'}
         </button>
       </form>
     </section>
@@ -1973,6 +1993,34 @@ function bindPolicyActions() {
     });
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-propose-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.proposePolicy;
+      if (policyId) {
+        void transitionPolicyLifecycle(policyId, 'propose');
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-review-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.reviewPolicy;
+      const decision = button.dataset.reviewDecision;
+      if (policyId && (decision === 'approve' || decision === 'request_changes')) {
+        void transitionPolicyLifecycle(policyId, 'review', decision);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-adopt-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.adoptPolicy;
+      if (policyId) {
+        void transitionPolicyLifecycle(policyId, 'adopt');
+      }
+    });
+  });
+
   document
     .querySelectorAll<HTMLButtonElement>('[data-create-from-drift]')
     .forEach((button) => {
@@ -2456,6 +2504,9 @@ function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
     ruleName: candidate?.ruleName ?? DEMO_POLICY.ruleName,
     activeVersionId: 'demo-policy-low-effort-v2',
     activeVersionNumber: 2,
+    lifecycleState: 'adopted',
+    adoptedBy: 'demo-lead-mod',
+    adoptedAt: '2026-05-16T10:30:00.000Z',
     createdAt: DEMO_POLICY.createdAt,
     updatedAt: now,
   };
@@ -3272,7 +3323,7 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       ...policyState,
       saving: false,
       policies: upsertPolicy(policyState.policies, payload.data),
-      message: `Policy created for ${payload.data.ruleName}.`,
+      message: `Draft created for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
     activePage = 'policies';
@@ -3284,7 +3335,7 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
         ...policyState,
         saving: false,
         policies: upsertPolicy(policyState.policies, policy),
-        message: `Demo policy created for ${policy.ruleName}.`,
+        message: `Demo draft created for ${policy.ruleName}.`,
         form: policyToForm(policy),
       };
       activePage = 'policies';
@@ -3329,7 +3380,7 @@ async function savePolicyForm(formData: FormData) {
       ...policyState,
       saving: false,
       policies: upsertPolicy(policyState.policies, payload.data),
-      message: `Policy saved for ${payload.data.ruleName}.`,
+      message: `Draft saved for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
   } catch (error) {
@@ -3341,6 +3392,140 @@ async function savePolicyForm(formData: FormData) {
   }
 
   render();
+}
+
+async function transitionPolicyLifecycle(
+  policyId: string,
+  action: 'propose' | 'review' | 'adopt',
+  decision?: 'approve' | 'request_changes'
+) {
+  policyState = { ...policyState, saving: true, error: undefined };
+  render();
+
+  try {
+    const suffix =
+      action === 'propose'
+        ? 'propose'
+        : action === 'review'
+          ? 'reviews'
+          : 'adopt';
+    const body =
+      action === 'review'
+        ? {
+            decision,
+            note:
+              decision === 'approve'
+                ? 'Approved for adoption.'
+                : 'Changes requested before adoption.',
+          }
+        : action === 'adopt'
+          ? {
+              quickAdoption: true,
+              note: 'Single-mod quick adoption recorded.',
+            }
+          : { note: 'Draft proposed for team review.' };
+    const policy = await fetchPolicyLifecycle(policyId, suffix, body);
+    policyState = {
+      ...policyState,
+      saving: false,
+      policies: upsertPolicy(policyState.policies, policy),
+      message:
+        action === 'adopt'
+          ? `Adopted ${policy.ruleName}.`
+          : `Updated ${policy.ruleName}.`,
+      form: policyToForm(policy),
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = policyState.policies.find((item) => item.id === policyId);
+      if (policy) {
+        const updated = applyClientDemoLifecycle(policy, action, decision);
+        policyState = {
+          ...policyState,
+          saving: false,
+          policies: upsertPolicy(policyState.policies, updated),
+          message:
+            action === 'adopt'
+              ? `Demo policy adopted for ${updated.ruleName}.`
+              : `Demo policy updated for ${updated.ruleName}.`,
+          form: policyToForm(updated),
+        };
+        render();
+        return;
+      }
+    }
+    policyState = {
+      ...policyState,
+      saving: false,
+      error: normalizeClientError(error, 'Policy lifecycle update failed.'),
+    };
+  }
+
+  render();
+}
+
+async function fetchPolicyLifecycle(
+  policyId: string,
+  suffix: string,
+  body: Record<string, unknown>
+): Promise<RulePolicy> {
+  const response = await fetch(
+    withWorkspaceSubreddit(`${API_ROUTES.policies}/${policyId}/${suffix}`),
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+  const payload = (await response.json()) as ApiResponse<RulePolicy>;
+  if (!payload.ok) {
+    throw new Error(payload.error.message);
+  }
+  return payload.data;
+}
+
+function applyClientDemoLifecycle(
+  policy: RulePolicy,
+  action: 'propose' | 'review' | 'adopt',
+  decision?: 'approve' | 'request_changes'
+): RulePolicy {
+  const now = new Date().toISOString();
+  if (action === 'adopt') {
+    return {
+      ...policy,
+      active: true,
+      lifecycleState: 'adopted',
+      activeVersionId: policy.proposedVersionId ?? policy.activeVersionId ?? 'demo-policy-low-effort-v2',
+      activeVersionNumber:
+        policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 2,
+      adoptedBy: 'demo-lead-mod',
+      adoptedAt: now,
+      updatedAt: now,
+    };
+  }
+  if (action === 'review') {
+    return {
+      ...policy,
+      lifecycleState: decision === 'request_changes' ? 'draft' : 'under_review',
+      reviewRecords: [
+        ...(policy.reviewRecords ?? []),
+        {
+          id: `demo-policy-review-${now}`,
+          reviewer: 'demo-reviewer',
+          decision: decision ?? 'abstain',
+          createdAt: now,
+        },
+      ],
+      updatedAt: now,
+    };
+  }
+  return {
+    ...policy,
+    lifecycleState: 'proposed',
+    proposedBy: 'demo-lead-mod',
+    proposedAt: now,
+    updatedAt: now,
+  };
 }
 
 async function previewApplyPolicy(formData: FormData) {

@@ -32,6 +32,11 @@ export const DEMO_POLICY: RulePolicy = {
   createdAt: '2026-05-16T00:00:00.000Z',
   updatedAt: '2026-05-16T00:00:00.000Z',
   createdBy: 'demo-lead-mod',
+  activeVersionId: 'demo-policy-low-effort-v2',
+  activeVersionNumber: 2,
+  lifecycleState: 'adopted',
+  adoptedBy: 'demo-lead-mod',
+  adoptedAt: '2026-05-16T10:30:00.000Z',
   defaultMessageMode: 'log_only',
   active: true,
   steps: [

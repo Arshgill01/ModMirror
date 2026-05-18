@@ -32,9 +32,12 @@ import type {
   OverrideReviewStatus,
   OverrideReviewUpdateInput,
   OverrideSummary,
+  PolicyAdoptInput,
   PolicyHealthOverview,
   PolicyHealthSummary,
   PolicyCreateInput,
+  PolicyProposeInput,
+  PolicyReviewInput,
   PolicyUpdateInput,
   RulePolicy,
 } from '../shared/schema';
@@ -48,10 +51,13 @@ import {
 import {
   createPolicy,
   createPolicyFromDriftCandidate,
+  addPolicyReview,
+  adoptPolicyVersion,
   getPolicyById,
   listPolicyChangeEvents,
   listPolicyVersions,
   listPolicies,
+  proposePolicyVersion,
   updatePolicy,
 } from '../server/services/policies';
 import {
@@ -381,6 +387,99 @@ api.put('/policies/:id', async (c) => {
         } satisfies ApiResponse<RulePolicy>,
         404
       );
+    }
+
+    return c.json({
+      ok: true,
+      data: policy,
+    } satisfies ApiResponse<RulePolicy>);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.post('/policies/:id/propose', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PolicyProposeInput>;
+
+  try {
+    const subreddit = getRequestedSubreddit(c);
+    const input: PolicyProposeInput = {
+      proposedBy: body.proposedBy ?? context.username ?? 'unknown',
+    };
+    if (body.policyVersionId !== undefined) {
+      input.policyVersionId = body.policyVersionId;
+    }
+    if (body.note !== undefined) {
+      input.note = body.note;
+    }
+
+    const policy = await proposePolicyVersion(
+      subreddit,
+      c.req.param('id'),
+      input
+    );
+    if (!policy) {
+      return c.json(policyNotFoundResponse(), 404);
+    }
+
+    return c.json({
+      ok: true,
+      data: policy,
+    } satisfies ApiResponse<RulePolicy>);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.post('/policies/:id/reviews', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PolicyReviewInput>;
+
+  try {
+    const subreddit = getRequestedSubreddit(c);
+    const input: PolicyReviewInput = {
+      reviewer: body.reviewer ?? context.username ?? 'unknown',
+      decision: body.decision ?? 'abstain',
+    };
+    if (body.policyVersionId !== undefined) {
+      input.policyVersionId = body.policyVersionId;
+    }
+    if (body.note !== undefined) {
+      input.note = body.note;
+    }
+
+    const policy = await addPolicyReview(subreddit, c.req.param('id'), input);
+    if (!policy) {
+      return c.json(policyNotFoundResponse(), 404);
+    }
+
+    return c.json({
+      ok: true,
+      data: policy,
+    } satisfies ApiResponse<RulePolicy>);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
+api.post('/policies/:id/adopt', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PolicyAdoptInput>;
+
+  try {
+    const subreddit = getRequestedSubreddit(c);
+    const input: PolicyAdoptInput = {
+      adoptedBy: body.adoptedBy ?? context.username ?? 'unknown',
+      quickAdoption: body.quickAdoption ?? false,
+    };
+    if (body.policyVersionId !== undefined) {
+      input.policyVersionId = body.policyVersionId;
+    }
+    if (body.note !== undefined) {
+      input.note = body.note;
+    }
+
+    const policy = await adoptPolicyVersion(subreddit, c.req.param('id'), input);
+    if (!policy) {
+      return c.json(policyNotFoundResponse(), 404);
     }
 
     return c.json({
@@ -782,6 +881,16 @@ function policyError(error: unknown): ApiResponse<RulePolicy> {
     error: {
       code: 'policy_validation_failed',
       message: error instanceof Error ? error.message : 'Policy request failed',
+    },
+  };
+}
+
+function policyNotFoundResponse(): ApiResponse<RulePolicy> {
+  return {
+    ok: false,
+    error: {
+      code: 'policy_not_found',
+      message: 'Policy was not found for this subreddit.',
     },
   };
 }
