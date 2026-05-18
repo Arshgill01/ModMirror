@@ -2,15 +2,27 @@
 
 ## Current Phase
 
-Expansion Wave 23 — Moderation Response Library is locally implemented on
-`expansion/w23-response-library` after W22 policy impact. Continue with Wave
-24 native Mod Notes next.
+Expansion Wave 24 — Native Mod Notes is locally implemented on
+`expansion/w24-mod-notes` after W23 response templates. Continue with Wave 25
+appeal/modmail next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 24 Checklist
+
+- [x] Re-check native Mod Notes support in installed Devvit typings and
+      official docs.
+- [x] Add native Mod Note attempt schema and receipt status.
+- [x] Add gated native Mod Notes service.
+- [x] Add Apply Policy opt-in mode for native/log-only/no Mod Note.
+- [x] Record skipped, sent, and failed Mod Note attempts on receipts.
+- [x] Add fallback, success, and failure tests.
+- [ ] Runtime-verify `reddit.addModNote` in Devvit playtest on safe test
+      content before enabling native mode.
 
 ## Expansion Wave 23 Checklist
 

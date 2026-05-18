@@ -25,6 +25,7 @@ import type {
   ModqueueTriageCapabilityState,
   ModqueueTriagePolicyMatchStatus,
   ModqueueTriageRiskState,
+  NativeModNoteMode,
   ModerationExecutionCapabilityState,
   ModerationExecutionMode,
   ModerationExecutionStatus,
@@ -73,6 +74,12 @@ export const RESPONSE_TEMPLATE_KIND_VALUES = [
   'modmail_draft',
   'private_message',
 ] as const satisfies readonly ResponseTemplateKind[];
+
+export const NATIVE_MOD_NOTE_MODE_VALUES = [
+  'none',
+  'log_only',
+  'native',
+] as const satisfies readonly NativeModNoteMode[];
 
 export const OVERRIDE_REASON_VALUES = [
   'severe_context',

@@ -10,6 +10,7 @@ import {
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
   MODQUEUE_CONTENT_TYPE_VALUES,
+  NATIVE_MOD_NOTE_MODE_VALUES,
   TEAM_DELIVERY_CHANNEL_VALUES,
   TEAM_DELIVERY_SUBJECT_TYPE_VALUES,
 } from '../shared/constants';
@@ -1535,6 +1536,12 @@ function normalizeApplyConfirmInput(
 
   if (body.executionMode !== undefined) {
     input.executionMode = body.executionMode;
+  }
+  if (
+    body.modNoteMode !== undefined &&
+    NATIVE_MOD_NOTE_MODE_VALUES.includes(body.modNoteMode)
+  ) {
+    input.modNoteMode = body.modNoteMode;
   }
   if (body.overrideReason !== undefined) {
     input.overrideReason = body.overrideReason;

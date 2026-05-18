@@ -3,6 +3,7 @@ import {
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
   MODERATION_EXECUTION_MODE_VALUES,
+  NATIVE_MOD_NOTE_MODE_VALUES,
 } from '../../shared/constants';
 import { recommendPolicyAction } from '../../shared/scoring';
 import type {
@@ -33,6 +34,11 @@ import { capturePolicySnapshot, getPolicyByRule } from './policies';
 import { createActionReceiptInput, saveActionReceipt } from './receipts';
 import { getTargetType } from './targetContext';
 import { buildApplyPolicyResponsePreview } from '../../shared/responseTemplates';
+import {
+  attemptNativeModNote,
+  type NativeModNoteDependencies,
+  type NativeModNoteInput,
+} from './modNotes';
 
 export async function previewApplyPolicy(
   input: ApplyPolicyPreviewInput
@@ -98,6 +104,7 @@ export async function confirmApplyPolicy(options: {
   input: ApplyPolicyConfirmInput;
   modUsername?: string;
   executionDependencies?: ModerationExecutionDependencies;
+  modNoteDependencies?: NativeModNoteDependencies;
 }): Promise<ApplyPolicyConfirmResult> {
   validateConfirmInput(options.input);
 
@@ -174,11 +181,34 @@ export async function confirmApplyPolicy(options: {
     overrideEvent = await saveOverrideEvent(overrideInput);
   }
 
+  const modNoteInput: NativeModNoteInput = {
+    confirmed: options.input.confirmed,
+    subreddit,
+    recommendation,
+  };
+  if (options.input.modNoteMode !== undefined) {
+    modNoteInput.mode = options.input.modNoteMode;
+  }
+  if (options.input.targetAuthor !== undefined) {
+    modNoteInput.targetAuthor = options.input.targetAuthor;
+  }
+  if (options.input.targetThingId !== undefined) {
+    modNoteInput.targetThingId = options.input.targetThingId;
+  }
+  if (preview.responsePreview !== undefined) {
+    modNoteInput.responsePreview = preview.responsePreview;
+  }
+  const nativeModNote = await attemptNativeModNote(
+    modNoteInput,
+    options.modNoteDependencies
+  );
+
   const receiptOptions: Parameters<typeof createActionReceiptInput>[0] = {
     preview,
     input: options.input,
     actionEvent,
     execution,
+    nativeModNote,
   };
   if (overrideEvent !== undefined) {
     receiptOptions.overrideEvent = overrideEvent;
@@ -326,6 +356,12 @@ function validateConfirmInput(input: ApplyPolicyConfirmInput): void {
     !MODERATION_EXECUTION_MODE_VALUES.includes(input.executionMode)
   ) {
     throw new Error('executionMode is invalid');
+  }
+  if (
+    input.modNoteMode !== undefined &&
+    !NATIVE_MOD_NOTE_MODE_VALUES.includes(input.modNoteMode)
+  ) {
+    throw new Error('modNoteMode is invalid');
   }
 }
 

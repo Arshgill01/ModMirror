@@ -87,6 +87,27 @@ const saveOverrideEvent = vi.fn();
 const createActionReceiptInput = vi.fn();
 const saveActionReceipt = vi.fn();
 
+function modNoteDependencies() {
+  return {
+    reddit: {
+      addModNote: vi.fn().mockResolvedValue({
+        id: 'ModNote_1',
+        type: 'NOTE',
+        createdAt: new Date('2026-05-16T00:00:00.000Z'),
+        operator: {},
+        user: {},
+        subreddit: {},
+      }),
+    },
+    capabilities: {
+      nativeModNotesEnabled: true,
+      nativeModNotesRuntimeVerified: true,
+      receiptCreationAvailable: true,
+    },
+    now: () => '2026-05-16T00:00:00.000Z',
+  };
+}
+
 vi.mock('./policies', () => ({
   capturePolicySnapshot,
   getPolicyByRule,
@@ -254,7 +275,9 @@ describe('apply policy service', () => {
         ruleKey: policy.ruleKey,
         selectedAction: 'warn',
         confirmed: true,
+        modNoteMode: 'log_only',
       },
+      modNoteDependencies: modNoteDependencies(),
     });
 
     expect(result.actionEvent.id).toBe('action-1');
@@ -287,10 +310,51 @@ describe('apply policy service', () => {
           executionMode: 'log_only',
           redditOperation: 'none',
         }),
+        nativeModNote: expect.objectContaining({
+          mode: 'log_only',
+          status: 'skipped',
+          deliveryAttempted: false,
+          errorCode: 'log_only_mode',
+        }),
         modUsername: 'mod_a',
       })
     );
     expect(saveActionReceipt).toHaveBeenCalled();
+  });
+
+  it('passes verified native Mod Note status into receipt creation', async () => {
+    const { confirmApplyPolicy } = await import('./applyPolicy');
+    const deps = modNoteDependencies();
+    await confirmApplyPolicy({
+      modUsername: 'mod_a',
+      input: {
+        subreddit: 'ExampleLearning',
+        ruleKey: policy.ruleKey,
+        targetThingId: 't3_target_post',
+        targetAuthor: 'learner_1',
+        selectedAction: 'warn',
+        confirmed: true,
+        modNoteMode: 'native',
+      },
+      modNoteDependencies: deps,
+    });
+
+    expect(deps.reddit.addModNote).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subreddit: 'ExampleLearning',
+        user: 'learner_1',
+        redditId: 't3_target_post',
+      })
+    );
+    expect(createActionReceiptInput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeModNote: expect.objectContaining({
+          status: 'sent',
+          deliveryAttempted: true,
+          noteId: 'ModNote_1',
+        }),
+      })
+    );
   });
 
   it('rejects confirm requests without explicit confirmation', async () => {

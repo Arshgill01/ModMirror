@@ -17,6 +17,17 @@ export type MessageDeliveryMode =
   | 'modmail'
   | 'log_only';
 
+export type NativeModNoteMode = 'none' | 'log_only' | 'native';
+
+export type NativeModNoteCapabilityState =
+  | 'enabled'
+  | 'disabled'
+  | 'unverified_disabled'
+  | 'receipt_required'
+  | 'not_applicable';
+
+export type NativeModNoteStatus = 'sent' | 'skipped' | 'failed';
+
 export type ResponseTemplateKind =
   | 'warning'
   | 'removal_explanation'
@@ -673,6 +684,7 @@ export interface ApplyPolicyConfirmInput extends ApplyPolicyPreviewInput {
   selectedAction: EnforcementAction;
   confirmed: boolean;
   executionMode?: ModerationExecutionMode;
+  modNoteMode?: NativeModNoteMode;
   overrideReason?: OverrideReason;
   overrideNote?: string;
 }
@@ -724,6 +736,22 @@ export interface PolicyStep {
   removalMessageTemplate?: string;
   noteTemplate?: string;
   requireOverrideReasonForDeviation: boolean;
+}
+
+export interface NativeModNoteAttempt {
+  mode: NativeModNoteMode;
+  status: NativeModNoteStatus;
+  deliveryAttempted: boolean;
+  capabilityState: NativeModNoteCapabilityState;
+  subreddit: string;
+  targetAuthor?: string;
+  targetThingId?: string;
+  noteBody?: string;
+  noteId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  startedAt: string;
+  completedAt: string;
 }
 
 export interface PolicyResponseTemplate {
@@ -1163,6 +1191,7 @@ export interface ActionReceipt {
   policySnapshot?: PolicySnapshot;
   recommendation: PolicyRecommendation;
   responsePreview?: ApplyPolicyResponsePreview;
+  nativeModNote?: NativeModNoteAttempt;
   selectedAction: EnforcementAction;
   deviatesFromPolicy: boolean;
   overrideEventId?: string;

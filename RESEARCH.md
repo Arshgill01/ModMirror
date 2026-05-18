@@ -6,9 +6,10 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 23 response library is implemented locally; policy-step
-template rendering is type/test verified but Apply Policy receipt persistence
-still requires Devvit Web/Redis runtime proof.
+Status: Expansion Wave 24 native Mod Notes integration is implemented locally;
+`reddit.addModNote` is supported by official docs and installed typings, but
+runtime permission/result behavior still requires Devvit playtest proof before
+native delivery can be enabled.
 
 Last updated: 2026-05-18
 
@@ -72,6 +73,7 @@ Updated by: Codex
 | Verified locally | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Tests cover empty and small-community states. Redis/API runtime remains unverified. |
 | Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
 | Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
+| Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -120,6 +122,10 @@ Updated by: Codex
 - W23 response templates are drafts only. They do not send public comments,
   private messages, modmail, or native Mod Notes, and template delivery remains
   gated until explicit delivery waves are runtime-verified.
+- W24 adds an opt-in `native` Mod Note mode, but native writes remain disabled
+  unless both `MODMIRROR_ENABLE_NATIVE_MOD_NOTES=true` and
+  `MODMIRROR_NATIVE_MOD_NOTES_RUNTIME_VERIFIED=true` are set. This wave did not
+  run a playtest Mod Note write, so production behavior remains unverified.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.

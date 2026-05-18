@@ -9,6 +9,7 @@ import {
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
+  NATIVE_MOD_NOTE_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
   RESPONSE_TEMPLATE_KIND_VALUES,
 } from '../shared/constants';
@@ -50,6 +51,7 @@ import type {
   MirrorScanRecord,
   ModqueueTriageItem,
   ModqueueTriageResponse,
+  NativeModNoteMode,
   OverrideReason,
   PolicyImpactMeasurement,
   PolicyStep,
@@ -139,6 +141,7 @@ type ApplyFormState = {
   targetPermalink: string;
   subreddit: string;
   selectedAction: EnforcementAction;
+  modNoteMode: NativeModNoteMode;
   overrideReason: OverrideReason | '';
   overrideNote: string;
 };
@@ -470,6 +473,7 @@ function emptyApplyForm(): ApplyFormState {
     targetPermalink: targetParams.targetPermalink ?? '',
     subreddit: targetParams.subreddit ?? '',
     selectedAction: 'remove',
+    modNoteMode: 'log_only',
     overrideReason: '',
     overrideNote: '',
   };
@@ -1379,6 +1383,11 @@ function renderReceiptLedgerItem(receipt: ActionReceipt) {
           ? `<p class="inline-note">${receipt.responsePreview.templates.length} response template draft${receipt.responsePreview.templates.length === 1 ? '' : 's'} captured; delivery remained gated.</p>`
           : ''
       }
+      ${
+        receipt.nativeModNote
+          ? `<p class="inline-note">Native Mod Note: ${formatAction(receipt.nativeModNote.status)} (${formatAction(receipt.nativeModNote.capabilityState)}).</p>`
+          : ''
+      }
     </li>
   `;
 }
@@ -1436,6 +1445,15 @@ function renderApplyForm() {
           ${ENFORCEMENT_ACTION_VALUES.map(
             (action) =>
               `<option value="${action}" ${action === form.selectedAction ? 'selected' : ''}>${formatAction(action)}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>
+        Native Mod Note
+        <select name="modNoteMode">
+          ${NATIVE_MOD_NOTE_MODE_VALUES.map(
+            (mode) =>
+              `<option value="${mode}" ${mode === form.modNoteMode ? 'selected' : ''}>${formatAction(mode)}</option>`
           ).join('')}
         </select>
       </label>
@@ -1505,11 +1523,32 @@ function renderApplyPreview() {
       ${
         applyState.result
           ? `<p class="inline-success">Receipt ${escapeHtml(applyState.result.receipt.id)} recorded${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
+             ${renderNativeModNoteResult(applyState.result.receipt.nativeModNote)}
              <button class="secondary-button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}" type="button">Generate case packet</button>`
           : ''
       }
     </article>
   `;
+}
+
+function renderNativeModNoteResult(
+  nativeModNote: ActionReceipt['nativeModNote']
+) {
+  if (!nativeModNote) {
+    return '';
+  }
+  const statusClass =
+    nativeModNote.status === 'sent'
+      ? 'inline-success'
+      : nativeModNote.status === 'failed'
+        ? 'inline-error'
+        : 'inline-note';
+  const idCopy = nativeModNote.noteId ? ` ID ${nativeModNote.noteId}.` : '';
+  const message =
+    nativeModNote.status === 'sent'
+      ? `Native Mod Note created.${idCopy}`
+      : nativeModNote.errorMessage ?? 'Native Mod Note was not attempted.';
+  return `<p class="${statusClass}">${escapeHtml(message)}</p>`;
 }
 
 function renderApplyResponsePreview() {
@@ -3808,6 +3847,33 @@ function createClientDemoApplyResult(
   if (preview.policySnapshot !== undefined) {
     result.receipt.policySnapshot = preview.policySnapshot;
   }
+  if (preview.responsePreview !== undefined) {
+    result.receipt.responsePreview = preview.responsePreview;
+    result.receipt.nativeModNote = {
+      mode: payload.modNoteMode,
+      status: 'skipped',
+      deliveryAttempted: false,
+      capabilityState:
+        payload.modNoteMode === 'native' ? 'unverified_disabled' : 'disabled',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetAuthor: payload.targetAuthor,
+      targetThingId: payload.targetThingId,
+      noteBody:
+        preview.responsePreview.templates.find(
+          (template) => template.kind === 'mod_note_summary'
+        )?.body ?? 'Demo Mod Note draft stored on the receipt only.',
+      errorCode:
+        payload.modNoteMode === 'native'
+          ? 'unverified_disabled'
+          : 'log_only_mode',
+      errorMessage:
+        payload.modNoteMode === 'native'
+          ? 'Native Mod Notes are disabled in demo fallback.'
+          : 'Generated Mod Note was stored on the ModMirror receipt only.',
+      startedAt: now,
+      completedAt: now,
+    };
+  }
 
   if (preview.recommendation.deviatesFromPolicy) {
     result.overrideEvent = {
@@ -4822,7 +4888,7 @@ async function confirmApplyPolicy(formData: FormData) {
         recommendation: result.recommendation,
       },
       result,
-      message: 'Policy action recorded in log-only mode.',
+      message: 'Policy action recorded with receipt.',
     };
     await loadGovernance();
     await loadReceipts();
@@ -4975,6 +5041,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     targetBody?: string;
     targetPermalink?: string;
     selectedAction: EnforcementAction;
+    modNoteMode: NativeModNoteMode;
     source: ApplyPolicySource;
     confirmed?: boolean;
     overrideReason?: OverrideReason;
@@ -4986,6 +5053,9 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,
+    modNoteMode: parseNativeModNoteMode(
+      String(formData.get('modNoteMode') ?? 'log_only')
+    ),
     source: getApplyPolicySource(String(formData.get('targetThingId') ?? '')),
   };
   const targetTitle = String(formData.get('targetTitle') ?? '').trim();
@@ -5035,6 +5105,12 @@ function getApplyPolicySource(targetThingId: string): ApplyPolicySource {
   return 'simulator';
 }
 
+function parseNativeModNoteMode(value: string): NativeModNoteMode {
+  return NATIVE_MOD_NOTE_MODE_VALUES.includes(value as NativeModNoteMode)
+    ? (value as NativeModNoteMode)
+    : 'log_only';
+}
+
 function applyFormDataToState(formData: FormData): ApplyFormState {
   const overrideReason = String(formData.get('overrideReason') ?? '');
 
@@ -5049,6 +5125,9 @@ function applyFormDataToState(formData: FormData): ApplyFormState {
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,
+    modNoteMode: parseNativeModNoteMode(
+      String(formData.get('modNoteMode') ?? 'log_only')
+    ),
     overrideReason: overrideReason ? (overrideReason as OverrideReason) : '',
     overrideNote: String(formData.get('overrideNote') ?? ''),
   };

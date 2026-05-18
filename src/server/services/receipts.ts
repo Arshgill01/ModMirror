@@ -8,6 +8,7 @@ import type {
   ApplyPolicyPreview,
   ApplyPolicySource,
   ModerationExecutionResult,
+  NativeModNoteAttempt,
   OverrideEvent,
 } from '../../shared/schema';
 import { parseJson, readJson, redisKeys, serializeJson, writeJson } from './redis';
@@ -22,6 +23,7 @@ export function createActionReceiptInput(options: {
   input: ApplyPolicyConfirmInput;
   actionEvent: ActionEvent;
   execution: ModerationExecutionResult;
+  nativeModNote?: NativeModNoteAttempt;
   overrideEvent?: OverrideEvent;
   modUsername?: string;
 }): ActionReceiptInput {
@@ -53,6 +55,9 @@ export function createActionReceiptInput(options: {
   }
   if (options.preview.responsePreview !== undefined) {
     receipt.responsePreview = options.preview.responsePreview;
+  }
+  if (options.nativeModNote !== undefined) {
+    receipt.nativeModNote = options.nativeModNote;
   }
   if (options.overrideEvent !== undefined) {
     receipt.overrideEventId = options.overrideEvent.id;
@@ -198,6 +203,9 @@ function copyOptionalReceiptFields(
   }
   if (input.responsePreview !== undefined) {
     receipt.responsePreview = input.responsePreview;
+  }
+  if (input.nativeModNote !== undefined) {
+    receipt.nativeModNote = input.nativeModNote;
   }
   if (input.overrideEventId !== undefined) {
     receipt.overrideEventId = input.overrideEventId;
