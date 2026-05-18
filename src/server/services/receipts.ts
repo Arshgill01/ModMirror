@@ -51,6 +51,9 @@ export function createActionReceiptInput(options: {
   if (options.preview.policySnapshot !== undefined) {
     receipt.policySnapshot = options.preview.policySnapshot;
   }
+  if (options.preview.responsePreview !== undefined) {
+    receipt.responsePreview = options.preview.responsePreview;
+  }
   if (options.overrideEvent !== undefined) {
     receipt.overrideEventId = options.overrideEvent.id;
     receipt.overrideReason = options.overrideEvent.overrideReason;
@@ -192,6 +195,9 @@ function copyOptionalReceiptFields(
   }
   if (input.contentSnapshot !== undefined) {
     receipt.contentSnapshot = input.contentSnapshot;
+  }
+  if (input.responsePreview !== undefined) {
+    receipt.responsePreview = input.responsePreview;
   }
   if (input.overrideEventId !== undefined) {
     receipt.overrideEventId = input.overrideEventId;

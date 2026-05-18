@@ -18,6 +18,14 @@ const policy: RulePolicy = {
       offenseCount: 1,
       windowDays: 30,
       recommendedAction: 'warn',
+      responseTemplates: {
+        warning: {
+          kind: 'warning',
+          body: 'Hi {{target_author}}, please review {{rule_name}}.',
+          deliveryMode: 'log_only',
+          enabled: true,
+        },
+      },
       requireOverrideReasonForDeviation: true,
     },
   ],
@@ -160,6 +168,18 @@ describe('apply policy service', () => {
         targetType: 'post',
         authorName: 'learner_1',
         fetchStatus: 'captured',
+      })
+    );
+    expect(preview.responsePreview).toEqual(
+      expect.objectContaining({
+        deliveryWillBeAttempted: false,
+        templates: [
+          expect.objectContaining({
+            kind: 'warning',
+            body: 'Hi learner_1, please review Rule 2: Low-effort questions.',
+            deliveryGated: true,
+          }),
+        ],
       })
     );
     expect(preview.evidence.map((item) => item.kind)).toEqual([

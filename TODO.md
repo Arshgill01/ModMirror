@@ -2,14 +2,27 @@
 
 ## Current Phase
 
-Expansion Wave 22 — Policy Impact is in progress on
-`expansion/w22-policy-impact` after W21 community health.
+Expansion Wave 23 — Moderation Response Library is locally implemented on
+`expansion/w23-response-library` after W22 policy impact. Continue with Wave
+24 native Mod Notes next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 23 Checklist
+
+- [x] Add response template schema tied to policy steps.
+- [x] Add safe template rendering with explicit missing-variable placeholders.
+- [x] Add policy editor fields for warning, removal explanation, mod note,
+      modmail, and private-message drafts.
+- [x] Add Apply Policy preview integration.
+- [x] Store gated response previews on receipts.
+- [x] Add escaping, fallback, and Apply preview tests.
+- [ ] Runtime-verify response preview persistence through Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 22 Checklist
 

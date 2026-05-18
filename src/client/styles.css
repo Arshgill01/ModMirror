@@ -1038,6 +1038,7 @@ dd {
 
 .policy-form input,
 .policy-form select,
+.policy-form textarea,
 .review-note-input,
 .markdown-export {
   background: var(--mm-paper);
@@ -1047,6 +1048,12 @@ dd {
   min-height: 34px;
   padding: 7px 9px;
   width: 100%;
+}
+
+.policy-form textarea {
+  line-height: 1.35;
+  min-height: 78px;
+  resize: vertical;
 }
 
 .policy-form input[readonly] {
@@ -1083,6 +1090,15 @@ dd {
   font-size: 14px;
   font-weight: 760;
   padding: 0;
+}
+
+.template-editor-grid {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-top: 10px;
 }
 
 .checkbox-label {
@@ -1124,6 +1140,51 @@ dd {
 .evidence-item p {
   color: var(--mm-ink);
   font-size: 14px;
+}
+
+.response-preview {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.template-preview-list {
+  display: grid;
+  gap: 10px;
+}
+
+.template-preview-item {
+  border: 1px solid var(--mm-line);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.template-preview-item div {
+  display: grid;
+  gap: 2px;
+}
+
+.template-preview-item span {
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.template-preview-item pre {
+  background: var(--mm-paper);
+  border: 1px solid var(--mm-line);
+  border-radius: 4px;
+  color: var(--mm-ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 9px;
+  white-space: pre-wrap;
 }
 
 .inbox-card {
@@ -1506,6 +1567,10 @@ dd {
 
   .policy-step {
     align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .template-editor-grid {
     grid-template-columns: 1fr;
   }
 

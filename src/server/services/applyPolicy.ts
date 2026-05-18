@@ -32,6 +32,7 @@ import { captureContentSnapshotForApplyPolicy } from './contentSnapshots';
 import { capturePolicySnapshot, getPolicyByRule } from './policies';
 import { createActionReceiptInput, saveActionReceipt } from './receipts';
 import { getTargetType } from './targetContext';
+import { buildApplyPolicyResponsePreview } from '../../shared/responseTemplates';
 
 export async function previewApplyPolicy(
   input: ApplyPolicyPreviewInput
@@ -61,6 +62,11 @@ export async function previewApplyPolicy(
   const recommendation = recommendPolicyAction(recommendationOptions);
   const policySnapshot = capturePolicySnapshot(policy);
   const targetSnapshot = buildTargetSnapshot(input, contentSnapshot);
+  const responsePreview = buildApplyPolicyResponsePreview({
+    policy,
+    recommendation,
+    targetSnapshot,
+  });
   const preview: ApplyPolicyPreview = {
     recommendation,
     targetSnapshot,
@@ -80,6 +86,9 @@ export async function previewApplyPolicy(
   }
   if (policySnapshot !== undefined) {
     preview.policySnapshot = policySnapshot;
+  }
+  if (responsePreview !== undefined) {
+    preview.responsePreview = responsePreview;
   }
 
   return preview;

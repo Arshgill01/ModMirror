@@ -31,6 +31,7 @@ import type {
   OverrideReason,
   OverrideReviewStatus,
   PolicyHealthStatus,
+  ResponseTemplateKind,
   RedditModerationOperation,
   TeamDeliveryChannel,
   TeamDeliverySubjectType,
@@ -64,6 +65,14 @@ export const MESSAGE_DELIVERY_MODE_VALUES = [
   'modmail',
   'log_only',
 ] as const satisfies readonly MessageDeliveryMode[];
+
+export const RESPONSE_TEMPLATE_KIND_VALUES = [
+  'warning',
+  'removal_explanation',
+  'mod_note_summary',
+  'modmail_draft',
+  'private_message',
+] as const satisfies readonly ResponseTemplateKind[];
 
 export const OVERRIDE_REASON_VALUES = [
   'severe_context',

@@ -10,6 +10,7 @@ import {
   ENFORCEMENT_ACTION_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
+  RESPONSE_TEMPLATE_KIND_VALUES,
 } from '../shared/constants';
 import {
   buildCommandCenterSummary,
@@ -20,6 +21,7 @@ import {
   type SetupStep,
 } from '../shared/productization';
 import { DEMO_POLICY } from '../shared/demoData';
+import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -52,6 +54,7 @@ import type {
   PolicyImpactMeasurement,
   PolicyStep,
   PolicyReplayResult,
+  ResponseTemplateKind,
   RulePolicy,
   TeamDeliveryCapabilities,
 } from '../shared/schema';
@@ -1263,8 +1266,41 @@ function renderStepEditor(step: PolicyStep, index: number) {
         <input name="requireOverride-${index}" type="checkbox" ${step.requireOverrideReasonForDeviation ? 'checked' : ''}>
         Require override reason on deviation
       </label>
+      <div class="template-editor-grid" aria-label="Response templates">
+        ${RESPONSE_TEMPLATE_KIND_VALUES.map((kind) =>
+          renderResponseTemplateEditor(step, index, kind)
+        ).join('')}
+      </div>
     </fieldset>
   `;
+}
+
+function renderResponseTemplateEditor(
+  step: PolicyStep,
+  index: number,
+  kind: ResponseTemplateKind
+) {
+  const template = step.responseTemplates?.[kind];
+  const body = template?.body ?? getLegacyTemplateBody(step, kind) ?? '';
+  return `
+    <label>
+      ${formatTemplateKind(kind)}
+      <textarea name="template-${kind}-${index}" rows="3" placeholder="${escapeAttribute(getTemplatePlaceholder(kind))}">${escapeHtml(body)}</textarea>
+    </label>
+  `;
+}
+
+function getLegacyTemplateBody(
+  step: PolicyStep,
+  kind: ResponseTemplateKind
+): string | undefined {
+  if (kind === 'removal_explanation') {
+    return step.removalMessageTemplate;
+  }
+  if (kind === 'mod_note_summary') {
+    return step.noteTemplate;
+  }
+  return undefined;
 }
 
 function renderApplyPolicyPanel() {
@@ -1336,6 +1372,11 @@ function renderReceiptLedgerItem(receipt: ActionReceipt) {
       ${
         receipt.overrideReason
           ? `<p class="inline-note">Override: ${formatAction(receipt.overrideReason)}${receipt.overrideNote ? ` - ${escapeHtml(receipt.overrideNote)}` : ''}</p>`
+          : ''
+      }
+      ${
+        receipt.responsePreview
+          ? `<p class="inline-note">${receipt.responsePreview.templates.length} response template draft${receipt.responsePreview.templates.length === 1 ? '' : 's'} captured; delivery remained gated.</p>`
           : ''
       }
     </li>
@@ -1460,6 +1501,7 @@ function renderApplyPreview() {
         <div><dt>Delivery</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
       </dl>
       ${renderApplyPreviewEvidence()}
+      ${renderApplyResponsePreview()}
       ${
         applyState.result
           ? `<p class="inline-success">Receipt ${escapeHtml(applyState.result.receipt.id)} recorded${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
@@ -1467,6 +1509,52 @@ function renderApplyPreview() {
           : ''
       }
     </article>
+  `;
+}
+
+function renderApplyResponsePreview() {
+  const responsePreview = applyState.preview?.responsePreview;
+  if (!responsePreview) {
+    return '';
+  }
+
+  return `
+    <section class="response-preview" aria-label="Response template preview">
+      <div class="section-header compact-header">
+        <div>
+          <h4>Response Templates</h4>
+          <p>Drafts are rendered for copy/review only; Apply Policy will not send them.</p>
+        </div>
+        <span class="status-badge status-neutral">Delivery gated</span>
+      </div>
+      ${
+        responsePreview.templates.length > 0
+          ? `<div class="template-preview-list">${responsePreview.templates
+              .map(
+                (template) => `
+                  <article class="template-preview-item">
+                    <div>
+                      <strong>${escapeHtml(template.title)}</strong>
+                      <span>${formatTemplateKind(template.kind)} - ${formatAction(template.deliveryMode)} - ${escapeHtml(template.source.replaceAll('_', ' '))}</span>
+                    </div>
+                    <pre>${escapeHtml(template.body)}</pre>
+                    ${
+                      template.missingVariables.length > 0
+                        ? `<p class="inline-error">Missing variables: ${escapeHtml(template.missingVariables.join(', '))}</p>`
+                        : ''
+                    }
+                  </article>
+                `
+              )
+              .join('')}</div>`
+          : renderEmptyState(
+              'No templates for this step',
+              'Add response templates in the policy editor before using manual delivery copy.',
+              []
+            )
+      }
+      ${responsePreview.warnings.map((warning) => `<p class="inline-note">${escapeHtml(warning)}</p>`).join('')}
+    </section>
   `;
 }
 
@@ -3564,8 +3652,34 @@ function createClientDemoApplyPreview(
       redactionNotes: ['Demo fallback stores excerpts only.'],
     },
   };
-
-  return {
+  const targetSnapshot: ApplyPolicyPreview['targetSnapshot'] = {
+    targetThingId: payload.targetThingId,
+    targetType: payload.targetThingId.startsWith('t1_') ? 'comment' : 'post',
+    subreddit: DEMO_SUBREDDIT_NAME,
+    authorName: payload.targetAuthor,
+    title: contentSnapshot.titleExcerpt,
+    body: contentSnapshot.bodyExcerpt,
+    ...(payload.targetPermalink ? { permalink: payload.targetPermalink } : {}),
+    source: 'provided',
+    warnings: ['Demo fallback preview uses seeded client data only.'],
+    contentSnapshot,
+  };
+  const recommendation: ApplyPolicyPreview['recommendation'] = {
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    policyId: policy.id,
+    offenseCount: 1,
+    recommendedAction,
+    messageDeliveryMode: policy.defaultMessageMode,
+    requiresOverrideReason: true,
+    selectedAction: payload.selectedAction,
+    deviatesFromPolicy,
+    fallbackReason: 'policy_found',
+    message: deviatesFromPolicy
+      ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
+      : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
+  };
+  const preview: ApplyPolicyPreview = {
     policy,
     policySnapshot: {
       policyId: policy.id,
@@ -3578,20 +3692,7 @@ function createClientDemoApplyPreview(
       defaultMessageMode: policy.defaultMessageMode,
       capturedAt: new Date().toISOString(),
     },
-    targetSnapshot: {
-      targetThingId: payload.targetThingId,
-      targetType: payload.targetThingId.startsWith('t1_') ? 'comment' : 'post',
-      subreddit: DEMO_SUBREDDIT_NAME,
-      authorName: payload.targetAuthor,
-      title: contentSnapshot.titleExcerpt,
-      body: contentSnapshot.bodyExcerpt,
-      ...(payload.targetPermalink
-        ? { permalink: payload.targetPermalink }
-        : {}),
-      source: 'provided',
-      warnings: ['Demo fallback preview uses seeded client data only.'],
-      contentSnapshot,
-    },
+    targetSnapshot,
     contentSnapshot,
     evidence: [
       {
@@ -3625,22 +3726,18 @@ function createClientDemoApplyPreview(
         'Demo fallback confirmation records a log-only ModMirror action. No Reddit moderation action is attempted.',
       caveats: ['Demo fallback uses client seed data, not live Reddit state.'],
     },
-    recommendation: {
-      ruleKey: policy.ruleKey,
-      ruleName: policy.ruleName,
-      policyId: policy.id,
-      offenseCount: 1,
-      recommendedAction,
-      messageDeliveryMode: policy.defaultMessageMode,
-      requiresOverrideReason: true,
-      selectedAction: payload.selectedAction,
-      deviatesFromPolicy,
-      fallbackReason: 'policy_found',
-      message: deviatesFromPolicy
-        ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
-        : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
-    },
+    recommendation,
   };
+  const responsePreview = buildApplyPolicyResponsePreview({
+    policy,
+    recommendation,
+    targetSnapshot,
+  });
+  if (responsePreview !== undefined) {
+    preview.responsePreview = responsePreview;
+  }
+
+  return preview;
 }
 
 function createClientDemoApplyResult(
@@ -4958,15 +5055,45 @@ function applyFormDataToState(formData: FormData): ApplyFormState {
 }
 
 function formDataToPolicy(formData: FormData) {
-  const steps = policyState.form.steps.map((step, index) => ({
-    offenseCount: step.offenseCount,
-    windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
-    recommendedAction: String(
-      formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
-    ) as EnforcementAction,
-    requireOverrideReasonForDeviation:
-      formData.get(`requireOverride-${index}`) === 'on',
-  }));
+  const steps = policyState.form.steps.map((step, index) => {
+    const responseTemplates = Object.fromEntries(
+      RESPONSE_TEMPLATE_KIND_VALUES.map((kind) => {
+        const body = String(formData.get(`template-${kind}-${index}`) ?? '').trim();
+        return [
+          kind,
+          body
+            ? {
+                kind,
+                body,
+                deliveryMode: 'log_only' as const,
+                enabled: true,
+              }
+            : undefined,
+        ];
+      }).filter(([, template]) => template !== undefined)
+    ) as PolicyStep['responseTemplates'];
+    const nextStep: PolicyStep = {
+      offenseCount: step.offenseCount,
+      windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
+      recommendedAction: String(
+        formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
+      ) as EnforcementAction,
+      requireOverrideReasonForDeviation:
+        formData.get(`requireOverride-${index}`) === 'on',
+    };
+    if (responseTemplates !== undefined && Object.keys(responseTemplates).length > 0) {
+      nextStep.responseTemplates = responseTemplates;
+    }
+    const removalTemplate = responseTemplates?.removal_explanation?.body;
+    if (removalTemplate !== undefined) {
+      nextStep.removalMessageTemplate = removalTemplate;
+    }
+    const noteTemplate = responseTemplates?.mod_note_summary?.body;
+    if (noteTemplate !== undefined) {
+      nextStep.noteTemplate = noteTemplate;
+    }
+    return nextStep;
+  });
 
   const policy = {
     ruleKey: String(formData.get('ruleKey') ?? '').trim(),
@@ -5131,6 +5258,29 @@ function getPrimaryActionCopy(intent: CommandCenterAction['intent']) {
 
 function formatAction(action: string) {
   return escapeHtml(action.replaceAll('_', ' '));
+}
+
+function formatTemplateKind(kind: ResponseTemplateKind) {
+  return kind
+    .split('_')
+    .map((part) => capitalize(part))
+    .join(' ');
+}
+
+function getTemplatePlaceholder(kind: ResponseTemplateKind) {
+  if (kind === 'warning') {
+    return 'Hi {{target_author}}, please review {{rule_name}} before posting again.';
+  }
+  if (kind === 'removal_explanation') {
+    return 'Removed under {{rule_name}}. Add context before reposting.';
+  }
+  if (kind === 'mod_note_summary') {
+    return '{{rule_name}} offense {{offense_count}}. Recommended: {{recommended_action}}.';
+  }
+  if (kind === 'modmail_draft') {
+    return '{{target_author}} reached offense {{offense_count}} for {{rule_name}}.';
+  }
+  return 'Private note for {{target_author}} about {{rule_name}}.';
 }
 
 function formatHealthStatus(status: PolicyHealthStatus) {

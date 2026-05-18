@@ -17,6 +17,13 @@ export type MessageDeliveryMode =
   | 'modmail'
   | 'log_only';
 
+export type ResponseTemplateKind =
+  | 'warning'
+  | 'removal_explanation'
+  | 'mod_note_summary'
+  | 'modmail_draft'
+  | 'private_message';
+
 export type OverrideReason =
   | 'severe_context'
   | 'repeat_pattern_not_captured'
@@ -657,6 +664,7 @@ export interface ApplyPolicyPreview {
   policySnapshot?: PolicySnapshot;
   targetSnapshot: ApplyPolicyTargetSnapshot;
   contentSnapshot?: ContentSnapshot;
+  responsePreview?: ApplyPolicyResponsePreview;
   evidence: ApplyPolicyPreviewEvidence[];
   confirmation: ApplyPolicyConfirmationPreview;
 }
@@ -712,9 +720,35 @@ export interface PolicyStep {
   offenseCount: number;
   windowDays: number;
   recommendedAction: EnforcementAction;
+  responseTemplates?: Partial<Record<ResponseTemplateKind, PolicyResponseTemplate>>;
   removalMessageTemplate?: string;
   noteTemplate?: string;
   requireOverrideReasonForDeviation: boolean;
+}
+
+export interface PolicyResponseTemplate {
+  kind: ResponseTemplateKind;
+  title?: string;
+  body: string;
+  deliveryMode: MessageDeliveryMode;
+  enabled: boolean;
+}
+
+export interface RenderedResponseTemplate {
+  kind: ResponseTemplateKind;
+  title: string;
+  body: string;
+  deliveryMode: MessageDeliveryMode;
+  source: 'policy_template' | 'legacy_template' | 'fallback';
+  missingVariables: string[];
+  deliveryGated: true;
+}
+
+export interface ApplyPolicyResponsePreview {
+  stepOffenseCount: number;
+  templates: RenderedResponseTemplate[];
+  deliveryWillBeAttempted: false;
+  warnings: string[];
 }
 
 export interface AttributedModAction {
@@ -1128,6 +1162,7 @@ export interface ActionReceipt {
   source: ActionReceiptSource;
   policySnapshot?: PolicySnapshot;
   recommendation: PolicyRecommendation;
+  responsePreview?: ApplyPolicyResponsePreview;
   selectedAction: EnforcementAction;
   deviatesFromPolicy: boolean;
   overrideEventId?: string;

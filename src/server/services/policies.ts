@@ -1,6 +1,9 @@
 import { redis } from '@devvit/web/server';
 import { randomUUID } from 'node:crypto';
-import { DEFAULT_POLICY_WINDOW_DAYS } from '../../shared/constants';
+import {
+  DEFAULT_POLICY_WINDOW_DAYS,
+  RESPONSE_TEMPLATE_KIND_VALUES,
+} from '../../shared/constants';
 import type {
   DriftCandidate,
   PolicyAdoptInput,
@@ -27,6 +30,7 @@ import {
   summarizePolicyRatification,
   upsertPolicyReviewRecord,
 } from './policyRatification';
+import { normalizeResponseTemplate } from '../../shared/responseTemplates';
 
 const DEFAULT_POLICY_STEPS: PolicyStep[] = [
   {
@@ -35,6 +39,15 @@ const DEFAULT_POLICY_STEPS: PolicyStep[] = [
     recommendedAction: 'warn',
     removalMessageTemplate:
       'Please review this community rule before posting again.',
+    responseTemplates: {
+      warning: {
+        kind: 'warning',
+        title: 'Rule reminder for {{target_author}}',
+        body: 'Hi {{target_author}}, please review {{rule_name}} before posting again. This is offense {{offense_count}} tracked by ModMirror.',
+        deliveryMode: 'log_only',
+        enabled: true,
+      },
+    },
     requireOverrideReasonForDeviation: true,
   },
   {
@@ -42,6 +55,21 @@ const DEFAULT_POLICY_STEPS: PolicyStep[] = [
     windowDays: DEFAULT_POLICY_WINDOW_DAYS,
     recommendedAction: 'remove',
     noteTemplate: 'Repeat violation handled through ModMirror policy.',
+    responseTemplates: {
+      removal_explanation: {
+        kind: 'removal_explanation',
+        title: 'Removal explanation for {{rule_name}}',
+        body: 'Your post or comment was removed under {{rule_name}}. ModMirror shows this as offense {{offense_count}} within the policy window.',
+        deliveryMode: 'log_only',
+        enabled: true,
+      },
+      mod_note_summary: {
+        kind: 'mod_note_summary',
+        body: '{{rule_name}} repeat violation. Recommended action: {{recommended_action}}.',
+        deliveryMode: 'log_only',
+        enabled: true,
+      },
+    },
     requireOverrideReasonForDeviation: true,
   },
   {
@@ -49,6 +77,21 @@ const DEFAULT_POLICY_STEPS: PolicyStep[] = [
     windowDays: DEFAULT_POLICY_WINDOW_DAYS,
     recommendedAction: 'temporary_ban_suggested',
     noteTemplate: 'Escalation suggested; moderator must confirm separately.',
+    responseTemplates: {
+      modmail_draft: {
+        kind: 'modmail_draft',
+        title: 'Escalation review for {{rule_name}}',
+        body: '{{target_author}} has reached offense {{offense_count}} for {{rule_name}}. ModMirror suggests escalation review; confirm any ban action separately.',
+        deliveryMode: 'log_only',
+        enabled: true,
+      },
+      mod_note_summary: {
+        kind: 'mod_note_summary',
+        body: 'Escalation suggested for {{rule_name}}. Moderator confirmation required before any ban.',
+        deliveryMode: 'log_only',
+        enabled: true,
+      },
+    },
     requireOverrideReasonForDeviation: true,
   },
 ];
@@ -729,7 +772,27 @@ function normalizeSteps(steps: PolicyStep[]): PolicyStep[] {
         throw new Error('Policy step windowDays must be at least 1');
       }
 
-      return { ...step };
+      const normalizedStep: PolicyStep = { ...step };
+      const responseTemplates = Object.fromEntries(
+        RESPONSE_TEMPLATE_KIND_VALUES.map((kind) => [
+          kind,
+          normalizeResponseTemplate(kind, step.responseTemplates?.[kind]),
+        ]).filter(([, template]) => template !== undefined)
+      ) as PolicyStep['responseTemplates'];
+      if (responseTemplates !== undefined && Object.keys(responseTemplates).length > 0) {
+        normalizedStep.responseTemplates = responseTemplates;
+      } else {
+        delete normalizedStep.responseTemplates;
+      }
+      if (normalizedStep.removalMessageTemplate !== undefined) {
+        normalizedStep.removalMessageTemplate =
+          normalizedStep.removalMessageTemplate.trim();
+      }
+      if (normalizedStep.noteTemplate !== undefined) {
+        normalizedStep.noteTemplate = normalizedStep.noteTemplate.trim();
+      }
+
+      return normalizedStep;
     });
 }
 
