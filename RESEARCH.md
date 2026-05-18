@@ -559,3 +559,35 @@ Runtime status:
 - Scan persistence is locally tested with mocked Redis only.
 - No Devvit playtest was run for W05 scan storage, list, detail, or compare
   routes.
+
+## Operational Overhaul W06 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Installed typings in `node_modules/@devvit/reddit/models/Listing.d.ts`
+  expose `ListingFetchOptions` with `limit`, `pageSize`, `after`, and
+  `before`, plus `Listing.all()` and `Listing.get(count)`.
+- Installed typings in `node_modules/@devvit/reddit/RedditClient.d.ts`
+  document `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`
+  and show a `limit: 1000`, `pageSize: 100` example.
+- W06 local tests mock depth-specific `getModerationLog` calls and warning
+  behavior.
+
+Decision:
+
+- W06 exposes conservative scan depths:
+  - `quick`: 25 actions, page size 25
+  - `standard`: 60 actions, page size 60
+  - `deep`: 250 actions, page size 100
+- The live adapter records the requested cap, page size, fetched action count,
+  whether the cap was hit, and that pagination remains runtime-unverified.
+- The product warns when live scans hit a cap or return fewer actions than
+  requested.
+
+Runtime status:
+
+- Not playtest-verified in W06.
+- Do not claim deep moderation-log pagination works in Reddit runtime until a
+  safe playtest records actual behavior and sample counts.

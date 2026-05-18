@@ -2,6 +2,11 @@
 
 ## Current Phase
 
+Operational Overhaul W06 — Deep Scan is complete locally on
+`overhaul/w06-deep-scan`. W07 Drift Analytics is the next recommended wave.
+The operational overhaul remains build-only/type-verified for W01-W06 runtime
+paths unless a wave report explicitly says playtest was run.
+
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
 Status: Wave 7/8 and the redesign rescue branch are merged to `master` and

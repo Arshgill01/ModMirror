@@ -26,6 +26,8 @@ It currently supports:
   and execution result.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
+- W06 quick, standard, and deep Mirror Scan depth options with safe caps,
+  scan-depth metadata, and explicit runtime-unverified pagination warnings.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -40,6 +42,8 @@ It does not yet support:
   locally tested only.
 - Runtime-verified full attributed scan history persistence. W05 local tests
   cover the Redis storage shape.
+- Runtime-verified deep moderation-log pagination. W06 verifies installed
+  typings and local mocks only.
 - Drift-over-time or policy-impact analytics from persisted scan/receipt data.
 - True multi-mod policy proposal/review/adoption.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
@@ -65,10 +69,9 @@ It does not yet support:
 - W05 `src/server/services/scans.ts` stores full `MirrorScanRecord` values and
   capped scan metadata indexes by subreddit/source, plus rule and anonymized
   author indexes for later analytics.
-- `src/server/services/scans.ts` persists `LastScanMetadata`, not complete
-  attributed scan records.
-- `src/server/services/redditSources.ts` defaults live moderation-log reads to
-  `limit: 60` and `pageSize: 60`.
+- W06 `src/server/services/redditSources.ts` supports live scan depths:
+  quick 25/25, standard 60/60, and deep 250/100. All live depth metadata remains
+  runtime-unverified until playtest proves actual pagination behavior.
 - `src/server/services/policies.ts` versions policy edits immediately; it does
   not model proposal, review, adoption, supersession, or archival states.
 - W01 target context is type/build-verified only. Runtime proof for post/comment

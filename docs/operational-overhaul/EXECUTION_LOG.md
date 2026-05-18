@@ -277,3 +277,41 @@ W05 validation:
 
 Runtime playtest was not run in W05. Full scan persistence is locally verified
 with mocked Redis only.
+
+### 2026-05-18 - W06 Deep Scan
+
+Created worktree:
+
+- `git worktree add ../modmirror-w06-deep-scan -b overhaul/w06-deep-scan overhaul/w05-scan-persistence`
+
+Implemented W06:
+
+- Inspected installed Devvit `Listing` and `getModerationLog` typings for
+  `limit`, `pageSize`, `after`, and `before` support.
+- Added `MirrorScanDepth` and `MirrorScanDepthMetadata` shared contracts.
+- Added conservative depth caps:
+  - `quick`: 25 actions, page size 25
+  - `standard`: 60 actions, page size 60
+  - `deep`: 250 actions, page size 100
+- Added depth metadata to Mirror Scan and persisted scan records.
+- Updated the live Reddit source adapter to pass depth-specific `limit` and
+  `pageSize`, record fetched count, record cap-hit state, and warn that
+  pagination is not runtime-verified.
+- Updated `/api/scan` to accept a `depth` field.
+- Updated the client Scan page with Quick, Standard, and Deep live scan actions
+  and scan-depth summary display.
+- Added mocked live-source tests for default standard depth, deep caps,
+  cap-hit warnings, and fetch-failure fallback.
+
+W06 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/redditSources.test.ts src/server/services/mirrorScan.test.ts src/server/services/scans.test.ts` - passed, 9 tests.
+- `npm test` - passed, 20 files and 90 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W06. Deep scan pagination is type/build-only and
+must not be claimed as runtime-verified.
