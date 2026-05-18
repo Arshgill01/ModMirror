@@ -105,6 +105,27 @@ const receipt: ActionReceipt = {
     source: 'provided',
     warnings: [],
   },
+  contentSnapshot: {
+    schemaVersion: 1,
+    targetThingId: action.targetThingId ?? 't3_current',
+    targetType: 'post',
+    subreddit: 'ExampleLearning',
+    authorName: 'learner_1',
+    titleExcerpt: 'Low-effort question',
+    bodyExcerpt: 'How do I learn everything fast?',
+    fetchedAt: '2026-05-16T12:00:00.000Z',
+    fetchStatus: 'captured',
+    source: 'receipt',
+    warnings: [],
+    privacy: {
+      retentionCategory: 'moderation_evidence',
+      authorStored: true,
+      titleExcerptStored: true,
+      bodyExcerptStored: true,
+      permalinkStored: false,
+      redactionNotes: ['Test snapshot stores excerpts only.'],
+    },
+  },
   modUsername: 'mod_a',
   source: 'dashboard',
   policySnapshot,
@@ -236,6 +257,7 @@ describe('case packet engine', () => {
 
     expect(packet.packetType).toBe('internal_review');
     expect(packet.action?.receiptId).toBe(receipt.id);
+    expect(packet.action?.contentSnapshot?.fetchStatus).toBe('captured');
     expect(packet.action?.evidenceSource).toBe('verified_receipt');
     expect(packet.action?.execution?.executionResult).toBe('skipped');
     expect(packet.evidence).toContainEqual(
@@ -244,6 +266,13 @@ describe('case packet engine', () => {
         source: 'verified_receipt',
       })
     );
+    expect(packet.evidence).toContainEqual(
+      expect.objectContaining({
+        label: 'Content snapshot',
+        source: 'verified_receipt',
+      })
+    );
+    expect(packet.markdown).toContain('Content snapshot: captured');
     expect(packet.markdown).toContain('Receipt ID: receipt-current');
   });
 

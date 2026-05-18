@@ -103,6 +103,19 @@ export type HealthState = 'ok' | 'degraded' | 'blocked';
 
 export type ModerationTargetType = 'post' | 'comment' | 'unknown';
 
+export type ContentSnapshotFetchStatus =
+  | 'captured'
+  | 'degraded'
+  | 'not_provided';
+
+export type ContentSnapshotSource =
+  | 'menu'
+  | 'dashboard'
+  | 'api'
+  | 'provided'
+  | 'receipt'
+  | 'demo';
+
 export type ModerationExecutionMode =
   | 'live'
   | 'log_only'
@@ -385,6 +398,31 @@ export interface ModerationTargetContext {
   warnings: string[];
 }
 
+export interface ContentSnapshotPrivacyMetadata {
+  retentionCategory: 'moderation_evidence';
+  authorStored: boolean;
+  titleExcerptStored: boolean;
+  bodyExcerptStored: boolean;
+  permalinkStored: boolean;
+  redactionNotes: string[];
+}
+
+export interface ContentSnapshot {
+  schemaVersion: 1;
+  targetThingId?: string;
+  targetType: ModerationTargetType;
+  subreddit?: string;
+  authorName?: string;
+  titleExcerpt?: string;
+  bodyExcerpt?: string;
+  permalink?: string;
+  fetchedAt: string;
+  fetchStatus: ContentSnapshotFetchStatus;
+  source: ContentSnapshotSource;
+  warnings: string[];
+  privacy: ContentSnapshotPrivacyMetadata;
+}
+
 export type ApplyPolicyTargetSnapshotSource = 'provided' | 'not_provided';
 
 export interface ApplyPolicyTargetSnapshot {
@@ -397,6 +435,7 @@ export interface ApplyPolicyTargetSnapshot {
   permalink?: string;
   source: ApplyPolicyTargetSnapshotSource;
   warnings: string[];
+  contentSnapshot?: ContentSnapshot;
 }
 
 export type ApplyPolicyPreviewEvidenceKind =
@@ -452,6 +491,7 @@ export interface ApplyPolicyPreviewInput {
   targetPermalink?: string;
   selectedAction?: EnforcementAction;
   source?: ApplyPolicySource;
+  contentSnapshot?: ContentSnapshot;
 }
 
 export interface ApplyPolicyPreview {
@@ -459,6 +499,7 @@ export interface ApplyPolicyPreview {
   policy?: RulePolicy;
   policySnapshot?: PolicySnapshot;
   targetSnapshot: ApplyPolicyTargetSnapshot;
+  contentSnapshot?: ContentSnapshot;
   evidence: ApplyPolicyPreviewEvidence[];
   confirmation: ApplyPolicyConfirmationPreview;
 }
@@ -791,6 +832,7 @@ export interface ActionReceipt {
   targetThingId?: string;
   targetType: ModerationTargetType;
   targetSnapshot: ApplyPolicyTargetSnapshot;
+  contentSnapshot?: ContentSnapshot;
   modUsername: string;
   source: ActionReceiptSource;
   policySnapshot?: PolicySnapshot;
@@ -866,6 +908,7 @@ export interface CasePacketAction {
   deliveryMode?: MessageDeliveryMode;
   source?: ActionSource | ApplyPolicySource;
   targetSnapshot?: ApplyPolicyTargetSnapshot;
+  contentSnapshot?: ContentSnapshot;
   execution?: ModerationExecutionResult;
   evidenceSource?: CasePacketEvidenceSource;
 }

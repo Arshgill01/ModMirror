@@ -8,6 +8,7 @@ import { recommendPolicyAction } from '../../shared/scoring';
 import type {
   ApplyPolicyConfirmInput,
   ApplyPolicyConfirmResult,
+  ContentSnapshot,
   ApplyPolicyPreview,
   ApplyPolicyPreviewEvidence,
   ApplyPolicyPreviewInput,
@@ -27,6 +28,7 @@ import {
   getRedditOperation,
   type ModerationExecutionDependencies,
 } from './moderationExecution';
+import { captureContentSnapshotForApplyPolicy } from './contentSnapshots';
 import { capturePolicySnapshot, getPolicyByRule } from './policies';
 import { createActionReceiptInput, saveActionReceipt } from './receipts';
 import { getTargetType } from './targetContext';
@@ -39,6 +41,7 @@ export async function previewApplyPolicy(
   const subreddit = input.subreddit ?? DEMO_SUBREDDIT_NAME;
   const policy = await getPolicyByRule(subreddit, input.ruleKey);
   const actionHistory = await loadActionHistory(subreddit);
+  const contentSnapshot = await captureContentSnapshotForApplyPolicy(input);
   const recommendationOptions: Parameters<typeof recommendPolicyAction>[0] = {
     ruleKey: input.ruleKey,
     actionHistory,
@@ -47,8 +50,9 @@ export async function previewApplyPolicy(
     recommendationOptions.policy = policy;
     recommendationOptions.ruleName = policy.ruleName;
   }
-  if (input.targetAuthor !== undefined) {
-    recommendationOptions.targetAuthor = input.targetAuthor;
+  const targetAuthor = input.targetAuthor ?? contentSnapshot.authorName;
+  if (targetAuthor !== undefined) {
+    recommendationOptions.targetAuthor = targetAuthor;
   }
   if (input.selectedAction !== undefined) {
     recommendationOptions.selectedAction = input.selectedAction;
@@ -56,15 +60,17 @@ export async function previewApplyPolicy(
 
   const recommendation = recommendPolicyAction(recommendationOptions);
   const policySnapshot = capturePolicySnapshot(policy);
-  const targetSnapshot = buildTargetSnapshot(input);
+  const targetSnapshot = buildTargetSnapshot(input, contentSnapshot);
   const preview: ApplyPolicyPreview = {
     recommendation,
     targetSnapshot,
+    contentSnapshot,
     evidence: buildPreviewEvidence({
       policy,
       recommendation,
       actionHistory,
       targetSnapshot,
+      contentSnapshot,
     }),
     confirmation: buildConfirmationPreview(recommendation),
   };
@@ -315,15 +321,15 @@ function validateConfirmInput(input: ApplyPolicyConfirmInput): void {
 }
 
 function buildTargetSnapshot(
-  input: ApplyPolicyPreviewInput
+  input: ApplyPolicyPreviewInput,
+  contentSnapshot: ContentSnapshot
 ): ApplyPolicyTargetSnapshot {
   if (input.targetThingId === undefined || !input.targetThingId.trim()) {
     return {
       targetType: 'unknown',
       source: 'not_provided',
-      warnings: [
-        'No target context was provided. Offense count defaults to the first offense unless target author history is available.',
-      ],
+      warnings: contentSnapshot.warnings,
+      contentSnapshot,
     };
   }
 
@@ -335,27 +341,33 @@ function buildTargetSnapshot(
     targetThingId: input.targetThingId,
     targetType,
     source: 'provided',
-    warnings: [],
+    warnings: [...contentSnapshot.warnings],
+    contentSnapshot,
   };
 
-  if (input.subreddit !== undefined) {
-    snapshot.subreddit = input.subreddit;
+  const subreddit = input.subreddit ?? contentSnapshot.subreddit;
+  if (subreddit !== undefined) {
+    snapshot.subreddit = subreddit;
   }
-  if (input.targetAuthor !== undefined) {
-    snapshot.authorName = input.targetAuthor;
+  const authorName = input.targetAuthor ?? contentSnapshot.authorName;
+  if (authorName !== undefined) {
+    snapshot.authorName = authorName;
   } else {
     snapshot.warnings.push(
       'Target author was not provided. Offense count defaults to the first offense.'
     );
   }
-  if (input.targetTitle !== undefined) {
-    snapshot.title = input.targetTitle;
+  const title = input.targetTitle ?? contentSnapshot.titleExcerpt;
+  if (title !== undefined) {
+    snapshot.title = title;
   }
-  if (input.targetBody !== undefined) {
-    snapshot.body = input.targetBody;
+  const body = input.targetBody ?? contentSnapshot.bodyExcerpt;
+  if (body !== undefined) {
+    snapshot.body = body;
   }
-  if (input.targetPermalink !== undefined) {
-    snapshot.permalink = input.targetPermalink;
+  const permalink = input.targetPermalink ?? contentSnapshot.permalink;
+  if (permalink !== undefined) {
+    snapshot.permalink = permalink;
   }
 
   return snapshot;
@@ -366,6 +378,7 @@ function buildPreviewEvidence(options: {
   recommendation: PolicyRecommendation;
   actionHistory: AttributedModAction[];
   targetSnapshot: ApplyPolicyTargetSnapshot;
+  contentSnapshot: ContentSnapshot;
 }): ApplyPolicyPreviewEvidence[] {
   const evidence: ApplyPolicyPreviewEvidence[] = [];
 
@@ -387,10 +400,10 @@ function buildPreviewEvidence(options: {
   if (options.targetSnapshot.source === 'provided') {
     evidence.push({
       kind: 'target',
-      label: 'Target context',
+      label: 'Content snapshot',
       detail: `${options.targetSnapshot.targetType} ${options.targetSnapshot.targetThingId ?? ''} by ${
         options.targetSnapshot.authorName ?? 'unknown author'
-      }`,
+      } (${options.contentSnapshot.fetchStatus})`,
     });
   } else {
     evidence.push({

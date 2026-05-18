@@ -278,6 +278,7 @@ export function renderCasePacketMarkdown(packet: CasePacket): string {
           `- Execution result: ${formatValue(action.execution?.executionResult)}`,
           `- Target: ${action.targetThingId ?? 'Not captured'}`,
           `- Target author: ${action.targetAuthor ?? 'Not captured'}`,
+          `- Content snapshot: ${formatValue(action.contentSnapshot?.fetchStatus)}`,
           `- Evidence source: ${formatValue(action.evidenceSource)}`,
         ].join('\n')
       : '- Action data was not found in ModMirror history.',
@@ -648,6 +649,9 @@ function toCasePacketActionFromReceipt(
   if (receipt.targetSnapshot.authorName !== undefined) {
     packetAction.targetAuthor = receipt.targetSnapshot.authorName;
   }
+  if (receipt.contentSnapshot !== undefined) {
+    packetAction.contentSnapshot = receipt.contentSnapshot;
+  }
   return packetAction;
 }
 
@@ -666,8 +670,10 @@ function receiptToActionEvent(receipt: ActionReceipt): ActionEvent {
   if (receipt.targetThingId !== undefined) {
     action.targetThingId = receipt.targetThingId;
   }
-  if (receipt.targetSnapshot.authorName !== undefined) {
-    action.targetAuthor = receipt.targetSnapshot.authorName;
+  const targetAuthor =
+    receipt.contentSnapshot?.authorName ?? receipt.targetSnapshot.authorName;
+  if (targetAuthor !== undefined) {
+    action.targetAuthor = targetAuthor;
   }
   if (receipt.recommendation.ruleName !== undefined) {
     action.ruleName = receipt.recommendation.ruleName;
@@ -808,6 +814,14 @@ function buildEvidence(options: {
       source: options.receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
       detail: `Receipt ${options.receipt.id} records execution result ${options.receipt.executionResult}.`,
     });
+    if (options.receipt.contentSnapshot !== undefined) {
+      evidence.push({
+        label: 'Content snapshot',
+        source:
+          options.receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
+        detail: `Snapshot captured ${options.receipt.contentSnapshot.targetType} ${options.receipt.contentSnapshot.targetThingId ?? 'target unavailable'} with status ${options.receipt.contentSnapshot.fetchStatus}.`,
+      });
+    }
   } else if (options.action !== undefined) {
     evidence.push({
       label: 'Action event',
@@ -965,6 +979,29 @@ function getDemoCasePacketData(): CasePacketDataSet {
         title: 'How do I learn everything fast?',
         source: 'provided',
         warnings: [],
+      },
+      contentSnapshot: {
+        schemaVersion: 1,
+        targetThingId: 't3_demo_case_r2_appeal',
+        targetType: 'post',
+        subreddit: DEMO_SUBREDDIT_NAME,
+        authorName: 'learner_1',
+        titleExcerpt: 'How do I learn everything fast?',
+        bodyExcerpt: 'I need the shortcut for the whole subject by tomorrow.',
+        fetchedAt: '2026-05-16T12:00:00.000Z',
+        fetchStatus: 'captured',
+        source: 'demo',
+        warnings: [],
+        privacy: {
+          retentionCategory: 'moderation_evidence',
+          authorStored: true,
+          titleExcerptStored: true,
+          bodyExcerptStored: true,
+          permalinkStored: false,
+          redactionNotes: [
+            'Demo snapshot contains seeded content, not live Reddit content.',
+          ],
+        },
       },
       modUsername: 'demo_mod_2',
       source: 'demo',

@@ -111,6 +111,10 @@ type ApplyFormState = {
   ruleKey: string;
   targetThingId: string;
   targetAuthor: string;
+  targetTitle: string;
+  targetBody: string;
+  targetPermalink: string;
+  subreddit: string;
   selectedAction: EnforcementAction;
   overrideReason: OverrideReason | '';
   overrideNote: string;
@@ -365,9 +369,17 @@ function getApplyTargetParamsFromHash(): Partial<ApplyFormState> {
   }
 
   const targetAuthor = params.get('targetAuthor')?.trim();
+  const targetTitle = params.get('targetTitle')?.trim();
+  const targetBody = params.get('targetBody')?.trim();
+  const targetPermalink = params.get('targetPermalink')?.trim();
+  const subreddit = params.get('subreddit')?.trim();
   return {
     targetThingId,
     targetAuthor: targetAuthor || '',
+    targetTitle: targetTitle || '',
+    targetBody: targetBody || '',
+    targetPermalink: targetPermalink || '',
+    subreddit: subreddit || '',
   };
 }
 
@@ -406,6 +418,10 @@ function emptyApplyForm(): ApplyFormState {
     ruleKey: '',
     targetThingId: targetParams.targetThingId ?? 't3_demo_policy_target',
     targetAuthor: targetParams.targetAuthor ?? 'learner_1',
+    targetTitle: targetParams.targetTitle ?? '',
+    targetBody: targetParams.targetBody ?? '',
+    targetPermalink: targetParams.targetPermalink ?? '',
+    subreddit: targetParams.subreddit ?? '',
     selectedAction: 'remove',
     overrideReason: '',
     overrideNote: '',
@@ -1101,6 +1117,10 @@ function renderApplyForm() {
         Target author
         <input name="targetAuthor" value="${escapeAttribute(form.targetAuthor)}" required>
       </label>
+      <input type="hidden" name="targetTitle" value="${escapeAttribute(form.targetTitle)}">
+      <input type="hidden" name="targetBody" value="${escapeAttribute(form.targetBody)}">
+      <input type="hidden" name="targetPermalink" value="${escapeAttribute(form.targetPermalink)}">
+      <input type="hidden" name="subreddit" value="${escapeAttribute(form.subreddit)}">
       <label>
         Selected action
         <select name="selectedAction">
@@ -2843,6 +2863,30 @@ function createClientDemoApplyPreview(
   const recommendedAction = policy.steps[0]?.recommendedAction ?? 'warn';
   const deviatesFromPolicy = payload.selectedAction !== recommendedAction;
 
+  const contentSnapshot = {
+    schemaVersion: 1 as const,
+    targetThingId: payload.targetThingId,
+    targetType: payload.targetThingId.startsWith('t1_')
+      ? ('comment' as const)
+      : ('post' as const),
+    subreddit: DEMO_SUBREDDIT_NAME,
+    authorName: payload.targetAuthor,
+    titleExcerpt: payload.targetTitle || 'Demo policy target',
+    bodyExcerpt: payload.targetBody || 'Seeded client fallback content.',
+    fetchedAt: new Date().toISOString(),
+    fetchStatus: 'captured' as const,
+    source: 'demo' as const,
+    warnings: ['Demo fallback preview uses seeded client data only.'],
+    privacy: {
+      retentionCategory: 'moderation_evidence' as const,
+      authorStored: Boolean(payload.targetAuthor),
+      titleExcerptStored: true,
+      bodyExcerptStored: true,
+      permalinkStored: Boolean(payload.targetPermalink),
+      redactionNotes: ['Demo fallback stores excerpts only.'],
+    },
+  };
+
   return {
     policy,
     policySnapshot: {
@@ -2861,9 +2905,16 @@ function createClientDemoApplyPreview(
       targetType: payload.targetThingId.startsWith('t1_') ? 'comment' : 'post',
       subreddit: DEMO_SUBREDDIT_NAME,
       authorName: payload.targetAuthor,
+      title: contentSnapshot.titleExcerpt,
+      body: contentSnapshot.bodyExcerpt,
+      ...(payload.targetPermalink
+        ? { permalink: payload.targetPermalink }
+        : {}),
       source: 'provided',
       warnings: ['Demo fallback preview uses seeded client data only.'],
+      contentSnapshot,
     },
+    contentSnapshot,
     evidence: [
       {
         kind: 'policy',
@@ -2976,6 +3027,9 @@ function createClientDemoApplyResult(
       createdAt: now,
     },
   };
+  if (preview.contentSnapshot !== undefined) {
+    result.receipt.contentSnapshot = preview.contentSnapshot;
+  }
   if (preview.policySnapshot !== undefined) {
     result.receipt.policySnapshot = preview.policySnapshot;
   }
@@ -3941,6 +3995,9 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     ruleKey: string;
     targetThingId: string;
     targetAuthor: string;
+    targetTitle?: string;
+    targetBody?: string;
+    targetPermalink?: string;
     selectedAction: EnforcementAction;
     source: ApplyPolicySource;
     confirmed?: boolean;
@@ -3955,11 +4012,26 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     ) as EnforcementAction,
     source: getApplyPolicySource(String(formData.get('targetThingId') ?? '')),
   };
+  const targetTitle = String(formData.get('targetTitle') ?? '').trim();
+  const targetBody = String(formData.get('targetBody') ?? '').trim();
+  const targetPermalink = String(formData.get('targetPermalink') ?? '').trim();
+  const formSubreddit = String(formData.get('subreddit') ?? '').trim();
+  if (targetTitle) {
+    payload.targetTitle = targetTitle;
+  }
+  if (targetBody) {
+    payload.targetBody = targetBody;
+  }
+  if (targetPermalink) {
+    payload.targetPermalink = targetPermalink;
+  }
   const selectedPolicy = policyState.policies.find(
     (policy) => policy.ruleKey === ruleKey
   );
   if (selectedPolicy !== undefined) {
     payload.subreddit = selectedPolicy.subreddit;
+  } else if (formSubreddit) {
+    payload.subreddit = formSubreddit;
   }
 
   if (includeOverride) {
@@ -3994,6 +4066,10 @@ function applyFormDataToState(formData: FormData): ApplyFormState {
     ruleKey: String(formData.get('ruleKey') ?? ''),
     targetThingId: String(formData.get('targetThingId') ?? ''),
     targetAuthor: String(formData.get('targetAuthor') ?? ''),
+    targetTitle: String(formData.get('targetTitle') ?? ''),
+    targetBody: String(formData.get('targetBody') ?? ''),
+    targetPermalink: String(formData.get('targetPermalink') ?? ''),
+    subreddit: String(formData.get('subreddit') ?? ''),
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,

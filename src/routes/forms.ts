@@ -120,8 +120,17 @@ function buildDashboardUrl(
   if (target.subreddit !== undefined) {
     params.set('subreddit', target.subreddit);
   }
+  if (target.title !== undefined) {
+    params.set('targetTitle', target.title);
+  }
+  if (target.body !== undefined) {
+    params.set('targetBody', target.body);
+  }
+  if (target.permalink !== undefined) {
+    params.set('targetPermalink', target.permalink);
+  }
 
-  return `${url}#policies?${params.toString()}`;
+  return `${url}#act?${params.toString()}`;
 }
 
 function normalizeOptionalString(value: string | undefined): string | undefined {

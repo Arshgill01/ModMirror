@@ -60,6 +60,26 @@ const preview: ApplyPolicyPreview = {
     source: 'provided',
     warnings: [],
   },
+  contentSnapshot: {
+    schemaVersion: 1,
+    targetThingId: 't3_target_post',
+    targetType: 'post',
+    subreddit: 'ExampleLearning',
+    authorName: 'learner_1',
+    titleExcerpt: 'Low-effort question',
+    fetchedAt: '2026-05-18T00:00:00.000Z',
+    fetchStatus: 'captured',
+    source: 'provided',
+    warnings: [],
+    privacy: {
+      retentionCategory: 'moderation_evidence',
+      authorStored: true,
+      titleExcerptStored: true,
+      bodyExcerptStored: false,
+      permalinkStored: false,
+      redactionNotes: ['Test snapshot stores excerpts only.'],
+    },
+  },
   evidence: [],
   confirmation: {
     executionMode: 'log_only',
@@ -150,6 +170,7 @@ describe('action receipts', () => {
     expect(receiptInput.policySnapshot?.policyVersionId).toBe(
       'policy-version-1'
     );
+    expect(receiptInput.contentSnapshot?.fetchStatus).toBe('captured');
   });
 
   it('stores and lists receipts by subreddit and target', async () => {

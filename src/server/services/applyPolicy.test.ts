@@ -154,6 +154,14 @@ describe('apply policy service', () => {
         source: 'provided',
       })
     );
+    expect(preview.contentSnapshot).toEqual(
+      expect.objectContaining({
+        targetThingId: 't3_target_post',
+        targetType: 'post',
+        authorName: 'learner_1',
+        fetchStatus: 'captured',
+      })
+    );
     expect(preview.evidence.map((item) => item.kind)).toEqual([
       'policy',
       'target',
@@ -183,7 +191,7 @@ describe('apply policy service', () => {
         source: 'not_provided',
       })
     );
-    expect(preview.targetSnapshot.warnings[0]).toMatch(/No target context/);
+    expect(preview.targetSnapshot.warnings[0]).toMatch(/No Reddit post\/comment target/);
     expect(preview.evidence).toContainEqual(
       expect.objectContaining({
         kind: 'target',

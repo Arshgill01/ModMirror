@@ -10,6 +10,8 @@ import type {
   CasePacketType,
   CasePacketOffenseBucket,
   Confidence,
+  ContentSnapshotFetchStatus,
+  ContentSnapshotSource,
   DigestDeliveryMode,
   DigestDeliveryState,
   DigestOverallStatus,
@@ -146,6 +148,21 @@ export const ACTION_RECEIPT_SOURCE_VALUES = [
   'demo',
   'simulator',
 ] as const satisfies readonly ActionReceiptSource[];
+
+export const CONTENT_SNAPSHOT_FETCH_STATUS_VALUES = [
+  'captured',
+  'degraded',
+  'not_provided',
+] as const satisfies readonly ContentSnapshotFetchStatus[];
+
+export const CONTENT_SNAPSHOT_SOURCE_VALUES = [
+  'menu',
+  'dashboard',
+  'api',
+  'provided',
+  'receipt',
+  'demo',
+] as const satisfies readonly ContentSnapshotSource[];
 
 export const MIRROR_SCAN_DEPTH_VALUES = [
   'quick',
