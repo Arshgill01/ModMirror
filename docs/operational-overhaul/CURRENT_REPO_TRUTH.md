@@ -36,6 +36,9 @@ It currently supports:
   client controls for propose/review/quick-adopt.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
+- W09 Case Packets v2 prefer W04 action receipts when present and include
+  receipt IDs, target snapshots, execution results, packet types, and evidence
+  labels that distinguish verified receipts from inferred history.
 - Manual digest generation and digest history.
 - Productized dashboard UI with runtime Settings.
 - Unit tests for core shared and server service logic.
@@ -83,6 +86,9 @@ It does not yet support:
 - W08 `src/server/services/policies.ts` stores policy lifecycle metadata on
   policy records and versions. Draft/proposed versions can be reviewed and
   adopted, while Apply Policy only uses policies with an adopted active version.
+- W09 `src/server/services/casePacket.ts` loads action receipts alongside
+  action/override history. Receipt-backed packets are treated as stronger
+  evidence; action-history-only packets remain supported with explicit caveats.
 - `src/server/services/policies.ts` versions policy edits immediately; it does
   not model proposal, review, adoption, supersession, or archival states.
 - W01 target context is type/build-verified only. Runtime proof for post/comment

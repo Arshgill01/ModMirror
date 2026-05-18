@@ -400,3 +400,46 @@ W08 validation:
 
 Runtime playtest was not run in W08. Policy lifecycle persistence and APIs are
 locally verified only; Devvit Redis/API/UI behavior still needs runtime proof.
+
+### 2026-05-18 - W09 Case Packets v2
+
+Created worktree:
+
+- `git worktree add ../modmirror-w09-case-packets-v2 -b overhaul/w09-case-packets-v2 overhaul/w08-policy-agreement`
+
+Implemented W09:
+
+- Added Case Packet packet types:
+  `appeal_context`, `internal_review`, and `policy_dispute`.
+- Added evidence source labels:
+  `verified_receipt`, `verified_modmirror_action`, `inferred_history`,
+  `demo_seed`, and `missing`.
+- Updated Case Packet schema to include receipt IDs, target snapshots,
+  execution results, evidence labels, and packet type.
+- Updated `casePacket.ts` to load action receipts in addition to action events
+  and overrides.
+- Made receipts the preferred action source when a receipt ID or matching
+  action ID is available.
+- Kept action-event fallback with explicit caveats when no immutable receipt is
+  found.
+- Added receipt-backed comparable labeling while preserving deterministic
+  comparable-case matching.
+- Updated Markdown and UI rendering to show packet type, receipt ID, execution
+  result, and evidence labels.
+- Added tests for receipt-backed packets, missing data, and
+  policy-changed-since-action behavior.
+
+W09 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - initially failed on exact optional property typing;
+  fixed by tightening receipt/action conversion objects.
+- `npm test -- src/server/services/casePacket.test.ts` - passed, 7 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 21 files and 94 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W09. Receipt-backed packet generation is
+locally verified only; Devvit Redis/API/UI behavior still needs runtime proof.

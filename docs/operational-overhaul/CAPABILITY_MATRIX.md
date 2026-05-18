@@ -40,7 +40,7 @@ Status labels:
 | Action receipts | verified locally | W04 `receipts.ts`, `receipts.test.ts`, Apply Policy confirm integration | Runtime-smoke Redis persistence in Devvit playtest. |
 | Override audit/review | verified locally | `audit.ts`, tests | Integrate with receipts. |
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
-| Case Packets | verified locally/demo runtime | `casePacket.ts`, tests, runtime reports | Upgrade to receipt-backed v2 in W09. |
+| Case Packets v2 | verified locally/demo runtime | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts, runtime reports for older demo flow | Runtime-smoke receipt-backed generation in Devvit playtest. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
 | Reddit mobile app QA | unverified | Launch checklist unchecked | Add W13 verification target. |

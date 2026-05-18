@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Operational Overhaul W08 — Policy Agreement is complete locally on
-`overhaul/w08-policy-agreement`. W09 Case Packets v2 is the next recommended
-wave. The operational overhaul remains build-only/type-verified for W01-W08
+Operational Overhaul W09 — Case Packets v2 is complete locally on
+`overhaul/w09-case-packets-v2`. W10 AI Advisory Spike is the next recommended
+wave. The operational overhaul remains build-only/type-verified for W01-W09
 runtime paths unless a wave report explicitly says playtest was run.
 
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.
