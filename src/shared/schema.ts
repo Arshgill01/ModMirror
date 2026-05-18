@@ -1196,6 +1196,65 @@ export interface ApiError {
   message: string;
 }
 
+export type RuntimeVerificationStatus =
+  | 'runtime_verified'
+  | 'local_verified'
+  | 'static_verified'
+  | 'type_only'
+  | 'unverified'
+  | 'disabled'
+  | 'blocked';
+
+export type RuntimeVerificationCategory =
+  | 'entrypoint'
+  | 'target_context'
+  | 'data_persistence'
+  | 'moderation_execution'
+  | 'policy_workflow'
+  | 'evidence'
+  | 'delivery'
+  | 'ai'
+  | 'access_control'
+  | 'ui_runtime';
+
+export interface RuntimeVerificationItem {
+  id: string;
+  category: RuntimeVerificationCategory;
+  capability: string;
+  status: RuntimeVerificationStatus;
+  evidence: string[];
+  diagnosticRoute?: string;
+  proofCommand?: string;
+  safeToRunInPlaytest: boolean;
+  destructive: boolean;
+  nextAction: string;
+}
+
+export interface RuntimeVerificationSummary {
+  total: number;
+  runtimeVerified: number;
+  localVerified: number;
+  staticVerified: number;
+  typeOnly: number;
+  unverified: number;
+  disabled: number;
+  blocked: number;
+}
+
+export interface RuntimeVerificationMatrix {
+  generatedAt: string;
+  context: {
+    appSlug?: string;
+    appVersion?: string;
+    subredditId?: string;
+    subredditName?: string;
+    username?: string;
+  };
+  items: RuntimeVerificationItem[];
+  summary: RuntimeVerificationSummary;
+  criticalBlockers: string[];
+}
+
 export type ApiSuccess<T> = {
   ok: true;
   data: T;

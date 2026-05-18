@@ -57,6 +57,7 @@ import type {
   TeamDeliveryConfirmResponse,
   TeamDeliveryPreviewRequest,
   TeamDeliverySubjectType,
+  RuntimeVerificationMatrix,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
 import { getConsistencyAnalytics } from '../server/services/analytics';
@@ -113,6 +114,7 @@ import {
   confirmTeamDelivery,
   getTeamDeliveryCapabilities,
 } from '../server/services/teamDelivery';
+import { buildRuntimeVerificationMatrix } from '../server/services/runtimeVerification';
 
 export const api = new Hono();
 
@@ -146,6 +148,23 @@ api.get('/health', (c) =>
     },
   } satisfies HealthResponse)
 );
+
+api.get('/runtime-verification', (c) => {
+  const runtimeContext: RuntimeVerificationMatrix['context'] = {
+    appSlug: context.appSlug,
+    appVersion: context.appVersion,
+    subredditId: context.subredditId,
+    subredditName: context.subredditName,
+  };
+  if (context.username !== undefined) {
+    runtimeContext.username = context.username;
+  }
+  const response: ApiResponse<RuntimeVerificationMatrix> = {
+    ok: true,
+    data: buildRuntimeVerificationMatrix(runtimeContext),
+  };
+  return c.json(response);
+});
 
 api.post('/smoke/redis', async (c) => {
   const result = await runRedisSmoke();

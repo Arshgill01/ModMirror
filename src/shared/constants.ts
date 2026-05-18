@@ -295,6 +295,7 @@ export const API_ROUTES = {
   teamDeliveryCapabilities: '/api/delivery/capabilities',
   teamDeliveryPreview: '/api/delivery/preview',
   teamDeliveryConfirm: '/api/delivery/confirm',
+  runtimeVerification: '/api/runtime-verification',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',
