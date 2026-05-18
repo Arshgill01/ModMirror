@@ -950,6 +950,59 @@ export interface ConsistencyAnalyticsSummary {
   policyImpacts: PolicyImpactSummary[];
 }
 
+export type CommunityHealthDataQuality = 'empty' | 'small_sample' | 'usable';
+
+export type CommunityHealthStatus =
+  | 'insufficient_data'
+  | 'stable'
+  | 'watch'
+  | 'needs_review';
+
+export type DriftStabilityStatus =
+  | 'insufficient_data'
+  | 'improving'
+  | 'stable'
+  | 'regressing';
+
+export interface CommunityHealthRuleSignal {
+  ruleKey: string;
+  ruleName?: string;
+  actionCount: number;
+  consistentActionCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  repeatAuthorCount: number;
+  consistencyRate: number;
+  overrideRate: number;
+  status: CommunityHealthStatus;
+  notes: string[];
+}
+
+export interface CommunityHealthCasePacketVolume {
+  eligibleReceiptCount: number;
+  persistedPacketCount: number;
+  source: 'receipts_only' | 'not_persisted';
+  note: string;
+}
+
+export interface CommunityHealthSummary {
+  subreddit: string;
+  generatedAt: string;
+  dataQuality: CommunityHealthDataQuality;
+  status: CommunityHealthStatus;
+  scanCount: number;
+  receiptCount: number;
+  actionCount: number;
+  overrideCount: number;
+  unresolvedOverrideCount: number;
+  policyChurnCount: number;
+  driftStability: DriftStabilityStatus;
+  casePacketVolume: CommunityHealthCasePacketVolume;
+  ruleSignals: CommunityHealthRuleSignal[];
+  privacyGuardrails: string[];
+  caveats: string[];
+}
+
 export interface DriftCandidate {
   ruleKey?: string;
   ruleName: string;

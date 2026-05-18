@@ -29,6 +29,7 @@ import type {
   ApiResponse,
   AttributionCorrection,
   AttributionCorrectionInput,
+  CommunityHealthSummary,
   ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
@@ -69,6 +70,7 @@ import type {
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
 import { getConsistencyAnalytics } from '../server/services/analytics';
+import { getCommunityHealthSummary } from '../server/services/communityHealth';
 import {
   compareScanRecords,
   getScanRecord,
@@ -391,6 +393,14 @@ api.get('/analytics/consistency', async (c) => {
   const response: ApiResponse<ConsistencyAnalyticsSummary> = {
     ok: true,
     data: await getConsistencyAnalytics(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.get('/community-health', async (c) => {
+  const response: ApiResponse<CommunityHealthSummary> = {
+    ok: true,
+    data: await getCommunityHealthSummary(getRequestedSubreddit(c)),
   };
   return c.json(response);
 });

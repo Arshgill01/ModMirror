@@ -2,14 +2,26 @@
 
 ## Current Phase
 
-Expansion Wave 20 — Replay Sandbox is in progress on
-`expansion/w20-replay-sandbox` after W19 policy ratification.
+Expansion Wave 21 — Community Health is in progress on
+`expansion/w21-community-health` after W20 replay sandbox.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 21 Checklist
+
+- [x] Add aggregate community health schema.
+- [x] Add aggregate-only community health service.
+- [x] Include repeat-author buckets without exposing usernames.
+- [x] Include unresolved overrides, policy churn, drift stability, and
+      receipt-backed case packet readiness.
+- [x] Add `/api/community-health`.
+- [x] Surface community health on the Review page.
+- [x] Add empty/small-community tests.
+- [ ] Runtime-verify community health route through Devvit Web/Redis playtest.
 
 ## Expansion Wave 20 Checklist
 

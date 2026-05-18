@@ -31,6 +31,7 @@ import type {
   AttributedModAction,
   CasePacket,
   Confidence,
+  CommunityHealthSummary,
   ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
@@ -209,6 +210,7 @@ type GovernanceUiState = {
   message: string | undefined;
   health: PolicyHealthOverview | undefined;
   analytics: ConsistencyAnalyticsSummary | undefined;
+  communityHealth: CommunityHealthSummary | undefined;
   overrides: ReviewableOverrideEvent[];
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
 };
@@ -345,6 +347,7 @@ let governanceState: GovernanceUiState = {
   message: undefined,
   health: undefined,
   analytics: undefined,
+  communityHealth: undefined,
   overrides: [],
   versionsByPolicy: {},
 };
@@ -1520,6 +1523,8 @@ function renderReviewPage() {
       </div>
     </section>
     ${renderGovernanceOverview()}
+    ${renderCommunityHealthLens()}
+    ${renderConsistencyAnalytics()}
     ${renderPolicyHealthCards()}
     ${renderOverrideInbox()}
     ${renderPolicyVersionSummary()}
@@ -1588,6 +1593,41 @@ function renderGovernanceOverview() {
       ${renderMetricCard('Stable policies', health.stablePolicies.toString())}
       ${renderMetricCard('Need review', health.policiesNeedingReview.toString())}
       ${renderMetricCard('Unresolved overrides', health.unresolvedOverrides.toString())}
+    </section>
+  `;
+}
+
+function renderCommunityHealthLens() {
+  const health = governanceState.communityHealth;
+  if (!health) {
+    return '';
+  }
+  const topRule = health.ruleSignals[0];
+  return `
+    <section class="section-panel community-health-panel">
+      <div class="section-header">
+        <div>
+          <h3>Community Health</h3>
+          <p>${escapeHtml(health.caveats[0] ?? 'Aggregate stored data only; no per-mod rankings are shown.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(health.status))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Data</dt><dd>${formatAction(health.dataQuality)}</dd></div>
+        <div><dt>Actions</dt><dd>${health.actionCount}</dd></div>
+        <div><dt>Unresolved</dt><dd>${health.unresolvedOverrideCount}</dd></div>
+        <div><dt>Churn</dt><dd>${health.policyChurnCount}</dd></div>
+        <div><dt>Drift</dt><dd>${formatAction(health.driftStability)}</dd></div>
+        <div><dt>Case-ready</dt><dd>${health.casePacketVolume.eligibleReceiptCount}</dd></div>
+      </dl>
+      ${
+        topRule
+          ? `<p class="recommendation">${escapeHtml(topRule.ruleName ?? topRule.ruleKey)}: ${formatPercent(topRule.consistencyRate)} consistency across ${topRule.actionCount} tracked action${topRule.actionCount === 1 ? '' : 's'}.</p>`
+          : '<p class="inline-note">No rule-level community health signal yet.</p>'
+      }
+      <dl class="status-list">
+        ${health.privacyGuardrails.map((guardrail) => `<div><dt>Guardrail</dt><dd>${escapeHtml(guardrail)}</dd></div>`).join('')}
+      </dl>
     </section>
   `;
 }
@@ -3292,6 +3332,50 @@ function createClientDemoAnalytics(): ConsistencyAnalyticsSummary {
   };
 }
 
+function createClientDemoCommunityHealth(): CommunityHealthSummary {
+  const now = new Date().toISOString();
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: now,
+    dataQuality: 'small_sample',
+    status: 'needs_review',
+    scanCount: 2,
+    receiptCount: 12,
+    actionCount: 12,
+    overrideCount: 3,
+    unresolvedOverrideCount: 1,
+    policyChurnCount: 4,
+    driftStability: 'improving',
+    casePacketVolume: {
+      eligibleReceiptCount: 12,
+      persistedPacketCount: 0,
+      source: 'not_persisted',
+      note: 'Demo case packets are generated on demand.',
+    },
+    ruleSignals: [
+      {
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        actionCount: 12,
+        consistentActionCount: 8,
+        overrideCount: 3,
+        unresolvedOverrideCount: 1,
+        repeatAuthorCount: 2,
+        consistencyRate: 8 / 12,
+        overrideRate: 3 / 12,
+        status: 'needs_review',
+        notes: ['One unresolved Rule 2 override needs team review.'],
+      },
+    ],
+    privacyGuardrails: [
+      'No per-moderator leaderboard fields are emitted.',
+      'Repeat-offense signals are aggregated by rule and do not expose usernames.',
+      'Demo health is labeled and not live subreddit proof.',
+    ],
+    caveats: ['Demo community health is seeded for preview and is not live proof.'],
+  };
+}
+
 function createClientDemoOverrides(
   latestOverride?: ApplyPolicyConfirmResult['overrideEvent']
 ): ReviewableOverrideEvent[] {
@@ -3770,7 +3854,8 @@ async function loadGovernance(ruleKey?: string) {
   render();
 
   try {
-    const [healthOverview, policies, overrides, analytics] = await Promise.all([
+    const [healthOverview, policies, overrides, analytics, communityHealth] =
+      await Promise.all([
       fetchApi<PolicyHealthOverview>(
         withWorkspaceSubreddit(API_ROUTES.policyHealth)
       ),
@@ -3785,6 +3870,9 @@ async function loadGovernance(ruleKey?: string) {
       fetchApi<ConsistencyAnalyticsSummary>(
         withWorkspaceSubreddit(API_ROUTES.consistencyAnalytics)
       ),
+      fetchApi<CommunityHealthSummary>(
+        withWorkspaceSubreddit(API_ROUTES.communityHealth)
+      ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
     policyState = {
@@ -3796,6 +3884,7 @@ async function loadGovernance(ruleKey?: string) {
       loading: false,
       health: healthOverview,
       analytics,
+      communityHealth,
       overrides,
       versionsByPolicy,
     };
@@ -3807,6 +3896,7 @@ async function loadGovernance(ruleKey?: string) {
         loading: false,
         health: createClientDemoHealth(),
         analytics: createClientDemoAnalytics(),
+        communityHealth: createClientDemoCommunityHealth(),
         overrides: ruleKey
           ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
           : demoOverrides,
