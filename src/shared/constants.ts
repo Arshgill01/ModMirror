@@ -15,6 +15,7 @@ import type {
   DigestSource,
   EnforcementAction,
   MessageDeliveryMode,
+  MirrorScanDepth,
   ModerationExecutionCapabilityState,
   ModerationExecutionMode,
   ModerationExecutionStatus,
@@ -135,6 +136,12 @@ export const ACTION_RECEIPT_SOURCE_VALUES = [
   'simulator',
 ] as const satisfies readonly ActionReceiptSource[];
 
+export const MIRROR_SCAN_DEPTH_VALUES = [
+  'quick',
+  'standard',
+  'deep',
+] as const satisfies readonly MirrorScanDepth[];
+
 export const MODERATION_EXECUTION_MODE_VALUES = [
   'live',
   'log_only',
@@ -205,6 +212,23 @@ export const DEFAULT_POLICY_WINDOW_DAYS = 30;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
 export const SCAN_HISTORY_LIMIT = 10;
+export const MIRROR_SCAN_DEPTH_CONFIG = {
+  quick: {
+    requestedLimit: 25,
+    pageSize: 25,
+  },
+  standard: {
+    requestedLimit: 60,
+    pageSize: 60,
+  },
+  deep: {
+    requestedLimit: 250,
+    pageSize: 100,
+  },
+} as const satisfies Record<
+  MirrorScanDepth,
+  { requestedLimit: number; pageSize: number }
+>;
 export const MINIMUM_ACTIONS_FOR_DRIFT_DISPLAY = 8;
 export const MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY = 3;
 export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';

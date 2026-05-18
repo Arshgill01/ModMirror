@@ -79,6 +79,8 @@ export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
 
+export type MirrorScanDepth = 'quick' | 'standard' | 'deep';
+
 export type ActionReceiptSource =
   | 'menu'
   | 'dashboard'
@@ -439,6 +441,7 @@ export interface MirrorScanSources {
   rules: NormalizedRule[];
   removalReasons: NormalizedRemovalReason[];
   actions: NormalizedModAction[];
+  scanDepth?: MirrorScanDepthMetadata;
   warnings: string[];
 }
 
@@ -463,7 +466,18 @@ export interface MirrorScan {
   confidenceBreakdown: Record<Confidence, number>;
   driftCandidates: DriftCandidate[];
   smallSubredditStatus: SmallSubredditThresholdStatus;
+  scanDepth: MirrorScanDepthMetadata;
   warnings: string[];
+}
+
+export interface MirrorScanDepthMetadata {
+  depth: MirrorScanDepth;
+  requestedLimit: number;
+  pageSize: number;
+  fetchedActions: number;
+  hitLimit: boolean;
+  paginationStrategy: 'listing_all';
+  runtimeVerified: boolean;
 }
 
 export interface MirrorScanRecord extends MirrorScan {

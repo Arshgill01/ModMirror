@@ -1,5 +1,6 @@
 import {
   CONFIDENCE_VALUES,
+  MIRROR_SCAN_DEPTH_CONFIG,
   MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY,
   SCAN_HISTORY_LIMIT,
 } from '../../shared/constants';
@@ -11,6 +12,8 @@ import type {
   DriftCandidate,
   EnforcementAction,
   MirrorScan,
+  MirrorScanDepth,
+  MirrorScanDepthMetadata,
   MirrorScanRecord,
 } from '../../shared/schema';
 import { attributeActions } from './attribution';
@@ -20,6 +23,7 @@ import { saveScanRecord } from './scans';
 
 export type RunMirrorScanOptions = {
   mode: 'live' | 'demo';
+  depth?: MirrorScanDepth;
   createdBy?: string;
 };
 
@@ -29,7 +33,9 @@ export async function runMirrorScan(
   const sources =
     options.mode === 'demo'
       ? getDemoMirrorScanSources()
-      : await loadLiveMirrorScanSources();
+      : await loadLiveMirrorScanSources(
+          options.depth === undefined ? {} : { depth: options.depth }
+        );
   const attributedActions = attributeActions(
     sources.actions,
     sources.rules,
@@ -51,6 +57,9 @@ export async function runMirrorScan(
     smallSubredditStatus: getSmallSubredditThresholdStatus(
       sources.actions.length
     ),
+    scanDepth:
+      sources.scanDepth ??
+      createDemoScanDepthMetadata(options.depth ?? 'standard', sources.actions.length),
     warnings: [...sources.warnings],
   };
 
@@ -185,6 +194,23 @@ function toScanRecord(
 
 function createScanId(source: ActionSource): string {
   return `scan-${source}-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+}
+
+function createDemoScanDepthMetadata(
+  depth: MirrorScanDepth,
+  actionCount: number
+): MirrorScanDepthMetadata {
+  const config = MIRROR_SCAN_DEPTH_CONFIG[depth];
+
+  return {
+    depth,
+    requestedLimit: config.requestedLimit,
+    pageSize: config.pageSize,
+    fetchedActions: actionCount,
+    hitLimit: actionCount >= config.requestedLimit,
+    paginationStrategy: 'listing_all',
+    runtimeVerified: true,
+  };
 }
 
 function formatError(error: unknown): string {

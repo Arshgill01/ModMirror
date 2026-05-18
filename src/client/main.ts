@@ -38,6 +38,7 @@ import type {
   GenerateDigestResponse,
   MessageDeliveryMode,
   MirrorScan,
+  MirrorScanDepth,
   OverrideReason,
   PolicyStep,
   RulePolicy,
@@ -68,6 +69,7 @@ type Page = {
 type ScanUiState = {
   loading: boolean;
   mode?: ScanMode;
+  depth?: MirrorScanDepth;
   error?: string;
   result?: MirrorScan;
   warnings: string[];
@@ -649,7 +651,9 @@ function renderScanPage() {
         </div>
         <div class="button-row">
           <button class="secondary-button" data-run-scan="demo" ${scanState.loading ? 'disabled' : ''} type="button">Use Demo Data</button>
-          <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''} type="button">Run Live Scan</button>
+          <button class="secondary-button" data-run-scan="live" data-scan-depth="quick" ${scanState.loading ? 'disabled' : ''} type="button">Quick Live Scan</button>
+          <button class="primary-button" data-run-scan="live" data-scan-depth="standard" ${scanState.loading ? 'disabled' : ''} type="button">Standard Live Scan</button>
+          <button class="secondary-button" data-run-scan="live" data-scan-depth="deep" ${scanState.loading ? 'disabled' : ''} type="button">Deep Live Scan</button>
         </div>
       </div>
     </section>
@@ -699,6 +703,7 @@ function renderScanSummary(scan: MirrorScan) {
   return `
     <section class="metric-grid" aria-label="Scan summary">
       ${renderMetricCard('Source', formatDataMode(scan.source as ProductDataMode))}
+      ${renderMetricCard('Depth', formatScanDepth(scan.scanDepth.depth))}
       ${renderMetricCard('Actions scanned', scan.totalActionsScanned.toString())}
       ${renderMetricCard('Attributed', scan.attributedCount.toString())}
       ${renderMetricCard('Unmatched', scan.unmatchedCount.toString())}
@@ -707,7 +712,7 @@ function renderScanSummary(scan: MirrorScan) {
       <div class="section-header">
         <div>
           <h3>Confidence Breakdown</h3>
-          <p>Historical rule labels remain inferred and confidence-scored.</p>
+          <p>Historical rule labels remain inferred and confidence-scored. Scan requested ${scan.scanDepth.requestedLimit} actions with page size ${scan.scanDepth.pageSize}.</p>
         </div>
         <span class="status-badge status-neutral">${escapeHtml(scan.smallSubredditStatus.message)}</span>
       </div>
@@ -1869,7 +1874,8 @@ function bindScanActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         const mode = button.dataset.runScan === 'demo' ? 'demo' : 'live';
-        void runScan(mode);
+        const depth = parseScanDepth(button.dataset.scanDepth);
+        void runScan(mode, depth);
       });
     });
 }
@@ -2104,10 +2110,11 @@ function getDevvitGlobal(): DevvitWebViewGlobal | undefined {
   return candidate && typeof candidate === 'object' ? candidate : undefined;
 }
 
-async function runScan(mode: ScanMode) {
+async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
   scanState = {
     loading: true,
     mode,
+    depth,
     warnings: [],
   };
   dashboardOpen = true;
@@ -2119,11 +2126,12 @@ async function runScan(mode: ScanMode) {
     const payload = await fetchApi<MirrorScan>(API_ROUTES.scan, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode }),
+      body: JSON.stringify({ mode, depth }),
     });
     scanState = {
       loading: false,
       mode,
+      depth,
       result: payload,
       warnings: payload.warnings,
     };
@@ -2133,6 +2141,7 @@ async function runScan(mode: ScanMode) {
       scanState = {
         loading: false,
         mode,
+        depth,
         result: payload,
         warnings: payload.warnings,
       };
@@ -2143,12 +2152,24 @@ async function runScan(mode: ScanMode) {
     scanState = {
       loading: false,
       mode,
+      depth,
       error: normalizeClientError(error, 'Scan could not reach the ModMirror API.'),
       warnings: [],
     };
   }
 
   render();
+}
+
+function parseScanDepth(value: string | undefined): MirrorScanDepth {
+  if (value === 'quick' || value === 'deep') {
+    return value;
+  }
+  return 'standard';
+}
+
+function formatScanDepth(depth: MirrorScanDepth): string {
+  return `${depth.charAt(0).toUpperCase()}${depth.slice(1)}`;
 }
 
 function createClientPreviewDemoScan(): MirrorScan {
@@ -2198,6 +2219,15 @@ function createClientPreviewDemoScan(): MirrorScan {
           'Keep monitoring; this rule can serve as the comparison baseline.',
       },
     ],
+    scanDepth: {
+      depth: 'standard',
+      requestedLimit: 60,
+      pageSize: 60,
+      fetchedActions: 60,
+      hitLimit: true,
+      paginationStrategy: 'listing_all',
+      runtimeVerified: true,
+    },
     smallSubredditStatus: {
       meetsThreshold: true,
       observedActions: 60,

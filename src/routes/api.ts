@@ -2,7 +2,10 @@ import { Hono } from 'hono';
 import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
-import { DEMO_SUBREDDIT_NAME } from '../shared/constants';
+import {
+  DEMO_SUBREDDIT_NAME,
+  MIRROR_SCAN_DEPTH_VALUES,
+} from '../shared/constants';
 import type {
   ActionEvent,
   ActionReceipt,
@@ -22,6 +25,7 @@ import type {
   LastScanMetadata,
   MirrorScan,
   MirrorScanComparison,
+  MirrorScanDepth,
   MirrorScanRecord,
   OverrideEvent,
   OverrideReviewStatus,
@@ -122,14 +126,20 @@ api.post('/smoke/reddit', async (c) => {
 api.post('/scan', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<{
     mode: string;
+    depth: string;
   }>;
   const mode: 'live' | 'demo' = body.mode === 'demo' ? 'demo' : 'live';
+  const depth = normalizeScanDepth(body.depth);
 
   try {
-    const scan =
-      context.username !== undefined
-        ? await runMirrorScan({ mode, createdBy: context.username })
-        : await runMirrorScan({ mode });
+    const scanOptions: Parameters<typeof runMirrorScan>[0] = {
+      mode,
+      depth,
+    };
+    if (context.username !== undefined) {
+      scanOptions.createdBy = context.username;
+    }
+    const scan = await runMirrorScan(scanOptions);
     const response: ApiResponse<MirrorScan> = {
       ok: true,
       data: scan,
@@ -149,6 +159,16 @@ api.post('/scan', async (c) => {
     return c.json(response, 500);
   }
 });
+
+function normalizeScanDepth(depth: string | undefined): MirrorScanDepth {
+  if (
+    depth !== undefined &&
+    MIRROR_SCAN_DEPTH_VALUES.includes(depth as MirrorScanDepth)
+  ) {
+    return depth as MirrorScanDepth;
+  }
+  return 'standard';
+}
 
 api.get('/scans', async (c) => {
   const source = c.req.query('source');

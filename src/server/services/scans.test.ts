@@ -144,6 +144,15 @@ function scanRecord(
       unmatched: 1,
     },
     driftCandidates: [],
+    scanDepth: {
+      depth: 'standard',
+      requestedLimit: 60,
+      pageSize: 60,
+      fetchedActions: 3,
+      hitLimit: false,
+      paginationStrategy: 'listing_all',
+      runtimeVerified: source === 'demo',
+    },
     smallSubredditStatus: {
       meetsThreshold: false,
       observedActions: 3,
