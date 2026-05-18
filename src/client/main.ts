@@ -26,6 +26,7 @@ import type {
   ApplyPolicySource,
   AiAdvisoryCapabilities,
   ApiResponse,
+  ActionReceipt,
   CasePacket,
   Confidence,
   ConsistencyAnalyticsSummary,
@@ -190,6 +191,12 @@ type GovernanceUiState = {
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
 };
 
+type ReceiptLedgerUiState = {
+  loading: boolean;
+  error?: string;
+  receipts: ActionReceipt[];
+};
+
 type DigestUiState = {
   loading: boolean;
   error: string | undefined;
@@ -222,10 +229,10 @@ type DevvitWebViewGlobal = {
 
 const pages: Page[] = [
   {
-    id: 'command-center',
-    label: 'Command Center',
-    title: 'Command Center',
-    purpose: 'A one-screen view of drift, policy health, and the next moderation governance action.',
+    id: 'act',
+    label: 'Act',
+    title: 'Act',
+    purpose: 'Apply the agreed policy to a post or comment and record the receipt.',
   },
   {
     id: 'scan',
@@ -234,9 +241,9 @@ const pages: Page[] = [
     purpose: 'Compare recent moderation actions against rules and removal reasons with confidence labels.',
   },
   {
-    id: 'policies',
-    label: 'Policies',
-    title: 'Policies',
+    id: 'agree',
+    label: 'Agree',
+    title: 'Agree',
     purpose: 'Turn drift findings into explicit rule policy ladders that moderators can apply.',
   },
   {
@@ -246,16 +253,10 @@ const pages: Page[] = [
     purpose: 'Review policy health and resolve exceptions without individual blame.',
   },
   {
-    id: 'case-packets',
-    label: 'Case Packets',
-    title: 'Case Packets',
-    purpose: 'Generate appeal context rooted in policy versions, tracked actions, and deterministic comparable cases.',
-  },
-  {
-    id: 'digest',
-    label: 'Digest',
-    title: 'Digest',
-    purpose: 'Generate a manual Markdown governance digest for the mod team.',
+    id: 'prove',
+    label: 'Prove',
+    title: 'Prove',
+    purpose: 'Package receipts, comparable cases, digest notes, and before/after consistency evidence.',
   },
   {
     id: 'settings',
@@ -273,7 +274,7 @@ if (!app) {
 
 const appRoot = app;
 let dashboardOpen = getCurrentWebViewMode() === 'expanded';
-let activePage: ProductPageId = dashboardOpen ? getPageFromHash() : 'command-center';
+let activePage: ProductPageId = dashboardOpen ? getPageFromHash() : 'act';
 let themePreference: ThemePreference = loadThemePreference();
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
@@ -314,6 +315,10 @@ let governanceState: GovernanceUiState = {
   overrides: [],
   versionsByPolicy: {},
 };
+let receiptLedgerState: ReceiptLedgerUiState = {
+  loading: false,
+  receipts: [],
+};
 let digestState: DigestUiState = {
   loading: false,
   error: undefined,
@@ -324,10 +329,23 @@ let aiAdvisoryState: AiAdvisoryUiState = {};
 let teamDeliveryState: TeamDeliveryUiState = {};
 
 function getPageFromHash(): ProductPageId {
-  const candidate = getHashRoute().page;
+  const candidate = canonicalPageId(getHashRoute().page);
   return pages.some((page) => page.id === candidate)
     ? (candidate as ProductPageId)
-    : 'command-center';
+    : 'act';
+}
+
+function canonicalPageId(page: string): string {
+  if (page === 'command-center') {
+    return 'act';
+  }
+  if (page === 'policies') {
+    return 'agree';
+  }
+  if (page === 'case-packets' || page === 'digest') {
+    return 'prove';
+  }
+  return page;
 }
 
 function getHashRoute() {
@@ -403,11 +421,10 @@ function render() {
   const page =
     pages.find((item) => item.id === activePage) ??
     ({
-      id: 'command-center',
-      label: 'Command Center',
-      title: 'Command Center',
-      purpose:
-        'A one-screen view of drift, policy health, and the next moderation governance action.',
+      id: 'act',
+      label: 'Act',
+      title: 'Act',
+      purpose: 'Apply the agreed policy to a post or comment and record the receipt.',
     } satisfies Page);
   const summary = buildDashboardSummary();
   applyThemePreference();
@@ -529,24 +546,22 @@ function renderDemoBanner(dataMode: ProductDataMode) {
 
 function renderPage(pageId: ProductPageId) {
   switch (pageId) {
-    case 'command-center':
-      return renderCommandCenterPage();
+    case 'act':
+      return renderActPage();
     case 'scan':
       return renderScanPage();
-    case 'policies':
-      return renderPoliciesPage();
+    case 'agree':
+      return renderAgreePage();
     case 'review':
       return renderReviewPage();
-    case 'case-packets':
-      return renderCasePacketPage();
-    case 'digest':
-      return renderDigestPage();
+    case 'prove':
+      return renderProvePage();
     case 'settings':
       return renderSettingsPage();
   }
 }
 
-function renderCommandCenterPage() {
+function renderActPage() {
   const summary = buildDashboardSummary();
   const setupInput: Parameters<typeof buildSetupSteps>[0] = {
     policies: policyState.policies,
@@ -561,43 +576,35 @@ function renderCommandCenterPage() {
   const setupSteps = buildSetupSteps(setupInput);
 
   return `
-    <section class="command-board" aria-label="Command center summary">
-      <div class="command-primary">
-        <div class="score-block" style="--score: ${summary.consistencyScore}%">
-          <span class="score-label">Consistency score</span>
-          <strong>${summary.consistencyScore}<span>/100</span></strong>
-          <p>${escapeHtml(summary.topIssue)}</p>
-        </div>
-
-        <div class="next-action">
-          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
-          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
-          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
-        </div>
+    <section class="act-layout" aria-label="Apply policy workflow">
+      <div class="act-primary">
+        ${renderApplyPolicyPanel()}
       </div>
 
-      <div class="command-secondary">
-        <dl class="signal-list">
-          ${renderCommandSignal('Data mode', formatDataMode(summary.dataMode))}
-          ${renderCommandSignal('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
-          ${renderCommandSignal('Active policies', summary.activePolicyCount.toString())}
-          ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
-        </dl>
-        <div class="secondary-actions">
-          ${summary.secondaryActions
-            .map(
-              (action) =>
-                `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
-            )
-            .join('')}
+      <aside class="act-context">
+        <div class="document-panel">
+          <div class="section-header">
+            <div>
+              <h3>Operational Queue</h3>
+              <p>Current state before a moderator confirms a post or comment action.</p>
+            </div>
+          </div>
+          <dl class="signal-list">
+            ${renderCommandSignal('Consistency', `${summary.consistencyScore}/100`)}
+            ${renderCommandSignal('Top issue', summary.topIssue)}
+            ${renderCommandSignal('Open overrides', summary.unresolvedOverrideCount.toString())}
+            ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
+          </dl>
+          <button class="secondary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+          <p class="inline-note">${escapeHtml(getPrimaryActionCopy(summary.primaryAction.intent))}</p>
         </div>
-      </div>
+
+        ${renderSetupWizard(setupSteps)}
+        ${renderDemoScenario()}
+      </aside>
     </section>
 
-    <section class="workflow-board">
-      ${renderSetupWizard(setupSteps)}
-      ${renderDemoScenario()}
-    </section>
+    ${renderReceiptLedger()}
   `;
 }
 
@@ -747,7 +754,7 @@ function renderDriftCandidates(candidates: DriftCandidate[]) {
     return renderEmptyState(
       'No drift candidates yet',
       'Create a policy now or keep scanning as more moderation history accumulates.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
@@ -781,13 +788,13 @@ function renderDriftCandidate(candidate: DriftCandidate, index?: number) {
   `;
 }
 
-function renderPoliciesPage() {
+function renderAgreePage() {
   return `
     <section class="section-panel">
       <div class="section-header">
         <div>
-          <h3>Policy Agreement Flow</h3>
-          <p>Policies are versioned and use local rule keys because Devvit rule IDs are not stable in current typings.</p>
+          <h3>Decision Records</h3>
+          <p>Draft, review, and adoption state stays separate from the action flow.</p>
           ${renderPolicyMessage()}
         </div>
         <div class="button-row">
@@ -801,7 +808,7 @@ function renderPoliciesPage() {
     ${renderDriftPolicyPanel()}
     <section class="policy-workbench">
       ${renderPolicyForm()}
-      ${renderApplyPolicyPanel()}
+      ${renderPolicyVersionSummary()}
     </section>
   `;
 }
@@ -825,7 +832,7 @@ function renderPolicyFallback() {
     'Create your first policy from a drift candidate or load the ExampleLearning demo scenario.',
     [
       { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' },
-      { label: 'Create Policy', page: 'policies', intent: 'create_policy' },
+      { label: 'Create Policy', page: 'agree', intent: 'create_policy' },
     ]
   );
 }
@@ -993,6 +1000,64 @@ function renderApplyPolicyPanel() {
   `;
 }
 
+function renderReceiptLedger() {
+  const receipts = [
+    ...(applyState.result ? [applyState.result.receipt] : []),
+    ...receiptLedgerState.receipts.filter(
+      (receipt) => receipt.id !== applyState.result?.receipt.id
+    ),
+  ].slice(0, 8);
+
+  return `
+    <section class="section-panel receipt-ledger" aria-label="Action receipt ledger">
+      <div class="section-header">
+        <div>
+          <h3>Receipt Ledger</h3>
+          <p>Every confirmed action creates a receipt, including skipped and log-only paths.</p>
+          ${receiptLedgerState.error ? `<p class="inline-error">${escapeHtml(receiptLedgerState.error)}</p>` : ''}
+        </div>
+        <button class="secondary-button" data-load-receipts type="button">Refresh receipts</button>
+      </div>
+      ${
+        receiptLedgerState.loading
+          ? renderLoadingState('Loading receipts', 'Reading recent Apply Policy receipts.')
+          : receipts.length > 0
+            ? `<ol class="ledger-list">${receipts.map(renderReceiptLedgerItem).join('')}</ol>`
+            : renderEmptyState(
+                'No receipts yet',
+                'Confirm an Apply Policy action to create a receipt for later review.',
+                [{ label: 'Apply Sample', page: 'act', intent: 'review_policy' }]
+              )
+      }
+    </section>
+  `;
+}
+
+function renderReceiptLedgerItem(receipt: ActionReceipt) {
+  const policy = receipt.policySnapshot;
+  return `
+    <li class="ledger-item">
+      <div>
+        <strong>${escapeHtml(receipt.id)}</strong>
+        <span>${formatDate(receipt.createdAt)} - ${escapeHtml(receipt.targetThingId ?? receipt.targetSnapshot.targetType)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Rule</dt><dd>${escapeHtml(policy?.ruleName ?? receipt.recommendation.ruleName ?? 'Unavailable')}</dd></div>
+        <div><dt>Recommended</dt><dd>${formatAction(receipt.recommendation.recommendedAction)}</dd></div>
+        <div><dt>Selected</dt><dd>${formatAction(receipt.selectedAction)}</dd></div>
+        <div><dt>Execution</dt><dd>${formatAction(receipt.executionResult)}</dd></div>
+        <div><dt>Mode</dt><dd>${formatAction(receipt.executionMode)}</dd></div>
+        <div><dt>Capability</dt><dd>${formatAction(receipt.capabilityState)}</dd></div>
+      </dl>
+      ${
+        receipt.overrideReason
+          ? `<p class="inline-note">Override: ${formatAction(receipt.overrideReason)}${receipt.overrideNote ? ` - ${escapeHtml(receipt.overrideNote)}` : ''}</p>`
+          : ''
+      }
+    </li>
+  `;
+}
+
 function renderApplyMessage() {
   if (applyState.error) {
     return `<p class="inline-error">${escapeHtml(applyState.error)}</p>`;
@@ -1008,7 +1073,7 @@ function renderApplyForm() {
     return renderEmptyState(
       'No policy available',
       'Create a policy before applying it to a sample case.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
@@ -1173,7 +1238,6 @@ function renderReviewPage() {
       </div>
     </section>
     ${renderGovernanceOverview()}
-    ${renderConsistencyAnalytics()}
     ${renderPolicyHealthCards()}
     ${renderOverrideInbox()}
     ${renderPolicyVersionSummary()}
@@ -1232,7 +1296,7 @@ function renderGovernanceOverview() {
     return renderEmptyState(
       'No review data yet',
       'Create policies and log Apply Policy actions. Review cards will appear as exceptions accumulate.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
@@ -1252,7 +1316,7 @@ function renderPolicyHealthCards() {
     return renderEmptyState(
       'Policy health has no signal yet',
       'Run the policy workflow to create enough tracked actions for health scoring.',
-      [{ label: 'Apply Sample', page: 'policies', intent: 'review_policy' }]
+      [{ label: 'Apply Sample', page: 'act', intent: 'apply_policy' }]
     );
   }
   return `
@@ -1300,7 +1364,7 @@ function renderOverrideInbox() {
     return renderEmptyState(
       'Override inbox is clear',
       'No unresolved exceptions are waiting for team review.',
-      [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+      [{ label: 'Generate Digest', page: 'prove', intent: 'generate_digest' }]
     );
   }
 
@@ -1402,6 +1466,16 @@ function renderPolicyVersionCard(policy: RulePolicy) {
           : '<p>No version records returned yet.</p>'
       }
     </article>
+  `;
+}
+
+function renderProvePage() {
+  return `
+    ${renderConsistencyAnalytics()}
+    <section class="prove-layout">
+      <div>${renderCasePacketPage()}</div>
+      <div>${renderDigestPage()}</div>
+    </section>
   `;
 }
 
@@ -1616,7 +1690,7 @@ function renderDigestPage() {
       ${report ? renderDigestReport(report, rulesNeedingAttention, stableRules) : renderEmptyState(
         'No digest generated yet',
         'Generate a manual digest after loading demo data or running a scan.',
-        [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+        [{ label: 'Generate Digest', page: 'prove', intent: 'generate_digest' }]
       )}
       ${renderDigestHistory()}
     </section>
@@ -1875,6 +1949,7 @@ function bindAllActions() {
   bindCasePacketActions();
   bindGovernanceActions();
   bindDigestActions();
+  bindReceiptActions();
   document
     .querySelectorAll<HTMLButtonElement>('[data-load-health]')
     .forEach((button) => {
@@ -1938,9 +2013,15 @@ function handleActionIntent(intent: string | undefined) {
     render();
     return;
   }
+  if (intent === 'apply_policy') {
+    activePage = 'act';
+    window.location.hash = '#act';
+    render();
+    return;
+  }
   if (intent === 'create_policy') {
-    activePage = 'policies';
-    window.location.hash = '#policies';
+    activePage = 'agree';
+    window.location.hash = '#agree';
     render();
     return;
   }
@@ -1957,10 +2038,20 @@ function handleActionIntent(intent: string | undefined) {
     return;
   }
   if (intent === 'generate_digest') {
-    activePage = 'digest';
-    window.location.hash = '#digest';
+    activePage = 'prove';
+    window.location.hash = '#prove';
     void generateDigest();
   }
+}
+
+function bindReceiptActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-receipts]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadReceipts();
+      });
+    });
 }
 
 function bindScanActions() {
@@ -1994,8 +2085,8 @@ function bindPolicyActions() {
           error: undefined,
           message: undefined,
         };
-        activePage = 'policies';
-        window.location.hash = '#policies';
+        activePage = 'agree';
+        window.location.hash = '#agree';
         render();
       });
     });
@@ -2012,8 +2103,8 @@ function bindPolicyActions() {
           error: undefined,
           message: undefined,
         };
-        activePage = 'policies';
-        window.location.hash = '#policies';
+        activePage = 'agree';
+        window.location.hash = '#agree';
         render();
       }
     });
@@ -2185,7 +2276,7 @@ function openDashboard(event?: MouseEvent) {
   dashboardOpen = true;
   activePage = getPageFromHash();
   if (window.location.hash.length <= 1) {
-    window.location.hash = '#command-center';
+    window.location.hash = '#act';
   }
   render();
 }
@@ -2369,6 +2460,10 @@ function canUseClientDemoFallback() {
     scanState.result?.source === 'demo' ||
     policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
   );
+}
+
+function isStandaloneStaticPreview() {
+  return window.parent === window && getDevvitGlobal() === undefined;
 }
 
 function getWorkspaceSubreddit() {
@@ -3155,6 +3250,40 @@ async function loadGovernance(ruleKey?: string) {
   render();
 }
 
+async function loadReceipts() {
+  receiptLedgerState = {
+    ...receiptLedgerState,
+    loading: true,
+  };
+  render();
+
+  try {
+    receiptLedgerState = {
+      loading: false,
+      receipts: await fetchApi<ActionReceipt[]>(
+        withWorkspaceSubreddit(API_ROUTES.receipts)
+      ),
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback() || isStandaloneStaticPreview()) {
+      receiptLedgerState = {
+        loading: false,
+        receipts: receiptLedgerState.receipts,
+      };
+      render();
+      return;
+    }
+
+    receiptLedgerState = {
+      loading: false,
+      receipts: receiptLedgerState.receipts,
+      error: normalizeClientError(error, 'Receipt ledger is unavailable.'),
+    };
+  }
+
+  render();
+}
+
 async function loadDigestHistory() {
   try {
     const data = await fetchApi<DigestHistoryResponse>(
@@ -3305,8 +3434,8 @@ async function generateCasePacket(
     message: undefined,
   };
   dashboardOpen = true;
-  activePage = 'case-packets';
-  window.location.hash = '#case-packets';
+  activePage = 'prove';
+  window.location.hash = '#prove';
   render();
 
   try {
@@ -3406,8 +3535,8 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       message: `Draft created for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
-    activePage = 'policies';
-    window.location.hash = '#policies';
+    activePage = 'agree';
+    window.location.hash = '#agree';
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const policy = createClientDemoPolicy(candidate);
@@ -3418,8 +3547,8 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
         message: `Demo draft created for ${policy.ruleName}.`,
         form: policyToForm(policy),
       };
-      activePage = 'policies';
-      window.location.hash = '#policies';
+      activePage = 'agree';
+      window.location.hash = '#agree';
       render();
       return;
     }
@@ -3688,6 +3817,7 @@ async function confirmApplyPolicy(formData: FormData) {
       message: 'Policy action recorded in log-only mode.',
     };
     await loadGovernance();
+    await loadReceipts();
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const result = createClientDemoApplyResult(payload);
@@ -3709,6 +3839,10 @@ async function confirmApplyPolicy(formData: FormData) {
         health: createClientDemoHealth(result.overrideEvent),
         overrides: createClientDemoOverrides(result.overrideEvent),
         versionsByPolicy: createClientDemoVersions(),
+      };
+      receiptLedgerState = {
+        loading: false,
+        receipts: [result.receipt, ...receiptLedgerState.receipts],
       };
       render();
       return;
@@ -4071,6 +4205,7 @@ render();
 void loadHealth();
 void loadPolicies();
 void loadGovernance();
+void loadReceipts();
 void loadDigestHistory();
 void loadAiAdvisoryCapabilities();
 void loadTeamDeliveryCapabilities();

@@ -737,7 +737,8 @@ dd {
 
 .page-scan > .section-panel:first-child,
 .page-review > .section-panel:first-child,
-.page-policies > .section-panel:first-child {
+.page-agree > .section-panel:first-child,
+.page-prove > .section-panel:first-child {
   border-bottom: 1px solid var(--mm-line);
   padding-bottom: 14px;
 }
@@ -871,12 +872,67 @@ dd {
 
 .policy-workbench > .section-panel,
 .policy-form-section,
-.page-policies .section-panel[aria-label="Apply policy workflow"],
-.page-case-packets > .section-panel:first-child,
-.page-digest > .section-panel {
+.act-primary .section-panel[aria-label="Apply policy workflow"],
+.act-context .document-panel,
+.act-context .setup-workflow,
+.page-prove > .section-panel,
+.prove-layout > div > .section-panel {
   background: var(--mm-paper);
   border: 1px solid var(--mm-line);
   padding: 18px;
+}
+
+.act-layout,
+.prove-layout {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+}
+
+.act-context {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.receipt-ledger {
+  border-top: 1px solid var(--mm-line);
+  padding-top: 18px;
+}
+
+.ledger-list {
+  background: var(--mm-paper);
+  border-block: 1px solid var(--mm-line);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ledger-item {
+  border-bottom: 1px solid var(--mm-line);
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+}
+
+.ledger-item:last-child {
+  border-bottom: 0;
+}
+
+.ledger-item > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.ledger-item strong {
+  color: var(--mm-ink);
+  font-size: 14px;
+}
+
+.ledger-item span {
+  color: var(--mm-muted);
+  font-size: 13px;
 }
 
 .policy-form {
@@ -1343,7 +1399,9 @@ dd {
   .command-board,
   .command-primary,
   .workflow-board,
-  .policy-workbench {
+  .policy-workbench,
+  .act-layout,
+  .prove-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1404,7 +1462,7 @@ dd {
   }
 
   .ops-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .workspace-header h2 {
