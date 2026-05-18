@@ -75,6 +75,7 @@ Updated by: Codex
 | Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
+| Verified locally | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Devvit Redis runtime persistence remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -756,6 +757,35 @@ Runtime status:
 - Runtime proof still requires safe playtest verification of internal-only
   destination, permission failure shape, and Redis receipt persistence before
   any live send adapter is exposed.
+
+## Wave 26 Collaborative Evidence Board
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Existing local services already persist action receipts, override events,
+  policy change events, and generated Case Packet data.
+- Shared privacy guidance requires minimizing copied data and avoiding per-mod
+  blame analytics.
+
+Decision:
+
+- Evidence Boards store review-thread summaries and source references rather
+  than full duplicate receipts or Case Packet Markdown.
+- Board evidence privacy metadata explicitly records that moderator names and
+  target authors are not copied into board summaries.
+- Board statuses are `open`, `needs_policy_change`, `accepted_exception`,
+  `resolved`, and `archived`.
+- Evidence Boards are a moderator review surface only; they do not execute or
+  recommend Reddit actions.
+
+Runtime status:
+
+- Evidence Board service and routes are locally/type verified only.
+- Redis persistence is tested with mocked Redis.
+- Devvit Web/Redis route proof is still required before treating boards as
+  runtime-proven records.
 
 ## Operational Overhaul W13 Runtime Findings
 

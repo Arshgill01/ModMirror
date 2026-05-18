@@ -19,6 +19,8 @@ import type {
   DigestScheduleCadence,
   DigestSource,
   EnforcementAction,
+  EvidenceBoardEvidenceSource,
+  EvidenceBoardStatus,
   MessageDeliveryMode,
   MirrorScanDepth,
   ModqueueContentType,
@@ -140,6 +142,24 @@ export const CASE_PACKET_OFFENSE_BUCKET_VALUES = [
   'third_or_more',
   'unknown',
 ] as const satisfies readonly CasePacketOffenseBucket[];
+
+export const EVIDENCE_BOARD_STATUS_VALUES = [
+  'open',
+  'needs_policy_change',
+  'accepted_exception',
+  'resolved',
+  'archived',
+] as const satisfies readonly EvidenceBoardStatus[];
+
+export const EVIDENCE_BOARD_EVIDENCE_SOURCE_VALUES = [
+  'receipt',
+  'content_snapshot',
+  'override',
+  'comparable_case',
+  'case_packet',
+  'policy_change',
+  'manual_note',
+] as const satisfies readonly EvidenceBoardEvidenceSource[];
 
 export const APPEAL_POSTURE_VALUES = [
   'policy_consistent',
@@ -358,6 +378,7 @@ export const API_ROUTES = {
   overrideSummary: '/api/overrides/summary',
   policyHealth: '/api/policy-health',
   casePacket: '/api/case-packet',
+  evidenceBoards: '/api/evidence-boards',
   digestGenerate: '/api/digest/generate',
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',

@@ -2,15 +2,29 @@
 
 ## Current Phase
 
-Expansion Wave 25 — Appeal Modmail / Case Packet Delivery is locally
-implemented on `expansion/w25-appeal-modmail` after W24 native Mod Notes.
-Continue with Wave 26 evidence board next.
+Expansion Wave 26 — Collaborative Evidence Board is locally implemented on
+`expansion/w26-evidence-board` after W25 appeal/modmail. Continue with Wave 27
+incident mode next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 26 Checklist
+
+- [x] Add Evidence Board schema for review-thread status, source references,
+      evidence summaries, privacy metadata, and status history.
+- [x] Add Redis-backed Evidence Board service and namespaced keys.
+- [x] Add `/api/evidence-boards` list/create and status-update routes.
+- [x] Collect evidence summaries from receipts, content snapshots, overrides,
+      Case Packets, comparable cases, and policy changes.
+- [x] Add Prove-page Evidence Board thread list and status update forms.
+- [x] Add receipt-ledger and Case Packet entrypoints for opening boards.
+- [x] Add lifecycle and privacy-preservation tests.
+- [ ] Runtime-verify Evidence Board route persistence through Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 25 Checklist
 

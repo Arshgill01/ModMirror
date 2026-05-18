@@ -1046,6 +1046,8 @@ dd {
 .policy-form input,
 .policy-form select,
 .policy-form textarea,
+.evidence-status-form input,
+.evidence-status-form select,
 .review-note-input,
 .markdown-export {
   background: var(--mm-paper);
@@ -1279,6 +1281,71 @@ dd {
 .case-list-block {
   display: grid;
   gap: 8px;
+}
+
+.evidence-board-panel {
+  margin-top: 18px;
+}
+
+.evidence-thread-list,
+.evidence-item-list {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.evidence-thread {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.evidence-thread-main {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.evidence-thread-main > div {
+  display: grid;
+  gap: 4px;
+}
+
+.evidence-thread-main span,
+.evidence-item-list span {
+  color: var(--mm-muted);
+  font-size: 13px;
+}
+
+.evidence-item-list li {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+}
+
+.evidence-item-list p {
+  color: var(--mm-muted);
+  margin: 0;
+}
+
+.evidence-status-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(140px, 0.35fr) minmax(180px, 1fr) auto;
+}
+
+.evidence-status-form label {
+  color: var(--mm-text);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 720;
 }
 
 .markdown-export {
@@ -1583,6 +1650,15 @@ dd {
 
   .calibration-form {
     grid-template-columns: 1fr;
+  }
+
+  .evidence-thread-main,
+  .evidence-status-form {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-thread-main {
+    display: grid;
   }
 }
 

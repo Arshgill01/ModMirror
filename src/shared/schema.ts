@@ -97,6 +97,22 @@ export type CasePacketOffenseBucket =
   | 'third_or_more'
   | 'unknown';
 
+export type EvidenceBoardStatus =
+  | 'open'
+  | 'needs_policy_change'
+  | 'accepted_exception'
+  | 'resolved'
+  | 'archived';
+
+export type EvidenceBoardEvidenceSource =
+  | 'receipt'
+  | 'content_snapshot'
+  | 'override'
+  | 'comparable_case'
+  | 'case_packet'
+  | 'policy_change'
+  | 'manual_note';
+
 export type AppealPosture =
   | 'policy_consistent'
   | 'justified_override'
@@ -1353,6 +1369,83 @@ export interface GenerateCasePacketRequest {
 
 export interface GenerateCasePacketResponse {
   packet: CasePacket;
+}
+
+export interface EvidenceBoardSubject {
+  targetThingId?: string;
+  ruleKey?: string;
+  receiptId?: string;
+  casePacketId?: string;
+  policyId?: string;
+  policyVersionId?: string;
+}
+
+export interface EvidenceBoardEvidencePrivacy {
+  sourceContainsAuthor: boolean;
+  authorCopiedToBoard: false;
+  contentExcerptCopiedToBoard: boolean;
+  moderatorNameCopiedToBoard: false;
+  retentionCategory: 'moderation_evidence';
+  redactionNotes: string[];
+}
+
+export interface EvidenceBoardEvidenceItem {
+  id: string;
+  source: EvidenceBoardEvidenceSource;
+  sourceId?: string;
+  label: string;
+  summary: string;
+  occurredAt?: string;
+  addedAt: string;
+  privacy: EvidenceBoardEvidencePrivacy;
+}
+
+export interface EvidenceBoardStatusChange {
+  fromStatus?: EvidenceBoardStatus;
+  toStatus: EvidenceBoardStatus;
+  changedAt: string;
+  changedBy?: string;
+  note?: string;
+}
+
+export interface EvidenceBoardThread {
+  id: string;
+  subreddit: string;
+  title: string;
+  status: EvidenceBoardStatus;
+  subject: EvidenceBoardSubject;
+  evidence: EvidenceBoardEvidenceItem[];
+  statusHistory: EvidenceBoardStatusChange[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+export interface EvidenceBoardSourceRef {
+  source: Extract<
+    EvidenceBoardEvidenceSource,
+    'receipt' | 'override' | 'policy_change'
+  >;
+  id: string;
+  policyId?: string;
+}
+
+export interface EvidenceBoardCreateRequest {
+  subreddit?: string;
+  title: string;
+  subject?: EvidenceBoardSubject;
+  sourceRefs?: EvidenceBoardSourceRef[];
+  casePacket?: CasePacket;
+  note?: string;
+}
+
+export interface EvidenceBoardStatusUpdateRequest {
+  status: EvidenceBoardStatus;
+  note?: string;
+}
+
+export interface EvidenceBoardListResponse {
+  boards: EvidenceBoardThread[];
 }
 
 export interface DigestReport {

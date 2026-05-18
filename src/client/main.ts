@@ -8,6 +8,7 @@ import {
   CONFIDENCE_VALUES,
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
+  EVIDENCE_BOARD_STATUS_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
@@ -43,6 +44,11 @@ import type {
   DigestSettings,
   DriftCandidate,
   EnforcementAction,
+  EvidenceBoardCreateRequest,
+  EvidenceBoardListResponse,
+  EvidenceBoardStatus,
+  EvidenceBoardStatusUpdateRequest,
+  EvidenceBoardThread,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
   GenerateDigestResponse,
@@ -255,6 +261,15 @@ type TeamDeliveryUiState = {
   error?: string;
 };
 
+type EvidenceBoardUiState = {
+  loading: boolean;
+  saving: boolean;
+  updatingBoardId: string | undefined;
+  error: string | undefined;
+  message: string | undefined;
+  boards: EvidenceBoardThread[];
+};
+
 type ModqueueTriageUiState = {
   loading: boolean;
   error: string | undefined;
@@ -381,6 +396,14 @@ let digestState: DigestUiState = {
 };
 let aiAdvisoryState: AiAdvisoryUiState = {};
 let teamDeliveryState: TeamDeliveryUiState = {};
+let evidenceBoardState: EvidenceBoardUiState = {
+  loading: false,
+  saving: false,
+  updatingBoardId: undefined,
+  error: undefined,
+  message: undefined,
+  boards: [],
+};
 let modqueueState: ModqueueTriageUiState = {
   loading: false,
   error: undefined,
@@ -1397,6 +1420,9 @@ function renderReceiptLedgerItem(receipt: ActionReceipt) {
           ? `<p class="inline-note">Native Mod Note: ${formatAction(receipt.nativeModNote.status)} (${formatAction(receipt.nativeModNote.capabilityState)}).</p>`
           : ''
       }
+      <div class="button-row">
+        <button class="secondary-button" data-create-evidence-board-receipt="${escapeAttribute(receipt.id)}" type="button" ${evidenceBoardState.saving ? 'disabled' : ''}>Open evidence board</button>
+      </div>
     </li>
   `;
 }
@@ -1957,9 +1983,99 @@ function renderProvePage() {
   return `
     ${renderConsistencyAnalytics()}
     <section class="prove-layout">
-      <div>${renderCasePacketPage()}</div>
+      <div>
+        ${renderCasePacketPage()}
+        ${renderEvidenceBoardPage()}
+      </div>
       <div>${renderDigestPage()}</div>
     </section>
+  `;
+}
+
+function renderEvidenceBoardPage() {
+  return `
+    <section class="section-panel evidence-board-panel">
+      <div class="section-header">
+        <div>
+          <h3>Evidence Board</h3>
+          <p>Moderator review threads that collect receipts, case packets, overrides, comparables, and policy changes.</p>
+          ${renderEvidenceBoardMessage()}
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-load-evidence-boards type="button">Refresh boards</button>
+          ${
+            casePacketState.packet
+              ? `<button class="secondary-button" data-create-evidence-board-case type="button" ${evidenceBoardState.saving ? 'disabled' : ''}>Open from packet</button>`
+              : ''
+          }
+        </div>
+      </div>
+      ${
+        evidenceBoardState.loading
+          ? renderLoadingState('Loading evidence boards', 'Reading review threads and attached evidence summaries.')
+          : evidenceBoardState.boards.length > 0
+            ? `<ol class="evidence-thread-list">${evidenceBoardState.boards.map(renderEvidenceBoardThread).join('')}</ol>`
+            : renderEmptyState(
+                'No evidence board yet',
+                'Create one from a receipt or the current Case Packet when a moderation decision needs team review.',
+                [{ label: 'Review receipts', page: 'act', intent: 'review_policy' }]
+              )
+      }
+    </section>
+  `;
+}
+
+function renderEvidenceBoardMessage() {
+  if (evidenceBoardState.error) {
+    return `<p class="inline-error">${escapeHtml(evidenceBoardState.error)}</p>`;
+  }
+  if (evidenceBoardState.message) {
+    return `<p class="inline-success">${escapeHtml(evidenceBoardState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderEvidenceBoardThread(board: EvidenceBoardThread) {
+  return `
+    <li class="evidence-thread">
+      <div class="evidence-thread-main">
+        <div>
+          <strong>${escapeHtml(board.title)}</strong>
+          <span>${formatDate(board.updatedAt)} - ${board.evidence.length} evidence item${board.evidence.length === 1 ? '' : 's'}</span>
+        </div>
+        <span class="status-badge status-neutral">${formatAction(board.status)}</span>
+      </div>
+      <ul class="evidence-item-list">
+        ${board.evidence
+          .slice(0, 5)
+          .map(
+            (item) => `
+              <li>
+                <span>${formatAction(item.source)}</span>
+                <strong>${escapeHtml(item.label)}</strong>
+                <p>${escapeHtml(item.summary)}</p>
+              </li>
+            `
+          )
+          .join('')}
+      </ul>
+      <form class="evidence-status-form" data-evidence-board-status-form="${escapeAttribute(board.id)}">
+        <label>
+          Status
+          <select name="status">
+            ${EVIDENCE_BOARD_STATUS_VALUES.map(
+              (status) =>
+                `<option value="${status}" ${status === board.status ? 'selected' : ''}>${formatAction(status)}</option>`
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Note
+          <input name="note" placeholder="Optional review note">
+        </label>
+        <button class="secondary-button" type="submit" ${evidenceBoardState.updatingBoardId === board.id ? 'disabled' : ''}>Update</button>
+      </form>
+    </li>
   `;
 }
 
@@ -2451,6 +2567,7 @@ function bindAllActions() {
   bindPolicyActions();
   bindApplyPolicyActions();
   bindCasePacketActions();
+  bindEvidenceBoardActions();
   bindGovernanceActions();
   bindDigestActions();
   bindReceiptActions();
@@ -2770,6 +2887,50 @@ function bindCasePacketActions() {
       }
     });
   });
+}
+
+function bindEvidenceBoardActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-evidence-boards]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadEvidenceBoards();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-create-evidence-board-case]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void createEvidenceBoardFromCasePacket();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-create-evidence-board-receipt]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const receiptId = button.dataset.createEvidenceBoardReceipt;
+        if (receiptId) {
+          void createEvidenceBoardFromReceipt(receiptId);
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-evidence-board-status-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const boardId = form.dataset.evidenceBoardStatusForm;
+        const formData = new FormData(form);
+        const status = String(formData.get('status') ?? '');
+        const note = String(formData.get('note') ?? '').trim();
+        if (boardId && isEvidenceBoardStatus(status)) {
+          void updateEvidenceBoardStatusFromForm(boardId, status, note);
+        }
+      });
+    });
 }
 
 function bindGovernanceActions() {
@@ -4311,6 +4472,214 @@ async function loadTeamDeliveryCapabilities() {
   render();
 }
 
+async function loadEvidenceBoards() {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<EvidenceBoardListResponse>(
+      withWorkspaceSubreddit(API_ROUTES.evidenceBoards)
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      loading: false,
+      boards: response.boards,
+      error: undefined,
+    };
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Evidence boards are unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function createEvidenceBoardFromReceipt(receiptId: string) {
+  const receipt = receiptLedgerState.receipts.find((item) => item.id === receiptId);
+  const subject: EvidenceBoardCreateRequest['subject'] = {
+    receiptId,
+  };
+  if (receipt?.targetThingId !== undefined) {
+    subject.targetThingId = receipt.targetThingId;
+  }
+  if (receipt?.recommendation.ruleKey !== undefined) {
+    subject.ruleKey = receipt.recommendation.ruleKey;
+  }
+  if (receipt?.policySnapshot?.policyId !== undefined) {
+    subject.policyId = receipt.policySnapshot.policyId;
+  }
+  if (receipt?.policySnapshot?.policyVersionId !== undefined) {
+    subject.policyVersionId = receipt.policySnapshot.policyVersionId;
+  }
+  await createEvidenceBoard({
+    title: `Review receipt ${receiptId}`,
+    subject,
+    sourceRefs: [
+      {
+        source: 'receipt',
+        id: receiptId,
+      },
+    ],
+    note: 'Opened from the action receipt ledger.',
+  });
+}
+
+async function createEvidenceBoardFromCasePacket() {
+  const packet = casePacketState.packet;
+  if (!packet) {
+    return;
+  }
+
+  const sourceRefs: EvidenceBoardCreateRequest['sourceRefs'] = [];
+  if (packet.action?.receiptId !== undefined) {
+    sourceRefs.push({
+      source: 'receipt',
+      id: packet.action.receiptId,
+    });
+  }
+  const subject: EvidenceBoardCreateRequest['subject'] = {
+    casePacketId: packet.id,
+  };
+  if (packet.action?.receiptId !== undefined) {
+    subject.receiptId = packet.action.receiptId;
+  }
+  if (packet.action?.targetThingId !== undefined) {
+    subject.targetThingId = packet.action.targetThingId;
+  }
+  if (packet.policyContext.ruleKey !== undefined) {
+    subject.ruleKey = packet.policyContext.ruleKey;
+  }
+  if (packet.policyContext.policyId !== undefined) {
+    subject.policyId = packet.policyContext.policyId;
+  }
+  if (packet.policyContext.policyVersionId !== undefined) {
+    subject.policyVersionId = packet.policyContext.policyVersionId;
+  }
+
+  await createEvidenceBoard({
+    title: `Review case packet ${packet.id}`,
+    subject,
+    sourceRefs,
+    casePacket: packet,
+    note: 'Opened from a Case Packet in the Prove workspace.',
+  });
+}
+
+async function createEvidenceBoard(request: EvidenceBoardCreateRequest) {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body: EvidenceBoardCreateRequest = {
+      ...request,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const board = await fetchApi<EvidenceBoardThread>(
+      API_ROUTES.evidenceBoards,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      saving: false,
+      boards: [
+        board,
+        ...evidenceBoardState.boards.filter((item) => item.id !== board.id),
+      ],
+      message: 'Evidence board opened.',
+      error: undefined,
+    };
+    activePage = 'prove';
+    window.location.hash = '#prove';
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      saving: false,
+      error: normalizeClientError(error, 'Evidence board could not be opened.'),
+    };
+  }
+
+  render();
+}
+
+async function updateEvidenceBoardStatusFromForm(
+  boardId: string,
+  status: EvidenceBoardStatus,
+  note: string
+) {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    updatingBoardId: boardId,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body: EvidenceBoardStatusUpdateRequest & { subreddit?: string } = {
+      status,
+    };
+    if (note) {
+      body.note = note;
+    }
+    if (subreddit) {
+      body.subreddit = subreddit;
+    }
+    const updated = await fetchApi<EvidenceBoardThread>(
+      `${API_ROUTES.evidenceBoards}/${encodeURIComponent(boardId)}/status`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      updatingBoardId: undefined,
+      boards: evidenceBoardState.boards.map((board) =>
+        board.id === updated.id ? updated : board
+      ),
+      message: 'Evidence board status updated.',
+      error: undefined,
+    };
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      updatingBoardId: undefined,
+      error: normalizeClientError(
+        error,
+        'Evidence board status could not be updated.'
+      ),
+    };
+  }
+
+  render();
+}
+
+function isEvidenceBoardStatus(value: string): value is EvidenceBoardStatus {
+  return EVIDENCE_BOARD_STATUS_VALUES.includes(value as EvidenceBoardStatus);
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -5555,6 +5924,7 @@ void loadReceipts();
 void loadDigestHistory();
 void loadAiAdvisoryCapabilities();
 void loadTeamDeliveryCapabilities();
+void loadEvidenceBoards();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

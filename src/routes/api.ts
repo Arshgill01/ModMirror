@@ -8,6 +8,7 @@ import {
   CASE_PACKET_TYPE_VALUES,
   CONFIDENCE_VALUES,
   DEMO_SUBREDDIT_NAME,
+  EVIDENCE_BOARD_STATUS_VALUES,
   MIRROR_SCAN_DEPTH_VALUES,
   MODQUEUE_CONTENT_TYPE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
@@ -35,6 +36,11 @@ import type {
   DigestCapabilities,
   DigestHistoryResponse,
   DigestSettings,
+  EvidenceBoardCreateRequest,
+  EvidenceBoardListResponse,
+  EvidenceBoardSourceRef,
+  EvidenceBoardStatus,
+  EvidenceBoardStatusUpdateRequest,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
   GenerateDigestRequest,
@@ -134,6 +140,11 @@ import {
   saveAttributionCorrection,
 } from '../server/services/attributionCalibration';
 import { runPolicyReplay, toPolicyReplayActions } from '../server/services/replaySandbox';
+import {
+  createEvidenceBoard,
+  listEvidenceBoards,
+  updateEvidenceBoardStatus,
+} from '../server/services/evidenceBoard';
 
 export const api = new Hono();
 
@@ -974,6 +985,68 @@ api.post('/case-packet', async (c) => {
   }
 });
 
+api.get('/evidence-boards', async (c) => {
+  const response: ApiResponse<EvidenceBoardListResponse> = {
+    ok: true,
+    data: {
+      boards: await listEvidenceBoards(getRequestedSubreddit(c)),
+    },
+  };
+  return c.json(response);
+});
+
+api.post('/evidence-boards', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<EvidenceBoardCreateRequest>;
+
+  try {
+    const response: ApiResponse<EvidenceBoardListResponse['boards'][number]> = {
+      ok: true,
+      data: await createEvidenceBoard({
+        request: normalizeEvidenceBoardCreateRequest(body),
+        subreddit: getRequestedBodySubreddit(body),
+        createdBy: context.username ?? 'unknown',
+      }),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(evidenceBoardError(error), 400);
+  }
+});
+
+api.post('/evidence-boards/:id/status', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<EvidenceBoardStatusUpdateRequest> & {
+    subreddit?: string;
+  };
+
+  try {
+    const board = await updateEvidenceBoardStatus({
+      subreddit: getRequestedBodySubreddit(body),
+      boardId: c.req.param('id'),
+      request: normalizeEvidenceBoardStatusUpdateRequest(body),
+      changedBy: context.username ?? 'unknown',
+    });
+    if (board === undefined) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'evidence_board_not_found',
+            message: 'Evidence board was not found for this subreddit.',
+          },
+        } satisfies ApiResponse<EvidenceBoardListResponse['boards'][number]>,
+        404
+      );
+    }
+    const response: ApiResponse<EvidenceBoardListResponse['boards'][number]> = {
+      ok: true,
+      data: board,
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(evidenceBoardError(error), 400);
+  }
+});
+
 api.post('/digest/generate', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateDigestRequest>;
 
@@ -1384,6 +1457,85 @@ function normalizeTeamDeliveryConfirmRequest(
   return {
     ...normalizeTeamDeliveryPreviewRequest(body),
     confirmed: body.confirmed === true,
+  };
+}
+
+function normalizeEvidenceBoardCreateRequest(
+  body: Partial<EvidenceBoardCreateRequest>
+): EvidenceBoardCreateRequest {
+  if (body.title === undefined) {
+    throw new Error('Evidence board title is required.');
+  }
+  const request: EvidenceBoardCreateRequest = {
+    title: body.title,
+  };
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.subject !== undefined) {
+    request.subject = {
+      ...body.subject,
+    };
+  }
+  if (Array.isArray(body.sourceRefs)) {
+    request.sourceRefs = body.sourceRefs.map((ref) => {
+      if (
+        ref.source !== 'receipt' &&
+        ref.source !== 'override' &&
+        ref.source !== 'policy_change'
+      ) {
+        throw new Error('Unsupported evidence board source reference.');
+      }
+      if (ref.id === undefined) {
+        throw new Error('Evidence board source reference ID is required.');
+      }
+      const sourceRef: EvidenceBoardSourceRef = {
+        source: ref.source,
+        id: ref.id,
+      };
+      if (ref.policyId !== undefined) {
+        sourceRef.policyId = ref.policyId;
+      }
+      return sourceRef;
+    });
+  }
+  if (body.casePacket !== undefined) {
+    request.casePacket = body.casePacket;
+  }
+  if (body.note !== undefined) {
+    request.note = body.note;
+  }
+  return request;
+}
+
+function normalizeEvidenceBoardStatusUpdateRequest(
+  body: Partial<EvidenceBoardStatusUpdateRequest>
+): EvidenceBoardStatusUpdateRequest {
+  if (
+    body.status === undefined ||
+    !EVIDENCE_BOARD_STATUS_VALUES.includes(body.status as EvidenceBoardStatus)
+  ) {
+    throw new Error('Evidence board status is required.');
+  }
+  const request: EvidenceBoardStatusUpdateRequest = {
+    status: body.status,
+  };
+  if (body.note !== undefined) {
+    request.note = body.note;
+  }
+  return request;
+}
+
+function evidenceBoardError(
+  error: unknown
+): ApiResponse<EvidenceBoardListResponse | EvidenceBoardListResponse['boards'][number]> {
+  return {
+    ok: false,
+    error: {
+      code: 'evidence_board_failed',
+      message:
+        error instanceof Error ? error.message : 'Evidence board request failed',
+    },
   };
 }
 
