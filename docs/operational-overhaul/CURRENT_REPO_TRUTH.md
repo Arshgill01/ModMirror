@@ -42,6 +42,9 @@ It currently supports:
 - W10 AI advisory spike contracts, capability endpoints, Settings labels, and
   mocked-provider tests. The feature remains disabled-by-default and cannot
   decide or execute enforcement.
+- W11 team-delivery capability state, preview/confirm APIs, manual/skipped
+  delivery receipts, and mocked adapter tests. It stores receipts but does not
+  send Reddit messages by default.
 - Manual digest generation and digest history.
 - Productized dashboard UI with runtime Settings.
 - Unit tests for core shared and server service logic.
@@ -59,6 +62,8 @@ It does not yet support:
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
 - Runtime-verified external AI calls or Devvit secret retrieval for AI
   providers. W10 is docs/type-supported and locally tested with mocks only.
+- Registered scheduler tasks for ModMirror delivery. W11 marks scheduler
+  delivery unavailable because no scheduler task exists in `devvit.json`.
 
 ## Remaining Smoking-Gun Code Facts
 
@@ -98,6 +103,10 @@ It does not yet support:
   unless an explicit provider is injected and enabled. It requires
   deterministic evidence IDs and rejects provider output that does not cite
   known evidence.
+- W11 `src/server/services/teamDelivery.ts` builds digest/policy proposal
+  delivery previews and stores delivery receipts. Mod discussion sends require
+  explicit confirmation, runtime-proof flags, and an injected adapter; product
+  routes do not inject an adapter, so default confirmations are skipped.
 - W01 target context is type/build-verified only. Runtime proof for post/comment
   menu visibility, form behavior, dashboard navigation, target fetch, and
   moderator permission shape is still pending.
@@ -118,6 +127,8 @@ Runtime evidence does not yet exist for:
 - Modmail/mod discussion delivery.
 - Native Mod Notes.
 - Scheduler.
+- Mod discussion delivery through Reddit Modmail.
+- Team delivery receipt persistence in Devvit Redis.
 - External AI fetch, provider secret retrieval, and provider latency/failure
   behavior.
 - Non-moderator access blocking.

@@ -252,3 +252,16 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       marking AI advisory available.
 - [ ] Add Terms/Privacy readiness notes before any uploaded build uses
       external fetch for AI.
+
+## Operational Overhaul W11 Follow-up
+
+- [x] Add team delivery capability states for manual copy, mod discussion, and
+      scheduler.
+- [x] Add preview-first delivery APIs for digest/policy proposal content.
+- [x] Store manual/skipped delivery receipts without sending Reddit messages.
+- [x] Keep product routes from injecting a live delivery adapter.
+- [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
+      before enabling any real send path.
+- [ ] Register and runtime-verify a scheduler task before scheduler delivery is
+      marked anything stronger than unavailable.
+- [ ] Verify permission failure shape and no accidental user-facing delivery.

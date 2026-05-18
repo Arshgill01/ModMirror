@@ -31,6 +31,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w09-case-packets-v2`
 - `overhaul/w10-ai-advisory-spike` at
   `/Users/arshdeepsingh/Developer/modmirror-w10-ai-advisory-spike`
+- `overhaul/w11-team-delivery-spike` at
+  `/Users/arshdeepsingh/Developer/modmirror-w11-team-delivery-spike`
 
 Planned critical path:
 
@@ -72,7 +74,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W08 Policy agreement | complete | Added draft/propose/review/adopt lifecycle, review records, adoption APIs, and Agree UI controls. |
 | W09 Case Packets v2 | complete | Added receipt-backed packet evidence, packet types, evidence labels, execution context, and UI/Markdown rendering. |
 | W10 AI advisory spike | complete locally | Added disabled-by-default advisory contracts, capability endpoints, mocked-provider tests, and Settings labels. No external AI runtime call was made. |
-| W11 Team delivery spike | pending | Preview-first delivery only if runtime-safe. |
+| W11 Team delivery spike | complete locally | Added preview-first team delivery capabilities, skipped/manual delivery receipts, mocked adapter tests, and Settings labels. No Reddit message or scheduler job was sent. |
 | W12 Operational UI | pending | Act / Scan / Agree / Review / Prove IA. |
 | W13 Runtime verification | pending | Harnesses and safety matrix. |
 | W14 Integration | pending | Merge lanes and run whole-repo checks. |

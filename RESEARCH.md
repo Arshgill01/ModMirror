@@ -636,3 +636,50 @@ Runtime status:
   only for ModMirror. Runtime proof requires a configured provider, HTTP
   permission/domain review as needed, secret setting, terms/privacy readiness,
   and playtest logs before any live advisory path can be labeled available.
+
+## Operational Overhaul W11 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit ModMailService docs expose
+  `reddit.modMail.createModDiscussionConversation({ subject, bodyMarkdown, subredditId })`
+  and say it creates a Mod Discussions conversation for the moderators of an
+  installed subreddit:
+  `https://developers.reddit.com/docs/api/redditapi/models/classes/ModMailService`.
+- Installed typings in `node_modules/@devvit/reddit/models/ModMail.d.ts` and
+  `node_modules/@devvit/public-api/apis/reddit/models/ModMail.d.ts` expose
+  `createModDiscussionConversation`, `createModInboxConversation`,
+  `createModNotification`, and `createConversation`.
+- Official Devvit Scheduler docs require scheduler tasks to be declared in
+  `devvit.json`, document Hono internal scheduler endpoints, and show
+  `scheduler.runJob`, `scheduler.cancelJob`, and `scheduler.listJobs`:
+  `https://developers.reddit.com/docs/capabilities/server/scheduler`.
+- Installed typings in `node_modules/@devvit/scheduler/SchedulerClient.d.ts`
+  expose `runJob`, `cancelJob`, and `listJobs`; `@devvit/web/server` re-exports
+  scheduler types.
+
+Decision:
+
+- W11 adds preview-first team delivery APIs but does not send Reddit messages
+  in production/default paths.
+- W11 adds delivery capability states:
+  `unavailable`, `unverified`, `verified_disabled`, and `enabled`.
+- Manual Markdown copy is enabled and creates no Reddit-side message.
+- Mod discussion delivery is type-supported but runtime-unverified. Confirming
+  it without runtime proof stores a skipped receipt.
+- Scheduler delivery is marked unavailable because no ModMirror scheduler task
+  is registered in `devvit.json`.
+- Actual mod discussion delivery can only happen through an explicitly injected
+  adapter plus live-delivery and runtime-proof flags. Product routes do not
+  inject an adapter.
+
+Runtime status:
+
+- No modmail/mod discussion message was sent in W11.
+- No scheduler task was registered or run in W11.
+- Delivery receipt persistence is locally tested with mocked Redis only.
+- Runtime proof still requires a safe playtest that confirms internal-only
+  destination, permission failure shape, receipt persistence, and no accidental
+  user-facing message.

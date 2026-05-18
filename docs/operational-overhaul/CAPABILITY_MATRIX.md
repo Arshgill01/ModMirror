@@ -34,14 +34,15 @@ Status labels:
 | Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
 | Ignore reports execution | disabled with local engine tests | W03 `moderationExecution.ts` uses target model `ignoreReports()` only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
 | Public comment delivery | disabled/unverified | `RESEARCH.md` says unknown ordering | Keep disabled until runtime proof. |
-| Modmail/mod discussion delivery | disabled/unverified | Digest capabilities are `unverified` | Spike only, preview-first. |
+| Modmail/mod discussion delivery | disabled/type-only | W11 `teamDelivery.ts`, `/api/delivery/*`, mocked adapter tests; Devvit docs/typings expose internal Mod Discussion creation | Keep disabled until explicit confirmation, runtime proof, and a real adapter are available. |
 | Native Mod Notes | disabled/unverified | Typings only | Spike only after runtime proof. |
-| Scheduler | disabled/unverified | Digest capabilities are `unverified` | Spike only after runtime proof. |
+| Scheduler | unavailable/type-only | W11 delivery capabilities mark scheduler unavailable because no scheduler task is registered in `devvit.json`; Devvit docs/typings expose scheduler APIs | Register only after runtime proof and opt-in design. |
 | Action receipts | verified locally | W04 `receipts.ts`, `receipts.test.ts`, Apply Policy confirm integration | Runtime-smoke Redis persistence in Devvit playtest. |
 | Override audit/review | verified locally | `audit.ts`, tests | Integrate with receipts. |
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets v2 | verified locally/demo runtime | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts, runtime reports for older demo flow | Runtime-smoke receipt-backed generation in Devvit playtest. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
 | AI advisory layer | disabled/type-only | W10 `aiAdvisory.ts`, `/api/ai/capabilities`, `/api/ai/advisory`, mocked-provider tests; Devvit docs/typings show server fetch and secret settings support | Keep disabled until provider config, HTTP permission, secrets, terms/privacy requirements, and runtime proof are complete. |
+| Team delivery receipts | verified locally | W11 `teamDelivery.ts`, `teamDelivery.test.ts`, Redis keys `delivery:receipts` and `delivery:receipt:{id}` | Runtime-smoke receipt persistence in Devvit playtest. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
 | Reddit mobile app QA | unverified | Launch checklist unchecked | Add W13 verification target. |

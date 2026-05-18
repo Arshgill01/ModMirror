@@ -481,3 +481,40 @@ secret was configured/read, and `devvit.json` HTTP permissions were not enabled.
 AI advisory remains disabled by default and must stay that way until provider
 configuration, Devvit secret access, external fetch, latency/failure behavior,
 and terms/privacy requirements are runtime-proven.
+
+### 2026-05-18 - W11 Team Delivery Spike
+
+Created worktree:
+
+- `git worktree add /Users/arshdeepsingh/Developer/modmirror-w11-team-delivery-spike -b overhaul/w11-team-delivery-spike overhaul/w10-ai-advisory-spike`
+
+Implemented W11:
+
+- Researched Devvit internal Mod Discussion and scheduler support using
+  official docs and installed typings.
+- Added team delivery capability state for manual Markdown copy, Mod
+  Discussion delivery, and scheduler delivery.
+- Added preview-first delivery contracts and APIs:
+  `/api/delivery/capabilities`, `/api/delivery/preview`, and
+  `/api/delivery/confirm`.
+- Added Redis-backed delivery receipts for manual-ready and skipped delivery
+  confirmation paths.
+- Added a guarded adapter path for mocked tests only. Product routes do not
+  inject an adapter and therefore do not send Reddit messages.
+- Added Settings labels for team delivery and scheduler runtime status.
+- Added focused tests for capability state, previews, manual receipts, skipped
+  receipts, and explicitly enabled mocked sends.
+
+W11 validation so far:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm test -- src/server/services/teamDelivery.test.ts` - passed, 5 tests.
+- `npm run lint` - passed.
+- `npm test` - passed, 23 files and 104 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W11. No Modmail/Mod Discussion message was
+sent, and no scheduler task was registered or run. Delivery receipt persistence
+is locally verified only.
