@@ -33,6 +33,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w10-ai-advisory-spike`
 - `overhaul/w11-team-delivery-spike` at
   `/Users/arshdeepsingh/Developer/modmirror-w11-team-delivery-spike`
+- `overhaul/w12-operational-ui` at
+  `/Users/arshdeepsingh/Developer/modmirror-w12-operational-ui`
 
 Planned critical path:
 
@@ -75,7 +77,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W09 Case Packets v2 | complete | Added receipt-backed packet evidence, packet types, evidence labels, execution context, and UI/Markdown rendering. |
 | W10 AI advisory spike | complete locally | Added disabled-by-default advisory contracts, capability endpoints, mocked-provider tests, and Settings labels. No external AI runtime call was made. |
 | W11 Team delivery spike | complete locally | Added preview-first team delivery capabilities, skipped/manual delivery receipts, mocked adapter tests, and Settings labels. No Reddit message or scheduler job was sent. |
-| W12 Operational UI | pending | Act / Scan / Agree / Review / Prove IA. |
+| W12 Operational UI | complete locally | Reframed dashboard around Act / Scan / Agree / Review / Prove / Settings, added Act receipt ledger, and captured static desktop/mobile screenshots. Devvit runtime proof remains W13. |
 | W13 Runtime verification | pending | Harnesses and safety matrix. |
 | W14 Integration | pending | Merge lanes and run whole-repo checks. |
 

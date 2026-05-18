@@ -518,3 +518,56 @@ W11 validation so far:
 Runtime playtest was not run in W11. No Modmail/Mod Discussion message was
 sent, and no scheduler task was registered or run. Delivery receipt persistence
 is locally verified only.
+
+### 2026-05-18 - W12 Operational UI Reframe
+
+Created worktree:
+
+- `git worktree add /Users/arshdeepsingh/Developer/modmirror-w12-operational-ui -b overhaul/w12-operational-ui overhaul/w11-team-delivery-spike`
+
+Implemented W12:
+
+- Reframed the dashboard sections around operational moderator jobs:
+  Act, Scan, Agree, Review, Prove, and Settings.
+- Moved Apply Policy into the Act workspace and paired it with the current
+  operational queue, guided setup, demo scenario, and receipt ledger.
+- Moved policy CRUD/lifecycle into Agree as decision records.
+- Moved case packets, manual digest, and before-after consistency analytics
+  into Prove.
+- Added legacy hash mapping for old page IDs.
+- Added receipt ledger loading from `/api/receipts` and a standalone static
+  preview fallback for screenshot review.
+- Added responsive layout adjustments for desktop and narrow viewports.
+
+W12 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm test -- src/shared/productization.test.ts` - passed, 5 tests.
+- `npm run lint` - passed.
+- `npm test` - passed, 23 files and 104 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- `npx vite --host 127.0.0.1 --port 5174` - failed as expected because the
+  Devvit Vite plugin only supports build mode.
+- `npx --yes http-server dist/client -a 127.0.0.1 -p 5174` - served the static
+  built client for screenshot review.
+- `bash "$PWCLI" open http://127.0.0.1:5174/#act --config output/playwright/w12-operational-ui/desktop.config.json`
+  - passed.
+- `bash "$PWCLI" click e19` - passed.
+- `bash "$PWCLI" screenshot --full-page --filename output/playwright/w12-operational-ui/act-desktop.png`
+  - passed.
+- `bash "$PWCLI" open http://127.0.0.1:5174/#act --config output/playwright/w12-operational-ui/mobile.config.json`
+  - passed.
+- `bash "$PWCLI" click e19` - passed.
+- `bash "$PWCLI" screenshot --full-page --filename output/playwright/w12-operational-ui/act-mobile.png`
+  - passed.
+
+Screenshot artifacts:
+
+- `output/playwright/w12-operational-ui/act-desktop.png` - 1440x1516.
+- `output/playwright/w12-operational-ui/act-mobile.png` - 390x2851.
+
+Runtime playtest was not run in W12. Static browser preview produced expected
+`/api/*` 404 console entries because only `dist/client` was served; the UI
+handled the receipt ledger without surfacing a static-preview failure.

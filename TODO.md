@@ -265,3 +265,15 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [ ] Register and runtime-verify a scheduler task before scheduler delivery is
       marked anything stronger than unavailable.
 - [ ] Verify permission failure shape and no accidental user-facing delivery.
+
+## Operational Overhaul W12 Follow-up
+
+- [x] Reframe the dashboard around Act, Scan, Agree, Review, Prove, and
+      Settings.
+- [x] Put Apply Policy and the action receipt ledger on the Act workspace.
+- [x] Move policy lifecycle work into Agree and proof artifacts into Prove.
+- [x] Capture static desktop and mobile screenshots for the Act workspace.
+- [ ] Runtime-verify the new IA inside Devvit WebView on desktop Reddit.
+- [ ] Runtime-verify the new IA inside mobile/narrow Reddit WebView.
+- [ ] Update any external docs/bookmarks that still reference the old page IDs
+      after integration.

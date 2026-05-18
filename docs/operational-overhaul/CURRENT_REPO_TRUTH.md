@@ -107,6 +107,11 @@ It does not yet support:
   delivery previews and stores delivery receipts. Mod discussion sends require
   explicit confirmation, runtime-proof flags, and an injected adapter; product
   routes do not inject an adapter, so default confirmations are skipped.
+- W12 reframed the client IA around Act, Scan, Agree, Review, Prove, and
+  Settings. Apply Policy and the receipt ledger now live in Act; policy
+  lifecycle records live in Agree; case packets, digest, and before-after
+  consistency evidence live in Prove. This is build/static-preview verified,
+  not Devvit runtime verified.
 - W01 target context is type/build-verified only. Runtime proof for post/comment
   menu visibility, form behavior, dashboard navigation, target fetch, and
   moderator permission shape is still pending.

@@ -42,6 +42,7 @@ Status labels:
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets v2 | verified locally/demo runtime | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts, runtime reports for older demo flow | Runtime-smoke receipt-backed generation in Devvit playtest. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
+| Operational IA: Act / Scan / Agree / Review / Prove | verified locally/static preview | W12 `src/client/main.ts`, `src/client/styles.css`, `src/shared/productization.ts`, static Playwright screenshots for desktop and mobile | Runtime-verify inside Devvit WebView on desktop and mobile clients. |
 | AI advisory layer | disabled/type-only | W10 `aiAdvisory.ts`, `/api/ai/capabilities`, `/api/ai/advisory`, mocked-provider tests; Devvit docs/typings show server fetch and secret settings support | Keep disabled until provider config, HTTP permission, secrets, terms/privacy requirements, and runtime proof are complete. |
 | Team delivery receipts | verified locally | W11 `teamDelivery.ts`, `teamDelivery.test.ts`, Redis keys `delivery:receipts` and `delivery:receipt:{id}` | Runtime-smoke receipt persistence in Devvit playtest. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
