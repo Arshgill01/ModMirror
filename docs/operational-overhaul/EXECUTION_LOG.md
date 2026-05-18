@@ -571,3 +571,62 @@ Screenshot artifacts:
 Runtime playtest was not run in W12. Static browser preview produced expected
 `/api/*` 404 console entries because only `dist/client` was served; the UI
 handled the receipt ledger without surfacing a static-preview failure.
+
+### 2026-05-18 - W13 Runtime Verification Harness
+
+Created worktree:
+
+- `git worktree add /Users/arshdeepsingh/Developer/modmirror-w13-runtime-verification -b overhaul/w13-runtime-verification overhaul/w12-operational-ui`
+
+Implemented W13:
+
+- Added runtime verification shared schema and `GET /api/runtime-verification`.
+- Added `src/server/services/runtimeVerification.ts` to classify operational
+  capabilities as runtime-verified, local-verified, static-verified, type-only,
+  disabled, unverified, or blocked.
+- Added focused tests for runtime verification summary/context behavior and
+  destructive execution safety labels.
+- Added `docs/operational-overhaul/RUNTIME_VERIFICATION_MATRIX.md`.
+
+W13 validation:
+
+- `npm run type-check` - failed before `npm install` because `node_modules`
+  were absent in the new worktree.
+- `npm test -- src/server/services/runtimeVerification.test.ts` - failed before
+  `npm install` because `vitest` was unavailable.
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - failed once on exact optional `context.username`
+  typing.
+- `npm test -- src/server/services/runtimeVerification.test.ts` - passed, 3
+  tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 24 files and 107 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- `npx devvit whoami` - passed as `u/BrightyBrainiac`.
+- `npm run dev` - reached Playtest ready for `r/modmirror_dev` on
+  `v0.0.1.71`.
+- `screencapture -x output/runtime/w13/devvit-w12-act-modal-v0.0.1.71.png` -
+  captured the expanded WebView proof.
+- `npm test -- src/server/services/runtimeVerification.test.ts` - passed after
+  updating matrix evidence.
+
+Runtime proof recorded:
+
+- Subreddit menu entry `Open ModMirror dashboard` appeared for the moderator.
+- The subreddit dashboard launcher opened its confirmation form and was
+  canceled; no new dashboard post was created.
+- An existing dashboard post rendered the W12 Act / Scan / Agree / Review /
+  Prove / Settings IA in Reddit's expanded WebView modal.
+- Reddit host chrome and the `Mobile` viewport control remained visible.
+
+Runtime proof gaps:
+
+- Post/comment Apply Policy menus were not proven. The feed post overflow and
+  moderator action menus checked during W13 did not show `Apply ModMirror
+  Policy`; test ordinary post/comment detail contexts next.
+- Redis smoke, Reddit smoke, target context, receipts, scan persistence, policy
+  lifecycle persistence, non-mod blocking, native mobile, and all destructive or
+  delivery features remain unverified unless earlier reports explicitly say
+  otherwise.

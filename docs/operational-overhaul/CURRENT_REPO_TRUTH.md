@@ -110,8 +110,10 @@ It does not yet support:
 - W12 reframed the client IA around Act, Scan, Agree, Review, Prove, and
   Settings. Apply Policy and the receipt ledger now live in Act; policy
   lifecycle records live in Agree; case packets, digest, and before-after
-  consistency evidence live in Prove. This is build/static-preview verified,
-  not Devvit runtime verified.
+  consistency evidence live in Prove. W13 verified this IA in Reddit's desktop
+  expanded WebView on playtest `v0.0.1.71`; native mobile remains unverified.
+- W13 added `GET /api/runtime-verification` and a matrix service so runtime,
+  local, static, type-only, disabled, and unverified claims are explicit.
 - W01 target context is type/build-verified only. Runtime proof for post/comment
   menu visibility, form behavior, dashboard navigation, target fetch, and
   moderator permission shape is still pending.
@@ -122,6 +124,8 @@ Runtime evidence exists for:
 
 - Devvit app identity and playtest readiness.
 - Compact inline card and expanded dashboard modal.
+- W12 operational IA inside the desktop expanded WebView on playtest
+  `v0.0.1.71`.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 

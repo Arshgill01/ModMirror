@@ -683,3 +683,46 @@ Runtime status:
 - Runtime proof still requires a safe playtest that confirms internal-only
   destination, permission failure shape, receipt persistence, and no accidental
   user-facing message.
+
+## Operational Overhaul W13 Runtime Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- `npx devvit whoami` succeeded as `u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.71`.
+- Zen desktop browser was signed in and opened the playtest subreddit.
+- Computer Use observed Reddit UI state and captured a screenshot at
+  `output/runtime/w13/devvit-w12-act-modal-v0.0.1.71.png`.
+
+Verified:
+
+- The subreddit overflow menu shows `Open ModMirror dashboard` for the
+  moderator account.
+- Selecting `Open ModMirror dashboard` opens the confirmation form. The W13 pass
+  canceled the form and did not create a new dashboard post.
+- An existing ModMirror dashboard custom post renders the W12 operational IA in
+  Reddit's expanded WebView modal: Act, Scan, Agree, Review, Prove, Settings.
+- Reddit host chrome remains present, including the host viewport control
+  labeled `Mobile`.
+
+Not verified:
+
+- Post/comment Apply Policy menu entries. The feed post overflow and moderator
+  menus checked in W13 did not expose `Apply ModMirror Policy`; test ordinary
+  post/comment detail pages next.
+- Runtime `/api/smoke/redis` and `/api/smoke/reddit` responses.
+- Real target context capture from `MenuItemRequest.targetId`.
+- Devvit Redis receipt, scan, policy lifecycle, and case packet persistence.
+- Non-mod access blocking and native Reddit mobile app behavior.
+
+Decision:
+
+- W13 upgrades the operational IA and subreddit dashboard launcher to runtime
+  verified on desktop WebView.
+- W13 does not upgrade post/comment Apply Policy, Redis persistence, receipts,
+  destructive moderation execution, delivery, scheduler, native Mod Notes, AI,
+  non-mod access, or native mobile status.

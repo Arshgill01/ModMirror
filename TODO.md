@@ -277,3 +277,21 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [ ] Runtime-verify the new IA inside mobile/narrow Reddit WebView.
 - [ ] Update any external docs/bookmarks that still reference the old page IDs
       after integration.
+
+## Operational Overhaul W13 Follow-up
+
+- [x] Add a runtime verification matrix endpoint.
+- [x] Add a runtime verification matrix document.
+- [x] Run Devvit playtest to readiness on `r/modmirror_dev`.
+- [x] Verify the subreddit dashboard launcher appears and opens its
+      confirmation form.
+- [x] Verify the W12 operational IA renders inside Reddit's desktop expanded
+      WebView.
+- [ ] Verify post Apply Policy menu entry on an ordinary safe post detail page.
+- [ ] Verify comment Apply Policy menu entry on an ordinary safe comment.
+- [ ] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
+      result.
+- [ ] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only
+      context.
+- [ ] Verify log-only Apply Policy creates a receipt in Devvit Redis.
+- [ ] Verify native Reddit mobile app layout and interaction behavior.

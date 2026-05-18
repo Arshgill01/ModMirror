@@ -16,6 +16,7 @@ Status labels:
 | Inline custom post dashboard | verified | `devvit.json`, Wave 7/8 and 9/10 runtime reports | Preserve as dashboard launcher/fallback. |
 | Expanded WebView dashboard | verified | `RESEARCH.md`, Wave 7/8 and 9/10 runtime reports | Keep host chrome intact. |
 | Subreddit dashboard menu | verified | `devvit.json`, `src/routes/menu.ts`, runtime reports | Keep, but align labels with operational IA later. |
+| Runtime verification matrix | verified locally/runtime partial | W13 `GET /api/runtime-verification`, `runtimeVerification.test.ts`, and `RUNTIME_VERIFICATION_MATRIX.md`; playtest reached `v0.0.1.71` | Re-run matrix after W14 integration. |
 | Post/comment smoke menus | disabled | Removed from `devvit.json` in W01. `/api/smoke/*` diagnostics remain explicit API routes. | Do not re-expose smoke language to moderators. |
 | Post/comment Apply Policy menu | type/build-only | `devvit.json`, `src/routes/menu.ts`, `src/routes/forms.ts`, local typecheck/build. | Runtime-verify in Devvit playtest. |
 | Target ID from menu request | type/build-only | `MenuItemRequest.targetId`, W01 form path | Runtime-verify through real W01 flow. |
@@ -42,8 +43,8 @@ Status labels:
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets v2 | verified locally/demo runtime | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts, runtime reports for older demo flow | Runtime-smoke receipt-backed generation in Devvit playtest. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
-| Operational IA: Act / Scan / Agree / Review / Prove | verified locally/static preview | W12 `src/client/main.ts`, `src/client/styles.css`, `src/shared/productization.ts`, static Playwright screenshots for desktop and mobile | Runtime-verify inside Devvit WebView on desktop and mobile clients. |
+| Operational IA: Act / Scan / Agree / Review / Prove | runtime verified on desktop WebView | W12 client code and static screenshots; W13 playtest `v0.0.1.71` rendered the IA in Reddit's expanded WebView modal with host viewport control visible | Re-run after W14 integration; native mobile remains separate. |
 | AI advisory layer | disabled/type-only | W10 `aiAdvisory.ts`, `/api/ai/capabilities`, `/api/ai/advisory`, mocked-provider tests; Devvit docs/typings show server fetch and secret settings support | Keep disabled until provider config, HTTP permission, secrets, terms/privacy requirements, and runtime proof are complete. |
 | Team delivery receipts | verified locally | W11 `teamDelivery.ts`, `teamDelivery.test.ts`, Redis keys `delivery:receipts` and `delivery:receipt:{id}` | Runtime-smoke receipt persistence in Devvit playtest. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
-| Reddit mobile app QA | unverified | Launch checklist unchecked | Add W13 verification target. |
+| Reddit mobile app QA | unverified | W12 static 390px screenshot only; W13 used desktop Zen with Reddit host Mobile viewport control, not native mobile app | Verify in native Reddit mobile app/device mirror. |
