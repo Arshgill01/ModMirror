@@ -1,5 +1,6 @@
 import type {
   ActionSource,
+  ActionReceiptSource,
   ApplyPolicySource,
   AppealPosture,
   CasePacketActionFamily,
@@ -127,6 +128,13 @@ export const APPLY_POLICY_SOURCE_VALUES = [
   'simulator',
 ] as const satisfies readonly ApplyPolicySource[];
 
+export const ACTION_RECEIPT_SOURCE_VALUES = [
+  'menu',
+  'dashboard',
+  'demo',
+  'simulator',
+] as const satisfies readonly ActionReceiptSource[];
+
 export const MODERATION_EXECUTION_MODE_VALUES = [
   'live',
   'log_only',
@@ -206,6 +214,7 @@ export const API_ROUTES = {
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   actions: '/api/actions',
+  receipts: '/api/receipts',
   overrides: '/api/overrides',
   overrideSummary: '/api/overrides/summary',
   policyHealth: '/api/policy-health',

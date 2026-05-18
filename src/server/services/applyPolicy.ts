@@ -28,6 +28,7 @@ import {
   type ModerationExecutionDependencies,
 } from './moderationExecution';
 import { capturePolicySnapshot, getPolicyByRule } from './policies';
+import { createActionReceiptInput, saveActionReceipt } from './receipts';
 import { getTargetType } from './targetContext';
 
 export async function previewApplyPolicy(
@@ -122,11 +123,7 @@ export async function confirmApplyPolicy(options: {
   ));
   const actionEvent = await saveActionEvent(actionInput);
 
-  const result: ApplyPolicyConfirmResult = {
-    recommendation,
-    actionEvent,
-    execution,
-  };
+  let overrideEvent: ApplyPolicyConfirmResult['overrideEvent'];
 
   if (recommendation.deviatesFromPolicy && options.input.overrideReason) {
     const overrideInput: Parameters<typeof saveOverrideEvent>[0] = {
@@ -159,7 +156,33 @@ export async function confirmApplyPolicy(options: {
       overrideInput.policyVersionStatus = 'missing';
     }
 
-    result.overrideEvent = await saveOverrideEvent(overrideInput);
+    overrideEvent = await saveOverrideEvent(overrideInput);
+  }
+
+  const receiptOptions: Parameters<typeof createActionReceiptInput>[0] = {
+    preview,
+    input: options.input,
+    actionEvent,
+    execution,
+  };
+  if (overrideEvent !== undefined) {
+    receiptOptions.overrideEvent = overrideEvent;
+  }
+  if (options.modUsername !== undefined) {
+    receiptOptions.modUsername = options.modUsername;
+  }
+  const receipt = await saveActionReceipt(
+    createActionReceiptInput(receiptOptions)
+  );
+
+  const result: ApplyPolicyConfirmResult = {
+    recommendation,
+    actionEvent,
+    execution,
+    receipt,
+  };
+  if (overrideEvent !== undefined) {
+    result.overrideEvent = overrideEvent;
   }
 
   return result;

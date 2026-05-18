@@ -23,6 +23,11 @@ export const redisKeys = {
   actions: (subreddit: string) => mmKey(subreddit, 'actions'),
   actionsByUser: (subreddit: string, username: string) =>
     mmKey(subreddit, `actions:user:${username}`),
+  receipts: (subreddit: string) => mmKey(subreddit, 'receipts'),
+  receipt: (subreddit: string, receiptId: string) =>
+    mmKey(subreddit, `receipt:${receiptId}`),
+  receiptsByTarget: (subreddit: string, targetThingId: string) =>
+    mmKey(subreddit, `receipts:target:${targetThingId}`),
   overrides: (subreddit: string) => mmKey(subreddit, 'overrides'),
   overrideReview: (subreddit: string, overrideId: string) =>
     mmKey(subreddit, `override:${overrideId}:review`),

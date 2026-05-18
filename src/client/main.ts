@@ -1067,7 +1067,7 @@ function renderApplyPreview() {
       ${renderApplyPreviewEvidence()}
       ${
         applyState.result
-          ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
+          ? `<p class="inline-success">Receipt ${escapeHtml(applyState.result.receipt.id)} recorded${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
              <button class="secondary-button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}" type="button">Generate case packet</button>`
           : ''
       }
@@ -2627,7 +2627,29 @@ function createClientDemoApplyResult(
     recommendation: preview.recommendation,
     actionEvent,
     execution,
+    receipt: {
+      id: `demo-receipt-${Date.now()}`,
+      actionEventId: actionEvent.id,
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetThingId: payload.targetThingId,
+      targetType: preview.targetSnapshot.targetType,
+      targetSnapshot: preview.targetSnapshot,
+      modUsername: 'demo_mod_2',
+      source: 'simulator',
+      recommendation: preview.recommendation,
+      selectedAction: payload.selectedAction,
+      deviatesFromPolicy: preview.recommendation.deviatesFromPolicy,
+      executionMode: execution.executionMode,
+      executionAttempted: execution.executionAttempted,
+      executionResult: execution.executionResult,
+      redditOperation: execution.redditOperation,
+      capabilityState: execution.capabilityState,
+      createdAt: now,
+    },
   };
+  if (preview.policySnapshot !== undefined) {
+    result.receipt.policySnapshot = preview.policySnapshot;
+  }
 
   if (preview.recommendation.deviatesFromPolicy) {
     result.overrideEvent = {
@@ -2651,6 +2673,11 @@ function createClientDemoApplyResult(
       updatedAt: now,
       createdAt: now,
     };
+    result.receipt.overrideEventId = result.overrideEvent.id;
+    result.receipt.overrideReason = result.overrideEvent.overrideReason;
+    if (result.overrideEvent.overrideNote !== undefined) {
+      result.receipt.overrideNote = result.overrideEvent.overrideNote;
+    }
   }
 
   return result;

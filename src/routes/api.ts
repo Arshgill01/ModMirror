@@ -5,6 +5,7 @@ import { APP_NAME, type HealthResponse } from '../shared/status';
 import { DEMO_SUBREDDIT_NAME } from '../shared/constants';
 import type {
   ActionEvent,
+  ActionReceipt,
   ApplyPolicyConfirmInput,
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -49,6 +50,11 @@ import {
   validateOverrideReviewStatus,
 } from '../server/services/audit';
 import { confirmApplyPolicy, previewApplyPolicy } from '../server/services/applyPolicy';
+import {
+  getActionReceipt,
+  listActionReceipts,
+  listActionReceiptsByTarget,
+} from '../server/services/receipts';
 import {
   getPolicyHealthOverview,
   listPolicyHealthSummaries,
@@ -324,6 +330,47 @@ api.get('/actions', async (c) => {
     data: await listRecentActionEvents(getRequestedSubreddit(c)),
   };
   return c.json(response);
+});
+
+api.get('/receipts', async (c) => {
+  const response: ApiResponse<ActionReceipt[]> = {
+    ok: true,
+    data: await listActionReceipts(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.get('/receipts/target/:targetThingId', async (c) => {
+  const response: ApiResponse<ActionReceipt[]> = {
+    ok: true,
+    data: await listActionReceiptsByTarget(
+      getRequestedSubreddit(c),
+      c.req.param('targetThingId')
+    ),
+  };
+  return c.json(response);
+});
+
+api.get('/receipts/:id', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const receipt = await getActionReceipt(subreddit, c.req.param('id'));
+  if (receipt === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'receipt_not_found',
+          message: 'Action receipt was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<ActionReceipt>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: receipt,
+  } satisfies ApiResponse<ActionReceipt>);
 });
 
 api.get('/overrides', async (c) => {

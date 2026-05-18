@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ActionEvent, RulePolicy } from '../../shared/schema';
+import type { ActionEvent, ActionReceipt, RulePolicy } from '../../shared/schema';
 
 const policy: RulePolicy = {
   id: 'policy-rule-2',
@@ -36,11 +36,48 @@ const actionEvent: ActionEvent = {
   createdAt: '2026-05-16T00:00:00.000Z',
 };
 
+const receipt: ActionReceipt = {
+  id: 'receipt-1',
+  actionEventId: actionEvent.id,
+  subreddit: 'ExampleLearning',
+  targetType: 'unknown',
+  targetSnapshot: {
+    targetType: 'unknown',
+    source: 'not_provided',
+    warnings: [],
+  },
+  modUsername: 'mod_a',
+  source: 'simulator',
+  recommendation: {
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    policyId: policy.id,
+    offenseCount: 1,
+    recommendedAction: 'warn',
+    messageDeliveryMode: 'log_only',
+    requiresOverrideReason: true,
+    selectedAction: 'warn',
+    deviatesFromPolicy: false,
+    fallbackReason: 'policy_found',
+    message: 'Team policy recommends warn.',
+  },
+  selectedAction: 'warn',
+  deviatesFromPolicy: false,
+  executionMode: 'log_only',
+  executionAttempted: false,
+  executionResult: 'skipped',
+  redditOperation: 'none',
+  capabilityState: 'not_applicable',
+  createdAt: '2026-05-16T00:00:00.000Z',
+};
+
 const getPolicyByRule = vi.fn();
 const capturePolicySnapshot = vi.fn();
 const listRecentActionEvents = vi.fn();
 const saveActionEvent = vi.fn();
 const saveOverrideEvent = vi.fn();
+const createActionReceiptInput = vi.fn();
+const saveActionReceipt = vi.fn();
 
 vi.mock('./policies', () => ({
   capturePolicySnapshot,
@@ -52,6 +89,11 @@ vi.mock('./audit', () => ({
   listRecentActionEvents,
   saveActionEvent,
   saveOverrideEvent,
+}));
+
+vi.mock('./receipts', () => ({
+  createActionReceiptInput,
+  saveActionReceipt,
 }));
 
 describe('apply policy service', () => {
@@ -71,6 +113,8 @@ describe('apply policy service', () => {
     });
     listRecentActionEvents.mockResolvedValue([]);
     saveActionEvent.mockResolvedValue(actionEvent);
+    createActionReceiptInput.mockImplementation((input) => input);
+    saveActionReceipt.mockResolvedValue(receipt);
     saveOverrideEvent.mockResolvedValue({
       id: 'override-1',
       subreddit: 'ExampleLearning',
@@ -186,6 +230,7 @@ describe('apply policy service', () => {
     });
 
     expect(result.actionEvent.id).toBe('action-1');
+    expect(result.receipt.id).toBe('receipt-1');
     expect(result.execution).toEqual(
       expect.objectContaining({
         executionMode: 'log_only',
@@ -207,6 +252,17 @@ describe('apply policy service', () => {
       })
     );
     expect(saveOverrideEvent).not.toHaveBeenCalled();
+    expect(createActionReceiptInput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionEvent,
+        execution: expect.objectContaining({
+          executionMode: 'log_only',
+          redditOperation: 'none',
+        }),
+        modUsername: 'mod_a',
+      })
+    );
+    expect(saveActionReceipt).toHaveBeenCalled();
   });
 
   it('rejects confirm requests without explicit confirmation', async () => {
@@ -259,6 +315,13 @@ describe('apply policy service', () => {
         policyVersionId: 'policy-version-1',
         policyVersionNumber: 1,
         policyVersionStatus: 'active',
+      })
+    );
+    expect(createActionReceiptInput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overrideEvent: expect.objectContaining({
+          overrideReason: 'edge_case_mod_discretion',
+        }),
       })
     );
   });

@@ -198,7 +198,7 @@ export function getDefaultModerationExecutionCapabilities(): ModerationExecution
     redditActionsRuntimeVerified:
       process.env.MODMIRROR_REDDIT_ACTIONS_RUNTIME_VERIFIED === 'true',
     receiptCreationAvailable:
-      process.env.MODMIRROR_ACTION_RECEIPTS_AVAILABLE === 'true',
+      process.env.MODMIRROR_ACTION_RECEIPTS_AVAILABLE !== 'false',
   };
 }
 

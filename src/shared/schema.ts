@@ -79,6 +79,12 @@ export type ActionSource = 'live' | 'demo' | 'modmirror';
 
 export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
 
+export type ActionReceiptSource =
+  | 'menu'
+  | 'dashboard'
+  | 'demo'
+  | 'simulator';
+
 export type HealthState = 'ok' | 'degraded' | 'blocked';
 
 export type ModerationTargetType = 'post' | 'comment' | 'unknown';
@@ -327,6 +333,7 @@ export interface ApplyPolicyConfirmResult {
   recommendation: PolicyRecommendation;
   actionEvent: ActionEvent;
   execution: ModerationExecutionResult;
+  receipt: ActionReceipt;
   overrideEvent?: OverrideEvent;
 }
 
@@ -535,6 +542,33 @@ export interface ModerationExecutionResult {
   redditResultMetadata?: Record<string, string | number | boolean>;
   startedAt: string;
   completedAt: string;
+}
+
+export interface ActionReceipt {
+  id: string;
+  actionEventId: string;
+  subreddit: string;
+  targetThingId?: string;
+  targetType: ModerationTargetType;
+  targetSnapshot: ApplyPolicyTargetSnapshot;
+  modUsername: string;
+  source: ActionReceiptSource;
+  policySnapshot?: PolicySnapshot;
+  recommendation: PolicyRecommendation;
+  selectedAction: EnforcementAction;
+  deviatesFromPolicy: boolean;
+  overrideEventId?: string;
+  overrideReason?: OverrideReason;
+  overrideNote?: string;
+  executionMode: ModerationExecutionMode;
+  executionAttempted: boolean;
+  executionResult: ModerationExecutionStatus;
+  redditOperation: RedditModerationOperation;
+  redditResultMetadata?: Record<string, string | number | boolean>;
+  errorCode?: string;
+  errorMessage?: string;
+  capabilityState: ModerationExecutionCapabilityState;
+  createdAt: string;
 }
 
 export interface OverrideSummary {
