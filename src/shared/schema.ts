@@ -81,6 +81,8 @@ export type ApplyPolicySource = 'live' | 'demo' | 'simulator';
 
 export type HealthState = 'ok' | 'degraded' | 'blocked';
 
+export type ModerationTargetType = 'post' | 'comment' | 'unknown';
+
 export type DigestSource = 'manual' | 'scheduled' | 'demo';
 
 export type DigestOverallStatus =
@@ -199,6 +201,19 @@ export interface ApplyPolicyContext {
   targetAuthor?: string;
   selectedAction?: EnforcementAction;
   source?: ApplyPolicySource;
+}
+
+export interface ModerationTargetContext {
+  targetThingId: string;
+  targetType: ModerationTargetType;
+  subreddit?: string;
+  authorName?: string;
+  title?: string;
+  body?: string;
+  permalink?: string;
+  currentModerator?: string;
+  modPermissions?: string[];
+  warnings: string[];
 }
 
 export type PolicyFallbackReason =

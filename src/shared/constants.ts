@@ -182,10 +182,9 @@ export const API_ROUTES = {
 } as const;
 
 export const INTERNAL_ROUTES = {
-  menuSmokeComment: '/internal/menu/smoke-comment',
-  menuSmokePost: '/internal/menu/smoke-post',
-  formSmokeTargetSubmit: '/internal/form/smoke-target-submit',
-  formSmokeChainedSubmit: '/internal/form/smoke-chained-submit',
+  menuApplyPolicyComment: '/internal/menu/apply-policy-comment',
+  menuApplyPolicyPost: '/internal/menu/apply-policy-post',
+  formApplyPolicyTargetSubmit: '/internal/form/apply-policy-target-submit',
   triggerOnAppInstall: '/internal/triggers/on-app-install',
 } as const;
 

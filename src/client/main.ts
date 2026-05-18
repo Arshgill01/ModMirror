@@ -304,10 +304,33 @@ let digestState: DigestUiState = {
 };
 
 function getPageFromHash(): ProductPageId {
-  const candidate = window.location.hash.replace('#', '');
+  const candidate = getHashRoute().page;
   return pages.some((page) => page.id === candidate)
     ? (candidate as ProductPageId)
     : 'command-center';
+}
+
+function getHashRoute() {
+  const raw = window.location.hash.replace('#', '');
+  const [page = '', query = ''] = raw.split('?');
+  return {
+    page,
+    params: new URLSearchParams(query),
+  };
+}
+
+function getApplyTargetParamsFromHash(): Partial<ApplyFormState> {
+  const params = getHashRoute().params;
+  const targetThingId = params.get('targetThingId')?.trim();
+  if (!targetThingId) {
+    return {};
+  }
+
+  const targetAuthor = params.get('targetAuthor')?.trim();
+  return {
+    targetThingId,
+    targetAuthor: targetAuthor || '',
+  };
 }
 
 function emptyPolicyForm(): PolicyFormState {
@@ -340,10 +363,11 @@ function emptyPolicyForm(): PolicyFormState {
 }
 
 function emptyApplyForm(): ApplyFormState {
+  const targetParams = getApplyTargetParamsFromHash();
   return {
     ruleKey: '',
-    targetThingId: 't3_demo_policy_target',
-    targetAuthor: 'learner_1',
+    targetThingId: targetParams.targetThingId ?? 't3_demo_policy_target',
+    targetAuthor: targetParams.targetAuthor ?? 'learner_1',
     selectedAction: 'remove',
     overrideReason: '',
     overrideNote: '',
@@ -1985,8 +2009,10 @@ function bindDigestActions() {
 function openDashboard(event?: MouseEvent) {
   requestExpandedModeFallback(event);
   dashboardOpen = true;
-  activePage = 'command-center';
-  window.location.hash = '#command-center';
+  activePage = getPageFromHash();
+  if (window.location.hash.length <= 1) {
+    window.location.hash = '#command-center';
+  }
   render();
 }
 
@@ -3445,6 +3471,16 @@ function normalizeClientError(error: unknown, fallback: string) {
 
 window.addEventListener('hashchange', () => {
   activePage = getPageFromHash();
+  const targetParams = getApplyTargetParamsFromHash();
+  if (targetParams.targetThingId !== undefined) {
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        ...targetParams,
+      },
+    };
+  }
   if (window.location.hash.length > 1) {
     dashboardOpen = true;
   }
