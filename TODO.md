@@ -2,15 +2,30 @@
 
 ## Current Phase
 
-Expansion Wave 16 — Live Context Intake and Content Snapshotting is in
-progress on `expansion/w16-context-intake` after operational W00-W14
-integration.
+Expansion Wave 17 — Modqueue Triage is in progress on
+`expansion/w17-modqueue-triage` after W16 content snapshotting.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 17 Checklist
+
+- [x] Research current Devvit modqueue/report API support from official docs
+      and installed typings.
+- [x] Record modqueue capability as type-only until playtest proves it.
+- [x] Add shared triage contracts for capability, queue item, policy hint,
+      history summary, and response.
+- [x] Add read-only triage service that normalizes Reddit queue items.
+- [x] Add `/api/modqueue/triage` without demo/fake queue fallback.
+- [x] Surface Operational Queue triage on the Act page.
+- [x] Link triage items into Apply Policy target fields.
+- [x] Add targeted service tests for capability, normalization, adapter failure,
+      and missing subreddit context.
+- [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
+      content.
 
 ## Expansion Wave 16 Checklist
 

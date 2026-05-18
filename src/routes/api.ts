@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { context } from '@devvit/web/server';
+import { context, reddit } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import {
@@ -8,6 +8,7 @@ import {
   CASE_PACKET_TYPE_VALUES,
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
+  MODQUEUE_CONTENT_TYPE_VALUES,
   TEAM_DELIVERY_CHANNEL_VALUES,
   TEAM_DELIVERY_SUBJECT_TYPE_VALUES,
 } from '../shared/constants';
@@ -39,6 +40,8 @@ import type {
   MirrorScanComparison,
   MirrorScanDepth,
   MirrorScanRecord,
+  ModqueueContentType,
+  ModqueueTriageResponse,
   OverrideEvent,
   OverrideReviewStatus,
   OverrideReviewUpdateInput,
@@ -115,6 +118,7 @@ import {
   getTeamDeliveryCapabilities,
 } from '../server/services/teamDelivery';
 import { buildRuntimeVerificationMatrix } from '../server/services/runtimeVerification';
+import { loadModqueueTriage } from '../server/services/modqueueTriage';
 
 export const api = new Hono();
 
@@ -162,6 +166,45 @@ api.get('/runtime-verification', (c) => {
   const response: ApiResponse<RuntimeVerificationMatrix> = {
     ok: true,
     data: buildRuntimeVerificationMatrix(runtimeContext),
+  };
+  return c.json(response);
+});
+
+api.get('/modqueue/triage', async (c) => {
+  const subreddit = getRequestedLiveSubreddit(c);
+  const type = normalizeModqueueContentType(c.req.query('type'));
+  const limit = normalizeModqueueLimit(c.req.query('limit'));
+  const triageOptions: Parameters<typeof loadModqueueTriage>[0] = {
+    type,
+    limit,
+    dependencies: {
+      fetchQueueItems: async (options) => {
+        const subredditClient = await reddit.getSubredditByName(options.subreddit);
+        if (options.type === 'post') {
+          return subredditClient
+            .getModQueue({ type: 'post', limit: options.limit })
+            .all();
+        }
+        if (options.type === 'comment') {
+          return subredditClient
+            .getModQueue({ type: 'comment', limit: options.limit })
+            .all();
+        }
+        return subredditClient
+          .getModQueue({ type: 'all', limit: options.limit })
+          .all();
+      },
+      listPolicies,
+      listRecentActions: listRecentActionEvents,
+    },
+  };
+  if (subreddit !== undefined) {
+    triageOptions.subreddit = subreddit;
+  }
+
+  const response: ApiResponse<ModqueueTriageResponse> = {
+    ok: true,
+    data: await loadModqueueTriage(triageOptions),
   };
   return c.json(response);
 });
@@ -977,6 +1020,12 @@ function getCurrentSubreddit(): string {
   return context.subredditName ?? DEMO_SUBREDDIT_NAME;
 }
 
+function getRequestedLiveSubreddit(c: {
+  req: { query: (name: string) => string | undefined };
+}): string | undefined {
+  return c.req.query('subreddit')?.trim() || context.subredditName;
+}
+
 function getRequestedSubreddit(c: {
   req: { query: (name: string) => string | undefined };
 }): string {
@@ -993,6 +1042,22 @@ function normalizeRequestedSubreddit(subreddit: string | undefined): string {
   }
 
   return getCurrentSubreddit();
+}
+
+function normalizeModqueueContentType(
+  value: string | undefined
+): ModqueueContentType {
+  return MODQUEUE_CONTENT_TYPE_VALUES.includes(value as ModqueueContentType)
+    ? (value as ModqueueContentType)
+    : 'all';
+}
+
+function normalizeModqueueLimit(value: string | undefined): number {
+  const limit = Number(value);
+  if (!Number.isFinite(limit)) {
+    return 25;
+  }
+  return Math.min(Math.max(Math.floor(limit), 1), 50);
 }
 
 function policyError(error: unknown): ApiResponse<RulePolicy> {

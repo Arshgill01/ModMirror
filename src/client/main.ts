@@ -42,6 +42,8 @@ import type {
   MessageDeliveryMode,
   MirrorScan,
   MirrorScanDepth,
+  ModqueueTriageItem,
+  ModqueueTriageResponse,
   OverrideReason,
   PolicyStep,
   RulePolicy,
@@ -221,6 +223,12 @@ type TeamDeliveryUiState = {
   error?: string;
 };
 
+type ModqueueTriageUiState = {
+  loading: boolean;
+  error: string | undefined;
+  response: ModqueueTriageResponse | undefined;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -331,6 +339,11 @@ let digestState: DigestUiState = {
 };
 let aiAdvisoryState: AiAdvisoryUiState = {};
 let teamDeliveryState: TeamDeliveryUiState = {};
+let modqueueState: ModqueueTriageUiState = {
+  loading: false,
+  error: undefined,
+  response: undefined,
+};
 
 function getPageFromHash(): ProductPageId {
   const candidate = canonicalPageId(getHashRoute().page);
@@ -373,7 +386,9 @@ function getApplyTargetParamsFromHash(): Partial<ApplyFormState> {
   const targetBody = params.get('targetBody')?.trim();
   const targetPermalink = params.get('targetPermalink')?.trim();
   const subreddit = params.get('subreddit')?.trim();
+  const ruleKey = params.get('ruleKey')?.trim();
   return {
+    ruleKey: ruleKey || '',
     targetThingId,
     targetAuthor: targetAuthor || '',
     targetTitle: targetTitle || '',
@@ -598,22 +613,7 @@ function renderActPage() {
       </div>
 
       <aside class="act-context">
-        <div class="document-panel">
-          <div class="section-header">
-            <div>
-              <h3>Operational Queue</h3>
-              <p>Current state before a moderator confirms a post or comment action.</p>
-            </div>
-          </div>
-          <dl class="signal-list">
-            ${renderCommandSignal('Consistency', `${summary.consistencyScore}/100`)}
-            ${renderCommandSignal('Top issue', summary.topIssue)}
-            ${renderCommandSignal('Open overrides', summary.unresolvedOverrideCount.toString())}
-            ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
-          </dl>
-          <button class="secondary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
-          <p class="inline-note">${escapeHtml(getPrimaryActionCopy(summary.primaryAction.intent))}</p>
-        </div>
+        ${renderModqueueTriagePanel(summary)}
 
         ${renderSetupWizard(setupSteps)}
         ${renderDemoScenario()}
@@ -621,6 +621,88 @@ function renderActPage() {
     </section>
 
     ${renderReceiptLedger()}
+  `;
+}
+
+function renderModqueueTriagePanel(summary: ReturnType<typeof buildDashboardSummary>) {
+  const response = modqueueState.response;
+  const capability = response?.capability;
+  const items = response?.items ?? [];
+
+  return `
+    <div class="document-panel modqueue-panel">
+      <div class="section-header">
+        <div>
+          <h3>Operational Queue</h3>
+          <p>Read-only triage from Reddit modqueue when runtime allows it.</p>
+        </div>
+        <button class="secondary-button compact-button" data-load-modqueue type="button" ${modqueueState.loading ? 'disabled' : ''}>Refresh</button>
+      </div>
+      <dl class="signal-list">
+        ${renderCommandSignal('Consistency', `${summary.consistencyScore}/100`)}
+        ${renderCommandSignal('Top issue', summary.topIssue)}
+        ${renderCommandSignal('Open overrides', summary.unresolvedOverrideCount.toString())}
+        ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
+      </dl>
+      ${
+        capability
+          ? `<p class="inline-note">${escapeHtml(capability.label)}: ${escapeHtml(capability.detail)}</p>`
+          : '<p class="inline-note">Queue capability has not been loaded yet.</p>'
+      }
+      ${modqueueState.error ? `<p class="inline-error">${escapeHtml(modqueueState.error)}</p>` : ''}
+      ${
+        modqueueState.loading
+          ? renderLoadingState('Loading modqueue', 'Reading Reddit modqueue items without taking action.')
+          : items.length > 0
+            ? `<ol class="modqueue-list">${items.map(renderModqueueTriageItem).join('')}</ol>`
+            : renderModqueueEmptyState(response, summary)
+      }
+    </div>
+  `;
+}
+
+function renderModqueueEmptyState(
+  response: ModqueueTriageResponse | undefined,
+  summary: ReturnType<typeof buildDashboardSummary>
+) {
+  if (response?.capability.state === 'failed_runtime') {
+    return `<p class="inline-note">${escapeHtml(response.warnings[0] ?? 'Modqueue read failed. Use post/comment Apply Policy menus until runtime proof is complete.')}</p>`;
+  }
+  if (response?.capability.state === 'unsupported') {
+    return `<p class="inline-note">${escapeHtml(response.capability.nextAction)}</p>`;
+  }
+  if (response) {
+    return '<p class="inline-note">No modqueue items returned. Use post/comment menus or enter a target thing ID directly.</p>';
+  }
+  return `
+    <button class="secondary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+    <p class="inline-note">${escapeHtml(getPrimaryActionCopy(summary.primaryAction.intent))}</p>
+  `;
+}
+
+function renderModqueueTriageItem(item: ModqueueTriageItem) {
+  const policyLabel =
+    item.policyHint.ruleName ?? formatAction(item.policyHint.status);
+  const title = item.title ?? item.bodyExcerpt ?? item.targetThingId;
+  return `
+    <li class="modqueue-item">
+      <div class="modqueue-item-main">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(item.targetThingId)}${item.authorName ? ` by ${escapeHtml(item.authorName)}` : ''}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Reports</dt><dd>${item.reportCount}</dd></div>
+        <div><dt>Risk</dt><dd>${formatAction(item.riskState)}</dd></div>
+        <div><dt>Policy</dt><dd>${escapeHtml(policyLabel)}</dd></div>
+        <div><dt>History</dt><dd>${item.historySummary.modmirrorActionsForAuthor}</dd></div>
+      </dl>
+      ${
+        item.reportReasons.length > 0
+          ? `<p class="inline-note">Reports: ${escapeHtml(item.reportReasons.slice(0, 3).join(', '))}</p>`
+          : '<p class="inline-note">No report reason text was available from the queue item.</p>'
+      }
+      <button class="secondary-button compact-button" data-apply-triage="${escapeAttribute(item.id)}" type="button">Apply Policy</button>
+    </li>
   `;
 }
 
@@ -1964,6 +2046,7 @@ function bindAllActions() {
   bindAppearanceActions();
   bindActionIntents();
   bindScanActions();
+  bindModqueueActions();
   bindPolicyActions();
   bindApplyPolicyActions();
   bindCasePacketActions();
@@ -2177,6 +2260,26 @@ function bindPolicyActions() {
       void savePolicyForm(new FormData(event.currentTarget as HTMLFormElement));
     }
   );
+}
+
+function bindModqueueActions() {
+  document.querySelectorAll<HTMLButtonElement>('[data-load-modqueue]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void loadModqueueTriage();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-apply-triage]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const itemId = button.dataset.applyTriage;
+      const item = modqueueState.response?.items.find(
+        (candidate) => candidate.id === itemId
+      );
+      if (item) {
+        applyTriageItem(item);
+      }
+    });
+  });
 }
 
 function bindApplyPolicyActions() {
@@ -3304,6 +3407,36 @@ async function loadGovernance(ruleKey?: string) {
   render();
 }
 
+async function loadModqueueTriage() {
+  modqueueState = {
+    ...modqueueState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    modqueueState = {
+      loading: false,
+      error: undefined,
+      response: await fetchApi<ModqueueTriageResponse>(
+        withWorkspaceSubreddit(`${API_ROUTES.modqueueTriage}?limit=10&type=all`)
+      ),
+    };
+  } catch (error) {
+    modqueueState = {
+      ...modqueueState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Modqueue triage is unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
 async function loadReceipts() {
   receiptLedgerState = {
     ...receiptLedgerState,
@@ -3911,6 +4044,28 @@ async function confirmApplyPolicy(formData: FormData) {
   }
 }
 
+function applyTriageItem(item: ModqueueTriageItem) {
+  applyState = {
+    ...applyState,
+    error: undefined,
+    message: `Loaded ${item.targetThingId} from the operational queue.`,
+    form: {
+      ...applyState.form,
+      ruleKey: item.policyHint.ruleKey ?? applyState.form.ruleKey,
+      targetThingId: item.targetThingId,
+      targetAuthor: item.authorName ?? '',
+      targetTitle: item.title ?? '',
+      targetBody: item.bodyExcerpt ?? '',
+      targetPermalink: item.permalink ?? '',
+      subreddit: item.subreddit,
+      selectedAction: applyState.form.selectedAction,
+    },
+  };
+  activePage = 'act';
+  window.location.hash = item.applyPolicyHash;
+  render();
+}
+
 async function generateDigest() {
   digestState = {
     ...digestState,
@@ -4281,6 +4436,7 @@ render();
 void loadHealth();
 void loadPolicies();
 void loadGovernance();
+void loadModqueueTriage();
 void loadReceipts();
 void loadDigestHistory();
 void loadAiAdvisoryCapabilities();

@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Operational Overhaul W09 Case Packets v2 implementation is complete locally; Devvit app identity exists; signed-in Wave 7/8 playtest reached the compact inline card and native expanded dashboard modal on Reddit.
+Status: Expansion Wave 17 modqueue triage is implemented locally with Devvit modqueue support verified from official docs and installed typings only; runtime playtest proof is still required.
 
 Last updated: 2026-05-18
 
@@ -63,6 +63,7 @@ Updated by: Codex
 | Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W08 Policy Agreement now has draft/propose/review/adopt lifecycle artifacts. | `RulePolicy` and `PolicyVersion` carry lifecycle/proposal/review/adoption metadata; `/api/policies/:id/propose`, `/reviews`, and `/adopt` exist; `policies.test.ts` covers draft, review, adopt, invalid transitions, and Apply Policy active-version snapshot behavior. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W09 Case Packets prefer immutable receipts and label evidence sources. | `casePacket.ts` loads receipts, emits packet types/evidence labels, includes receipt target snapshots and execution results, and falls back to action history with caveats. `casePacket.test.ts` covers receipt-backed packets and policy-changed-since-action. Runtime Redis/API behavior remains unverified. |
+| Type/build only | W17 modqueue triage can read Reddit modqueue items through Devvit when runtime permits. | Official Subreddit docs list `getModQueue(options?)` and `getReports(options?)` returning `Listing<Post | Comment>`; installed typings expose `Subreddit.getModQueue`, `RedditAPIClient.getModQueue`, `Subreddit.getReports`, and proto routes `/r/{subreddit}/about/modqueue` and `/about/reports`. `src/server/services/modqueueTriage.ts`, `/api/modqueue/triage`, and `src/server/services/modqueueTriage.test.ts` are local/type verified only. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -88,6 +89,10 @@ Updated by: Codex
   visibility, form submission, target fetch behavior, and exact permission
   strings. The flow remains non-destructive and does not execute moderation
   actions.
+- W17 adds a read-only modqueue triage route and UI panel. It does not fake
+  queue items if Devvit runtime or subreddit context is unavailable. The
+  capability remains `type_only` because no playtest has yet proven
+  `/api/modqueue/triage` against real queue content.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.

@@ -896,6 +896,41 @@ dd {
   min-width: 0;
 }
 
+.modqueue-panel .empty-state {
+  border: 0;
+  padding: 10px 0 0;
+}
+
+.modqueue-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin-top: 12px;
+}
+
+.modqueue-item {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 9px;
+  padding-top: 12px;
+}
+
+.modqueue-item-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.modqueue-item-main strong,
+.modqueue-item-main span {
+  overflow-wrap: anywhere;
+}
+
+.modqueue-item-main span {
+  color: var(--mm-muted);
+  font-size: 13px;
+}
+
 .receipt-ledger {
   border-top: 1px solid var(--mm-line);
   padding-top: 18px;

@@ -21,6 +21,10 @@ import type {
   EnforcementAction,
   MessageDeliveryMode,
   MirrorScanDepth,
+  ModqueueContentType,
+  ModqueueTriageCapabilityState,
+  ModqueueTriagePolicyMatchStatus,
+  ModqueueTriageRiskState,
   ModerationExecutionCapabilityState,
   ModerationExecutionMode,
   ModerationExecutionStatus,
@@ -265,6 +269,34 @@ export const TEAM_DELIVERY_SUBJECT_TYPE_VALUES = [
   'policy_proposal',
 ] as const satisfies readonly TeamDeliverySubjectType[];
 
+export const MODQUEUE_CONTENT_TYPE_VALUES = [
+  'all',
+  'post',
+  'comment',
+] as const satisfies readonly ModqueueContentType[];
+
+export const MODQUEUE_TRIAGE_CAPABILITY_STATE_VALUES = [
+  'type_only',
+  'runtime_verified',
+  'failed_runtime',
+  'unsupported',
+  'disabled',
+] as const satisfies readonly ModqueueTriageCapabilityState[];
+
+export const MODQUEUE_TRIAGE_RISK_STATE_VALUES = [
+  'needs_review',
+  'reported',
+  'high_report_volume',
+  'already_actioned',
+] as const satisfies readonly ModqueueTriageRiskState[];
+
+export const MODQUEUE_TRIAGE_POLICY_MATCH_STATUS_VALUES = [
+  'matched',
+  'possible_match',
+  'no_policy',
+  'unmatched',
+] as const satisfies readonly ModqueueTriagePolicyMatchStatus[];
+
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
@@ -295,6 +327,7 @@ export const API_ROUTES = {
   scan: '/api/scan',
   scans: '/api/scans',
   consistencyAnalytics: '/api/analytics/consistency',
+  modqueueTriage: '/api/modqueue/triage',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   actions: '/api/actions',

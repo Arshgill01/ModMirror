@@ -212,6 +212,27 @@ export type TeamDeliveryReceiptStatus =
   | 'sent'
   | 'failed';
 
+export type ModqueueContentType = 'all' | 'post' | 'comment';
+
+export type ModqueueTriageCapabilityState =
+  | 'type_only'
+  | 'runtime_verified'
+  | 'failed_runtime'
+  | 'unsupported'
+  | 'disabled';
+
+export type ModqueueTriageRiskState =
+  | 'needs_review'
+  | 'reported'
+  | 'high_report_volume'
+  | 'already_actioned';
+
+export type ModqueueTriagePolicyMatchStatus =
+  | 'matched'
+  | 'possible_match'
+  | 'no_policy'
+  | 'unmatched';
+
 export interface SubredditRuleRef {
   ruleKey: string;
   ruleName: string;
@@ -421,6 +442,62 @@ export interface ContentSnapshot {
   source: ContentSnapshotSource;
   warnings: string[];
   privacy: ContentSnapshotPrivacyMetadata;
+}
+
+export interface ModqueueTriageCapability {
+  state: ModqueueTriageCapabilityState;
+  label: string;
+  detail: string;
+  runtimeProof: 'runtime_verified' | 'type_only' | 'not_verified';
+  evidence: string[];
+  nextAction: string;
+  safeToUseForReadOnlyTriage: boolean;
+}
+
+export interface ModqueuePolicyHint {
+  status: ModqueueTriagePolicyMatchStatus;
+  ruleKey?: string;
+  ruleName?: string;
+  confidence: Confidence;
+  matchReasons: string[];
+}
+
+export interface ModqueueHistorySummary {
+  modmirrorActionsForAuthor: number;
+  recentRules: string[];
+  lastActionAt?: string;
+  summary: string;
+}
+
+export interface ModqueueTriageItem {
+  id: string;
+  targetThingId: string;
+  targetType: ModerationTargetType;
+  subreddit: string;
+  authorName?: string;
+  title?: string;
+  bodyExcerpt?: string;
+  permalink?: string;
+  createdAt?: string;
+  reportCount: number;
+  reportReasons: string[];
+  riskState: ModqueueTriageRiskState;
+  policyHint: ModqueuePolicyHint;
+  historySummary: ModqueueHistorySummary;
+  contentSnapshot: ContentSnapshot;
+  applyPolicyHash: string;
+  source: 'reddit_modqueue';
+  warnings: string[];
+}
+
+export interface ModqueueTriageResponse {
+  generatedAt: string;
+  subreddit?: string;
+  requestedType: ModqueueContentType;
+  capability: ModqueueTriageCapability;
+  items: ModqueueTriageItem[];
+  source: 'reddit_modqueue' | 'unavailable';
+  warnings: string[];
 }
 
 export type ApplyPolicyTargetSnapshotSource = 'provided' | 'not_provided';
