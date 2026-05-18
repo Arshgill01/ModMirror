@@ -939,6 +939,41 @@ export interface PolicyImpactSummary {
   caveats: string[];
 }
 
+export interface PolicyImpactEvidenceWindow {
+  startAt?: string;
+  endAt?: string;
+  receiptCount: number;
+  scanCount: number;
+  consistencyRate: number;
+  overrideRate: number;
+  driftCandidateCount: number;
+}
+
+export interface PolicyImpactTimelineEvent {
+  id: string;
+  occurredAt: string;
+  label: string;
+  detail: string;
+  source: 'policy_version' | 'receipt' | 'scan';
+}
+
+export interface PolicyImpactMeasurement {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  generatedAt: string;
+  dataQuality: ConsistencyAnalyticsDataQuality;
+  status: PolicyImpactStatus;
+  adoptedAt?: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  before: PolicyImpactEvidenceWindow;
+  after: PolicyImpactEvidenceWindow;
+  timeline: PolicyImpactTimelineEvent[];
+  caveats: string[];
+  source: 'stored' | 'demo';
+}
+
 export interface ConsistencyAnalyticsSummary {
   subreddit: string;
   generatedAt: string;

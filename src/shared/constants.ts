@@ -334,6 +334,7 @@ export const API_ROUTES = {
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   policyReplay: '/api/policies/:id/replay',
+  policyImpact: '/api/policies/:id/impact',
   actions: '/api/actions',
   receipts: '/api/receipts',
   overrides: '/api/overrides',

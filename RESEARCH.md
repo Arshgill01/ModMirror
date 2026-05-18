@@ -6,8 +6,8 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 21 community health is implemented locally; aggregate
-health signals are type/test verified but Redis route runtime proof is still
+Status: Expansion Wave 22 policy impact is implemented locally; before/after
+impact measurement is type/test verified but Redis route runtime proof is still
 required.
 
 Last updated: 2026-05-18
@@ -70,6 +70,7 @@ Updated by: Codex
 | Verified locally | W19 policy ratification enforces reviewer approval thresholds before non-quick adoption. | `src/server/services/policyRatification.ts` summarizes latest reviewer votes, `policies.ts` stores proposal notes/settings and blocks adoption until approval thresholds are met, and policy tests cover threshold success/failure plus disabled quick adoption. Redis runtime remains unverified. |
 | Verified locally | W20 replay sandbox can simulate proposed policy outcomes without live Reddit calls or receipt mutation. | `src/server/services/replaySandbox.ts` runs read-only policy replay over supplied or scan-derived attributed actions, `/api/policies/:id/replay` loads stored scan actions when given `scanId`, and replay tests cover changed recommendations, skipped rules, and input immutability. Redis/API runtime remains unverified. |
 | Verified locally | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Tests cover empty and small-community states. Redis/API runtime remains unverified. |
+| Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -112,6 +113,9 @@ Updated by: Codex
 - W21 community health avoids per-mod leaderboards and does not emit moderator
   usernames. Repeat-offense signals are aggregate counts only, and empty/small
   samples are labeled before health claims are made.
+- W22 policy impact requires minimum before/after receipt windows before
+  claiming improvement or regression. Demo impact remains labeled as demo and
+  is not live subreddit proof.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.

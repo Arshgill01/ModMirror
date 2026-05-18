@@ -49,6 +49,7 @@ import type {
   ModqueueTriageItem,
   ModqueueTriageResponse,
   OverrideReason,
+  PolicyImpactMeasurement,
   PolicyStep,
   PolicyReplayResult,
   RulePolicy,
@@ -213,6 +214,7 @@ type GovernanceUiState = {
   communityHealth: CommunityHealthSummary | undefined;
   overrides: ReviewableOverrideEvent[];
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
+  impactsByPolicy: Record<string, PolicyImpactMeasurement>;
 };
 
 type ReceiptLedgerUiState = {
@@ -350,6 +352,7 @@ let governanceState: GovernanceUiState = {
   communityHealth: undefined,
   overrides: [],
   versionsByPolicy: {},
+  impactsByPolicy: {},
 };
 let receiptLedgerState: ReceiptLedgerUiState = {
   loading: false,
@@ -1763,6 +1766,7 @@ function renderPolicyVersionSummary() {
 
 function renderPolicyVersionCard(policy: RulePolicy) {
   const versions = governanceState.versionsByPolicy[policy.id] ?? [];
+  const impact = governanceState.impactsByPolicy[policy.id];
   return `
     <article class="version-card">
       <div class="card-header">
@@ -1787,7 +1791,29 @@ function renderPolicyVersionCard(policy: RulePolicy) {
               .join('')}</ol>`
           : '<p>No version records returned yet.</p>'
       }
+      ${impact ? renderPolicyImpactDetail(impact) : ''}
     </article>
+  `;
+}
+
+function renderPolicyImpactDetail(impact: PolicyImpactMeasurement) {
+  return `
+    <div class="impact-detail">
+      <div class="card-header">
+        <div>
+          <h4>Impact</h4>
+          <p>${escapeHtml(impact.caveats[0] ?? 'Before/after impact uses stored receipts and scans.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(impact.status))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Source</dt><dd>${formatAction(impact.source)}</dd></div>
+        <div><dt>Before</dt><dd>${formatPercent(impact.before.consistencyRate)}</dd></div>
+        <div><dt>After</dt><dd>${formatPercent(impact.after.consistencyRate)}</dd></div>
+        <div><dt>Before receipts</dt><dd>${impact.before.receiptCount}</dd></div>
+        <div><dt>After receipts</dt><dd>${impact.after.receiptCount}</dd></div>
+      </dl>
+    </div>
   `;
 }
 
@@ -3376,6 +3402,48 @@ function createClientDemoCommunityHealth(): CommunityHealthSummary {
   };
 }
 
+function createClientDemoImpacts(): Record<string, PolicyImpactMeasurement> {
+  const now = new Date().toISOString();
+  return {
+    [DEMO_POLICY.id]: {
+      policyId: DEMO_POLICY.id,
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      generatedAt: now,
+      dataQuality: 'limited',
+      status: 'new_policy_tracking',
+      adoptedAt: '2026-05-16T10:30:00.000Z',
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      before: {
+        receiptCount: 3,
+        scanCount: 1,
+        consistencyRate: 1 / 3,
+        overrideRate: 2 / 3,
+        driftCandidateCount: 1,
+      },
+      after: {
+        receiptCount: 9,
+        scanCount: 1,
+        consistencyRate: 7 / 9,
+        overrideRate: 2 / 9,
+        driftCandidateCount: 1,
+      },
+      timeline: [
+        {
+          id: 'demo-policy-low-effort-v2',
+          occurredAt: '2026-05-16T10:30:00.000Z',
+          label: 'Policy adopted',
+          detail: 'Demo policy version 2 became the comparison point.',
+          source: 'policy_version',
+        },
+      ],
+      caveats: ['Demo impact is seeded for preview and is not live subreddit proof.'],
+      source: 'demo',
+    },
+  };
+}
+
 function createClientDemoOverrides(
   latestOverride?: ApplyPolicyConfirmResult['overrideEvent']
 ): ReviewableOverrideEvent[] {
@@ -3875,6 +3943,7 @@ async function loadGovernance(ruleKey?: string) {
       ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
+    const impactsByPolicy = await loadPolicyImpacts(policies);
     policyState = {
       ...policyState,
       policies,
@@ -3887,6 +3956,7 @@ async function loadGovernance(ruleKey?: string) {
       communityHealth,
       overrides,
       versionsByPolicy,
+      impactsByPolicy,
     };
   } catch (error) {
     if (canUseClientDemoFallback()) {
@@ -3901,6 +3971,7 @@ async function loadGovernance(ruleKey?: string) {
           ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
           : demoOverrides,
         versionsByPolicy: createClientDemoVersions(),
+        impactsByPolicy: createClientDemoImpacts(),
         error: undefined,
       };
       render();
@@ -4060,6 +4131,36 @@ async function loadPolicyVersions(
   );
 
   return Object.fromEntries(entries);
+}
+
+async function loadPolicyImpacts(
+  policies: RulePolicy[]
+): Promise<Record<string, PolicyImpactMeasurement>> {
+  const entries = await Promise.all(
+    policies.map(async (policy) => {
+      try {
+        return [
+          policy.id,
+          await fetchApi<PolicyImpactMeasurement>(
+            withWorkspaceSubreddit(
+              API_ROUTES.policyImpact.replace(
+                ':id',
+                encodeURIComponent(policy.id)
+              )
+            )
+          ),
+        ] as const;
+      } catch {
+        return [policy.id, undefined] as const;
+      }
+    })
+  );
+
+  return Object.fromEntries(
+    entries.filter((entry): entry is readonly [string, PolicyImpactMeasurement] =>
+      entry[1] !== undefined
+    )
+  );
 }
 
 async function reviewOverride(

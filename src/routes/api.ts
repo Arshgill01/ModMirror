@@ -55,6 +55,7 @@ import type {
   PolicyHealthSummary,
   PolicyCreateInput,
   PolicyProposeInput,
+  PolicyImpactMeasurement,
   PolicyReplayActionInput,
   PolicyReplayResult,
   PolicyReviewInput,
@@ -71,6 +72,7 @@ import type {
 import { runMirrorScan } from '../server/services/mirrorScan';
 import { getConsistencyAnalytics } from '../server/services/analytics';
 import { getCommunityHealthSummary } from '../server/services/communityHealth';
+import { getPolicyImpactMeasurement } from '../server/services/policyImpact';
 import {
   compareScanRecords,
   getScanRecord,
@@ -748,6 +750,19 @@ api.post('/policies/:id/replay', async (c) => {
   } catch (error) {
     return c.json(policyError(error), 400);
   }
+});
+
+api.get('/policies/:id/impact', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(policyNotFoundResponse(), 404);
+  }
+
+  return c.json({
+    ok: true,
+    data: await getPolicyImpactMeasurement({ subreddit, policy }),
+  } satisfies ApiResponse<PolicyImpactMeasurement>);
 });
 
 api.get('/actions', async (c) => {

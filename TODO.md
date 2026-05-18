@@ -2,14 +2,24 @@
 
 ## Current Phase
 
-Expansion Wave 21 — Community Health is in progress on
-`expansion/w21-community-health` after W20 replay sandbox.
+Expansion Wave 22 — Policy Impact is in progress on
+`expansion/w22-policy-impact` after W21 community health.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 22 Checklist
+
+- [x] Add policy impact measurement schema.
+- [x] Add before/after policy impact service.
+- [x] Add policy impact API route.
+- [x] Add policy-detail before/after UI.
+- [x] Add demo-labeled impact fallback.
+- [x] Add tests for thresholds, insufficient data, and demo labeling.
+- [ ] Runtime-verify policy impact route through Devvit Web/Redis playtest.
 
 ## Expansion Wave 21 Checklist
 
