@@ -5,6 +5,7 @@ import type {
   AppealPosture,
   CasePacketActionFamily,
   CasePacketConsistencyStatus,
+  CasePacketType,
   CasePacketOffenseBucket,
   Confidence,
   DigestDeliveryMode,
@@ -88,6 +89,12 @@ export const CASE_PACKET_CONSISTENCY_STATUS_VALUES = [
   'policy_changed_since_action',
   'insufficient_data',
 ] as const satisfies readonly CasePacketConsistencyStatus[];
+
+export const CASE_PACKET_TYPE_VALUES = [
+  'appeal_context',
+  'internal_review',
+  'policy_dispute',
+] as const satisfies readonly CasePacketType[];
 
 export const CASE_PACKET_ACTION_FAMILY_VALUES = [
   'approve',

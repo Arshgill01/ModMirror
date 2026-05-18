@@ -3,6 +3,7 @@ import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import {
+  CASE_PACKET_TYPE_VALUES,
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
 } from '../shared/constants';
@@ -963,9 +964,18 @@ function normalizeGenerateCasePacketInput(
       type: body.subject.type ?? 'demo',
     },
   };
+  if (
+    body.packetType !== undefined &&
+    CASE_PACKET_TYPE_VALUES.includes(body.packetType)
+  ) {
+    request.packetType = body.packetType;
+  }
 
   if (body.subject.actionId !== undefined) {
     request.subject.actionId = body.subject.actionId;
+  }
+  if (body.subject.receiptId !== undefined) {
+    request.subject.receiptId = body.subject.receiptId;
   }
   if (body.subject.username !== undefined) {
     request.subject.username = body.subject.username;

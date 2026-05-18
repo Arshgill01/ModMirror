@@ -1404,8 +1404,8 @@ function renderCasePacketPage() {
       </div>
       <form class="policy-form action-id-form" data-case-action-form>
         <label>
-          Tracked action ID
-          <input name="actionId" placeholder="Paste an Apply Policy action ID">
+          Tracked action or receipt ID
+          <input name="actionId" placeholder="Paste an Apply Policy action or receipt ID">
         </label>
         <div class="button-row">
           <button class="secondary-button" type="submit">Generate from action</button>
@@ -1454,6 +1454,7 @@ function renderCasePacketDetail() {
       <span class="status-badge status-neutral">${formatAction(packet.appealPosture)}</span>
     </section>
     <section class="packet-summary-strip" aria-label="Case packet summary">
+      <span>${formatAction(packet.packetType)}</span>
       <strong>${formatAction(packet.consistencyStatus)}</strong>
       <span>posture ${formatAction(packet.appealPosture)}</span>
       <span>policy v${packet.policyContext.policyVersionNumber?.toString() ?? 'unavailable'}</span>
@@ -1485,10 +1486,13 @@ function renderCasePacketAction(packet: CasePacket) {
       <h3>Action Summary</h3>
       <dl class="status-list">
         <div><dt>Action ID</dt><dd>${escapeHtml(action?.actionId ?? 'Unavailable')}</dd></div>
+        <div><dt>Receipt ID</dt><dd>${escapeHtml(action?.receiptId ?? 'Unavailable')}</dd></div>
         <div><dt>Created</dt><dd>${escapeHtml(action?.createdAt ? formatDate(action.createdAt) : 'Unavailable')}</dd></div>
         <div><dt>Rule</dt><dd>${escapeHtml(action?.ruleName ?? action?.ruleKey ?? 'Unavailable')}</dd></div>
         <div><dt>Recommended</dt><dd>${formatAction(action?.recommendedAction ?? 'unavailable')}</dd></div>
         <div><dt>Selected</dt><dd>${formatAction(action?.selectedAction ?? 'unavailable')}</dd></div>
+        <div><dt>Execution</dt><dd>${formatAction(action?.execution?.executionResult ?? 'unavailable')}</dd></div>
+        <div><dt>Evidence</dt><dd>${formatAction(action?.evidenceSource ?? 'unavailable')}</dd></div>
         <div><dt>Target author</dt><dd>${escapeHtml(action?.targetAuthor ?? 'Not captured')}</dd></div>
       </dl>
     </article>
@@ -1558,6 +1562,10 @@ function renderCasePacketLists(packet: CasePacket) {
                 .join('')}</ul>`
             : '<p>No comparable cases found in the configured window.</p>'
         }
+      </div>
+      <div class="case-list-block">
+        <strong>Evidence labels</strong>
+        <ul>${packet.evidence.map((item) => `<li>${escapeHtml(item.label)}: ${formatAction(item.source)} - ${escapeHtml(item.detail)}</li>`).join('')}</ul>
       </div>
       <div class="case-list-block">
         <strong>Caveats</strong>
@@ -2913,13 +2921,16 @@ function createClientDemoCasePacket(): CasePacket {
     generatedAt,
     generatedBy: 'local-preview',
     subreddit: DEMO_SUBREDDIT_NAME,
+    packetType: 'appeal_context',
     subject: {
       type: 'demo',
+      receiptId: 'demo-receipt-r2-appeal',
       targetThingId: 't3_demo_case_r2_appeal',
       ruleKey: DEMO_POLICY.ruleKey,
     },
     action: {
       actionId: 'demo-case-r2-appeal',
+      receiptId: 'demo-receipt-r2-appeal',
       createdAt: '2026-05-16T19:15:00.000Z',
       moderator: 'demo_mod_2',
       targetThingId: 't3_demo_case_r2_appeal',
@@ -2930,6 +2941,7 @@ function createClientDemoCasePacket(): CasePacket {
       selectedAction: 'temporary_ban_suggested',
       deliveryMode: 'log_only',
       source: 'demo',
+      evidenceSource: 'demo_seed',
     },
     policyContext: {
       policyId: DEMO_POLICY.id,
@@ -2975,6 +2987,7 @@ function createClientDemoCasePacket(): CasePacket {
         targetType: 'post',
         matchReasons: ['same rule', 'first offense', 'same policy version'],
         anonymizedTargetAuthor: 'learner_*',
+        evidenceSource: 'demo_seed',
       },
       {
         actionId: 'demo-case-r2-comparable-strict',
@@ -2989,6 +3002,19 @@ function createClientDemoCasePacket(): CasePacket {
         targetType: 'post',
         matchReasons: ['same rule', 'first offense', 'stricter outcome'],
         anonymizedTargetAuthor: 'learner_*',
+        evidenceSource: 'demo_seed',
+      },
+    ],
+    evidence: [
+      {
+        label: 'Action receipt',
+        source: 'demo_seed',
+        detail: 'Demo receipt records a log-only moderation decision.',
+      },
+      {
+        label: 'Comparable cases',
+        source: 'demo_seed',
+        detail: 'Demo comparables show followed and stricter Rule 2 outcomes.',
       },
     ],
     appealPosture: 'review_recommended',

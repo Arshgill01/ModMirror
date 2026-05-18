@@ -41,6 +41,18 @@ export type PolicyHealthStatus =
 
 export type CasePacketSubjectType = 'action' | 'user_rule' | 'demo';
 
+export type CasePacketType =
+  | 'appeal_context'
+  | 'internal_review'
+  | 'policy_dispute';
+
+export type CasePacketEvidenceSource =
+  | 'verified_receipt'
+  | 'verified_modmirror_action'
+  | 'inferred_history'
+  | 'demo_seed'
+  | 'missing';
+
 export type CasePacketConsistencyStatus =
   | 'matched_policy'
   | 'stricter_than_policy'
@@ -786,6 +798,7 @@ export interface PolicyHealthOverview {
 export interface CasePacketSubject {
   type: CasePacketSubjectType;
   actionId?: string;
+  receiptId?: string;
   username?: string;
   ruleKey?: string;
   targetThingId?: string;
@@ -793,6 +806,7 @@ export interface CasePacketSubject {
 
 export interface CasePacketAction {
   actionId?: string;
+  receiptId?: string;
   createdAt?: string;
   moderator?: string;
   targetThingId?: string;
@@ -803,6 +817,9 @@ export interface CasePacketAction {
   selectedAction?: EnforcementAction;
   deliveryMode?: MessageDeliveryMode;
   source?: ActionSource | ApplyPolicySource;
+  targetSnapshot?: ApplyPolicyTargetSnapshot;
+  execution?: ModerationExecutionResult;
+  evidenceSource?: CasePacketEvidenceSource;
 }
 
 export interface CasePacketPolicyContext {
@@ -840,6 +857,7 @@ export interface CasePacketUserHistoryItem {
 
 export interface ComparableCase {
   actionId: string;
+  receiptId?: string;
   createdAt: string;
   ruleKey?: string;
   ruleName?: string;
@@ -851,6 +869,13 @@ export interface ComparableCase {
   targetType?: 'post' | 'comment' | 'unknown';
   matchReasons: string[];
   anonymizedTargetAuthor?: string;
+  evidenceSource?: CasePacketEvidenceSource;
+}
+
+export interface CasePacketEvidenceItem {
+  label: string;
+  source: CasePacketEvidenceSource;
+  detail: string;
 }
 
 export interface CasePacket {
@@ -858,6 +883,7 @@ export interface CasePacket {
   generatedAt: string;
   generatedBy?: string;
   subreddit: string;
+  packetType: CasePacketType;
   subject: CasePacketSubject;
   action?: CasePacketAction;
   policyContext: CasePacketPolicyContext;
@@ -865,6 +891,7 @@ export interface CasePacket {
   overrideContext?: CasePacketOverrideContext;
   userHistory: CasePacketUserHistoryItem[];
   comparableCases: ComparableCase[];
+  evidence: CasePacketEvidenceItem[];
   appealPosture: AppealPosture;
   caveats: string[];
   markdown: string;
@@ -872,6 +899,7 @@ export interface CasePacket {
 
 export interface GenerateCasePacketRequest {
   subject: CasePacketSubject;
+  packetType?: CasePacketType;
   timeWindowDays?: number;
   maxComparableCases?: number;
 }
