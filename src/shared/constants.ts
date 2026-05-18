@@ -298,6 +298,7 @@ export const MODQUEUE_TRIAGE_POLICY_MATCH_STATUS_VALUES = [
 ] as const satisfies readonly ModqueueTriagePolicyMatchStatus[];
 
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
+export const DEFAULT_POLICY_REQUIRED_APPROVALS = 1;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
 export const SCAN_HISTORY_LIMIT = 10;

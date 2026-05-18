@@ -268,6 +268,21 @@ export interface PolicyReviewRecord {
   note?: string;
 }
 
+export interface PolicyRatificationSettings {
+  requiredApprovals: number;
+  allowSingleModAdoption: boolean;
+}
+
+export interface PolicyRatificationSummary {
+  requiredApprovals: number;
+  approvals: number;
+  requestsForChanges: number;
+  abstentions: number;
+  latestReviewCount: number;
+  canAdopt: boolean;
+  adoptionBlockedReason?: string;
+}
+
 export interface RulePolicy extends SubredditRuleRef {
   id: string;
   subreddit: string;
@@ -278,9 +293,12 @@ export interface RulePolicy extends SubredditRuleRef {
   lifecycleState?: PolicyLifecycleState;
   proposedBy?: string;
   proposedAt?: string;
+  proposalNote?: string;
   proposalRationale?: string;
   proposalSource?: PolicyProposalSource;
   reviewRecords?: PolicyReviewRecord[];
+  ratificationSettings?: PolicyRatificationSettings;
+  ratificationSummary?: PolicyRatificationSummary;
   adoptedBy?: string;
   adoptedAt?: string;
   createdAt: string;
@@ -300,6 +318,7 @@ export interface PolicyCreateInput extends SubredditRuleRef {
   active?: boolean;
   proposalRationale?: string;
   proposalSource?: PolicyProposalSource;
+  ratificationSettings?: Partial<PolicyRatificationSettings>;
 }
 
 export interface PolicyUpdateInput {
@@ -314,6 +333,7 @@ export interface PolicyUpdateInput {
   changeSummary?: string;
   proposalRationale?: string;
   proposalSource?: PolicyProposalSource;
+  ratificationSettings?: Partial<PolicyRatificationSettings>;
 }
 
 export interface PolicyReviewInput {
@@ -351,9 +371,12 @@ export interface PolicyVersion extends SubredditRuleRef {
   lifecycleState?: PolicyLifecycleState;
   proposedBy?: string;
   proposedAt?: string;
+  proposalNote?: string;
   proposalRationale?: string;
   proposalSource?: PolicyProposalSource;
   reviewRecords?: PolicyReviewRecord[];
+  ratificationSettings?: PolicyRatificationSettings;
+  ratificationSummary?: PolicyRatificationSummary;
   adoptedBy?: string;
   adoptedAt?: string;
   supersededByVersionId?: string;

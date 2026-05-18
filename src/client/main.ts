@@ -94,6 +94,8 @@ type PolicyFormState = {
   ruleKey: string;
   ruleName: string;
   defaultMessageMode: MessageDeliveryMode;
+  requiredApprovals: number;
+  allowSingleModAdoption: boolean;
   steps: PolicyStep[];
 };
 
@@ -411,6 +413,8 @@ function emptyPolicyForm(): PolicyFormState {
     ruleKey: '',
     ruleName: '',
     defaultMessageMode: 'log_only',
+    requiredApprovals: 1,
+    allowSingleModAdoption: true,
     steps: [
       {
         offenseCount: 1,
@@ -1035,8 +1039,9 @@ function renderPolicyList() {
 }
 
 function renderPolicyCard(policy: RulePolicy) {
-  const lifecycle = policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+  const lifecycle = getPolicyLifecycle(policy);
   const reviews = policy.reviewRecords ?? [];
+  const ratification = getPolicyRatificationSummary(policy);
   return `
     <article class="action-card">
       <div class="card-header">
@@ -1050,9 +1055,20 @@ function renderPolicyCard(policy: RulePolicy) {
         <div><dt>Steps</dt><dd>${policy.steps.length}</dd></div>
         <div><dt>Delivery</dt><dd>${formatAction(policy.defaultMessageMode)}</dd></div>
         <div><dt>Version</dt><dd>${policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Votes</dt><dd>${ratification.approvals}/${ratification.requiredApprovals}</dd></div>
         <div><dt>Reviews</dt><dd>${reviews.length}</dd></div>
         <div><dt>Updated</dt><dd>${formatDate(policy.updatedAt)}</dd></div>
       </dl>
+      ${
+        policy.proposalNote
+          ? `<p class="inline-note">Proposal note: ${escapeHtml(policy.proposalNote)}</p>`
+          : ''
+      }
+      ${
+        ratification.adoptionBlockedReason && lifecycle !== 'adopted'
+          ? `<p class="inline-note">${escapeHtml(ratification.adoptionBlockedReason)}</p>`
+          : ''
+      }
       <div class="button-row">
         <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">${policy.active ? 'Draft revision' : 'Edit draft'}</button>
         ${renderPolicyLifecycleButtons(policy)}
@@ -1063,7 +1079,8 @@ function renderPolicyCard(policy: RulePolicy) {
 }
 
 function renderPolicyLifecycleButtons(policy: RulePolicy) {
-  const lifecycle = policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+  const lifecycle = getPolicyLifecycle(policy);
+  const ratification = getPolicyRatificationSummary(policy);
   const policyId = escapeAttribute(policy.id);
   if (lifecycle === 'draft') {
     return `<button class="secondary-button" data-propose-policy="${policyId}" type="button">Propose</button>`;
@@ -1072,7 +1089,12 @@ function renderPolicyLifecycleButtons(policy: RulePolicy) {
     return `
       <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="approve" type="button">Approve</button>
       <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="request_changes" type="button">Request changes</button>
-      <button class="primary-button" data-adopt-policy="${policyId}" type="button">Quick adopt</button>
+      ${
+        ratification.canAdopt
+          ? `<button class="primary-button" data-adopt-policy="${policyId}" type="button">Adopt reviewed</button>`
+          : ''
+      }
+      <button class="secondary-button" data-adopt-policy="${policyId}" data-quick-adoption="true" type="button">Quick adopt</button>
     `;
   }
   return '';
@@ -1124,9 +1146,17 @@ function renderPolicyForm() {
           <select name="defaultMessageMode">
             ${MESSAGE_DELIVERY_MODE_VALUES.map(
               (mode) =>
-                `<option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>`
+              `<option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>`
             ).join('')}
           </select>
+        </label>
+        <label>
+          Approval threshold
+          <input name="requiredApprovals" type="number" min="1" max="5" value="${form.requiredApprovals}">
+        </label>
+        <label class="checkbox-label">
+          <input name="allowSingleModAdoption" type="checkbox" ${form.allowSingleModAdoption ? 'checked' : ''}>
+          Allow recorded quick adoption
         </label>
         <div class="step-grid">
           ${form.steps.map(renderStepEditor).join('')}
@@ -1259,7 +1289,7 @@ function renderApplyForm() {
     );
   }
 
-  const activePolicies = policyState.policies.filter((policy) => policy.active);
+  const activePolicies = policyState.policies.filter(isPolicyAvailableForApply);
   const form = getApplyFormState(activePolicies);
 
   return `
@@ -2321,7 +2351,12 @@ function bindPolicyActions() {
     button.addEventListener('click', () => {
       const policyId = button.dataset.adoptPolicy;
       if (policyId) {
-        void transitionPolicyLifecycle(policyId, 'adopt');
+        void transitionPolicyLifecycle(
+          policyId,
+          'adopt',
+          undefined,
+          button.dataset.quickAdoption === 'true'
+        );
       }
     });
   });
@@ -2986,6 +3021,18 @@ function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
     lifecycleState: 'adopted',
     adoptedBy: 'demo-lead-mod',
     adoptedAt: '2026-05-16T10:30:00.000Z',
+    ratificationSettings: {
+      requiredApprovals: 1,
+      allowSingleModAdoption: true,
+    },
+    ratificationSummary: {
+      requiredApprovals: 1,
+      approvals: 1,
+      requestsForChanges: 0,
+      abstentions: 0,
+      latestReviewCount: 1,
+      canAdopt: true,
+    },
     createdAt: DEMO_POLICY.createdAt,
     updatedAt: now,
   };
@@ -4028,7 +4075,8 @@ async function savePolicyForm(formData: FormData) {
 async function transitionPolicyLifecycle(
   policyId: string,
   action: 'propose' | 'review' | 'adopt',
-  decision?: 'approve' | 'request_changes'
+  decision?: 'approve' | 'request_changes',
+  quickAdoption = false
 ) {
   policyState = { ...policyState, saving: true, error: undefined };
   render();
@@ -4051,8 +4099,10 @@ async function transitionPolicyLifecycle(
           }
         : action === 'adopt'
           ? {
-              quickAdoption: true,
-              note: 'Single-mod quick adoption recorded.',
+              quickAdoption,
+              note: quickAdoption
+                ? 'Single-mod quick adoption recorded.'
+                : 'Ratified policy version adopted.',
             }
           : { note: 'Draft proposed for team review.' };
     const policy = await fetchPolicyLifecycle(policyId, suffix, body);
@@ -4131,6 +4181,18 @@ function applyClientDemoLifecycle(
         policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 2,
       adoptedBy: 'demo-lead-mod',
       adoptedAt: now,
+      ratificationSummary: {
+        requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+        approvals: Math.max(
+          1,
+          policy.ratificationSummary?.approvals ?? 0
+        ),
+        requestsForChanges: 0,
+        abstentions: policy.ratificationSummary?.abstentions ?? 0,
+        latestReviewCount:
+          policy.ratificationSummary?.latestReviewCount ?? 1,
+        canAdopt: true,
+      },
       updatedAt: now,
     };
   }
@@ -4147,6 +4209,28 @@ function applyClientDemoLifecycle(
           createdAt: now,
         },
       ],
+      ratificationSummary:
+        decision === 'approve'
+          ? {
+              requiredApprovals:
+                policy.ratificationSettings?.requiredApprovals ?? 1,
+              approvals: 1,
+              requestsForChanges: 0,
+              abstentions: 0,
+              latestReviewCount: 1,
+              canAdopt: true,
+            }
+          : {
+              requiredApprovals:
+                policy.ratificationSettings?.requiredApprovals ?? 1,
+              approvals: 0,
+              requestsForChanges: 1,
+              abstentions: 0,
+              latestReviewCount: 1,
+              canAdopt: false,
+              adoptionBlockedReason:
+                'At least one reviewer requested changes on this version.',
+            },
       updatedAt: now,
     };
   }
@@ -4155,6 +4239,16 @@ function applyClientDemoLifecycle(
     lifecycleState: 'proposed',
     proposedBy: 'demo-lead-mod',
     proposedAt: now,
+    proposalNote: 'Draft proposed for team review.',
+    ratificationSummary: {
+      requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+      approvals: 0,
+      requestsForChanges: 0,
+      abstentions: 0,
+      latestReviewCount: 0,
+      canAdopt: false,
+      adoptionBlockedReason: `Requires ${policy.ratificationSettings?.requiredApprovals ?? 1} approval vote(s) before adoption.`,
+    },
     updatedAt: now,
   };
 }
@@ -4486,7 +4580,15 @@ function formDataToPolicy(formData: FormData) {
       formData.get('defaultMessageMode') ?? 'log_only'
     ) as MessageDeliveryMode,
     steps,
-    active: true,
+    active: false,
+    ratificationSettings: {
+      requiredApprovals: Math.max(
+        1,
+        Number(formData.get('requiredApprovals') ?? 1)
+      ),
+      allowSingleModAdoption:
+        formData.get('allowSingleModAdoption') === 'on',
+    },
   };
   const subreddit = getWorkspaceSubreddit();
   if (subreddit) {
@@ -4503,6 +4605,9 @@ function policyToForm(policy: RulePolicy): PolicyFormState {
     ruleKey: policy.ruleKey,
     ruleName: policy.ruleName,
     defaultMessageMode: policy.defaultMessageMode,
+    requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+    allowSingleModAdoption:
+      policy.ratificationSettings?.allowSingleModAdoption ?? true,
     steps: policy.steps.map((step) => ({ ...step })),
   };
 }
@@ -4515,6 +4620,54 @@ function upsertPolicy(policies: RulePolicy[], policy: RulePolicy) {
   );
   return [...others, policy].sort((left, right) =>
     left.ruleName.localeCompare(right.ruleName)
+  );
+}
+
+function getPolicyLifecycle(policy: RulePolicy) {
+  return policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+}
+
+function getPolicyRatificationSummary(policy: RulePolicy) {
+  const reviewsByReviewer = new Map(
+    (policy.reviewRecords ?? []).map((record) => [
+      record.reviewer.toLowerCase(),
+      record,
+    ])
+  );
+  const latestReviews = [...reviewsByReviewer.values()];
+  const requiredApprovals =
+    policy.ratificationSummary?.requiredApprovals ??
+    policy.ratificationSettings?.requiredApprovals ??
+    1;
+  const approvals =
+    policy.ratificationSummary?.approvals ??
+    latestReviews.filter((record) => record.decision === 'approve').length;
+  const requestsForChanges =
+    policy.ratificationSummary?.requestsForChanges ??
+    latestReviews.filter((record) => record.decision === 'request_changes')
+      .length;
+  const canAdopt =
+    policy.ratificationSummary?.canAdopt ??
+    (requestsForChanges === 0 && approvals >= requiredApprovals);
+
+  return {
+    requiredApprovals,
+    approvals,
+    requestsForChanges,
+    canAdopt,
+    adoptionBlockedReason:
+      policy.ratificationSummary?.adoptionBlockedReason ??
+      (canAdopt
+        ? undefined
+        : `Requires ${requiredApprovals} approval vote(s) before adoption.`),
+  };
+}
+
+function isPolicyAvailableForApply(policy: RulePolicy) {
+  return (
+    policy.active &&
+    policy.activeVersionId !== undefined &&
+    policy.archived !== true
   );
 }
 

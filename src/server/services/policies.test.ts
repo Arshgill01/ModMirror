@@ -196,6 +196,80 @@ describe('policy version lifecycle', () => {
     ).rejects.toThrow(/Only proposed policy versions/);
   });
 
+  it('requires configured approval thresholds before reviewed adoption', async () => {
+    const {
+      addPolicyReview,
+      adoptPolicyVersion,
+      createPolicy,
+      proposePolicyVersion,
+    } = await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+      ratificationSettings: {
+        requiredApprovals: 2,
+        allowSingleModAdoption: false,
+      },
+    });
+
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+      note: 'Escalation needs team ratification.',
+    });
+    await addPolicyReview(policy.subreddit, policy.id, {
+      reviewer: 'secondmod',
+      decision: 'approve',
+    });
+
+    await expect(
+      adoptPolicyVersion(policy.subreddit, policy.id, {
+        adoptedBy: 'leadmod',
+      })
+    ).rejects.toThrow(/Requires 2 approval/);
+
+    const reviewed = await addPolicyReview(policy.subreddit, policy.id, {
+      reviewer: 'thirdmod',
+      decision: 'approve',
+    });
+    const adopted = await adoptPolicyVersion(policy.subreddit, policy.id, {
+      adoptedBy: 'leadmod',
+    });
+
+    expect(reviewed?.ratificationSummary?.approvals).toBe(2);
+    expect(adopted?.lifecycleState).toBe('adopted');
+    expect(adopted?.proposalNote).toBe('Escalation needs team ratification.');
+  });
+
+  it('blocks quick adoption when the policy disables it', async () => {
+    const { adoptPolicyVersion, createPolicy, proposePolicyVersion } =
+      await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+      ratificationSettings: {
+        requiredApprovals: 1,
+        allowSingleModAdoption: false,
+      },
+    });
+
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+    });
+
+    await expect(
+      adoptPolicyVersion(policy.subreddit, policy.id, {
+        adoptedBy: 'leadmod',
+        quickAdoption: true,
+      })
+    ).rejects.toThrow(/Single-mod quick adoption is disabled/);
+  });
+
   it('finds a policy from the policy index if the direct rule key is missing', async () => {
     const { getPolicyByRule } = await import('./policies');
     const indexedPolicy: RulePolicy = {

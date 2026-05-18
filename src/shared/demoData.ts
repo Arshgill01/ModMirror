@@ -37,6 +37,18 @@ export const DEMO_POLICY: RulePolicy = {
   lifecycleState: 'adopted',
   adoptedBy: 'demo-lead-mod',
   adoptedAt: '2026-05-16T10:30:00.000Z',
+  ratificationSettings: {
+    requiredApprovals: 1,
+    allowSingleModAdoption: true,
+  },
+  ratificationSummary: {
+    requiredApprovals: 1,
+    approvals: 1,
+    requestsForChanges: 0,
+    abstentions: 0,
+    latestReviewCount: 1,
+    canAdopt: true,
+  },
   defaultMessageMode: 'log_only',
   active: true,
   steps: [

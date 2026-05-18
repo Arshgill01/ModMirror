@@ -2,14 +2,26 @@
 
 ## Current Phase
 
-Expansion Wave 18 — Attribution Calibration is in progress on
-`expansion/w18-attribution-calibration` after W17 modqueue triage.
+Expansion Wave 19 — Policy Ratification is in progress on
+`expansion/w19-policy-ratification` after W18 attribution calibration.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 19 Checklist
+
+- [x] Add explicit ratification settings and summary schema.
+- [x] Add a pure policy ratification helper service.
+- [x] Store proposal notes with proposed versions.
+- [x] Enforce approval thresholds before reviewed adoption.
+- [x] Keep quick adoption explicit and block it when policy settings disable it.
+- [x] Show approval thresholds and proposal notes in the Agree UI.
+- [x] Add threshold and invalid-transition tests.
+- [ ] Runtime-verify policy lifecycle API writes through Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 18 Checklist
 

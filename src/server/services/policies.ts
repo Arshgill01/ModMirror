@@ -22,6 +22,11 @@ import {
   serializeJson,
   writeJson,
 } from './redis';
+import {
+  normalizeRatificationSettings,
+  summarizePolicyRatification,
+  upsertPolicyReviewRecord,
+} from './policyRatification';
 
 const DEFAULT_POLICY_STEPS: PolicyStep[] = [
   {
@@ -91,9 +96,9 @@ export async function listPolicies(subreddit: string): Promise<RulePolicy[]> {
     policies.map((policy) => ensurePolicyVersioned(policy, 'legacy_migrated'))
   );
 
-  return versionedPolicies.sort((left, right) =>
-    left.ruleName.localeCompare(right.ruleName)
-  );
+  return versionedPolicies
+    .map(withRatificationDefaults)
+    .sort((left, right) => left.ruleName.localeCompare(right.ruleName));
 }
 
 export async function createPolicy(
@@ -116,6 +121,13 @@ export async function createPolicy(
     defaultMessageMode: input.defaultMessageMode ?? 'log_only',
     active: false,
     reviewRecords: [],
+    ratificationSettings: normalizeRatificationSettings(
+      input.ratificationSettings
+    ),
+    ratificationSummary: summarizePolicyRatification({
+      reviewRecords: [],
+      settings: input.ratificationSettings,
+    }),
   };
 
   if (input.rulePriority !== undefined) {
@@ -183,10 +195,17 @@ export async function updatePolicy(
     proposedVersionNumber: nextVersionNumber,
     lifecycleState: 'draft',
     reviewRecords: [],
+    ratificationSettings: normalizeRatificationSettings(
+      input.ratificationSettings ?? current.ratificationSettings
+    ),
     updatedAt: now,
     ruleName: proposalRuleName,
     active: input.active ?? current.active,
   };
+  updated.ratificationSummary = summarizePolicyRatification({
+    reviewRecords: [],
+    settings: updated.ratificationSettings,
+  });
 
   if (!current.activeVersionId) {
     updated.steps = proposalSteps;
@@ -223,6 +242,7 @@ export async function updatePolicy(
   updated.proposedVersionId = version.id;
   delete updated.proposedBy;
   delete updated.proposedAt;
+  delete updated.proposalNote;
 
   await setPolicyByRule(updated);
   await savePolicyVersion(updated, version);
@@ -354,14 +374,35 @@ export async function proposePolicyVersion(
     lifecycleState: 'proposed',
     proposedBy: input.proposedBy,
     proposedAt: now,
+    ratificationSettings: normalizeRatificationSettings(
+      policy.ratificationSettings
+    ),
+    ratificationSummary: summarizePolicyRatification({
+      reviewRecords: [],
+      settings: policy.ratificationSettings,
+    }),
   };
   const proposedPolicy: RulePolicy = {
     ...policy,
     lifecycleState: 'proposed',
     proposedBy: input.proposedBy,
     proposedAt: now,
+    ratificationSettings: normalizeRatificationSettings(
+      policy.ratificationSettings
+    ),
+    ratificationSummary: summarizePolicyRatification({
+      reviewRecords: [],
+      settings: policy.ratificationSettings,
+    }),
     updatedAt: now,
   };
+  if (input.note !== undefined) {
+    proposedVersion.proposalNote = input.note;
+    proposedPolicy.proposalNote = input.note;
+  } else {
+    delete proposedVersion.proposalNote;
+    delete proposedPolicy.proposalNote;
+  }
 
   await setPolicyByRule(proposedPolicy);
   await savePolicyVersion(proposedPolicy, proposedVersion);
@@ -409,17 +450,32 @@ export async function addPolicyReview(
   if (input.note !== undefined) {
     review.note = input.note;
   }
-  const nextState = input.decision === 'request_changes' ? 'draft' : 'under_review';
-  const reviewRecords = [...(version.reviewRecords ?? []), review];
+  const nextState =
+    input.decision === 'request_changes' ? 'draft' : 'under_review';
+  const reviewRecords = upsertPolicyReviewRecord(
+    version.reviewRecords ?? [],
+    review
+  );
+  const ratificationSettings = normalizeRatificationSettings(
+    version.ratificationSettings ?? policy.ratificationSettings
+  );
+  const ratificationSummary = summarizePolicyRatification({
+    reviewRecords,
+    settings: ratificationSettings,
+  });
   const reviewedVersion: PolicyVersion = {
     ...version,
     lifecycleState: nextState,
     reviewRecords,
+    ratificationSettings,
+    ratificationSummary,
   };
   const reviewedPolicy: RulePolicy = {
     ...policy,
     lifecycleState: nextState,
     reviewRecords,
+    ratificationSettings,
+    ratificationSummary,
     updatedAt: now,
   };
 
@@ -460,6 +516,23 @@ export async function adoptPolicyVersion(
   }
 
   const now = new Date().toISOString();
+  const ratificationSettings = normalizeRatificationSettings(
+    version.ratificationSettings ?? policy.ratificationSettings
+  );
+  const ratificationSummary = summarizePolicyRatification({
+    reviewRecords: version.reviewRecords,
+    settings: ratificationSettings,
+  });
+  if (input.quickAdoption && !ratificationSettings.allowSingleModAdoption) {
+    throw new Error('Single-mod quick adoption is disabled for this policy');
+  }
+  if (!input.quickAdoption && !ratificationSummary.canAdopt) {
+    throw new Error(
+      ratificationSummary.adoptionBlockedReason ??
+        `Requires ${ratificationSettings.requiredApprovals} approval vote(s) before adoption.`
+    );
+  }
+
   const previousVersion = await getStoredPolicyVersion(policy, policy.activeVersionId);
   if (previousVersion !== undefined) {
     await savePolicyVersion(policy, {
@@ -489,6 +562,8 @@ export async function adoptPolicyVersion(
     lifecycleState: 'adopted',
     adoptedBy: input.adoptedBy,
     adoptedAt: now,
+    ratificationSettings,
+    ratificationSummary,
   };
   const adoptedPolicy: RulePolicy = {
     ...policy,
@@ -503,6 +578,8 @@ export async function adoptPolicyVersion(
     adoptedBy: input.adoptedBy,
     adoptedAt: now,
     reviewRecords: adoptedVersion.reviewRecords ?? [],
+    ratificationSettings,
+    ratificationSummary,
   };
   delete adoptedPolicy.proposedVersionId;
   delete adoptedPolicy.proposedVersionNumber;
@@ -686,6 +763,20 @@ function isAdoptedPolicy(policy: RulePolicy): boolean {
   );
 }
 
+function withRatificationDefaults(policy: RulePolicy): RulePolicy {
+  const ratificationSettings = normalizeRatificationSettings(
+    policy.ratificationSettings
+  );
+  return {
+    ...policy,
+    ratificationSettings,
+    ratificationSummary: summarizePolicyRatification({
+      reviewRecords: policy.reviewRecords,
+      settings: ratificationSettings,
+    }),
+  };
+}
+
 async function ensurePolicyVersioned(
   policy: RulePolicy,
   changeType: PolicyChangeEvent['changeType']
@@ -703,6 +794,13 @@ async function ensurePolicyVersioned(
     lifecycleState: 'adopted',
     adoptedBy: policy.createdBy,
     adoptedAt: policy.updatedAt,
+    ratificationSettings: normalizeRatificationSettings(
+      policy.ratificationSettings
+    ),
+    ratificationSummary: summarizePolicyRatification({
+      reviewRecords: policy.reviewRecords,
+      settings: policy.ratificationSettings,
+    }),
     updatedAt: policy.updatedAt,
   };
   const version = buildPolicyVersion({
@@ -778,6 +876,9 @@ function buildPolicyVersion(options: {
   if (options.policy.proposedAt !== undefined) {
     version.proposedAt = options.policy.proposedAt;
   }
+  if (options.policy.proposalNote !== undefined) {
+    version.proposalNote = options.policy.proposalNote;
+  }
   if (options.policy.proposalRationale !== undefined) {
     version.proposalRationale = options.policy.proposalRationale;
   }
@@ -787,6 +888,17 @@ function buildPolicyVersion(options: {
   if (options.policy.reviewRecords !== undefined) {
     version.reviewRecords = options.policy.reviewRecords;
   }
+  if (options.policy.ratificationSettings !== undefined) {
+    version.ratificationSettings = normalizeRatificationSettings(
+      options.policy.ratificationSettings
+    );
+  } else {
+    version.ratificationSettings = normalizeRatificationSettings();
+  }
+  version.ratificationSummary = summarizePolicyRatification({
+    reviewRecords: options.policy.reviewRecords,
+    settings: version.ratificationSettings,
+  });
   if (options.policy.adoptedBy !== undefined) {
     version.adoptedBy = options.policy.adoptedBy;
   }

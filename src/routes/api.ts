@@ -417,8 +417,11 @@ api.post('/policies', async (c) => {
       ruleName: body.ruleName ?? '',
       steps: body.steps ?? [],
       defaultMessageMode: body.defaultMessageMode ?? 'log_only',
-      active: body.active ?? true,
+      active: body.active ?? false,
     };
+    if (body.ratificationSettings !== undefined) {
+      input.ratificationSettings = body.ratificationSettings;
+    }
     if (body.rulePriority !== undefined) {
       input.rulePriority = body.rulePriority;
     }
