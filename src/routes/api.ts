@@ -3,6 +3,8 @@ import { context } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import {
+  AI_ADVISORY_EVIDENCE_SOURCE_VALUES,
+  AI_ADVISORY_KIND_VALUES,
   CASE_PACKET_TYPE_VALUES,
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
@@ -10,6 +12,12 @@ import {
 import type {
   ActionEvent,
   ActionReceipt,
+  AiAdvisoryCapabilities,
+  AiAdvisoryEvidenceInput,
+  AiAdvisoryEvidenceSource,
+  AiAdvisoryKind,
+  AiAdvisoryRequest,
+  AiAdvisoryResponse,
   ApplyPolicyConfirmInput,
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -88,6 +96,10 @@ import {
   listDigestHistory,
   updateDigestSettings,
 } from '../server/services/digest';
+import {
+  generateAiAdvisory,
+  getAiAdvisoryCapabilities,
+} from '../server/services/aiAdvisory';
 
 export const api = new Hono();
 
@@ -818,6 +830,38 @@ api.put('/digest/settings', async (c) => {
   }
 });
 
+api.get('/ai/capabilities', (c) => {
+  const response: ApiResponse<AiAdvisoryCapabilities> = {
+    ok: true,
+    data: getAiAdvisoryCapabilities(),
+  };
+  return c.json(response);
+});
+
+api.post('/ai/advisory', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<AiAdvisoryRequest>;
+
+  try {
+    const response: ApiResponse<AiAdvisoryResponse> = {
+      ok: true,
+      data: await generateAiAdvisory({
+        request: normalizeAiAdvisoryRequest(body),
+      }),
+    };
+    return c.json(response);
+  } catch (error) {
+    const response: ApiResponse<AiAdvisoryResponse> = {
+      ok: false,
+      error: {
+        code: 'ai_advisory_failed',
+        message:
+          error instanceof Error ? error.message : 'AI advisory request failed',
+      },
+    };
+    return c.json(response, 400);
+  }
+});
+
 api.post('/apply-policy/preview', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<ApplyPolicyPreviewInput>;
 
@@ -916,6 +960,62 @@ function digestSettingsError(error: unknown): ApiResponse<DigestSettings> {
         error instanceof Error ? error.message : 'Digest settings update failed',
     },
   };
+}
+
+function normalizeAiAdvisoryRequest(
+  body: Partial<AiAdvisoryRequest>
+): AiAdvisoryRequest {
+  if (
+    body.kind === undefined ||
+    !AI_ADVISORY_KIND_VALUES.includes(body.kind as AiAdvisoryKind)
+  ) {
+    throw new Error('AI advisory kind is required.');
+  }
+  if (!Array.isArray(body.evidence)) {
+    throw new Error('AI advisory evidence is required.');
+  }
+
+  const request: AiAdvisoryRequest = {
+    kind: body.kind,
+    evidence: body.evidence.map((item) => normalizeAiEvidence(item)),
+  };
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.prompt !== undefined) {
+    request.prompt = body.prompt;
+  }
+  if (body.maxWords !== undefined) {
+    request.maxWords = body.maxWords;
+  }
+  return request;
+}
+
+function normalizeAiEvidence(
+  item: Partial<AiAdvisoryEvidenceInput>
+): AiAdvisoryEvidenceInput {
+  if (
+    item.id === undefined ||
+    item.source === undefined ||
+    !AI_ADVISORY_EVIDENCE_SOURCE_VALUES.includes(
+      item.source as AiAdvisoryEvidenceSource
+    ) ||
+    item.label === undefined ||
+    item.summary === undefined
+  ) {
+    throw new Error('AI advisory evidence requires id, source, label, and summary.');
+  }
+
+  const evidence: AiAdvisoryEvidenceInput = {
+    id: item.id,
+    source: item.source,
+    label: item.label,
+    summary: item.summary,
+  };
+  if (item.createdAt !== undefined) {
+    evidence.createdAt = item.createdAt;
+  }
+  return evidence;
 }
 
 function normalizeApplyPreviewInput(

@@ -1,5 +1,7 @@
 import type {
   ActionSource,
+  AiAdvisoryEvidenceSource,
+  AiAdvisoryKind,
   ActionReceiptSource,
   ApplyPolicySource,
   AppealPosture,
@@ -215,6 +217,24 @@ export const DIGEST_SCHEDULE_CADENCE_VALUES = [
   'weekly',
 ] as const satisfies readonly DigestScheduleCadence[];
 
+export const AI_ADVISORY_KIND_VALUES = [
+  'drift_explanation',
+  'policy_draft_suggestion',
+  'case_packet_summary',
+  'digest_summary',
+] as const satisfies readonly AiAdvisoryKind[];
+
+export const AI_ADVISORY_EVIDENCE_SOURCE_VALUES = [
+  'scan',
+  'receipt',
+  'case_packet',
+  'digest',
+  'policy',
+  'analytics',
+  'override',
+  'action',
+] as const satisfies readonly AiAdvisoryEvidenceSource[];
+
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
@@ -257,6 +277,8 @@ export const API_ROUTES = {
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',
   digestSettings: '/api/digest/settings',
+  aiAdvisoryCapabilities: '/api/ai/capabilities',
+  aiAdvisoryGenerate: '/api/ai/advisory',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',

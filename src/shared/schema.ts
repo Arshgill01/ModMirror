@@ -151,6 +151,33 @@ export type DigestCapabilityState = 'available' | 'unavailable' | 'unverified';
 
 export type DigestScheduleCadence = 'weekly';
 
+export type AiAdvisoryKind =
+  | 'drift_explanation'
+  | 'policy_draft_suggestion'
+  | 'case_packet_summary'
+  | 'digest_summary';
+
+export type AiAdvisoryCapabilityState =
+  | 'disabled'
+  | 'unconfigured'
+  | 'type_only'
+  | 'available';
+
+export type AiAdvisoryOutputStatus =
+  | 'disabled'
+  | 'generated'
+  | 'rejected';
+
+export type AiAdvisoryEvidenceSource =
+  | 'scan'
+  | 'receipt'
+  | 'case_packet'
+  | 'digest'
+  | 'policy'
+  | 'analytics'
+  | 'override'
+  | 'action';
+
 export interface SubredditRuleRef {
   ruleKey: string;
   ruleName: string;
@@ -1010,6 +1037,56 @@ export interface DigestHistoryResponse {
   history: DigestReport[];
   capabilities: DigestCapabilities;
   settings: DigestSettings;
+}
+
+export interface AiAdvisoryCapabilityStatus {
+  state: AiAdvisoryCapabilityState;
+  label: string;
+  detail: string;
+  runtimeProof: 'not_verified' | 'type_only' | 'verified';
+}
+
+export interface AiAdvisoryCapabilities {
+  overall: AiAdvisoryCapabilityStatus;
+  externalFetch: AiAdvisoryCapabilityStatus;
+  secretStorage: AiAdvisoryCapabilityStatus;
+  enforcementUse: AiAdvisoryCapabilityStatus;
+  supportedKinds: AiAdvisoryKind[];
+  providerConfigured: boolean;
+}
+
+export interface AiAdvisoryEvidenceInput {
+  id: string;
+  source: AiAdvisoryEvidenceSource;
+  label: string;
+  summary: string;
+  createdAt?: string;
+}
+
+export interface AiAdvisoryRequest {
+  kind: AiAdvisoryKind;
+  subreddit?: string;
+  prompt?: string;
+  evidence: AiAdvisoryEvidenceInput[];
+  maxWords?: number;
+}
+
+export interface AiAdvisoryProviderMetadata {
+  id: string;
+  label: string;
+  state: AiAdvisoryCapabilityState;
+}
+
+export interface AiAdvisoryResponse {
+  kind: AiAdvisoryKind;
+  status: AiAdvisoryOutputStatus;
+  generatedAt: string;
+  advisoryText: string;
+  citedEvidenceIds: string[];
+  caveats: string[];
+  provider: AiAdvisoryProviderMetadata;
+  moderatorReviewRequired: true;
+  mayDecideEnforcement: false;
 }
 
 export interface SmallSubredditThresholdStatus {

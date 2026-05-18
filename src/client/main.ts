@@ -24,6 +24,7 @@ import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
   ApplyPolicySource,
+  AiAdvisoryCapabilities,
   ApiResponse,
   CasePacket,
   Confidence,
@@ -198,6 +199,11 @@ type DigestUiState = {
   message: string | undefined;
 };
 
+type AiAdvisoryUiState = {
+  capabilities?: AiAdvisoryCapabilities;
+  error?: string;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -308,6 +314,7 @@ let digestState: DigestUiState = {
   history: [],
   message: undefined,
 };
+let aiAdvisoryState: AiAdvisoryUiState = {};
 
 function getPageFromHash(): ProductPageId {
   const candidate = getHashRoute().page;
@@ -1757,6 +1764,8 @@ function renderSettingsPage() {
       ${renderSettingsCard('Digest history', digestState.history.length.toString(), digestState.settings?.lastGeneratedAt ? `Last generated ${formatDate(digestState.settings.lastGeneratedAt)}.` : 'No saved digest history in this subreddit yet.')}
       ${renderSettingsCard('Digest mod discussion', digestState.capabilities?.modDiscussion.state ?? 'unverified', digestState.capabilities?.modDiscussion.detail ?? 'Capability status loads from the digest runtime endpoint.')}
       ${renderSettingsCard('Digest scheduler', digestState.capabilities?.scheduler.state ?? 'unverified', digestState.capabilities?.scheduler.detail ?? 'Weekly scheduling remains opt-in and disabled until runtime-verified.')}
+      ${renderSettingsCard('AI advisory', aiAdvisoryState.capabilities?.overall.label ?? 'AI advisory disabled', aiAdvisoryState.capabilities?.overall.detail ?? aiAdvisoryState.error ?? 'Advisory drafts are disabled unless a provider is explicitly configured and runtime-verified.')}
+      ${renderSettingsCard('AI enforcement use', aiAdvisoryState.capabilities?.enforcementUse.state ?? 'disabled', aiAdvisoryState.capabilities?.enforcementUse.detail ?? 'AI output cannot decide or execute moderation actions.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;
@@ -3158,6 +3167,24 @@ async function loadDigestHistory() {
   }
 }
 
+async function loadAiAdvisoryCapabilities() {
+  try {
+    aiAdvisoryState = {
+      capabilities: await fetchApi<AiAdvisoryCapabilities>(
+        API_ROUTES.aiAdvisoryCapabilities
+      ),
+    };
+  } catch (error) {
+    aiAdvisoryState = {
+      error: normalizeClientError(
+        error,
+        'AI advisory capability status is unavailable.'
+      ),
+    };
+  }
+  render();
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -4018,6 +4045,7 @@ void loadHealth();
 void loadPolicies();
 void loadGovernance();
 void loadDigestHistory();
+void loadAiAdvisoryCapabilities();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {
