@@ -86,6 +86,7 @@ const saveActionEvent = vi.fn();
 const saveOverrideEvent = vi.fn();
 const createActionReceiptInput = vi.fn();
 const saveActionReceipt = vi.fn();
+const getActiveIncidentMode = vi.fn();
 
 function modNoteDependencies() {
   return {
@@ -125,6 +126,10 @@ vi.mock('./receipts', () => ({
   saveActionReceipt,
 }));
 
+vi.mock('./incidentMode', () => ({
+  getActiveIncidentMode,
+}));
+
 describe('apply policy service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -144,6 +149,7 @@ describe('apply policy service', () => {
     saveActionEvent.mockResolvedValue(actionEvent);
     createActionReceiptInput.mockImplementation((input) => input);
     saveActionReceipt.mockResolvedValue(receipt);
+    getActiveIncidentMode.mockResolvedValue(undefined);
     saveOverrideEvent.mockResolvedValue({
       id: 'override-1',
       subreddit: 'ExampleLearning',
@@ -352,6 +358,40 @@ describe('apply policy service', () => {
           status: 'sent',
           deliveryAttempted: true,
           noteId: 'ModNote_1',
+        }),
+      })
+    );
+  });
+
+  it('tags receipts with the active incident ID without changing execution', async () => {
+    getActiveIncidentMode.mockResolvedValue({
+      id: 'incident-1',
+      subreddit: 'ExampleLearning',
+      status: 'active',
+      reason: 'spam_flood',
+      startedAt: '2026-05-16T00:00:00.000Z',
+      expiresAt: '2026-05-16T02:00:00.000Z',
+      presetSuggestions: [],
+      triageGroups: [],
+    });
+    const { confirmApplyPolicy } = await import('./applyPolicy');
+
+    await confirmApplyPolicy({
+      modUsername: 'mod_a',
+      input: {
+        subreddit: 'ExampleLearning',
+        ruleKey: policy.ruleKey,
+        selectedAction: 'warn',
+        confirmed: true,
+      },
+    });
+
+    expect(createActionReceiptInput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        incidentId: 'incident-1',
+        execution: expect.objectContaining({
+          executionMode: 'log_only',
+          executionResult: 'skipped',
         }),
       })
     );

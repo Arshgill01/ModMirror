@@ -2,15 +2,31 @@
 
 ## Current Phase
 
-Expansion Wave 26 — Collaborative Evidence Board is locally implemented on
-`expansion/w26-evidence-board` after W25 appeal/modmail. Continue with Wave 27
-incident mode next.
+Expansion Wave 27 — Incident Mode is locally implemented on
+`expansion/w27-incident-mode` after W26 Evidence Board. Continue with Wave 28
+config portability next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 27 Checklist
+
+- [x] Add explicit temporary Incident Mode schema for reason, status, duration,
+      preset suggestions, triage groups, and post-incident report.
+- [x] Add Redis-backed Incident Mode service and namespaced keys.
+- [x] Add `/api/incidents`, `/api/incidents/start`, and
+      `/api/incidents/:id/end` routes.
+- [x] Tag Apply Policy receipts with the active incident ID without changing
+      execution mode or confirmation requirements.
+- [x] Add Settings workflow to start/end incidents and view preset suggestions,
+      triage groups, recent incidents, and the last incident report.
+- [x] Add active Incident Mode banner and receipt-ledger incident tags.
+- [x] Add tests for start/end/expiry behavior and receipt tagging.
+- [ ] Runtime-verify Incident Mode route persistence and active receipt tagging
+      through Devvit Web/Redis playtest.
 
 ## Expansion Wave 26 Checklist
 

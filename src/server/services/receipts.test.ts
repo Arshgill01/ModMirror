@@ -153,6 +153,7 @@ describe('action receipts', () => {
       actionEvent,
       execution,
       modUsername: 'mod_a',
+      incidentId: 'incident-1',
     });
 
     expect(receiptInput).toEqual(
@@ -165,6 +166,7 @@ describe('action receipts', () => {
         selectedAction: 'warn',
         executionResult: 'skipped',
         redditOperation: 'none',
+        incidentId: 'incident-1',
       })
     );
     expect(receiptInput.policySnapshot?.policyVersionId).toBe(

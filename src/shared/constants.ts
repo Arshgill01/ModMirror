@@ -21,6 +21,8 @@ import type {
   EnforcementAction,
   EvidenceBoardEvidenceSource,
   EvidenceBoardStatus,
+  IncidentModeReason,
+  IncidentModeStatus,
   MessageDeliveryMode,
   MirrorScanDepth,
   ModqueueContentType,
@@ -160,6 +162,20 @@ export const EVIDENCE_BOARD_EVIDENCE_SOURCE_VALUES = [
   'policy_change',
   'manual_note',
 ] as const satisfies readonly EvidenceBoardEvidenceSource[];
+
+export const INCIDENT_MODE_REASON_VALUES = [
+  'raid',
+  'spam_flood',
+  'brigading',
+  'crisis',
+  'other',
+] as const satisfies readonly IncidentModeReason[];
+
+export const INCIDENT_MODE_STATUS_VALUES = [
+  'active',
+  'ended',
+  'expired',
+] as const satisfies readonly IncidentModeStatus[];
 
 export const APPEAL_POSTURE_VALUES = [
   'policy_consistent',
@@ -379,6 +395,8 @@ export const API_ROUTES = {
   policyHealth: '/api/policy-health',
   casePacket: '/api/case-packet',
   evidenceBoards: '/api/evidence-boards',
+  incidents: '/api/incidents',
+  incidentStart: '/api/incidents/start',
   digestGenerate: '/api/digest/generate',
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',

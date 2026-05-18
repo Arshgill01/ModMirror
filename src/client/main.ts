@@ -9,6 +9,7 @@ import {
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
   EVIDENCE_BOARD_STATUS_VALUES,
+  INCIDENT_MODE_REASON_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
@@ -52,6 +53,12 @@ import type {
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
   GenerateDigestResponse,
+  IncidentMode,
+  IncidentModeEndRequest,
+  IncidentModeReason,
+  IncidentModeReport,
+  IncidentModeStartRequest,
+  IncidentModeStateResponse,
   MessageDeliveryMode,
   MirrorScan,
   MirrorScanDepth,
@@ -270,6 +277,17 @@ type EvidenceBoardUiState = {
   boards: EvidenceBoardThread[];
 };
 
+type IncidentModeUiState = {
+  loading: boolean;
+  saving: boolean;
+  ending: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  active: IncidentMode | undefined;
+  incidents: IncidentMode[];
+  report: IncidentModeReport | undefined;
+};
+
 type ModqueueTriageUiState = {
   loading: boolean;
   error: string | undefined;
@@ -403,6 +421,16 @@ let evidenceBoardState: EvidenceBoardUiState = {
   error: undefined,
   message: undefined,
   boards: [],
+};
+let incidentModeState: IncidentModeUiState = {
+  loading: false,
+  saving: false,
+  ending: false,
+  error: undefined,
+  message: undefined,
+  active: undefined,
+  incidents: [],
+  report: undefined,
 };
 let modqueueState: ModqueueTriageUiState = {
   loading: false,
@@ -558,6 +586,7 @@ function render() {
 
       <main class="ops-main page-${page.id}">
         ${renderDemoBanner(summary.dataMode)}
+        ${renderIncidentBanner()}
         <header class="workspace-header">
           <div>
             <h2>${page.title}</h2>
@@ -639,6 +668,23 @@ function renderDemoBanner(dataMode: ProductDataMode) {
     <aside class="demo-banner" aria-label="Demo data mode">
       <strong>Demo data active</strong>
       <span>ExampleLearning is loaded for review, screenshots, and the 3-minute walkthrough. Live subreddit data remains separate.</span>
+    </aside>
+  `;
+}
+
+function renderIncidentBanner() {
+  const active = incidentModeState.active;
+  if (active === undefined || active.status !== 'active') {
+    return '';
+  }
+
+  return `
+    <aside class="incident-banner" aria-label="Incident Mode active">
+      <div>
+        <strong>Incident Mode active</strong>
+        <span>${formatAction(active.reason)} until ${formatDate(active.expiresAt)}. Receipts are tagged ${escapeHtml(active.id)}.</span>
+      </div>
+      <button class="secondary-button compact-button" data-end-incident type="button" ${incidentModeState.ending ? 'disabled' : ''}>End incident</button>
     </aside>
   `;
 }
@@ -1418,6 +1464,11 @@ function renderReceiptLedgerItem(receipt: ActionReceipt) {
       ${
         receipt.nativeModNote
           ? `<p class="inline-note">Native Mod Note: ${formatAction(receipt.nativeModNote.status)} (${formatAction(receipt.nativeModNote.capabilityState)}).</p>`
+          : ''
+      }
+      ${
+        receipt.incidentId
+          ? `<p class="inline-note">Incident: ${escapeHtml(receipt.incidentId)}. Tagged for post-incident review.</p>`
           : ''
       }
       <div class="button-row">
@@ -2451,6 +2502,9 @@ function renderDigestHistory() {
 function renderSettingsPage() {
   const summary = buildDashboardSummary();
   return `
+    <section class="settings-stack">
+      ${renderIncidentSettings()}
+    </section>
     <section class="settings-grid">
       ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
       ${renderSettingsCard('Data mode', formatDataMode(summary.dataMode), summary.dataMode === 'demo' ? 'Demo data is labeled and separate from live subreddit data.' : 'Live scans depend on Reddit API availability.')}
@@ -2469,6 +2523,176 @@ function renderSettingsPage() {
       ${renderSettingsCard('Team scheduler', teamDeliveryState.capabilities?.scheduler.state ?? 'unavailable', teamDeliveryState.capabilities?.scheduler.detail ?? 'Scheduled delivery is unavailable until a scheduler task is registered and runtime-verified.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
+  `;
+}
+
+function renderIncidentSettings() {
+  const active = incidentModeState.active;
+  const hasActive = active !== undefined && active.status === 'active';
+  return `
+    <section class="document-panel incident-settings" aria-label="Incident Mode">
+      <div class="section-header">
+        <div>
+          <h3>Incident Mode</h3>
+          <p>Explicit temporary mode for raids, spam floods, brigading, or crisis handling. It changes review context and receipt tags, not automatic enforcement.</p>
+        </div>
+        <button class="secondary-button compact-button" data-load-incidents type="button" ${incidentModeState.loading ? 'disabled' : ''}>Refresh</button>
+      </div>
+      ${renderIncidentModeMessage()}
+      ${
+        incidentModeState.loading
+          ? renderLoadingState('Loading Incident Mode', 'Reading active incident status and recent incident reports.')
+          : hasActive
+            ? renderActiveIncident(active)
+            : renderStartIncidentForm()
+      }
+      ${renderLastIncidentReport()}
+      ${renderRecentIncidents()}
+    </section>
+  `;
+}
+
+function renderIncidentModeMessage() {
+  if (incidentModeState.error) {
+    return `<p class="inline-error">${escapeHtml(incidentModeState.error)}</p>`;
+  }
+  if (incidentModeState.message) {
+    return `<p class="inline-success">${escapeHtml(incidentModeState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderActiveIncident(active: IncidentMode) {
+  return `
+    <div class="incident-active">
+      <dl class="compact-metrics">
+        <div><dt>Status</dt><dd>${formatAction(active.status)}</dd></div>
+        <div><dt>Reason</dt><dd>${formatAction(active.reason)}</dd></div>
+        <div><dt>Started</dt><dd>${formatDate(active.startedAt)}</dd></div>
+        <div><dt>Expires</dt><dd>${formatDate(active.expiresAt)}</dd></div>
+      </dl>
+      ${active.description ? `<p class="inline-note">${escapeHtml(active.description)}</p>` : ''}
+      <div class="incident-guidance-grid">
+        <div>
+          <h4>Policy preset suggestions</h4>
+          <ol class="incident-list">
+            ${active.presetSuggestions
+              .map(
+                (suggestion) => `
+                  <li>
+                    <strong>${escapeHtml(suggestion.label)}</strong>
+                    <span>${formatAction(suggestion.recommendedAction)}. ${escapeHtml(suggestion.detail)}</span>
+                    <em>${escapeHtml(suggestion.safetyNote)}</em>
+                  </li>
+                `
+              )
+              .join('')}
+          </ol>
+        </div>
+        <div>
+          <h4>Triage groups</h4>
+          <ol class="incident-list">
+            ${active.triageGroups
+              .map(
+                (group) => `
+                  <li>
+                    <strong>${escapeHtml(group.label)}</strong>
+                    <span>${escapeHtml(group.detail)}</span>
+                    <em>${escapeHtml(group.suggestedQueueFilter)}</em>
+                  </li>
+                `
+              )
+              .join('')}
+          </ol>
+        </div>
+      </div>
+      <form class="policy-form incident-form" data-incident-end-form>
+        <label>
+          Post-incident note
+          <textarea name="reviewNote" rows="3" placeholder="What changed, what still needs review, or why the incident can end."></textarea>
+        </label>
+        <div class="button-row">
+          <button class="secondary-button" type="submit" ${incidentModeState.ending ? 'disabled' : ''}>End Incident Mode</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function renderStartIncidentForm() {
+  return `
+    <form class="policy-form incident-form" data-incident-start-form>
+      <div class="incident-form-grid">
+        <label>
+          Reason
+          <select name="reason">
+            ${INCIDENT_MODE_REASON_VALUES.map(
+              (reason) => `<option value="${reason}">${formatAction(reason)}</option>`
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Duration minutes
+          <input name="durationMinutes" type="number" min="15" max="1440" step="15" value="120" />
+        </label>
+      </div>
+      <label>
+        Description
+        <textarea name="description" rows="3" placeholder="What moderators should know before acting during this incident."></textarea>
+      </label>
+      <div class="button-row">
+        <button class="primary-button" type="submit" ${incidentModeState.saving ? 'disabled' : ''}>Start Incident Mode</button>
+      </div>
+      <p class="inline-note">No auto-remove, auto-ban, or silent action is enabled. Apply Policy still requires confirmation.</p>
+    </form>
+  `;
+}
+
+function renderLastIncidentReport() {
+  const report = incidentModeState.report;
+  if (report === undefined) {
+    return '';
+  }
+  return `
+    <div class="incident-report">
+      <h4>Last post-incident report</h4>
+      <dl class="compact-metrics">
+        <div><dt>Receipts</dt><dd>${report.receiptCount}</dd></div>
+        <div><dt>Overrides</dt><dd>${report.overrideCount}</dd></div>
+        ${Object.entries(report.executionResults)
+          .map(
+            ([status, count]) =>
+              `<div><dt>${formatAction(status)}</dt><dd>${count}</dd></div>`
+          )
+          .join('')}
+      </dl>
+      <ul class="plain-note-list">
+        ${report.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderRecentIncidents() {
+  if (incidentModeState.incidents.length === 0) {
+    return '';
+  }
+  return `
+    <div class="incident-report">
+      <h4>Recent incidents</h4>
+      <ol class="incident-list compact">
+        ${incidentModeState.incidents
+          .map(
+            (incident) => `
+              <li>
+                <strong>${formatAction(incident.reason)} - ${formatAction(incident.status)}</strong>
+                <span>${formatDate(incident.startedAt)} to ${formatDate(incident.endedAt ?? incident.expiresAt)}</span>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+    </div>
   `;
 }
 
@@ -2568,6 +2792,7 @@ function bindAllActions() {
   bindApplyPolicyActions();
   bindCasePacketActions();
   bindEvidenceBoardActions();
+  bindIncidentModeActions();
   bindGovernanceActions();
   bindDigestActions();
   bindReceiptActions();
@@ -2929,6 +3154,43 @@ function bindEvidenceBoardActions() {
         if (boardId && isEvidenceBoardStatus(status)) {
           void updateEvidenceBoardStatusFromForm(boardId, status, note);
         }
+      });
+    });
+}
+
+function bindIncidentModeActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-incidents]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadIncidentMode();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-end-incident]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void endIncidentMode('');
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-incident-start-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void startIncidentMode(new FormData(form));
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-incident-end-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const note = String(new FormData(form).get('reviewNote') ?? '').trim();
+        void endIncidentMode(note);
       });
     });
 }
@@ -4680,6 +4942,162 @@ function isEvidenceBoardStatus(value: string): value is EvidenceBoardStatus {
   return EVIDENCE_BOARD_STATUS_VALUES.includes(value as EvidenceBoardStatus);
 }
 
+async function loadIncidentMode() {
+  incidentModeState = {
+    ...incidentModeState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<IncidentModeStateResponse>(
+      withWorkspaceSubreddit(API_ROUTES.incidents)
+    );
+    incidentModeState = {
+      ...incidentModeState,
+      loading: false,
+      active: response.active,
+      incidents: response.incidents,
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Incident Mode status is unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function startIncidentMode(formData: FormData) {
+  const reason = String(formData.get('reason') ?? '');
+  if (!isIncidentModeReason(reason)) {
+    incidentModeState = {
+      ...incidentModeState,
+      error: 'Choose an incident reason before starting Incident Mode.',
+    };
+    render();
+    return;
+  }
+
+  const durationMinutes = Number(formData.get('durationMinutes') ?? 120);
+  const description = String(formData.get('description') ?? '').trim();
+  const subreddit = getWorkspaceSubreddit();
+  const body: IncidentModeStartRequest = {
+    reason,
+    durationMinutes: Number.isFinite(durationMinutes) ? durationMinutes : 120,
+  };
+  if (description) {
+    body.description = description;
+  }
+  if (subreddit) {
+    body.subreddit = subreddit;
+  }
+
+  incidentModeState = {
+    ...incidentModeState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+    report: undefined,
+  };
+  render();
+
+  try {
+    const incident = await fetchApi<IncidentMode>(API_ROUTES.incidentStart, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    incidentModeState = {
+      ...incidentModeState,
+      saving: false,
+      active: incident,
+      incidents: [
+        incident,
+        ...incidentModeState.incidents.filter((item) => item.id !== incident.id),
+      ],
+      message: 'Incident Mode started. Apply Policy confirmations will tag receipts.',
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      saving: false,
+      error: normalizeClientError(error, 'Incident Mode could not be started.'),
+    };
+  }
+
+  render();
+}
+
+async function endIncidentMode(reviewNote: string) {
+  const active = incidentModeState.active;
+  if (active === undefined) {
+    return;
+  }
+
+  const body: IncidentModeEndRequest = {};
+  const subreddit = getWorkspaceSubreddit();
+  if (reviewNote) {
+    body.reviewNote = reviewNote;
+  }
+  if (subreddit) {
+    body.subreddit = subreddit;
+  }
+
+  incidentModeState = {
+    ...incidentModeState,
+    ending: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const report = await fetchApi<IncidentModeReport>(
+      `${API_ROUTES.incidents}/${encodeURIComponent(active.id)}/end`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    incidentModeState = {
+      ...incidentModeState,
+      ending: false,
+      active: undefined,
+      report,
+      incidents: [
+        report.incident,
+        ...incidentModeState.incidents.filter(
+          (item) => item.id !== report.incident.id
+        ),
+      ],
+      message: 'Incident Mode ended and a review summary is ready.',
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      ending: false,
+      error: normalizeClientError(error, 'Incident Mode could not be ended.'),
+    };
+  }
+
+  render();
+}
+
+function isIncidentModeReason(value: string): value is IncidentModeReason {
+  return INCIDENT_MODE_REASON_VALUES.includes(value as IncidentModeReason);
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -5925,6 +6343,7 @@ void loadDigestHistory();
 void loadAiAdvisoryCapabilities();
 void loadTeamDeliveryCapabilities();
 void loadEvidenceBoards();
+void loadIncidentMode();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

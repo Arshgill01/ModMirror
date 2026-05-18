@@ -26,6 +26,7 @@ export function createActionReceiptInput(options: {
   nativeModNote?: NativeModNoteAttempt;
   overrideEvent?: OverrideEvent;
   modUsername?: string;
+  incidentId?: string;
 }): ActionReceiptInput {
   const receipt: ActionReceiptInput = {
     actionEventId: options.actionEvent.id,
@@ -58,6 +59,9 @@ export function createActionReceiptInput(options: {
   }
   if (options.nativeModNote !== undefined) {
     receipt.nativeModNote = options.nativeModNote;
+  }
+  if (options.incidentId !== undefined) {
+    receipt.incidentId = options.incidentId;
   }
   if (options.overrideEvent !== undefined) {
     receipt.overrideEventId = options.overrideEvent.id;
@@ -224,5 +228,8 @@ function copyOptionalReceiptFields(
   }
   if (input.errorMessage !== undefined) {
     receipt.errorMessage = input.errorMessage;
+  }
+  if (input.incidentId !== undefined) {
+    receipt.incidentId = input.incidentId;
   }
 }

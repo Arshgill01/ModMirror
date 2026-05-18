@@ -113,6 +113,15 @@ export type EvidenceBoardEvidenceSource =
   | 'policy_change'
   | 'manual_note';
 
+export type IncidentModeReason =
+  | 'raid'
+  | 'spam_flood'
+  | 'brigading'
+  | 'crisis'
+  | 'other';
+
+export type IncidentModeStatus = 'active' | 'ended' | 'expired';
+
 export type AppealPosture =
   | 'policy_consistent'
   | 'justified_override'
@@ -1222,6 +1231,7 @@ export interface ActionReceipt {
   errorCode?: string;
   errorMessage?: string;
   capabilityState: ModerationExecutionCapabilityState;
+  incidentId?: string;
   createdAt: string;
 }
 
@@ -1446,6 +1456,64 @@ export interface EvidenceBoardStatusUpdateRequest {
 
 export interface EvidenceBoardListResponse {
   boards: EvidenceBoardThread[];
+}
+
+export interface IncidentPolicyPresetSuggestion {
+  id: string;
+  label: string;
+  detail: string;
+  recommendedAction: EnforcementAction;
+  safetyNote: string;
+}
+
+export interface IncidentTriageGroup {
+  id: string;
+  label: string;
+  detail: string;
+  priority: 'high' | 'medium' | 'low';
+  suggestedQueueFilter: string;
+}
+
+export interface IncidentMode {
+  id: string;
+  subreddit: string;
+  status: IncidentModeStatus;
+  reason: IncidentModeReason;
+  description?: string;
+  startedAt: string;
+  startedBy?: string;
+  expiresAt: string;
+  endedAt?: string;
+  endedBy?: string;
+  reviewNote?: string;
+  presetSuggestions: IncidentPolicyPresetSuggestion[];
+  triageGroups: IncidentTriageGroup[];
+}
+
+export interface IncidentModeStartRequest {
+  subreddit?: string;
+  reason: IncidentModeReason;
+  description?: string;
+  durationMinutes?: number;
+}
+
+export interface IncidentModeEndRequest {
+  subreddit?: string;
+  reviewNote?: string;
+}
+
+export interface IncidentModeStateResponse {
+  active?: IncidentMode;
+  incidents: IncidentMode[];
+}
+
+export interface IncidentModeReport {
+  incident: IncidentMode;
+  receiptCount: number;
+  overrideCount: number;
+  executionResults: Record<ModerationExecutionStatus, number>;
+  taggedReceiptIds: string[];
+  caveats: string[];
 }
 
 export interface DigestReport {

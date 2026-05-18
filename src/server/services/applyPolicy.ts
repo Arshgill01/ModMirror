@@ -39,6 +39,7 @@ import {
   type NativeModNoteDependencies,
   type NativeModNoteInput,
 } from './modNotes';
+import { getActiveIncidentMode } from './incidentMode';
 
 export async function previewApplyPolicy(
   input: ApplyPolicyPreviewInput
@@ -202,6 +203,7 @@ export async function confirmApplyPolicy(options: {
     modNoteInput,
     options.modNoteDependencies
   );
+  const activeIncident = await getActiveIncidentMode(subreddit);
 
   const receiptOptions: Parameters<typeof createActionReceiptInput>[0] = {
     preview,
@@ -215,6 +217,9 @@ export async function confirmApplyPolicy(options: {
   }
   if (options.modUsername !== undefined) {
     receiptOptions.modUsername = options.modUsername;
+  }
+  if (activeIncident !== undefined) {
+    receiptOptions.incidentId = activeIncident.id;
   }
   const receipt = await saveActionReceipt(
     createActionReceiptInput(receiptOptions)

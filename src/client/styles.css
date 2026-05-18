@@ -54,6 +54,7 @@ button:disabled {
 h1,
 h2,
 h3,
+h4,
 p,
 dl,
 dd {
@@ -268,21 +269,40 @@ dd {
   padding-bottom: 18px;
 }
 
-.demo-banner {
+.demo-banner,
+.incident-banner {
   align-items: center;
-  background: #fff7e6;
-  border: 1px solid #e6cf91;
-  color: #5f3f00;
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr);
   padding: 10px 12px;
 }
 
+.demo-banner {
+  background: #fff7e6;
+  border: 1px solid #e6cf91;
+  color: #5f3f00;
+}
+
+.incident-banner {
+  background: #fff3ed;
+  border: 1px solid #d98c65;
+  color: #6f2600;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .demo-banner strong,
-.demo-banner span {
+.demo-banner span,
+.incident-banner strong,
+.incident-banner span {
   font-size: 13px;
   line-height: 1.35;
+}
+
+.incident-banner div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 }
 
 .workspace-header h2 {
@@ -1455,6 +1475,86 @@ dd {
   grid-template-columns: 1fr;
 }
 
+.settings-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.incident-settings {
+  background: var(--mm-paper);
+  border: 1px solid var(--mm-line);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.incident-active,
+.incident-form,
+.incident-report {
+  display: grid;
+  gap: 12px;
+}
+
+.incident-form-grid,
+.incident-guidance-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.incident-settings h4 {
+  color: var(--mm-ink);
+  font-size: 14px;
+  font-weight: 740;
+  margin-bottom: 8px;
+}
+
+.incident-list {
+  border-block: 1px solid var(--mm-line);
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.incident-list li {
+  border-bottom: 1px solid var(--mm-line);
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+}
+
+.incident-list li:last-child {
+  border-bottom: 0;
+}
+
+.incident-list strong {
+  color: var(--mm-ink);
+  font-size: 14px;
+}
+
+.incident-list span,
+.incident-list em,
+.plain-note-list {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.incident-list em {
+  font-style: normal;
+}
+
+.incident-list.compact {
+  border-bottom: 0;
+}
+
+.plain-note-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .settings-grid .action-card {
   align-items: center;
   border-bottom: 1px solid var(--mm-line);
@@ -1701,7 +1801,10 @@ dd {
     font-size: 25px;
   }
 
-  .demo-banner {
+  .demo-banner,
+  .incident-banner,
+  .incident-form-grid,
+  .incident-guidance-grid {
     grid-template-columns: 1fr;
   }
 

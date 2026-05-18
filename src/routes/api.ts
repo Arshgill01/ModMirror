@@ -9,6 +9,7 @@ import {
   CONFIDENCE_VALUES,
   DEMO_SUBREDDIT_NAME,
   EVIDENCE_BOARD_STATUS_VALUES,
+  INCIDENT_MODE_REASON_VALUES,
   MIRROR_SCAN_DEPTH_VALUES,
   MODQUEUE_CONTENT_TYPE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
@@ -41,6 +42,12 @@ import type {
   EvidenceBoardSourceRef,
   EvidenceBoardStatus,
   EvidenceBoardStatusUpdateRequest,
+  IncidentMode,
+  IncidentModeEndRequest,
+  IncidentModeReason,
+  IncidentModeReport,
+  IncidentModeStartRequest,
+  IncidentModeStateResponse,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
   GenerateDigestRequest,
@@ -145,6 +152,11 @@ import {
   listEvidenceBoards,
   updateEvidenceBoardStatus,
 } from '../server/services/evidenceBoard';
+import {
+  endIncidentMode,
+  getIncidentModeState,
+  startIncidentMode,
+} from '../server/services/incidentMode';
 
 export const api = new Hono();
 
@@ -1047,6 +1059,64 @@ api.post('/evidence-boards/:id/status', async (c) => {
   }
 });
 
+api.get('/incidents', async (c) => {
+  const response: ApiResponse<IncidentModeStateResponse> = {
+    ok: true,
+    data: await getIncidentModeState(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.post('/incidents/start', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<IncidentModeStartRequest>;
+
+  try {
+    const response: ApiResponse<IncidentMode> = {
+      ok: true,
+      data: await startIncidentMode({
+        subreddit: getRequestedBodySubreddit(body),
+        request: normalizeIncidentModeStartRequest(body),
+        startedBy: context.username ?? 'unknown',
+      }),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(incidentModeError(error), 400);
+  }
+});
+
+api.post('/incidents/:id/end', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<IncidentModeEndRequest>;
+
+  try {
+    const report = await endIncidentMode({
+      subreddit: getRequestedBodySubreddit(body),
+      incidentId: c.req.param('id'),
+      request: normalizeIncidentModeEndRequest(body),
+      endedBy: context.username ?? 'unknown',
+    });
+    if (report === undefined) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'incident_not_found',
+            message: 'Incident was not found for this subreddit.',
+          },
+        } satisfies ApiResponse<IncidentModeReport>,
+        404
+      );
+    }
+    const response: ApiResponse<IncidentModeReport> = {
+      ok: true,
+      data: report,
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(incidentModeError(error), 400);
+  }
+});
+
 api.post('/digest/generate', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateDigestRequest>;
 
@@ -1535,6 +1605,56 @@ function evidenceBoardError(
       code: 'evidence_board_failed',
       message:
         error instanceof Error ? error.message : 'Evidence board request failed',
+    },
+  };
+}
+
+function normalizeIncidentModeStartRequest(
+  body: Partial<IncidentModeStartRequest>
+): IncidentModeStartRequest {
+  if (
+    body.reason === undefined ||
+    !INCIDENT_MODE_REASON_VALUES.includes(body.reason as IncidentModeReason)
+  ) {
+    throw new Error('Incident reason is required.');
+  }
+  const request: IncidentModeStartRequest = {
+    reason: body.reason,
+  };
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.description !== undefined) {
+    request.description = body.description;
+  }
+  if (body.durationMinutes !== undefined) {
+    request.durationMinutes = body.durationMinutes;
+  }
+  return request;
+}
+
+function normalizeIncidentModeEndRequest(
+  body: Partial<IncidentModeEndRequest>
+): IncidentModeEndRequest {
+  const request: IncidentModeEndRequest = {};
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.reviewNote !== undefined) {
+    request.reviewNote = body.reviewNote;
+  }
+  return request;
+}
+
+function incidentModeError(
+  error: unknown
+): ApiResponse<IncidentMode | IncidentModeReport> {
+  return {
+    ok: false,
+    error: {
+      code: 'incident_mode_failed',
+      message:
+        error instanceof Error ? error.message : 'Incident Mode request failed',
     },
   };
 }
