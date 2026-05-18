@@ -168,3 +168,43 @@ W02 validation:
 
 Runtime playtest was not run in W02. Apply Policy remains log-only; no Reddit
 moderation execution is attempted or claimed.
+
+### 2026-05-18 - W03 Moderation Execution
+
+Created worktree:
+
+- `git worktree add ../modmirror-w03-moderation-execution -b overhaul/w03-moderation-execution overhaul/w02-recommendation-core`
+
+Implemented W03:
+
+- Added typed moderation execution schema for execution mode, result status,
+  Reddit operation, capability state, and execution result metadata.
+- Added `src/server/services/moderationExecution.ts` with gated execution for
+  `remove`, `approve`, and `ignore_reports`.
+- Added explicit confirmation enforcement on Apply Policy confirm requests.
+- Integrated execution results into Apply Policy confirmation and persisted
+  action events.
+- Added default feature/capability gates:
+  `MODMIRROR_ENABLE_LIVE_REDDIT_ACTIONS`,
+  `MODMIRROR_REDDIT_ACTIONS_RUNTIME_VERIFIED`, and
+  `MODMIRROR_ACTION_RECEIPTS_AVAILABLE`.
+- Kept product-integrated live Reddit execution disabled by default because W04
+  receipts and runtime proof are not complete.
+- Updated the client payload to send explicit confirmation and display execution
+  success/failure/skipped context after confirmation.
+- Added mocked execution tests for disabled gates, missing receipts, live
+  success, permission failure, and ignore-reports target model calls.
+
+W03 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/moderationExecution.test.ts src/server/services/applyPolicy.test.ts` - passed, 15 tests.
+- `npm test` - passed, 17 files and 82 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W03. The Reddit execution code path is covered
+by installed typings and mocked tests only; live execution must remain disabled
+until W04 receipts and safe playtest proof are complete.

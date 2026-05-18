@@ -30,8 +30,8 @@ Status labels:
 | True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
 | Apply Policy target-aware preview | verified locally | `applyPolicy.ts`, `applyPolicy.test.ts`, `schema.ts`, client rendering | Preserve as W03 execution preview foundation. |
 | Apply Policy confirm log-only | verified locally | `applyPolicy.ts`, `audit.ts`, tests | Preserve fallback while adding execution gates. |
-| Real Reddit remove/approve execution | type/build-only | Installed typings expose APIs; no product call | Add gated service in W03, runtime-proof before enabling. |
-| Ignore reports execution | type/build-only | Installed typings expose APIs | Gate and test before enabling. |
+| Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when all gates are enabled; default config blocks live execution | Add W04 receipts, then runtime-proof on safe test content before enabling. |
+| Ignore reports execution | disabled with local engine tests | W03 `moderationExecution.ts` uses target model `ignoreReports()` only when all gates are enabled; default config blocks live execution | Runtime-proof on safe test content before enabling. |
 | Public comment delivery | disabled/unverified | `RESEARCH.md` says unknown ordering | Keep disabled until runtime proof. |
 | Modmail/mod discussion delivery | disabled/unverified | Digest capabilities are `unverified` | Spike only, preview-first. |
 | Native Mod Notes | disabled/unverified | Typings only | Spike only after runtime proof. |

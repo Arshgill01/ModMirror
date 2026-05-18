@@ -15,6 +15,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w01-entrypoints-context`
 - `overhaul/w02-recommendation-core` at
   `/Users/arshdeepsingh/Developer/modmirror-w02-recommendation-core`
+- `overhaul/w03-moderation-execution` at
+  `/Users/arshdeepsingh/Developer/modmirror-w03-moderation-execution`
 
 Planned critical path:
 
@@ -48,7 +50,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W00 Truth/control | complete | Committed as `7abeb28 docs: add operational overhaul control layer`. |
 | W01 Entrypoints/context | complete | Committed as `4e28b6c docs: record W01 entrypoint verification`; replaced smoke menus; added target context and dashboard handoff; no execution. |
 | W02 Recommendation core | complete | Added target-aware preview snapshots, evidence, confirmation caveats, and validation; still log-only. |
-| W03 Moderation execution | pending | Gated execution service; preserve log-only fallback. |
+| W03 Moderation execution | complete | Added gated execution engine and confirm integration; live Reddit actions remain disabled until receipts/runtime proof. |
 | W04 Receipts ledger | pending | Immutable action receipt schema/storage/API. |
 | W05 Scan persistence | pending | Full scan records with retention. |
 | W06 Deep scan | pending | Pagination/depth research and safe caps. |

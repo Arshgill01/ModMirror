@@ -486,3 +486,33 @@ Digest delivery/scheduler status:
 - Manual Markdown copy remains the verified launch path.
 - Mod discussion delivery is still unverified and disabled.
 - Scheduler execution is still unverified and disabled.
+
+## Operational Overhaul W03 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Installed typings in `node_modules/@devvit/reddit/RedditClient.d.ts`
+  expose `reddit.approve(id)`, `reddit.remove(id, isSpam)`,
+  `reddit.getPostById(id)`, and `reddit.getCommentById(id)`.
+- Installed typings in `node_modules/@devvit/reddit/models/Post.d.ts` and
+  `node_modules/@devvit/reddit/models/Comment.d.ts` expose
+  `ignoreReports()`.
+- Local W03 tests mock success, failure, and permission-denied execution paths.
+
+Decision:
+
+- W03 adds a typed execution engine, but product-integrated live Reddit actions
+  remain disabled by default. The live path requires all of:
+  `MODMIRROR_ENABLE_LIVE_REDDIT_ACTIONS=true`,
+  `MODMIRROR_REDDIT_ACTIONS_RUNTIME_VERIFIED=true`, and
+  `MODMIRROR_ACTION_RECEIPTS_AVAILABLE=true`.
+- `MODMIRROR_ACTION_RECEIPTS_AVAILABLE` intentionally remains false by default
+  because W04 has not added the receipt ledger yet.
+
+Runtime status:
+
+- Not playtest-verified in W03.
+- Do not claim remove/approve/ignore-reports behavior beyond installed typings
+  and mocked local tests until safe playtest proof is recorded.

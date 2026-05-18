@@ -18,6 +18,9 @@ It currently supports:
 - Policy CRUD with immutable version records.
 - Apply Policy target-aware preview, policy snapshots, evidence notes, explicit
   log-only confirmation copy, and `log_only` confirmation.
+- A W03 gated moderation execution engine with typed success, failure, and
+  skipped results. Product-integrated live Reddit actions remain disabled by
+  default until receipts and runtime proof exist.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -26,7 +29,8 @@ It currently supports:
 
 It does not yet support:
 
-- Safe execution of Reddit moderation actions from Apply Policy.
+- Default-enabled safe execution of Reddit moderation actions from Apply
+  Policy. W03 added the gated engine, but live execution remains disabled.
 - Action receipts that distinguish live, failed, skipped, dry-run, and log-only
   outcomes.
 - Full attributed scan history persistence.
@@ -45,6 +49,10 @@ It does not yet support:
   `ignoreReports`.
 - W02 Apply Policy previews now distinguish target context, policy version,
   ModMirror-tracked history, and log-only safety caveats before confirmation.
+- W03 `src/server/services/moderationExecution.ts` can call typed
+  remove/approve/ignore-reports SDK methods only when confirmation, runtime
+  proof, feature flags, and receipt availability gates all pass. Current
+  product defaults keep this path disabled.
 - `src/server/services/scans.ts` persists `LastScanMetadata`, not complete
   attributed scan records.
 - `src/server/services/redditSources.ts` defaults live moderation-log reads to
