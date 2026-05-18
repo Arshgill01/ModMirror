@@ -27,6 +27,7 @@ import type {
   ApiResponse,
   CasePacket,
   Confidence,
+  ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
   DigestReport,
@@ -182,6 +183,7 @@ type GovernanceUiState = {
   error: string | undefined;
   message: string | undefined;
   health: PolicyHealthOverview | undefined;
+  analytics: ConsistencyAnalyticsSummary | undefined;
   overrides: ReviewableOverrideEvent[];
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
 };
@@ -296,6 +298,7 @@ let governanceState: GovernanceUiState = {
   error: undefined,
   message: undefined,
   health: undefined,
+  analytics: undefined,
   overrides: [],
   versionsByPolicy: {},
 };
@@ -1136,9 +1139,43 @@ function renderReviewPage() {
       </div>
     </section>
     ${renderGovernanceOverview()}
+    ${renderConsistencyAnalytics()}
     ${renderPolicyHealthCards()}
     ${renderOverrideInbox()}
     ${renderPolicyVersionSummary()}
+  `;
+}
+
+function renderConsistencyAnalytics() {
+  const analytics = governanceState.analytics;
+  if (!analytics) {
+    return '';
+  }
+
+  const trend = analytics.ruleTrends[0];
+  const impact = analytics.policyImpacts[0];
+
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Consistency Over Time</h3>
+          <p>${escapeHtml(analytics.caveats[0] ?? 'Receipts and persisted scans are used before making trend claims.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(analytics.dataQuality))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Scans</dt><dd>${analytics.scanCount}</dd></div>
+        <div><dt>Receipts</dt><dd>${analytics.receiptCount}</dd></div>
+        <div><dt>Top trend</dt><dd>${escapeHtml(trend ? formatAction(trend.status) : 'No signal')}</dd></div>
+        <div><dt>Policy impact</dt><dd>${escapeHtml(impact ? formatAction(impact.status) : 'No signal')}</dd></div>
+      </dl>
+      ${
+        trend
+          ? `<p class="recommendation">${escapeHtml(trend.ruleName)}: ${trend.points.length} scan point${trend.points.length === 1 ? '' : 's'}; latest distribution ${escapeHtml(formatDistribution(trend.latestDistribution))}.</p>`
+          : '<p class="inline-note">No repeated drift candidates are available yet.</p>'
+      }
+    </section>
   `;
 }
 
@@ -1732,6 +1769,18 @@ function renderDistributionItem(action: EnforcementAction, count: number) {
       <strong>${count}</strong>
     </div>
   `;
+}
+
+function formatDistribution(
+  distribution: Partial<Record<EnforcementAction, number>>
+): string {
+  const entries = Object.entries(distribution);
+  if (entries.length === 0) {
+    return 'no current distribution';
+  }
+  return entries
+    .map(([action, count]) => `${formatAction(action)} ${count}`)
+    .join(', ');
 }
 
 function renderEmptyState(
@@ -2447,6 +2496,84 @@ function createClientDemoHealth(
   };
 }
 
+function createClientDemoAnalytics(): ConsistencyAnalyticsSummary {
+  const now = new Date().toISOString();
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: now,
+    scanCount: 2,
+    receiptCount: 12,
+    dataQuality: 'limited',
+    caveats: ['Demo analytics are seeded for preview and are not live proof.'],
+    ruleTrends: [
+      {
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        status: 'improving',
+        latestDistribution: {
+          warn: 9,
+          remove: 5,
+        },
+        points: [
+          {
+            scanId: 'demo-scan-before',
+            createdAt: '2026-05-15T00:00:00.000Z',
+            source: 'demo',
+            depth: 'standard',
+            totalActions: 24,
+            distinctActions: 3,
+            confidence: 'high',
+            actionDistribution: {
+              warn: 7,
+              remove: 10,
+              temporary_ban_suggested: 7,
+            },
+          },
+          {
+            scanId: 'demo-scan-after',
+            createdAt: now,
+            source: 'demo',
+            depth: 'standard',
+            totalActions: 18,
+            distinctActions: 2,
+            confidence: 'high',
+            actionDistribution: {
+              warn: 9,
+              remove: 5,
+            },
+          },
+        ],
+        caveats: ['Demo scans are useful for preview, not live policy proof.'],
+      },
+    ],
+    policyImpacts: [
+      {
+        policyId: DEMO_POLICY.id,
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        policyVersionId: 'demo-policy-low-effort-v2',
+        adoptedAt: '2026-05-16T00:00:00.000Z',
+        status: 'new_policy_tracking',
+        before: {
+          receiptCount: 3,
+          adherenceRate: 1 / 3,
+          overrideRate: 2 / 3,
+          unresolvedOverrideCount: 0,
+        },
+        after: {
+          receiptCount: 9,
+          adherenceRate: 7 / 9,
+          overrideRate: 2 / 9,
+          unresolvedOverrideCount: 1,
+        },
+        caveats: [
+          'Receipts cover ModMirror Apply Policy usage, not every moderator action.',
+        ],
+      },
+    ],
+  };
+}
+
 function createClientDemoOverrides(
   latestOverride?: ApplyPolicyConfirmResult['overrideEvent']
 ): ReviewableOverrideEvent[] {
@@ -2873,7 +3000,7 @@ async function loadGovernance(ruleKey?: string) {
   render();
 
   try {
-    const [healthOverview, policies, overrides] = await Promise.all([
+    const [healthOverview, policies, overrides, analytics] = await Promise.all([
       fetchApi<PolicyHealthOverview>(
         withWorkspaceSubreddit(API_ROUTES.policyHealth)
       ),
@@ -2885,6 +3012,9 @@ async function loadGovernance(ruleKey?: string) {
             )
           : withWorkspaceSubreddit(`${API_ROUTES.overrides}?status=unresolved`)
       ),
+      fetchApi<ConsistencyAnalyticsSummary>(
+        withWorkspaceSubreddit(API_ROUTES.consistencyAnalytics)
+      ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
     policyState = {
@@ -2895,6 +3025,7 @@ async function loadGovernance(ruleKey?: string) {
       ...governanceState,
       loading: false,
       health: healthOverview,
+      analytics,
       overrides,
       versionsByPolicy,
     };
@@ -2905,6 +3036,7 @@ async function loadGovernance(ruleKey?: string) {
         ...governanceState,
         loading: false,
         health: createClientDemoHealth(),
+        analytics: createClientDemoAnalytics(),
         overrides: ruleKey
           ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
           : demoOverrides,

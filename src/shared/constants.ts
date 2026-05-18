@@ -237,6 +237,7 @@ export const API_ROUTES = {
   health: '/api/health',
   scan: '/api/scan',
   scans: '/api/scans',
+  consistencyAnalytics: '/api/analytics/consistency',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   actions: '/api/actions',

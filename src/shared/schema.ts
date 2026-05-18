@@ -500,6 +500,72 @@ export interface MirrorScanComparison {
   confidenceDelta: Record<Confidence, number>;
 }
 
+export type ConsistencyAnalyticsDataQuality =
+  | 'insufficient'
+  | 'limited'
+  | 'usable';
+
+export type TrendDirection =
+  | 'insufficient_data'
+  | 'improving'
+  | 'stable'
+  | 'regressing';
+
+export type PolicyImpactStatus =
+  | 'insufficient_data'
+  | 'new_policy_tracking'
+  | TrendDirection;
+
+export interface RuleDriftTrendPoint {
+  scanId: string;
+  createdAt: string;
+  source: ActionSource;
+  depth: MirrorScanDepth;
+  totalActions: number;
+  distinctActions: number;
+  confidence: Confidence;
+  actionDistribution: Partial<Record<EnforcementAction, number>>;
+}
+
+export interface RuleDriftTrend {
+  ruleKey?: string;
+  ruleName: string;
+  status: TrendDirection;
+  points: RuleDriftTrendPoint[];
+  latestDistribution: Partial<Record<EnforcementAction, number>>;
+  caveats: string[];
+}
+
+export interface PolicyImpactWindow {
+  receiptCount: number;
+  adherenceRate: number;
+  overrideRate: number;
+  unresolvedOverrideCount: number;
+}
+
+export interface PolicyImpactSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  policyVersionId?: string;
+  adoptedAt: string;
+  status: PolicyImpactStatus;
+  before: PolicyImpactWindow;
+  after: PolicyImpactWindow;
+  caveats: string[];
+}
+
+export interface ConsistencyAnalyticsSummary {
+  subreddit: string;
+  generatedAt: string;
+  scanCount: number;
+  receiptCount: number;
+  dataQuality: ConsistencyAnalyticsDataQuality;
+  caveats: string[];
+  ruleTrends: RuleDriftTrend[];
+  policyImpacts: PolicyImpactSummary[];
+}
+
 export interface DriftCandidate {
   ruleKey?: string;
   ruleName: string;

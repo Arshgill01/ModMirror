@@ -14,6 +14,7 @@ import type {
   ApplyPolicyPreview,
   ApplyPolicyPreviewInput,
   ApiResponse,
+  ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
   DigestSettings,
@@ -38,6 +39,7 @@ import type {
   RulePolicy,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
+import { getConsistencyAnalytics } from '../server/services/analytics';
 import {
   compareScanRecords,
   getScanRecord,
@@ -242,6 +244,14 @@ api.get('/scans/:id', async (c) => {
     ok: true,
     data: record,
   } satisfies ApiResponse<MirrorScanRecord>);
+});
+
+api.get('/analytics/consistency', async (c) => {
+  const response: ApiResponse<ConsistencyAnalyticsSummary> = {
+    ok: true,
+    data: await getConsistencyAnalytics(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
 });
 
 api.get('/policies', async (c) => {
