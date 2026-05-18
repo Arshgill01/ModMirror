@@ -2,15 +2,30 @@
 
 ## Current Phase
 
-Expansion Wave 28 — Configuration Portability is locally implemented on
-`expansion/w28-config-portability` after W27 Incident Mode. Continue with Wave
-29 multi-community support next.
+Expansion Wave 29 — Multi-Community Isolation is locally implemented on
+`expansion/w29-multi-community` after W28 Configuration Portability. Continue
+with Wave 30 privacy controls next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 29 Checklist
+
+- [x] Add central subreddit scope resolver for current context, demo exception,
+      and live-only requests.
+- [x] Reject cross-subreddit API requests instead of silently falling back to
+      the current subreddit.
+- [x] Route policy creation, drift-policy creation, attribution correction, and
+      Apply Policy normalization through the shared subreddit guard.
+- [x] Add API isolation error response handling.
+- [x] Add Redis key guard for unsafe subreddit namespace segments.
+- [x] Confirm starter template reuse remains non-sensitive through W28 portable
+      config tests.
+- [x] Add key/subreddit isolation tests.
+- [ ] Runtime-verify context-derived subreddit behavior in Devvit Web playtest.
 
 ## Expansion Wave 28 Checklist
 

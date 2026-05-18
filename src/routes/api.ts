@@ -166,8 +166,39 @@ import {
   getPortableConfigTemplates,
   importPortableConfig,
 } from '../server/services/configPortability';
+import {
+  isSubredditIsolationError,
+  resolveLiveSubredditScope,
+  resolveSubredditScope,
+} from '../server/services/subredditIsolation';
 
 export const api = new Hono();
+
+api.onError((error, c) => {
+  if (isSubredditIsolationError(error)) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'subreddit_isolation_failed',
+          message: error.message,
+        },
+      } satisfies ApiResponse<never>,
+      403
+    );
+  }
+
+  return c.json(
+    {
+      ok: false,
+      error: {
+        code: 'internal_error',
+        message: 'Internal ModMirror API error',
+      },
+    } satisfies ApiResponse<never>,
+    500
+  );
+});
 
 api.get('/health', (c) =>
   c.json({
@@ -459,7 +490,7 @@ api.post('/policies', async (c) => {
 
   try {
     const input: PolicyCreateInput = {
-      subreddit: body.subreddit ?? getCurrentSubreddit(),
+      subreddit: getRequestedBodySubreddit(body),
       createdBy: body.createdBy ?? context.username ?? 'unknown',
       ruleKey: body.ruleKey ?? '',
       ruleName: body.ruleName ?? '',
@@ -511,7 +542,7 @@ api.post('/policies/from-drift', async (c) => {
     const response: ApiResponse<RulePolicy> = {
       ok: true,
       data: await createPolicyFromDriftCandidate({
-        subreddit: body.subreddit ?? getCurrentSubreddit(),
+        subreddit: getRequestedBodySubreddit(body),
         createdBy: body.createdBy ?? context.username ?? 'unknown',
         driftCandidate: body.driftCandidate,
       }),
@@ -1348,14 +1379,13 @@ api.post('/apply-policy/confirm', async (c) => {
   }
 });
 
-function getCurrentSubreddit(): string {
-  return context.subredditName ?? DEMO_SUBREDDIT_NAME;
-}
-
 function getRequestedLiveSubreddit(c: {
   req: { query: (name: string) => string | undefined };
 }): string | undefined {
-  return c.req.query('subreddit')?.trim() || context.subredditName;
+  return resolveLiveSubredditScope({
+    requestedSubreddit: c.req.query('subreddit'),
+    currentSubreddit: context.subredditName,
+  });
 }
 
 function getRequestedSubreddit(c: {
@@ -1369,11 +1399,11 @@ function getRequestedBodySubreddit(body: { subreddit?: string }): string {
 }
 
 function normalizeRequestedSubreddit(subreddit: string | undefined): string {
-  if (subreddit === DEMO_SUBREDDIT_NAME) {
-    return DEMO_SUBREDDIT_NAME;
-  }
-
-  return getCurrentSubreddit();
+  return resolveSubredditScope({
+    requestedSubreddit: subreddit,
+    currentSubreddit: context.subredditName,
+    demoSubreddit: DEMO_SUBREDDIT_NAME,
+  });
 }
 
 function normalizeModqueueContentType(
@@ -1416,7 +1446,7 @@ function normalizeReplayActions(
 async function normalizeAttributionCorrectionInput(
   body: Partial<AttributionCorrectionInput>
 ): Promise<AttributionCorrectionInput> {
-  const subreddit = body.subreddit ?? getCurrentSubreddit();
+  const subreddit = getRequestedBodySubreddit(body);
   const actionId = body.actionId?.trim();
   const correctedRuleKey = body.correctedRuleKey?.trim();
   if (!actionId) {
@@ -1798,7 +1828,7 @@ function normalizeApplyPreviewInput(
   body: Partial<ApplyPolicyPreviewInput>
 ): ApplyPolicyPreviewInput {
   const input: ApplyPolicyPreviewInput = {
-    subreddit: body.subreddit ?? getCurrentSubreddit(),
+    subreddit: getRequestedBodySubreddit(body),
     ruleKey: body.ruleKey ?? '',
     source: body.source ?? 'simulator',
   };

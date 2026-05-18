@@ -1,7 +1,9 @@
 import { redis } from '@devvit/web/server';
 import type { RedisSmokeResult } from '../../shared/schema';
+import { assertSafeSubredditName } from './subredditIsolation';
 
 export function mmKey(subreddit: string, suffix: string): string {
+  assertSafeSubredditName(subreddit);
   return `modmirror:${subreddit}:${suffix}`;
 }
 

@@ -6,10 +6,9 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 28 Configuration Portability is implemented locally.
-Portable packages export policy configuration, response templates, and
-non-sensitive settings only; Devvit Web/Redis route persistence still requires
-playtest proof.
+Status: Expansion Wave 29 Multi-Community Isolation is implemented locally.
+Subreddit scope resolution and Redis key namespace guards are type/test
+verified; exact Devvit runtime context behavior still requires playtest proof.
 
 Last updated: 2026-05-18
 
@@ -78,6 +77,7 @@ Updated by: Codex
 | Verified locally | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Devvit Redis runtime persistence remains unverified. |
 | Verified locally | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Devvit Redis/API runtime remains unverified. |
 | Verified locally | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Devvit Redis/API runtime remains unverified. |
+| Verified locally | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit context behavior remains runtime-unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -138,6 +138,10 @@ Updated by: Codex
   include receipts, overrides, scans, content snapshots, case packets, evidence
   boards, delivery receipts, incident reports, moderator activity logs, or
   private queue history.
+- W29 treats `context.subredditName` as the authority for live subreddit access.
+  The only explicit cross-context exception is the labeled ExampleLearning demo
+  namespace. Runtime playtest still needs to verify the exact context values
+  attached to Devvit Web requests.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.
