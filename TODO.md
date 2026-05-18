@@ -240,3 +240,15 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - private message, modmail, or native Mod Notes delivery.
 - override audit dashboard.
 - Devpost final copy.
+
+## Operational Overhaul W10 Follow-up
+
+- [x] Add disabled-by-default AI advisory contracts and capability endpoint.
+- [x] Add mocked-provider tests that require deterministic evidence citations.
+- [x] Keep AI advisory unable to decide or execute enforcement.
+- [ ] Runtime-verify Devvit external fetch with a safe test provider before
+      enabling any live AI advisory path.
+- [ ] Runtime-verify Devvit app secret retrieval for any provider key before
+      marking AI advisory available.
+- [ ] Add Terms/Privacy readiness notes before any uploaded build uses
+      external fetch for AI.

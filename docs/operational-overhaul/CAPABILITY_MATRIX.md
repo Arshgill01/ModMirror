@@ -42,5 +42,6 @@ Status labels:
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets v2 | verified locally/demo runtime | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts, runtime reports for older demo flow | Runtime-smoke receipt-backed generation in Devvit playtest. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
+| AI advisory layer | disabled/type-only | W10 `aiAdvisory.ts`, `/api/ai/capabilities`, `/api/ai/advisory`, mocked-provider tests; Devvit docs/typings show server fetch and secret settings support | Keep disabled until provider config, HTTP permission, secrets, terms/privacy requirements, and runtime proof are complete. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
 | Reddit mobile app QA | unverified | Launch checklist unchecked | Add W13 verification target. |

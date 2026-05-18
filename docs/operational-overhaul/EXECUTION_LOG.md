@@ -443,3 +443,41 @@ W09 validation:
 
 Runtime playtest was not run in W09. Receipt-backed packet generation is
 locally verified only; Devvit Redis/API/UI behavior still needs runtime proof.
+
+### 2026-05-18 - W10 AI Advisory Spike
+
+Created worktree:
+
+- `git worktree add /Users/arshdeepsingh/Developer/modmirror-w10-ai-advisory-spike -b overhaul/w10-ai-advisory-spike overhaul/w09-case-packets-v2`
+
+Implemented W10:
+
+- Researched Devvit external fetch and secret-storage support using official
+  docs and installed typings.
+- Added AI advisory shared contracts for capability state, advisory kind,
+  evidence inputs, requests, and responses.
+- Added a disabled-by-default `aiAdvisory` service with no-provider fallback,
+  mocked-provider generation support, evidence-citation validation, and
+  moderator-review/enforcement-disabled response metadata.
+- Added `/api/ai/capabilities` and `/api/ai/advisory`.
+- Added Settings page capability labels for AI advisory and AI enforcement use.
+- Added mocked-provider tests for disabled fallback, generated output, rejected
+  uncited output, and prompt evidence IDs.
+
+W10 validation so far:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm test -- src/server/services/aiAdvisory.test.ts` - passed, 5 tests.
+- `npm run type-check` - initially failed on exact optional property typing in
+  the client AI capability state.
+- `npm run type-check` - passed after fixing the optional state assignment.
+- `npm run lint` - passed.
+- `npm test` - passed, 22 files and 99 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W10. No external AI call was made, no provider
+secret was configured/read, and `devvit.json` HTTP permissions were not enabled.
+AI advisory remains disabled by default and must stay that way until provider
+configuration, Devvit secret access, external fetch, latency/failure behavior,
+and terms/privacy requirements are runtime-proven.

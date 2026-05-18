@@ -594,3 +594,45 @@ Runtime status:
 - Not playtest-verified in W06.
 - Do not claim deep moderation-log pagination works in Reddit runtime until a
   safe playtest records actual behavior and sample counts.
+
+## Operational Overhaul W10 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit Web documentation says server endpoints can use standard
+  server frameworks and server capabilities, including `fetch`, while client
+  fetch is restricted to the app's own webview domain:
+  `https://developers.reddit.com/docs/next/capabilities/devvit-web/devvit_web_overview`.
+- Official HTTP Fetch documentation says Devvit apps can fetch allow-listed
+  HTTPS domains from server-side code, lists a 30-second timeout, documents
+  `permissions.http.domains`, and lists `api.openai.com` and
+  `generativelanguage.googleapis.com` in the global fetch allowlist:
+  `https://developers.reddit.com/docs/capabilities/server/http-fetch`.
+- Official secrets documentation describes app-scoped secret settings set by
+  the developer via `devvit settings set` and retrieved during invocation:
+  `https://developers.reddit.com/docs/secrets_storage`.
+- Installed typings expose `SettingsClient.get()` in
+  `node_modules/@devvit/settings/SettingsClient.d.ts` and Devvit Web config
+  schema types for `permissions.http` and app/subreddit `settings` in
+  `node_modules/@devvit/shared-types/schemas/config-file.v1.d.ts`.
+
+Decision:
+
+- W10 does not enable HTTP permissions or commit any provider key path.
+- W10 adds a disabled-by-default provider abstraction and advisory endpoints:
+  `/api/ai/capabilities` and `/api/ai/advisory`.
+- The service only generates with an explicitly supplied provider and enabled
+  flag. Production/default runtime returns a disabled fallback.
+- AI output is advisory only, cannot decide enforcement, and must cite
+  deterministic evidence IDs supplied in the request. Provider output that
+  does not cite known evidence is rejected.
+
+Runtime status:
+
+- No external AI call was made in W10.
+- Devvit HTTP Fetch and secret-storage behavior remain docs/type-supported
+  only for ModMirror. Runtime proof requires a configured provider, HTTP
+  permission/domain review as needed, secret setting, terms/privacy readiness,
+  and playtest logs before any live advisory path can be labeled available.

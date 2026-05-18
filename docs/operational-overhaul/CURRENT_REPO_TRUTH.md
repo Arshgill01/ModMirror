@@ -39,6 +39,9 @@ It currently supports:
 - W09 Case Packets v2 prefer W04 action receipts when present and include
   receipt IDs, target snapshots, execution results, packet types, and evidence
   labels that distinguish verified receipts from inferred history.
+- W10 AI advisory spike contracts, capability endpoints, Settings labels, and
+  mocked-provider tests. The feature remains disabled-by-default and cannot
+  decide or execute enforcement.
 - Manual digest generation and digest history.
 - Productized dashboard UI with runtime Settings.
 - Unit tests for core shared and server service logic.
@@ -54,6 +57,8 @@ It does not yet support:
 - Runtime-verified deep moderation-log pagination. W06 verifies installed
   typings and local mocks only.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
+- Runtime-verified external AI calls or Devvit secret retrieval for AI
+  providers. W10 is docs/type-supported and locally tested with mocks only.
 
 ## Remaining Smoking-Gun Code Facts
 
@@ -89,8 +94,10 @@ It does not yet support:
 - W09 `src/server/services/casePacket.ts` loads action receipts alongside
   action/override history. Receipt-backed packets are treated as stronger
   evidence; action-history-only packets remain supported with explicit caveats.
-- `src/server/services/policies.ts` versions policy edits immediately; it does
-  not model proposal, review, adoption, supersession, or archival states.
+- W10 `src/server/services/aiAdvisory.ts` returns disabled fallback responses
+  unless an explicit provider is injected and enabled. It requires
+  deterministic evidence IDs and rejects provider output that does not cite
+  known evidence.
 - W01 target context is type/build-verified only. Runtime proof for post/comment
   menu visibility, form behavior, dashboard navigation, target fetch, and
   moderator permission shape is still pending.
@@ -111,6 +118,8 @@ Runtime evidence does not yet exist for:
 - Modmail/mod discussion delivery.
 - Native Mod Notes.
 - Scheduler.
+- External AI fetch, provider secret retrieval, and provider latency/failure
+  behavior.
 - Non-moderator access blocking.
 - Exact moderator permission strings.
 
