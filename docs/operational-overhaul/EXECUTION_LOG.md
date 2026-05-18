@@ -630,3 +630,35 @@ Runtime proof gaps:
   lifecycle persistence, non-mod blocking, native mobile, and all destructive or
   delivery features remain unverified unless earlier reports explicitly say
   otherwise.
+
+### 2026-05-18 - W14 Integration
+
+Created worktree:
+
+- `git worktree add /Users/arshdeepsingh/Developer/modmirror-integration-operational-overhaul -b integration/operational-overhaul master`
+
+Integrated operational overhaul:
+
+- `git merge --ff-only overhaul/w13-runtime-verification` fast-forwarded the
+  integration branch from `master` to the W13 tip.
+- No merge conflicts occurred. W13 is a descendant of W00 through W12, so this
+  fast-forward includes the full operational wave lane.
+- Updated `README.md` to describe the integrated operational IA and current
+  verified/unverified runtime truth.
+- Added `docs/operational-overhaul/wave14-integration.md`.
+- Added `docs/operational-overhaul/BUILD_REPORT.md`.
+
+W14 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm test -- src/server/services/runtimeVerification.test.ts src/server/services/moderationExecution.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+  - passed, 4 files and 20 tests.
+- `npm run lint` - passed.
+- `npm test` - passed, 24 files and 107 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- `git diff -- package-lock.json` - passed after restoring install churn.
+
+Runtime playtest was not rerun in W14. W14 preserves W13 runtime proof and
+records the remaining gaps in `BUILD_REPORT.md`.

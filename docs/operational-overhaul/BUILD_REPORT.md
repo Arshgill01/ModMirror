@@ -1,0 +1,73 @@
+# Operational Overhaul Build Report
+
+Date: 2026-05-18
+
+Integrated branch: `integration/operational-overhaul`
+
+## Implemented
+
+- Removed production-facing smoke-test menu labels and added real ModMirror
+  post/comment Apply Policy menu entries.
+- Added post/comment target context capture and dashboard handoff.
+- Added target-aware Apply Policy preview, evidence, comparable context, and
+  explicit confirmation.
+- Added gated moderation execution service; real Reddit actions remain disabled
+  until safe runtime proof exists.
+- Added immutable action receipts and receipt APIs.
+- Added full scan persistence, scan history, comparison routes, and deep scan
+  depth controls.
+- Added drift-over-time analytics from scans and receipts.
+- Added policy draft/propose/review/adopt lifecycle.
+- Added receipt-backed Case Packets v2.
+- Added disabled-by-default AI advisory spike.
+- Added preview-first team delivery spike with manual/skipped receipts.
+- Reframed UI around Act / Scan / Agree / Review / Prove / Settings.
+- Added runtime verification matrix endpoint and docs.
+
+## Branches / Worktrees
+
+- W00-W13 wave branches: `overhaul/w00-truth-and-control` through
+  `overhaul/w13-runtime-verification`.
+- Integration branch: `integration/operational-overhaul`.
+- Integration worktree:
+  `/Users/arshdeepsingh/Developer/modmirror-integration-operational-overhaul`.
+
+## Validation
+
+Integrated local checks:
+
+- `npm install` - passed, with existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm test -- src/server/services/runtimeVerification.test.ts src/server/services/moderationExecution.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+  - passed, 4 files and 20 tests.
+- `npm run lint` - passed.
+- `npm test` - passed, 24 files and 107 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime proof obtained before integration:
+
+- W13 `npm run dev` reached playtest ready for `r/modmirror_dev` on
+  `v0.0.1.71`.
+- Subreddit dashboard launcher and confirmation form were visible to the
+  moderator account.
+- W12 operational IA rendered inside Reddit's desktop expanded WebView modal.
+
+## Known Gaps
+
+- Post/comment Apply Policy menus need focused runtime proof in post/comment
+  detail contexts.
+- Devvit Redis receipt/scan/policy persistence needs route-level runtime proof.
+- Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
+- Non-mod access blocking, native mobile, Mod Discussion delivery, scheduler,
+  native Mod Notes, and external AI are unverified/disabled.
+- `npm install` continues to report inherited audit findings; W14 did not
+  change dependency versions.
+
+## Next Engineering Risks
+
+- Expansion waves must not build on unverified destructive behavior.
+- Any feature that uses post/comment context must first close the W13 menu proof
+  gap.
+- Runtime receipts should be verified before relying on analytics or case
+  packets as live proof.
