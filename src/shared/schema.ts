@@ -216,6 +216,42 @@ export interface ModerationTargetContext {
   warnings: string[];
 }
 
+export type ApplyPolicyTargetSnapshotSource = 'provided' | 'not_provided';
+
+export interface ApplyPolicyTargetSnapshot {
+  targetThingId?: string;
+  targetType: ModerationTargetType;
+  subreddit?: string;
+  authorName?: string;
+  title?: string;
+  body?: string;
+  permalink?: string;
+  source: ApplyPolicyTargetSnapshotSource;
+  warnings: string[];
+}
+
+export type ApplyPolicyPreviewEvidenceKind =
+  | 'policy'
+  | 'target'
+  | 'history'
+  | 'safety'
+  | 'fallback';
+
+export interface ApplyPolicyPreviewEvidence {
+  kind: ApplyPolicyPreviewEvidenceKind;
+  label: string;
+  detail: string;
+}
+
+export interface ApplyPolicyConfirmationPreview {
+  executionMode: 'log_only';
+  willExecuteRedditAction: false;
+  actionLabel: string;
+  requiresOverrideReason: boolean;
+  message: string;
+  caveats: string[];
+}
+
 export type PolicyFallbackReason =
   | 'policy_found'
   | 'no_policy'
@@ -240,7 +276,11 @@ export interface ApplyPolicyPreviewInput {
   subreddit?: string;
   ruleKey: string;
   targetThingId?: string;
+  targetType?: ModerationTargetType;
   targetAuthor?: string;
+  targetTitle?: string;
+  targetBody?: string;
+  targetPermalink?: string;
   selectedAction?: EnforcementAction;
   source?: ApplyPolicySource;
 }
@@ -248,6 +288,10 @@ export interface ApplyPolicyPreviewInput {
 export interface ApplyPolicyPreview {
   recommendation: PolicyRecommendation;
   policy?: RulePolicy;
+  policySnapshot?: PolicySnapshot;
+  targetSnapshot: ApplyPolicyTargetSnapshot;
+  evidence: ApplyPolicyPreviewEvidence[];
+  confirmation: ApplyPolicyConfirmationPreview;
 }
 
 export interface ApplyPolicyConfirmInput extends ApplyPolicyPreviewInput {

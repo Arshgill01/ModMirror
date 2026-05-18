@@ -1,5 +1,6 @@
 import type {
   ActionSource,
+  ApplyPolicySource,
   AppealPosture,
   CasePacketActionFamily,
   CasePacketConsistencyStatus,
@@ -115,6 +116,12 @@ export const ACTION_SOURCE_VALUES = [
   'demo',
   'modmirror',
 ] as const satisfies readonly ActionSource[];
+
+export const APPLY_POLICY_SOURCE_VALUES = [
+  'live',
+  'demo',
+  'simulator',
+] as const satisfies readonly ApplyPolicySource[];
 
 export const DIGEST_SOURCE_VALUES = [
   'manual',

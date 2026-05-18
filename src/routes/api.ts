@@ -661,8 +661,20 @@ function normalizeApplyPreviewInput(
   if (body.targetThingId !== undefined) {
     input.targetThingId = body.targetThingId;
   }
+  if (body.targetType !== undefined) {
+    input.targetType = body.targetType;
+  }
   if (body.targetAuthor !== undefined) {
     input.targetAuthor = body.targetAuthor;
+  }
+  if (body.targetTitle !== undefined) {
+    input.targetTitle = body.targetTitle;
+  }
+  if (body.targetBody !== undefined) {
+    input.targetBody = body.targetBody;
+  }
+  if (body.targetPermalink !== undefined) {
+    input.targetPermalink = body.targetPermalink;
   }
   if (body.selectedAction !== undefined) {
     input.selectedAction = body.selectedAction;

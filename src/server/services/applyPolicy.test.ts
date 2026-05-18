@@ -88,11 +88,89 @@ describe('apply policy service', () => {
     const preview = await previewApplyPolicy({
       subreddit: 'ExampleLearning',
       ruleKey: policy.ruleKey,
+      targetThingId: 't3_target_post',
+      targetAuthor: 'learner_1',
       selectedAction: 'warn',
+      source: 'live',
     });
 
     expect(preview.recommendation.recommendedAction).toBe('warn');
     expect(preview.recommendation.messageDeliveryMode).toBe('log_only');
+    expect(preview.policySnapshot).toEqual(
+      expect.objectContaining({
+        policyId: policy.id,
+        policyVersionId: 'policy-version-1',
+      })
+    );
+    expect(preview.targetSnapshot).toEqual(
+      expect.objectContaining({
+        targetThingId: 't3_target_post',
+        targetType: 'post',
+        authorName: 'learner_1',
+        source: 'provided',
+      })
+    );
+    expect(preview.evidence.map((item) => item.kind)).toEqual([
+      'policy',
+      'target',
+      'history',
+      'safety',
+    ]);
+    expect(preview.confirmation).toEqual(
+      expect.objectContaining({
+        executionMode: 'log_only',
+        willExecuteRedditAction: false,
+        requiresOverrideReason: false,
+      })
+    );
+  });
+
+  it('previews a missing target as an explicit caveat', async () => {
+    const { previewApplyPolicy } = await import('./applyPolicy');
+    const preview = await previewApplyPolicy({
+      subreddit: 'ExampleLearning',
+      ruleKey: policy.ruleKey,
+      selectedAction: 'warn',
+    });
+
+    expect(preview.targetSnapshot).toEqual(
+      expect.objectContaining({
+        targetType: 'unknown',
+        source: 'not_provided',
+      })
+    );
+    expect(preview.targetSnapshot.warnings[0]).toMatch(/No target context/);
+    expect(preview.evidence).toContainEqual(
+      expect.objectContaining({
+        kind: 'target',
+        label: 'Target context missing',
+      })
+    );
+  });
+
+  it('rejects unsupported target thing IDs', async () => {
+    const { previewApplyPolicy } = await import('./applyPolicy');
+    await expect(
+      previewApplyPolicy({
+        subreddit: 'ExampleLearning',
+        ruleKey: policy.ruleKey,
+        targetThingId: 't5_unsupported',
+        selectedAction: 'warn',
+      })
+    ).rejects.toThrow(/targetThingId must be a post t3_ or comment t1_ ID/);
+  });
+
+  it('rejects a target type that conflicts with the thing ID', async () => {
+    const { previewApplyPolicy } = await import('./applyPolicy');
+    await expect(
+      previewApplyPolicy({
+        subreddit: 'ExampleLearning',
+        ruleKey: policy.ruleKey,
+        targetThingId: 't1_target_comment',
+        targetType: 'post',
+        selectedAction: 'warn',
+      })
+    ).rejects.toThrow(/targetType does not match targetThingId/);
   });
 
   it('confirms matching log_only action without override', async () => {

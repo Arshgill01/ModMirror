@@ -23,6 +23,7 @@ import { DEMO_POLICY } from '../shared/demoData';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
+  ApplyPolicySource,
   ApiResponse,
   CasePacket,
   Confidence,
@@ -1063,6 +1064,7 @@ function renderApplyPreview() {
         <div><dt>Recommended</dt><dd>${formatAction(recommendation.recommendedAction)}</dd></div>
         <div><dt>Delivery</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
       </dl>
+      ${renderApplyPreviewEvidence()}
       ${
         applyState.result
           ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}.</p>
@@ -1070,6 +1072,29 @@ function renderApplyPreview() {
           : ''
       }
     </article>
+  `;
+}
+
+function renderApplyPreviewEvidence() {
+  const preview = applyState.preview;
+  if (!preview) {
+    return '';
+  }
+
+  return `
+    <div class="evidence-list">
+      ${preview.evidence
+        .map(
+          (item) => `
+            <div class="evidence-item">
+              <span>${escapeHtml(item.label)}</span>
+              <p>${escapeHtml(item.detail)}</p>
+            </div>
+          `
+        )
+        .join('')}
+    </div>
+    <p class="inline-note">${escapeHtml(preview.confirmation.message)}</p>
   `;
 }
 
@@ -2471,6 +2496,57 @@ function createClientDemoApplyPreview(
 
   return {
     policy,
+    policySnapshot: {
+      policyId: policy.id,
+      policyVersionId: policy.activeVersionId ?? `${policy.id}-v1`,
+      policyVersionNumber: policy.activeVersionNumber ?? 1,
+      policyVersionStatus: 'active',
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      steps: policy.steps,
+      defaultMessageMode: policy.defaultMessageMode,
+      capturedAt: new Date().toISOString(),
+    },
+    targetSnapshot: {
+      targetThingId: payload.targetThingId,
+      targetType: payload.targetThingId.startsWith('t1_') ? 'comment' : 'post',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      authorName: payload.targetAuthor,
+      source: 'provided',
+      warnings: ['Demo fallback preview uses seeded client data only.'],
+    },
+    evidence: [
+      {
+        kind: 'policy',
+        label: 'Policy version',
+        detail: `Using ${policy.ruleName} version ${policy.activeVersionNumber ?? 1}.`,
+      },
+      {
+        kind: 'target',
+        label: 'Target context',
+        detail: `${payload.targetThingId} by ${payload.targetAuthor}`,
+      },
+      {
+        kind: 'history',
+        label: 'Offense count',
+        detail: 'Offense 1 from demo seed data.',
+      },
+      {
+        kind: 'safety',
+        label: 'Execution mode',
+        detail:
+          'Confirming this demo preview records a log-only ModMirror action.',
+      },
+    ],
+    confirmation: {
+      executionMode: 'log_only',
+      willExecuteRedditAction: false,
+      actionLabel: payload.selectedAction,
+      requiresOverrideReason: deviatesFromPolicy,
+      message:
+        'Demo fallback confirmation records a log-only ModMirror action. No Reddit moderation action is attempted.',
+      caveats: ['Demo fallback uses client seed data, not live Reddit state.'],
+    },
     recommendation: {
       ruleKey: policy.ruleKey,
       ruleName: policy.ruleName,
@@ -3112,10 +3188,12 @@ async function confirmApplyPolicy(formData: FormData) {
         body: JSON.stringify(payload),
       }
     );
+    const preview = applyState.preview ?? createClientDemoApplyPreview(payload);
     applyState = {
       ...applyState,
       confirming: false,
       preview: {
+        ...preview,
         recommendation: result.recommendation,
       },
       result,
@@ -3125,10 +3203,12 @@ async function confirmApplyPolicy(formData: FormData) {
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const result = createClientDemoApplyResult(payload);
+      const preview = createClientDemoApplyPreview(payload);
       applyState = {
         ...applyState,
         confirming: false,
         preview: {
+          ...preview,
           recommendation: result.recommendation,
         },
         result,
@@ -3240,7 +3320,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     targetThingId: string;
     targetAuthor: string;
     selectedAction: EnforcementAction;
-    source: 'simulator';
+    source: ApplyPolicySource;
     overrideReason?: OverrideReason;
     overrideNote?: string;
   } = {
@@ -3250,7 +3330,7 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,
-    source: 'simulator',
+    source: getApplyPolicySource(String(formData.get('targetThingId') ?? '')),
   };
   const selectedPolicy = policyState.policies.find(
     (policy) => policy.ruleKey === ruleKey
@@ -3271,6 +3351,16 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
   }
 
   return payload;
+}
+
+function getApplyPolicySource(targetThingId: string): ApplyPolicySource {
+  if (!targetThingId || targetThingId === 't3_demo_policy_target') {
+    return 'simulator';
+  }
+  if (targetThingId.startsWith('t1_') || targetThingId.startsWith('t3_')) {
+    return 'live';
+  }
+  return 'simulator';
 }
 
 function applyFormDataToState(formData: FormData): ApplyFormState {
