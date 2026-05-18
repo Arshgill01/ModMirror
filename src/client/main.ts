@@ -44,6 +44,7 @@ import type {
   OverrideReason,
   PolicyStep,
   RulePolicy,
+  TeamDeliveryCapabilities,
 } from '../shared/schema';
 import './styles.css';
 
@@ -204,6 +205,11 @@ type AiAdvisoryUiState = {
   error?: string;
 };
 
+type TeamDeliveryUiState = {
+  capabilities?: TeamDeliveryCapabilities;
+  error?: string;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -315,6 +321,7 @@ let digestState: DigestUiState = {
   message: undefined,
 };
 let aiAdvisoryState: AiAdvisoryUiState = {};
+let teamDeliveryState: TeamDeliveryUiState = {};
 
 function getPageFromHash(): ProductPageId {
   const candidate = getHashRoute().page;
@@ -1766,6 +1773,8 @@ function renderSettingsPage() {
       ${renderSettingsCard('Digest scheduler', digestState.capabilities?.scheduler.state ?? 'unverified', digestState.capabilities?.scheduler.detail ?? 'Weekly scheduling remains opt-in and disabled until runtime-verified.')}
       ${renderSettingsCard('AI advisory', aiAdvisoryState.capabilities?.overall.label ?? 'AI advisory disabled', aiAdvisoryState.capabilities?.overall.detail ?? aiAdvisoryState.error ?? 'Advisory drafts are disabled unless a provider is explicitly configured and runtime-verified.')}
       ${renderSettingsCard('AI enforcement use', aiAdvisoryState.capabilities?.enforcementUse.state ?? 'disabled', aiAdvisoryState.capabilities?.enforcementUse.detail ?? 'AI output cannot decide or execute moderation actions.')}
+      ${renderSettingsCard('Team delivery', teamDeliveryState.capabilities?.modDiscussion.state ?? 'unverified', teamDeliveryState.capabilities?.modDiscussion.detail ?? teamDeliveryState.error ?? 'Mod discussion delivery remains preview-first until runtime-verified.')}
+      ${renderSettingsCard('Team scheduler', teamDeliveryState.capabilities?.scheduler.state ?? 'unavailable', teamDeliveryState.capabilities?.scheduler.detail ?? 'Scheduled delivery is unavailable until a scheduler task is registered and runtime-verified.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;
@@ -3185,6 +3194,24 @@ async function loadAiAdvisoryCapabilities() {
   render();
 }
 
+async function loadTeamDeliveryCapabilities() {
+  try {
+    teamDeliveryState = {
+      capabilities: await fetchApi<TeamDeliveryCapabilities>(
+        API_ROUTES.teamDeliveryCapabilities
+      ),
+    };
+  } catch (error) {
+    teamDeliveryState = {
+      error: normalizeClientError(
+        error,
+        'Team delivery capability status is unavailable.'
+      ),
+    };
+  }
+  render();
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -4046,6 +4073,7 @@ void loadPolicies();
 void loadGovernance();
 void loadDigestHistory();
 void loadAiAdvisoryCapabilities();
+void loadTeamDeliveryCapabilities();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

@@ -26,6 +26,8 @@ import type {
   OverrideReviewStatus,
   PolicyHealthStatus,
   RedditModerationOperation,
+  TeamDeliveryChannel,
+  TeamDeliverySubjectType,
 } from './schema';
 
 export const APP_NAME = 'ModMirror';
@@ -235,6 +237,17 @@ export const AI_ADVISORY_EVIDENCE_SOURCE_VALUES = [
   'action',
 ] as const satisfies readonly AiAdvisoryEvidenceSource[];
 
+export const TEAM_DELIVERY_CHANNEL_VALUES = [
+  'manual_markdown',
+  'mod_discussion',
+  'scheduler',
+] as const satisfies readonly TeamDeliveryChannel[];
+
+export const TEAM_DELIVERY_SUBJECT_TYPE_VALUES = [
+  'digest',
+  'policy_proposal',
+] as const satisfies readonly TeamDeliverySubjectType[];
+
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
@@ -279,6 +292,9 @@ export const API_ROUTES = {
   digestSettings: '/api/digest/settings',
   aiAdvisoryCapabilities: '/api/ai/capabilities',
   aiAdvisoryGenerate: '/api/ai/advisory',
+  teamDeliveryCapabilities: '/api/delivery/capabilities',
+  teamDeliveryPreview: '/api/delivery/preview',
+  teamDeliveryConfirm: '/api/delivery/confirm',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',

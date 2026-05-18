@@ -8,6 +8,8 @@ import {
   CASE_PACKET_TYPE_VALUES,
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
+  TEAM_DELIVERY_CHANNEL_VALUES,
+  TEAM_DELIVERY_SUBJECT_TYPE_VALUES,
 } from '../shared/constants';
 import type {
   ActionEvent,
@@ -49,6 +51,12 @@ import type {
   PolicyReviewInput,
   PolicyUpdateInput,
   RulePolicy,
+  TeamDeliveryCapabilities,
+  TeamDeliveryChannel,
+  TeamDeliveryConfirmRequest,
+  TeamDeliveryConfirmResponse,
+  TeamDeliveryPreviewRequest,
+  TeamDeliverySubjectType,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
 import { getConsistencyAnalytics } from '../server/services/analytics';
@@ -100,6 +108,11 @@ import {
   generateAiAdvisory,
   getAiAdvisoryCapabilities,
 } from '../server/services/aiAdvisory';
+import {
+  buildTeamDeliveryPreview,
+  confirmTeamDelivery,
+  getTeamDeliveryCapabilities,
+} from '../server/services/teamDelivery';
 
 export const api = new Hono();
 
@@ -830,6 +843,49 @@ api.put('/digest/settings', async (c) => {
   }
 });
 
+api.get('/delivery/capabilities', (c) => {
+  const response: ApiResponse<TeamDeliveryCapabilities> = {
+    ok: true,
+    data: getTeamDeliveryCapabilities(),
+  };
+  return c.json(response);
+});
+
+api.post('/delivery/preview', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<TeamDeliveryPreviewRequest>;
+
+  try {
+    const response = {
+      ok: true,
+      data: buildTeamDeliveryPreview({
+        request: normalizeTeamDeliveryPreviewRequest(body),
+        subreddit: getRequestedBodySubreddit(body),
+      }),
+    } satisfies ApiResponse<ReturnType<typeof buildTeamDeliveryPreview>>;
+    return c.json(response);
+  } catch (error) {
+    return c.json(teamDeliveryError(error), 400);
+  }
+});
+
+api.post('/delivery/confirm', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<TeamDeliveryConfirmRequest>;
+
+  try {
+    const response: ApiResponse<TeamDeliveryConfirmResponse> = {
+      ok: true,
+      data: await confirmTeamDelivery({
+        request: normalizeTeamDeliveryConfirmRequest(body),
+        subreddit: getRequestedBodySubreddit(body),
+        requestedBy: context.username ?? 'unknown',
+      }),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(teamDeliveryError(error), 400);
+  }
+});
+
 api.get('/ai/capabilities', (c) => {
   const response: ApiResponse<AiAdvisoryCapabilities> = {
     ok: true,
@@ -959,6 +1015,64 @@ function digestSettingsError(error: unknown): ApiResponse<DigestSettings> {
       message:
         error instanceof Error ? error.message : 'Digest settings update failed',
     },
+  };
+}
+
+function teamDeliveryError(
+  error: unknown
+): ApiResponse<TeamDeliveryConfirmResponse> {
+  return {
+    ok: false,
+    error: {
+      code: 'team_delivery_failed',
+      message:
+        error instanceof Error ? error.message : 'Team delivery request failed',
+    },
+  };
+}
+
+function normalizeTeamDeliveryPreviewRequest(
+  body: Partial<TeamDeliveryPreviewRequest>
+): TeamDeliveryPreviewRequest {
+  if (
+    body.channel === undefined ||
+    !TEAM_DELIVERY_CHANNEL_VALUES.includes(body.channel as TeamDeliveryChannel)
+  ) {
+    throw new Error('Team delivery channel is required.');
+  }
+  if (
+    body.subjectType === undefined ||
+    !TEAM_DELIVERY_SUBJECT_TYPE_VALUES.includes(
+      body.subjectType as TeamDeliverySubjectType
+    )
+  ) {
+    throw new Error('Team delivery subject type is required.');
+  }
+  if (body.title === undefined || body.markdown === undefined) {
+    throw new Error('Team delivery title and markdown are required.');
+  }
+
+  const request: TeamDeliveryPreviewRequest = {
+    channel: body.channel,
+    subjectType: body.subjectType,
+    title: body.title,
+    markdown: body.markdown,
+  };
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.subjectId !== undefined) {
+    request.subjectId = body.subjectId;
+  }
+  return request;
+}
+
+function normalizeTeamDeliveryConfirmRequest(
+  body: Partial<TeamDeliveryConfirmRequest>
+): TeamDeliveryConfirmRequest {
+  return {
+    ...normalizeTeamDeliveryPreviewRequest(body),
+    confirmed: body.confirmed === true,
   };
 }
 

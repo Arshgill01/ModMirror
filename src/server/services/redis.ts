@@ -42,6 +42,9 @@ export const redisKeys = {
   digest: (subreddit: string, digestId: string) =>
     mmKey(subreddit, `digest:${digestId}`),
   digestSettings: (subreddit: string) => mmKey(subreddit, 'digest:settings'),
+  deliveryReceipts: (subreddit: string) => mmKey(subreddit, 'delivery:receipts'),
+  deliveryReceipt: (subreddit: string, receiptId: string) =>
+    mmKey(subreddit, `delivery:receipt:${receiptId}`),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 

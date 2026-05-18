@@ -178,6 +178,27 @@ export type AiAdvisoryEvidenceSource =
   | 'override'
   | 'action';
 
+export type TeamDeliveryChannel =
+  | 'manual_markdown'
+  | 'mod_discussion'
+  | 'scheduler';
+
+export type TeamDeliverySubjectType =
+  | 'digest'
+  | 'policy_proposal';
+
+export type TeamDeliveryCapabilityState =
+  | 'unavailable'
+  | 'unverified'
+  | 'verified_disabled'
+  | 'enabled';
+
+export type TeamDeliveryReceiptStatus =
+  | 'manual_ready'
+  | 'skipped'
+  | 'sent'
+  | 'failed';
+
 export interface SubredditRuleRef {
   ruleKey: string;
   ruleName: string;
@@ -1087,6 +1108,68 @@ export interface AiAdvisoryResponse {
   provider: AiAdvisoryProviderMetadata;
   moderatorReviewRequired: true;
   mayDecideEnforcement: false;
+}
+
+export interface TeamDeliveryCapabilityStatus {
+  state: TeamDeliveryCapabilityState;
+  label: string;
+  detail: string;
+  runtimeProof: 'not_verified' | 'type_only' | 'verified';
+}
+
+export interface TeamDeliveryCapabilities {
+  manualMarkdown: TeamDeliveryCapabilityStatus;
+  modDiscussion: TeamDeliveryCapabilityStatus;
+  scheduler: TeamDeliveryCapabilityStatus;
+}
+
+export interface TeamDeliveryPreviewRequest {
+  subreddit?: string;
+  channel: TeamDeliveryChannel;
+  subjectType: TeamDeliverySubjectType;
+  subjectId?: string;
+  title: string;
+  markdown: string;
+}
+
+export interface TeamDeliveryPreview {
+  subreddit: string;
+  channel: TeamDeliveryChannel;
+  subjectType: TeamDeliverySubjectType;
+  subjectId?: string;
+  title: string;
+  markdown: string;
+  capability: TeamDeliveryCapabilityStatus;
+  warnings: string[];
+  requiresExplicitConfirmation: true;
+  deliveryWillBeAttempted: boolean;
+}
+
+export interface TeamDeliveryConfirmRequest extends TeamDeliveryPreviewRequest {
+  confirmed: boolean;
+}
+
+export interface TeamDeliveryReceipt {
+  id: string;
+  subreddit: string;
+  channel: TeamDeliveryChannel;
+  subjectType: TeamDeliverySubjectType;
+  subjectId?: string;
+  title: string;
+  status: TeamDeliveryReceiptStatus;
+  requestedBy: string;
+  createdAt: string;
+  deliveryAttempted: boolean;
+  runtimeVerified: boolean;
+  previewMarkdown: string;
+  destination?: string;
+  providerReferenceId?: string;
+  errorMessage?: string;
+}
+
+export interface TeamDeliveryConfirmResponse {
+  preview: TeamDeliveryPreview;
+  receipt: TeamDeliveryReceipt;
 }
 
 export interface SmallSubredditThresholdStatus {
