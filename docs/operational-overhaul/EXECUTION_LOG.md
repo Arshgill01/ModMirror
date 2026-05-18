@@ -130,3 +130,41 @@ W01 validation:
 
 Runtime playtest was not run in W01, so menu visibility, form UX, target fetch,
 and permission values remain type/build-only.
+
+### 2026-05-18 - W02 Recommendation Core
+
+Created worktree:
+
+- `git worktree add ../modmirror-w02-recommendation-core -b overhaul/w02-recommendation-core overhaul/w01-entrypoints-context`
+
+Implemented W02:
+
+- Expanded the shared Apply Policy preview contract with policy snapshots,
+  target snapshots, evidence rows, and confirmation metadata.
+- Added Apply Policy input validation for selected action, source, target
+  thing ID shape, and target type mismatches.
+- Updated server preview generation so it reports target context, policy
+  version, ModMirror-tracked offense history, and the current log-only safety
+  state.
+- Preserved `confirmApplyPolicy` as log-only and reused the preview policy
+  snapshot for action and override records.
+- Updated the API normalizer to pass optional target title/body/permalink/type
+  fields through to the service.
+- Updated the dashboard Apply Policy preview to render evidence and explicit
+  log-only confirmation copy. Client demo fallback now returns the full preview
+  shape and stays labeled as demo/log-only.
+- Added service tests for target-aware preview, missing target caveats,
+  unsupported target IDs, and target type mismatch rejection.
+
+W02 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/applyPolicy.test.ts` - passed, 7 tests.
+- `npm test` - passed, 16 files and 74 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W02. Apply Policy remains log-only; no Reddit
+moderation execution is attempted or claimed.

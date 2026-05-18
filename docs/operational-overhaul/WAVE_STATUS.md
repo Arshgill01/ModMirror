@@ -11,6 +11,10 @@ Current created branch/worktree:
 
 - `overhaul/w00-truth-and-control` at
   `/Users/arshdeepsingh/Developer/modmirror-w00-truth-and-control`
+- `overhaul/w01-entrypoints-context` at
+  `/Users/arshdeepsingh/Developer/modmirror-w01-entrypoints-context`
+- `overhaul/w02-recommendation-core` at
+  `/Users/arshdeepsingh/Developer/modmirror-w02-recommendation-core`
 
 Planned critical path:
 
@@ -42,8 +46,8 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | Wave | Status | Notes |
 |---|---|---|
 | W00 Truth/control | complete | Committed as `7abeb28 docs: add operational overhaul control layer`. |
-| W01 Entrypoints/context | complete | Replaced smoke menus; added target context and dashboard handoff; no execution. |
-| W02 Recommendation core | pending | Target-aware preview contract. |
+| W01 Entrypoints/context | complete | Committed as `4e28b6c docs: record W01 entrypoint verification`; replaced smoke menus; added target context and dashboard handoff; no execution. |
+| W02 Recommendation core | complete | Added target-aware preview snapshots, evidence, confirmation caveats, and validation; still log-only. |
 | W03 Moderation execution | pending | Gated execution service; preserve log-only fallback. |
 | W04 Receipts ledger | pending | Immutable action receipt schema/storage/API. |
 | W05 Scan persistence | pending | Full scan records with retention. |

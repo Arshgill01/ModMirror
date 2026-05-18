@@ -28,7 +28,7 @@ Status labels:
 | Deep scan pagination | gap | Live source defaults to shallow fetch | Research/implement W06. |
 | Policy CRUD/versioning | verified locally | `policies.ts`, tests | Extend to agreement lifecycle later. |
 | True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
-| Apply Policy preview | verified locally | `applyPolicy.ts`, tests | Make target-aware in W02. |
+| Apply Policy target-aware preview | verified locally | `applyPolicy.ts`, `applyPolicy.test.ts`, `schema.ts`, client rendering | Preserve as W03 execution preview foundation. |
 | Apply Policy confirm log-only | verified locally | `applyPolicy.ts`, `audit.ts`, tests | Preserve fallback while adding execution gates. |
 | Real Reddit remove/approve execution | type/build-only | Installed typings expose APIs; no product call | Add gated service in W03, runtime-proof before enabling. |
 | Ignore reports execution | type/build-only | Installed typings expose APIs | Gate and test before enabling. |

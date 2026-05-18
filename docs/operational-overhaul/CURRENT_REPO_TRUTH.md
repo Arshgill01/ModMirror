@@ -16,7 +16,8 @@ It currently supports:
 - Demo and live Mirror Scan source paths.
 - Deterministic attribution and drift summaries.
 - Policy CRUD with immutable version records.
-- Apply Policy preview and `log_only` confirmation.
+- Apply Policy target-aware preview, policy snapshots, evidence notes, explicit
+  log-only confirmation copy, and `log_only` confirmation.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -42,6 +43,8 @@ It does not yet support:
 - `src/server/services/applyPolicy.ts` calls `createLogOnlyActionInput` and
   `saveActionEvent`; it does not call `reddit.remove`, `reddit.approve`, or
   `ignoreReports`.
+- W02 Apply Policy previews now distinguish target context, policy version,
+  ModMirror-tracked history, and log-only safety caveats before confirmation.
 - `src/server/services/scans.ts` persists `LastScanMetadata`, not complete
   attributed scan records.
 - `src/server/services/redditSources.ts` defaults live moderation-log reads to
