@@ -31,6 +31,9 @@ It currently supports:
 - W07 consistency analytics from persisted scans and Apply Policy receipts,
   including drift trend direction, receipt-backed policy impact windows, and
   insufficient-data caveats.
+- W08 policy agreement lifecycle with draft, proposed, under-review, adopted,
+  superseded, and archived states; review records; explicit adoption APIs; and
+  client controls for propose/review/quick-adopt.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -47,7 +50,6 @@ It does not yet support:
   cover the Redis storage shape.
 - Runtime-verified deep moderation-log pagination. W06 verifies installed
   typings and local mocks only.
-- True multi-mod policy proposal/review/adoption.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
 
 ## Remaining Smoking-Gun Code Facts
@@ -78,6 +80,9 @@ It does not yet support:
   persisted `MirrorScanRecord` values and W04 receipts. It treats receipts as
   stronger signals than inferred mod-log history, but it only claims impact
   when scan/receipt counts meet local thresholds.
+- W08 `src/server/services/policies.ts` stores policy lifecycle metadata on
+  policy records and versions. Draft/proposed versions can be reviewed and
+  adopted, while Apply Policy only uses policies with an adopted active version.
 - `src/server/services/policies.ts` versions policy edits immediately; it does
   not model proposal, review, adoption, supersession, or archival states.
 - W01 target context is type/build-verified only. Runtime proof for post/comment

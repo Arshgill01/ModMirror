@@ -28,7 +28,7 @@ Status labels:
 | Deep scan pagination | type/build-only | W06 quick/standard/deep depth caps, `redditSources.test.ts`, installed `Listing` typings | Runtime-verify moderation-log pagination in Devvit playtest. |
 | Drift-over-time analytics | verified locally | W07 `analytics.ts`, `analytics.test.ts`, `/api/analytics/consistency`, Review UI surface | Runtime-smoke Redis-backed scan/receipt reads in Devvit playtest. |
 | Policy CRUD/versioning | verified locally | `policies.ts`, tests | Extend to agreement lifecycle later. |
-| True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
+| True policy proposal/review/adoption | verified locally | W08 lifecycle schema, policy version metadata, propose/review/adopt APIs, and policy tests | Runtime-smoke lifecycle APIs in Devvit playtest. |
 | Apply Policy target-aware preview | verified locally | `applyPolicy.ts`, `applyPolicy.test.ts`, `schema.ts`, client rendering | Preserve as W03 execution preview foundation. |
 | Apply Policy confirm log-only | verified locally | `applyPolicy.ts`, `audit.ts`, tests | Preserve fallback while adding execution gates. |
 | Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |

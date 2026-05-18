@@ -353,3 +353,50 @@ W07 validation:
 Runtime playtest was not run in W07. Consistency analytics are locally verified
 only; Redis-backed scan/receipt reads and the Review UI panel still need
 Devvit playtest proof.
+
+### 2026-05-18 - W08 Policy Agreement Lifecycle
+
+Created worktree:
+
+- `git worktree add ../modmirror-w08-policy-agreement -b overhaul/w08-policy-agreement overhaul/w07-drift-analytics`
+
+Implemented W08:
+
+- Added policy lifecycle states: `draft`, `proposed`, `under_review`,
+  `adopted`, `superseded`, and `archived`.
+- Added proposal metadata, proposal source metadata, policy review records,
+  review decisions, and adoption metadata to shared policy/version contracts.
+- Changed new policy saves into draft versions instead of immediately active
+  policies.
+- Added policy lifecycle service operations:
+  - propose a draft version for review;
+  - record review decisions;
+  - adopt proposed/reviewed versions;
+  - supersede prior adopted versions when a new version is adopted.
+- Kept Apply Policy scoped to adopted active policy versions. Drafts and
+  proposals are visible in Agree, but not used as enforcement policy.
+- Added `/api/policies/:id/propose`, `/api/policies/:id/reviews`, and
+  `/api/policies/:id/adopt`.
+- Updated the Policies page to show lifecycle state, review counts, and
+  propose/review/quick-adopt controls. The quick-adopt path is labeled as
+  single-mod quick adoption.
+- Added static/demo fallback handling for lifecycle button interactions.
+- Updated policy lifecycle tests for draft creation, review/adoption,
+  invalid transitions, legacy migration, and active-version snapshots.
+
+W08 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm test -- src/server/services/policies.test.ts` - initially failed
+  because the existing tests expected immediate active policy creation.
+- `npm test -- src/server/services/policies.test.ts` - passed after updating
+  tests for W08 lifecycle behavior, 5 tests.
+- `npm test -- src/server/services/policies.test.ts src/server/services/applyPolicy.test.ts` - passed, 14 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 21 files and 93 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W08. Policy lifecycle persistence and APIs are
+locally verified only; Devvit Redis/API/UI behavior still needs runtime proof.

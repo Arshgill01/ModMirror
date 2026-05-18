@@ -2,9 +2,9 @@
 
 ## Current Phase
 
-Operational Overhaul W07 — Drift Analytics is complete locally on
-`overhaul/w07-drift-analytics`. W08 Policy Agreement is the next recommended
-wave. The operational overhaul remains build-only/type-verified for W01-W07
+Operational Overhaul W08 — Policy Agreement is complete locally on
+`overhaul/w08-policy-agreement`. W09 Case Packets v2 is the next recommended
+wave. The operational overhaul remains build-only/type-verified for W01-W08
 runtime paths unless a wave report explicitly says playtest was run.
 
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.

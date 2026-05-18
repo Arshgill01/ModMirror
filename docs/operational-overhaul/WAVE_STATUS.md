@@ -25,6 +25,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w06-deep-scan`
 - `overhaul/w07-drift-analytics` at
   `/Users/arshdeepsingh/Developer/modmirror-w07-drift-analytics`
+- `overhaul/w08-policy-agreement` at
+  `/Users/arshdeepsingh/Developer/modmirror-w08-policy-agreement`
 
 Planned critical path:
 
@@ -63,7 +65,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W05 Scan persistence | complete | Added full scan records, capped metadata indexes, list/detail/compare APIs, and local persistence tests. |
 | W06 Deep scan | complete | Added quick/standard/deep scan depths, safe caps, depth metadata, warnings, API/client controls, and local pagination tests. |
 | W07 Drift analytics | complete | Added local consistency analytics from persisted scans and receipts, with Review UI surface and insufficient-data caveats. |
-| W08 Policy agreement | pending | Draft/propose/review/adopt lifecycle. |
+| W08 Policy agreement | complete | Added draft/propose/review/adopt lifecycle, review records, adoption APIs, and Agree UI controls. |
 | W09 Case Packets v2 | pending | Receipt-backed evidence model. |
 | W10 AI advisory spike | pending | Optional advisory only; no AI judging. |
 | W11 Team delivery spike | pending | Preview-first delivery only if runtime-safe. |
