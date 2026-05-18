@@ -204,6 +204,7 @@ export const DIGEST_SCHEDULE_CADENCE_VALUES = [
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
+export const SCAN_HISTORY_LIMIT = 10;
 export const MINIMUM_ACTIONS_FOR_DRIFT_DISPLAY = 8;
 export const MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY = 3;
 export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
@@ -211,6 +212,7 @@ export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
 export const API_ROUTES = {
   health: '/api/health',
   scan: '/api/scan',
+  scans: '/api/scans',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   actions: '/api/actions',

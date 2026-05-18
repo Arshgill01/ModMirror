@@ -466,6 +466,26 @@ export interface MirrorScan {
   warnings: string[];
 }
 
+export interface MirrorScanRecord extends MirrorScan {
+  attributedActions: AttributedModAction[];
+  unmatchedActions: AttributedModAction[];
+  retention: {
+    maxScansPerSubreddit: number;
+    storedActionCount: number;
+  };
+}
+
+export interface MirrorScanComparison {
+  leftScanId: string;
+  rightScanId: string;
+  subreddit: string;
+  totalActionsDelta: number;
+  attributedDelta: number;
+  unmatchedDelta: number;
+  driftCandidateDelta: number;
+  confidenceDelta: Record<Confidence, number>;
+}
+
 export interface DriftCandidate {
   ruleKey?: string;
   ruleName: string;

@@ -19,7 +19,10 @@ import type {
   GenerateDigestRequest,
   GenerateDigestResponse,
   DriftCandidate,
+  LastScanMetadata,
   MirrorScan,
+  MirrorScanComparison,
+  MirrorScanRecord,
   OverrideEvent,
   OverrideReviewStatus,
   OverrideReviewUpdateInput,
@@ -31,6 +34,11 @@ import type {
   RulePolicy,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
+import {
+  compareScanRecords,
+  getScanRecord,
+  listScanMetadata,
+} from '../server/services/scans';
 import {
   createPolicy,
   createPolicyFromDriftCandidate,
@@ -140,6 +148,80 @@ api.post('/scan', async (c) => {
 
     return c.json(response, 500);
   }
+});
+
+api.get('/scans', async (c) => {
+  const source = c.req.query('source');
+  const options: Parameters<typeof listScanMetadata>[1] = {};
+  if (source === 'live' || source === 'demo') {
+    options.source = source;
+  }
+  const response: ApiResponse<LastScanMetadata[]> = {
+    ok: true,
+    data: await listScanMetadata(getRequestedSubreddit(c), options),
+  };
+  return c.json(response);
+});
+
+api.get('/scans/compare', async (c) => {
+  const left = c.req.query('left');
+  const right = c.req.query('right');
+  if (left === undefined || right === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'scan_compare_missing_ids',
+          message: 'Both left and right scan IDs are required.',
+        },
+      } satisfies ApiResponse<MirrorScanComparison>,
+      400
+    );
+  }
+
+  const comparison = await compareScanRecords(
+    getRequestedSubreddit(c),
+    left,
+    right
+  );
+  if (comparison === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'scan_compare_not_found',
+          message: 'One or both scans were not found for this subreddit.',
+        },
+      } satisfies ApiResponse<MirrorScanComparison>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: comparison,
+  } satisfies ApiResponse<MirrorScanComparison>);
+});
+
+api.get('/scans/:id', async (c) => {
+  const record = await getScanRecord(getRequestedSubreddit(c), c.req.param('id'));
+  if (record === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'scan_not_found',
+          message: 'Scan record was not found for this subreddit.',
+        },
+      } satisfies ApiResponse<MirrorScanRecord>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: record,
+  } satisfies ApiResponse<MirrorScanRecord>);
 });
 
 api.get('/policies', async (c) => {

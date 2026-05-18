@@ -1,6 +1,7 @@
 import {
   CONFIDENCE_VALUES,
   MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY,
+  SCAN_HISTORY_LIMIT,
 } from '../../shared/constants';
 import { getSmallSubredditThresholdStatus } from '../../shared/scoring';
 import type {
@@ -10,11 +11,12 @@ import type {
   DriftCandidate,
   EnforcementAction,
   MirrorScan,
+  MirrorScanRecord,
 } from '../../shared/schema';
 import { attributeActions } from './attribution';
 import { getDemoMirrorScanSources } from './demoData';
 import { loadLiveMirrorScanSources } from './redditSources';
-import { saveLastScanMetadata } from './scans';
+import { saveScanRecord } from './scans';
 
 export type RunMirrorScanOptions = {
   mode: 'live' | 'demo';
@@ -56,7 +58,7 @@ export async function runMirrorScan(
     scan.createdBy = options.createdBy;
   }
 
-  await saveScanMetadata(scan);
+  await saveScanMetadata(scan, attributedActions);
   return scan;
 }
 
@@ -151,25 +153,34 @@ function summarizeConfidence(actions: AttributedModAction[]): Confidence {
   return 'low';
 }
 
-async function saveScanMetadata(scan: MirrorScan): Promise<void> {
+async function saveScanMetadata(
+  scan: MirrorScan,
+  attributedActions: AttributedModAction[]
+): Promise<void> {
   try {
-    await saveLastScanMetadata({
-      id: scan.id,
-      subreddit: scan.subreddit,
-      createdAt: scan.createdAt,
-      createdBy: scan.createdBy ?? 'unknown',
-      source: scan.source,
-      totalActionsScanned: scan.totalActionsScanned,
-      attributedCount: scan.attributedCount,
-      unmatchedCount: scan.unmatchedCount,
-      confidenceBreakdown: scan.confidenceBreakdown,
-      driftCandidateCount: scan.driftCandidates.length,
-    });
+    await saveScanRecord(toScanRecord(scan, attributedActions));
   } catch (error) {
     scan.warnings.push(
       `Scan completed, but saving scan metadata failed: ${formatError(error)}`
     );
   }
+}
+
+function toScanRecord(
+  scan: MirrorScan,
+  attributedActions: AttributedModAction[]
+): MirrorScanRecord {
+  return {
+    ...scan,
+    attributedActions,
+    unmatchedActions: attributedActions.filter(
+      (action) => action.confidence === 'unmatched'
+    ),
+    retention: {
+      maxScansPerSubreddit: SCAN_HISTORY_LIMIT,
+      storedActionCount: attributedActions.length,
+    },
+  };
 }
 
 function createScanId(source: ActionSource): string {

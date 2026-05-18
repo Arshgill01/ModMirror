@@ -20,6 +20,13 @@ export const redisKeys = {
   scanLast: (subreddit: string) => mmKey(subreddit, 'scan:last'),
   scan: (subreddit: string, scanId: string) =>
     mmKey(subreddit, `scan:${scanId}`),
+  scans: (subreddit: string) => mmKey(subreddit, 'scans'),
+  scansBySource: (subreddit: string, source: string) =>
+    mmKey(subreddit, `scans:source:${source}`),
+  scansByRule: (subreddit: string, ruleKey: string) =>
+    mmKey(subreddit, `scans:rule:${ruleKey}`),
+  scansByAuthorHash: (subreddit: string, authorHash: string) =>
+    mmKey(subreddit, `scans:author:${authorHash}`),
   actions: (subreddit: string) => mmKey(subreddit, 'actions'),
   actionsByUser: (subreddit: string, username: string) =>
     mmKey(subreddit, `actions:user:${username}`),
