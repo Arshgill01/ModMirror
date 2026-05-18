@@ -10,6 +10,8 @@ an operational Reddit moderation tool at the moment of action.
 It currently supports:
 
 - Devvit Web + Hono server scaffold.
+- Non-destructive post/comment menu entrypoints for Apply Policy guidance
+  with target context capture, added in W01 and type/build-verified locally.
 - Redis key helpers and service-level persistence.
 - Demo and live Mirror Scan source paths.
 - Deterministic attribution and drift summaries.
@@ -23,8 +25,6 @@ It currently supports:
 
 It does not yet support:
 
-- Real post/comment Apply Policy entrypoints.
-- Full target context capture for posts/comments.
 - Safe execution of Reddit moderation actions from Apply Policy.
 - Action receipts that distinguish live, failed, skipped, dry-run, and log-only
   outcomes.
@@ -33,15 +33,12 @@ It does not yet support:
 - True multi-mod policy proposal/review/adoption.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
 
-## Smoking-Gun Code Facts
+## Remaining Smoking-Gun Code Facts
 
-- `devvit.json` still exposes two `"ModMirror smoke test"` menu entries for
-  moderators on posts and comments.
-- `src/routes/menu.ts` routes post/comment menu actions to smoke forms.
-- `src/routes/forms.ts` contains smoke chained forms and a subreddit dashboard
-  launcher.
-- `src/core/smoke.ts` has a minimal target summary helper, but there is no
-  production target-context service.
+- W01 removed the production-facing post/comment smoke menus from
+  `devvit.json` and replaced them with `Apply ModMirror Policy` entries.
+- `src/core/smoke.ts` still backs explicit `/api/smoke/*` diagnostic routes,
+  but smoke menu/form surfaces are no longer production-facing.
 - `src/server/services/applyPolicy.ts` calls `createLogOnlyActionInput` and
   `saveActionEvent`; it does not call `reddit.remove`, `reddit.approve`, or
   `ignoreReports`.
@@ -51,6 +48,9 @@ It does not yet support:
   `limit: 60` and `pageSize: 60`.
 - `src/server/services/policies.ts` versions policy edits immediately; it does
   not model proposal, review, adoption, supersession, or archival states.
+- W01 target context is type/build-verified only. Runtime proof for post/comment
+  menu visibility, form behavior, dashboard navigation, target fetch, and
+  moderator permission shape is still pending.
 
 ## Runtime Truth
 
@@ -84,4 +84,3 @@ actual moderation loop is credible:
 6. Create immutable receipts for success, failure, skipped, and log-only paths.
 7. Require override reasons for deviations.
 8. Prove consistency changes over time from receipts and scans.
-

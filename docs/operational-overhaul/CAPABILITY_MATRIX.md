@@ -16,10 +16,10 @@ Status labels:
 | Inline custom post dashboard | verified | `devvit.json`, Wave 7/8 and 9/10 runtime reports | Preserve as dashboard launcher/fallback. |
 | Expanded WebView dashboard | verified | `RESEARCH.md`, Wave 7/8 and 9/10 runtime reports | Keep host chrome intact. |
 | Subreddit dashboard menu | verified | `devvit.json`, `src/routes/menu.ts`, runtime reports | Keep, but align labels with operational IA later. |
-| Post/comment smoke menus | verified as present | `devvit.json`, `src/routes/menu.ts` | Replace in W01 with real ModMirror entrypoints. |
-| Post/comment Apply Policy menu | gap | No menu config or handler exists | Add in W01. |
-| Target ID from menu request | type/build-only | `MenuItemRequest.targetId`, smoke helper | Runtime-verify through real W01 flow. |
-| Full target context capture | gap | Only smoke summary exists | Add target-context service in W01. |
+| Post/comment smoke menus | disabled | Removed from `devvit.json` in W01. `/api/smoke/*` diagnostics remain explicit API routes. | Do not re-expose smoke language to moderators. |
+| Post/comment Apply Policy menu | type/build-only | `devvit.json`, `src/routes/menu.ts`, `src/routes/forms.ts`, local typecheck/build. | Runtime-verify in Devvit playtest. |
+| Target ID from menu request | type/build-only | `MenuItemRequest.targetId`, W01 form path | Runtime-verify through real W01 flow. |
+| Full target context capture | type/build-only | `src/server/services/targetContext.ts`, unit tests | Runtime-verify post/comment fetch and permission shape. |
 | Current moderator context | partial | `context.username`, `reddit.getCurrentUser()` in smoke | Add safe resolver and permission notes. |
 | Moderator-only menu visibility | type/build-only | `forUserType: "moderator"` | Runtime-verify and add server-side checks. |
 | Mirror Scan demo mode | verified | `mirrorScan.test.ts`, runtime demo reports | Preserve clear demo labeling. |
@@ -43,4 +43,3 @@ Status labels:
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |
 | Non-mod access blocking | unverified | Launch checklist unchecked | Add runtime QA matrix. |
 | Reddit mobile app QA | unverified | Launch checklist unchecked | Add W13 verification target. |
-

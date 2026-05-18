@@ -97,3 +97,36 @@ Runtime playtest was not attempted for W00 and is not claimed here.
 
 Commit only the new `docs/operational-overhaul/` control documents. The
 temporary `npm install` lockfile drift was restored before commit.
+
+### 2026-05-18 - W01 Entrypoints And Target Context
+
+Created worktree:
+
+- `git worktree add ../modmirror-w01-entrypoints-context -b overhaul/w01-entrypoints-context overhaul/w00-truth-and-control`
+
+Implemented W01:
+
+- Replaced post/comment `ModMirror smoke test` menu entries in `devvit.json`
+  with `Apply ModMirror Policy`.
+- Removed smoke form/menu exposure from Devvit config.
+- Added `src/server/services/targetContext.ts` for post/comment target type,
+  author, subreddit, title/body/permalink, current moderator, and mod
+  permission capture.
+- Added unit tests for target type and target context resolution.
+- Added post/comment menu handlers that open a target context form.
+- Added an Apply Policy target form submit path that creates the dashboard post
+  and navigates with target context in the hash.
+- Updated the client hash parser so the existing Apply Policy panel receives
+  target ID and author from the menu handoff.
+
+W01 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test -- src/server/services/targetContext.test.ts` - passed, 4 tests.
+- `npm test` - passed, 16 files and 71 tests.
+- `npm run build` - passed.
+
+Runtime playtest was not run in W01, so menu visibility, form UX, target fetch,
+and permission values remain type/build-only.

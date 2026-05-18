@@ -41,8 +41,8 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 
 | Wave | Status | Notes |
 |---|---|---|
-| W00 Truth/control | in progress | Docs/control layer and baseline checks only. |
-| W01 Entrypoints/context | pending | Replace smoke menus; add target context; no execution. |
+| W00 Truth/control | complete | Committed as `7abeb28 docs: add operational overhaul control layer`. |
+| W01 Entrypoints/context | complete | Replaced smoke menus; added target context and dashboard handoff; no execution. |
 | W02 Recommendation core | pending | Target-aware preview contract. |
 | W03 Moderation execution | pending | Gated execution service; preserve log-only fallback. |
 | W04 Receipts ledger | pending | Immutable action receipt schema/storage/API. |
@@ -66,4 +66,3 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 - Wave status exists.
 - Baseline command results are recorded.
 - No product behavior changed.
-
