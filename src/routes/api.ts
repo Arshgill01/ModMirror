@@ -54,6 +54,8 @@ import type {
   PolicyHealthSummary,
   PolicyCreateInput,
   PolicyProposeInput,
+  PolicyReplayActionInput,
+  PolicyReplayResult,
   PolicyReviewInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -126,6 +128,7 @@ import {
   listAttributionCorrections,
   saveAttributionCorrection,
 } from '../server/services/attributionCalibration';
+import { runPolicyReplay, toPolicyReplayActions } from '../server/services/replaySandbox';
 
 export const api = new Hono();
 
@@ -670,6 +673,73 @@ api.get('/policies/:id/changes', async (c) => {
   });
 });
 
+api.post('/policies/:id/replay', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    scanId: string;
+    source: 'scan' | 'synthetic';
+    actions: PolicyReplayActionInput[];
+  }>;
+  const subreddit = getRequestedSubreddit(c);
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(policyNotFoundResponse(), 404);
+  }
+
+  try {
+    const scanRecord =
+      body.scanId === undefined
+        ? undefined
+        : await getScanRecord(subreddit, body.scanId);
+    if (body.scanId !== undefined && scanRecord === undefined) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'scan_not_found',
+            message: 'Scan record was not found for replay.',
+          },
+        } satisfies ApiResponse<PolicyReplayResult>,
+        404
+      );
+    }
+
+    const actions =
+      scanRecord === undefined
+        ? normalizeReplayActions(body.actions)
+        : toPolicyReplayActions(scanRecord.attributedActions);
+    if (actions.length === 0) {
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'replay_actions_required',
+            message:
+              'Policy replay requires a scanId or supplied synthetic actions.',
+          },
+        } satisfies ApiResponse<PolicyReplayResult>,
+        400
+      );
+    }
+
+    const replayInput = {
+      subreddit,
+      policy,
+      source: scanRecord === undefined ? (body.source ?? 'synthetic') : 'scan',
+      actions,
+    };
+    if (scanRecord !== undefined) {
+      Object.assign(replayInput, { scanId: scanRecord.id });
+    }
+
+    return c.json({
+      ok: true,
+      data: runPolicyReplay(replayInput),
+    } satisfies ApiResponse<PolicyReplayResult>);
+  } catch (error) {
+    return c.json(policyError(error), 400);
+  }
+});
+
 api.get('/actions', async (c) => {
   const response: ApiResponse<ActionEvent[]> = {
     ok: true,
@@ -1105,6 +1175,27 @@ function normalizeModqueueLimit(value: string | undefined): number {
     return 25;
   }
   return Math.min(Math.max(Math.floor(limit), 1), 50);
+}
+
+function normalizeReplayActions(
+  actions: PolicyReplayActionInput[] | undefined
+): PolicyReplayActionInput[] {
+  if (!Array.isArray(actions)) {
+    return [];
+  }
+
+  return actions
+    .filter(
+      (action) =>
+        typeof action.id === 'string' &&
+        typeof action.subreddit === 'string' &&
+        typeof action.rawActionType === 'string' &&
+        typeof action.createdAt === 'string'
+    )
+    .map((action) => ({
+      ...action,
+      evidence: Array.isArray(action.evidence) ? action.evidence : [],
+    }));
 }
 
 async function normalizeAttributionCorrectionInput(

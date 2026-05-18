@@ -2,14 +2,25 @@
 
 ## Current Phase
 
-Expansion Wave 19 — Policy Ratification is in progress on
-`expansion/w19-policy-ratification` after W18 attribution calibration.
+Expansion Wave 20 — Replay Sandbox is in progress on
+`expansion/w20-replay-sandbox` after W19 policy ratification.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 20 Checklist
+
+- [x] Add read-only replay contracts.
+- [x] Add replay service for stored or synthetic attributed actions.
+- [x] Add replay API route under policy records.
+- [x] Add policy replay UI on the Agree page.
+- [x] Add replay fixtures and edge-case tests.
+- [x] Keep replay from mutating action receipts or live Reddit state.
+- [ ] Runtime-verify replay route against a stored scan in Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 19 Checklist
 

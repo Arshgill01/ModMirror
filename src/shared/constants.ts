@@ -332,6 +332,7 @@ export const API_ROUTES = {
   attributionCorrections: '/api/attribution/corrections',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
+  policyReplay: '/api/policies/:id/replay',
   actions: '/api/actions',
   receipts: '/api/receipts',
   overrides: '/api/overrides',

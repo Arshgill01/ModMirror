@@ -981,6 +981,14 @@ dd {
   padding: 0;
 }
 
+.replay-list {
+  background: var(--mm-paper);
+  border-block: 1px solid var(--mm-line);
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
 .ledger-item {
   border-bottom: 1px solid var(--mm-line);
   display: grid;

@@ -49,6 +49,7 @@ import type {
   ModqueueTriageResponse,
   OverrideReason,
   PolicyStep,
+  PolicyReplayResult,
   RulePolicy,
   TeamDeliveryCapabilities,
 } from '../shared/schema';
@@ -106,6 +107,12 @@ type PolicyUiState = {
   message: string | undefined;
   policies: RulePolicy[];
   form: PolicyFormState;
+};
+
+type PolicyReplayUiState = {
+  loadingPolicyId: string | undefined;
+  error: string | undefined;
+  result: PolicyReplayResult | undefined;
 };
 
 type ApplyUiState = {
@@ -310,6 +317,11 @@ let policyState: PolicyUiState = {
   message: undefined,
   policies: [],
   form: emptyPolicyForm(),
+};
+let policyReplayState: PolicyReplayUiState = {
+  loadingPolicyId: undefined,
+  error: undefined,
+  result: undefined,
 };
 let applyState: ApplyUiState = {
   loading: false,
@@ -991,6 +1003,7 @@ function renderAgreePage() {
     </section>
     ${renderPolicyFallback()}
     ${renderPolicyList()}
+    ${renderPolicyReplayPanel()}
     ${renderDriftPolicyPanel()}
     <section class="policy-workbench">
       ${renderPolicyForm()}
@@ -1038,6 +1051,58 @@ function renderPolicyList() {
   `;
 }
 
+function renderPolicyReplayPanel() {
+  if (!policyReplayState.result && !policyReplayState.error) {
+    return '';
+  }
+  const result = policyReplayState.result;
+  return `
+    <section class="section-panel replay-panel" aria-label="Policy replay sandbox">
+      <div class="section-header">
+        <div>
+          <h3>Replay Sandbox</h3>
+          <p>Read-only simulation against stored scan history or labeled synthetic actions.</p>
+          ${policyReplayState.error ? `<p class="inline-error">${escapeHtml(policyReplayState.error)}</p>` : ''}
+        </div>
+      </div>
+      ${
+        result
+          ? `
+            <dl class="compact-metrics">
+              <div><dt>Policy</dt><dd>${escapeHtml(result.ruleName)}</dd></div>
+              <div><dt>Source</dt><dd>${formatAction(result.source)}</dd></div>
+              <div><dt>Evaluated</dt><dd>${result.totalActionsEvaluated}</dd></div>
+              <div><dt>Would change</dt><dd>${result.changedRecommendationCount}</dd></div>
+              <div><dt>Skipped</dt><dd>${result.skippedActionCount}</dd></div>
+            </dl>
+            <ol class="replay-list">
+              ${result.items.slice(0, 6).map(renderReplayItem).join('')}
+            </ol>
+            ${result.warnings.map((warning) => `<p class="inline-note">${escapeHtml(warning)}</p>`).join('')}
+          `
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderReplayItem(item: PolicyReplayResult['items'][number]) {
+  return `
+    <li class="ledger-item">
+      <div>
+        <strong>${escapeHtml(item.actionId)}</strong>
+        <span>${formatDate(item.createdAt)} - offense ${item.offenseCount}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Historical</dt><dd>${formatAction(item.historicalAction)}</dd></div>
+        <div><dt>Replay</dt><dd>${formatAction(item.recommendedAction)}</dd></div>
+        <div><dt>Changed</dt><dd>${item.wouldChangeOutcome ? 'Yes' : 'No'}</dd></div>
+        <div><dt>Confidence</dt><dd>${formatAction(item.confidence)}</dd></div>
+      </dl>
+    </li>
+  `;
+}
+
 function renderPolicyCard(policy: RulePolicy) {
   const lifecycle = getPolicyLifecycle(policy);
   const reviews = policy.reviewRecords ?? [];
@@ -1072,6 +1137,7 @@ function renderPolicyCard(policy: RulePolicy) {
       <div class="button-row">
         <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">${policy.active ? 'Draft revision' : 'Edit draft'}</button>
         ${renderPolicyLifecycleButtons(policy)}
+        <button class="secondary-button" data-replay-policy="${escapeAttribute(policy.id)}" ${policyReplayState.loadingPolicyId === policy.id ? 'disabled' : ''} type="button">Replay</button>
         <button class="secondary-button" data-action-intent="review_policy" type="button">Review health</button>
       </div>
     </article>
@@ -2361,6 +2427,15 @@ function bindPolicyActions() {
     });
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-replay-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.replayPolicy;
+      if (policyId) {
+        void runPolicyReplayFromUi(policyId);
+      }
+    });
+  });
+
   document
     .querySelectorAll<HTMLButtonElement>('[data-create-from-drift]')
     .forEach((button) => {
@@ -3036,6 +3111,72 @@ function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
     createdAt: DEMO_POLICY.createdAt,
     updatedAt: now,
   };
+}
+
+function buildClientDemoReplay(policy: RulePolicy): PolicyReplayResult {
+  const now = new Date().toISOString();
+  const replay: PolicyReplayResult = {
+    id: `demo-replay-${Date.now()}`,
+    subreddit: policy.subreddit,
+    policyId: policy.id,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    source: 'synthetic',
+    generatedAt: now,
+    totalActionsEvaluated: 3,
+    matchedPolicyCount: 1,
+    changedRecommendationCount: 2,
+    skippedActionCount: 0,
+    items: [
+      {
+        actionId: 'demo-replay-1',
+        targetAuthor: 'learner_a',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        recommendedAction: 'warn',
+        offenseCount: 1,
+        wouldChangeOutcome: true,
+        evidence: ['Demo synthetic first offense.'],
+      },
+      {
+        actionId: 'demo-replay-2',
+        targetAuthor: 'learner_a',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        recommendedAction: 'remove',
+        offenseCount: 2,
+        wouldChangeOutcome: false,
+        evidence: ['Demo synthetic repeat offense.'],
+      },
+      {
+        actionId: 'demo-replay-3',
+        targetAuthor: 'learner_b',
+        createdAt: now,
+        confidence: 'medium',
+        historicalAction: 'temporary_ban_suggested',
+        recommendedAction: 'warn',
+        offenseCount: 1,
+        wouldChangeOutcome: true,
+        evidence: ['Demo synthetic stricter first offense.'],
+      },
+    ],
+    warnings: [
+      'Demo replay uses synthetic actions, not live Reddit history.',
+      'Replay is read-only and does not create receipts or Reddit moderation calls.',
+    ],
+  };
+  const versionId = policy.activeVersionId ?? policy.proposedVersionId;
+  const versionNumber =
+    policy.activeVersionNumber ?? policy.proposedVersionNumber;
+  if (versionId !== undefined) {
+    replay.policyVersionId = versionId;
+  }
+  if (versionNumber !== undefined) {
+    replay.policyVersionNumber = versionNumber;
+  }
+  return replay;
 }
 
 function createClientDemoHealth(
@@ -4143,6 +4284,69 @@ async function transitionPolicyLifecycle(
   }
 
   render();
+}
+
+async function runPolicyReplayFromUi(policyId: string) {
+  policyReplayState = {
+    loadingPolicyId: policyId,
+    error: undefined,
+    result: policyReplayState.result,
+  };
+  render();
+
+  try {
+    const scanId = scanState.record?.id;
+    if (!scanId) {
+      throw new Error('Run a scan first so replay has stored actions to use.');
+    }
+    const replay = await fetchPolicyReplay(policyId, { scanId });
+    policyReplayState = {
+      loadingPolicyId: undefined,
+      result: replay,
+      error: undefined,
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = policyState.policies.find((item) => item.id === policyId);
+      if (policy) {
+        policyReplayState = {
+          loadingPolicyId: undefined,
+          result: buildClientDemoReplay(policy),
+          error: undefined,
+        };
+        render();
+        return;
+      }
+    }
+    policyReplayState = {
+      loadingPolicyId: undefined,
+      error: normalizeClientError(error, 'Policy replay failed.'),
+      result: undefined,
+    };
+  }
+
+  render();
+}
+
+async function fetchPolicyReplay(
+  policyId: string,
+  body: Record<string, unknown>
+): Promise<PolicyReplayResult> {
+  const response = await fetch(
+    withWorkspaceSubreddit(
+      API_ROUTES.policyReplay.replace(':id', encodeURIComponent(policyId))
+    ),
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+  const payload = (await response.json()) as ApiResponse<PolicyReplayResult>;
+  if (!payload.ok) {
+    throw new Error(payload.error.message);
+  }
+  return payload.data;
 }
 
 async function fetchPolicyLifecycle(

@@ -580,6 +580,63 @@ export interface PolicyRecommendation {
   message: string;
 }
 
+export type PolicyReplaySource = 'scan' | 'synthetic';
+
+export interface PolicyReplayActionInput {
+  id: string;
+  subreddit: string;
+  rawActionType: string;
+  normalizedAction?: EnforcementAction;
+  targetThingId?: string;
+  targetAuthor?: string;
+  createdAt: string;
+  inferredRuleKey?: string;
+  inferredRuleName?: string;
+  confidence: Confidence;
+  evidence: string[];
+}
+
+export interface PolicyReplayInput {
+  subreddit: string;
+  policy: RulePolicy;
+  source: PolicyReplaySource;
+  scanId?: string;
+  actions: PolicyReplayActionInput[];
+  generatedAt?: string;
+}
+
+export interface PolicyReplayItem {
+  actionId: string;
+  targetThingId?: string;
+  targetAuthor?: string;
+  createdAt: string;
+  confidence: Confidence;
+  historicalAction: EnforcementAction;
+  recommendedAction: EnforcementAction;
+  offenseCount: number;
+  wouldChangeOutcome: boolean;
+  evidence: string[];
+}
+
+export interface PolicyReplayResult {
+  id: string;
+  subreddit: string;
+  policyId: string;
+  policyVersionId?: string;
+  policyVersionNumber?: number;
+  ruleKey: string;
+  ruleName: string;
+  source: PolicyReplaySource;
+  scanId?: string;
+  generatedAt: string;
+  totalActionsEvaluated: number;
+  matchedPolicyCount: number;
+  changedRecommendationCount: number;
+  skippedActionCount: number;
+  items: PolicyReplayItem[];
+  warnings: string[];
+}
+
 export interface ApplyPolicyPreviewInput {
   subreddit?: string;
   ruleKey: string;
