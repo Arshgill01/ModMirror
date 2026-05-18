@@ -23,6 +23,8 @@ Current created branch/worktree:
   `/Users/arshdeepsingh/Developer/modmirror-w05-scan-persistence`
 - `overhaul/w06-deep-scan` at
   `/Users/arshdeepsingh/Developer/modmirror-w06-deep-scan`
+- `overhaul/w07-drift-analytics` at
+  `/Users/arshdeepsingh/Developer/modmirror-w07-drift-analytics`
 
 Planned critical path:
 
@@ -60,7 +62,7 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W04 Receipts ledger | complete | Added receipt schema, Redis storage, list/detail APIs, and Apply Policy receipt writes. |
 | W05 Scan persistence | complete | Added full scan records, capped metadata indexes, list/detail/compare APIs, and local persistence tests. |
 | W06 Deep scan | complete | Added quick/standard/deep scan depths, safe caps, depth metadata, warnings, API/client controls, and local pagination tests. |
-| W07 Drift analytics | pending | Trends and policy impact from scans/receipts. |
+| W07 Drift analytics | complete | Added local consistency analytics from persisted scans and receipts, with Review UI surface and insufficient-data caveats. |
 | W08 Policy agreement | pending | Draft/propose/review/adopt lifecycle. |
 | W09 Case Packets v2 | pending | Receipt-backed evidence model. |
 | W10 AI advisory spike | pending | Optional advisory only; no AI judging. |

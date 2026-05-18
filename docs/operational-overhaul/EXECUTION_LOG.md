@@ -315,3 +315,41 @@ W06 validation:
 
 Runtime playtest was not run in W06. Deep scan pagination is type/build-only and
 must not be claimed as runtime-verified.
+
+### 2026-05-18 - W07 Drift Analytics
+
+Created worktree:
+
+- `git worktree add ../modmirror-w07-drift-analytics -b overhaul/w07-drift-analytics overhaul/w06-deep-scan`
+
+Implemented W07:
+
+- Added shared consistency analytics contracts for data quality, rule drift
+  trend points, policy impact windows, and overall analytics summaries.
+- Added `src/server/services/analytics.ts` to compute drift-over-time trends
+  from persisted `MirrorScanRecord` values and policy impact from W04 action
+  receipts.
+- Anchored policy impact windows on the active policy version timestamp from
+  the policy record and kept insufficient/new-policy states explicit when
+  receipt history is too thin.
+- Added `/api/analytics/consistency`.
+- Added a Review page consistency-over-time panel that reports scan count,
+  receipt count, top trend, policy impact status, and caveats.
+- Added demo fallback analytics with clear demo-only caveats for static
+  preview.
+- Added focused analytics tests for improving trend/impact and insufficient
+  data behavior.
+
+W07 validation:
+
+- `npm install` - passed, with the existing 31 audit findings.
+- `npm test -- src/server/services/analytics.test.ts` - passed, 2 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 21 files and 92 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run in W07. Consistency analytics are locally verified
+only; Redis-backed scan/receipt reads and the Review UI panel still need
+Devvit playtest proof.

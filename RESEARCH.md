@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 7/8 Productization implementation complete locally; Devvit app identity exists; signed-in Wave 7/8 playtest reached the compact inline card and native expanded dashboard modal on Reddit.
+Status: Operational Overhaul W07 Drift Analytics implementation is complete locally; Devvit app identity exists; signed-in Wave 7/8 playtest reached the compact inline card and native expanded dashboard modal on Reddit.
 
 Last updated: 2026-05-18
 
@@ -60,6 +60,7 @@ Updated by: Codex
 | Type/build only | W01 post/comment Apply Policy menu entrypoints can use `MenuItemRequest.targetId`, `reddit.getPostById`, `reddit.getCommentById`, `reddit.getCurrentUser`, and `User.getModPermissionsForSubreddit` to build target context. | `devvit.json`, `src/routes/menu.ts`, `src/routes/forms.ts`, `src/server/services/targetContext.ts`, and `src/server/services/targetContext.test.ts`; `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` pass. Runtime menu/form behavior remains unverified. |
 | Type/build only | Devvit scheduler client exists in installed typings. | `@devvit/web/server` re-exports `@devvit/scheduler`; `node_modules/@devvit/scheduler/SchedulerClient.d.ts` exposes `scheduler.runJob`, `cancelJob`, and `listJobs`, and `Devvit.addSchedulerJob` exists in `node_modules/@devvit/public-api/devvit/Devvit.d.ts`. No Wave 9/10 scheduler job is registered until runtime behavior is verified. |
 | Type/build only | Devvit modmail/mod discussion APIs exist in installed typings. | `node_modules/@devvit/reddit/models/ModMail.d.ts` and newmodmail proto typings expose modmail conversations including internal mod-only conversation fields. ModMirror keeps digest delivery disabled/unverified until a non-spam runtime playtest proves safe behavior. |
+| Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints

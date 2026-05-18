@@ -28,6 +28,9 @@ It currently supports:
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
   scan-depth metadata, and explicit runtime-unverified pagination warnings.
+- W07 consistency analytics from persisted scans and Apply Policy receipts,
+  including drift trend direction, receipt-backed policy impact windows, and
+  insufficient-data caveats.
 - Override audit/review and policy health.
 - Case Packet generation from tracked ModMirror action data.
 - Manual digest generation and digest history.
@@ -44,7 +47,6 @@ It does not yet support:
   cover the Redis storage shape.
 - Runtime-verified deep moderation-log pagination. W06 verifies installed
   typings and local mocks only.
-- Drift-over-time or policy-impact analytics from persisted scan/receipt data.
 - True multi-mod policy proposal/review/adoption.
 - Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
 
@@ -72,6 +74,10 @@ It does not yet support:
 - W06 `src/server/services/redditSources.ts` supports live scan depths:
   quick 25/25, standard 60/60, and deep 250/100. All live depth metadata remains
   runtime-unverified until playtest proves actual pagination behavior.
+- W07 `src/server/services/analytics.ts` computes consistency summaries from
+  persisted `MirrorScanRecord` values and W04 receipts. It treats receipts as
+  stronger signals than inferred mod-log history, but it only claims impact
+  when scan/receipt counts meet local thresholds.
 - `src/server/services/policies.ts` versions policy edits immediately; it does
   not model proposal, review, adoption, supersession, or archival states.
 - W01 target context is type/build-verified only. Runtime proof for post/comment

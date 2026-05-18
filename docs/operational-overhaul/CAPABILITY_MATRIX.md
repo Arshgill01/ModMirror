@@ -26,6 +26,7 @@ Status labels:
 | Mirror Scan live source adapters | type/build-only | `redditSources.ts`, installed typings | Runtime-smoke and capture warnings. |
 | Full scan history persistence | verified locally | W05 `MirrorScanRecord`, `scans.ts`, `scans.test.ts` | Runtime-smoke Redis persistence in Devvit playtest. |
 | Deep scan pagination | type/build-only | W06 quick/standard/deep depth caps, `redditSources.test.ts`, installed `Listing` typings | Runtime-verify moderation-log pagination in Devvit playtest. |
+| Drift-over-time analytics | verified locally | W07 `analytics.ts`, `analytics.test.ts`, `/api/analytics/consistency`, Review UI surface | Runtime-smoke Redis-backed scan/receipt reads in Devvit playtest. |
 | Policy CRUD/versioning | verified locally | `policies.ts`, tests | Extend to agreement lifecycle later. |
 | True policy proposal/review/adoption | gap | No lifecycle schema | Add W08 after receipt/scan groundwork. |
 | Apply Policy target-aware preview | verified locally | `applyPolicy.ts`, `applyPolicy.test.ts`, `schema.ts`, client rendering | Preserve as W03 execution preview foundation. |
