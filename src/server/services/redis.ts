@@ -27,6 +27,10 @@ export const redisKeys = {
     mmKey(subreddit, `scans:rule:${ruleKey}`),
   scansByAuthorHash: (subreddit: string, authorHash: string) =>
     mmKey(subreddit, `scans:author:${authorHash}`),
+  attributionCorrections: (subreddit: string) =>
+    mmKey(subreddit, 'attribution:corrections'),
+  attributionCorrectionHistory: (subreddit: string) =>
+    mmKey(subreddit, 'attribution:correction-history'),
   actions: (subreddit: string) => mmKey(subreddit, 'actions'),
   actionsByUser: (subreddit: string, username: string) =>
     mmKey(subreddit, `actions:user:${username}`),

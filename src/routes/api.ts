@@ -6,6 +6,7 @@ import {
   AI_ADVISORY_EVIDENCE_SOURCE_VALUES,
   AI_ADVISORY_KIND_VALUES,
   CASE_PACKET_TYPE_VALUES,
+  CONFIDENCE_VALUES,
   DEMO_SUBREDDIT_NAME,
   MIRROR_SCAN_DEPTH_VALUES,
   MODQUEUE_CONTENT_TYPE_VALUES,
@@ -26,6 +27,8 @@ import type {
   ApplyPolicyPreview,
   ApplyPolicyPreviewInput,
   ApiResponse,
+  AttributionCorrection,
+  AttributionCorrectionInput,
   ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
@@ -119,6 +122,10 @@ import {
 } from '../server/services/teamDelivery';
 import { buildRuntimeVerificationMatrix } from '../server/services/runtimeVerification';
 import { loadModqueueTriage } from '../server/services/modqueueTriage';
+import {
+  listAttributionCorrections,
+  saveAttributionCorrection,
+} from '../server/services/attributionCalibration';
 
 export const api = new Hono();
 
@@ -338,6 +345,43 @@ api.get('/scans/:id', async (c) => {
     ok: true,
     data: record,
   } satisfies ApiResponse<MirrorScanRecord>);
+});
+
+api.get('/attribution/corrections', async (c) => {
+  const response: ApiResponse<AttributionCorrection[]> = {
+    ok: true,
+    data: await listAttributionCorrections(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.post('/attribution/corrections', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<
+    AttributionCorrectionInput
+  >;
+
+  try {
+    const input = await normalizeAttributionCorrectionInput(body);
+    const response: ApiResponse<AttributionCorrection> = {
+      ok: true,
+      data: await saveAttributionCorrection(input),
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'attribution_correction_failed',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Attribution correction failed.',
+        },
+      } satisfies ApiResponse<AttributionCorrection>,
+      400
+    );
+  }
 });
 
 api.get('/analytics/consistency', async (c) => {
@@ -1058,6 +1102,69 @@ function normalizeModqueueLimit(value: string | undefined): number {
     return 25;
   }
   return Math.min(Math.max(Math.floor(limit), 1), 50);
+}
+
+async function normalizeAttributionCorrectionInput(
+  body: Partial<AttributionCorrectionInput>
+): Promise<AttributionCorrectionInput> {
+  const subreddit = body.subreddit ?? getCurrentSubreddit();
+  const actionId = body.actionId?.trim();
+  const correctedRuleKey = body.correctedRuleKey?.trim();
+  if (!actionId) {
+    throw new Error('actionId is required');
+  }
+  if (!correctedRuleKey) {
+    throw new Error('correctedRuleKey is required');
+  }
+
+  const scanRecord =
+    body.sourceScanId === undefined
+      ? undefined
+      : await getScanRecord(subreddit, body.sourceScanId);
+  const originalAction = scanRecord?.attributedActions.find(
+    (action) => action.id === actionId
+  );
+  const originalConfidence =
+    body.originalConfidence !== undefined &&
+    CONFIDENCE_VALUES.includes(body.originalConfidence)
+      ? body.originalConfidence
+      : originalAction?.confidence ?? 'unmatched';
+
+  const input: AttributionCorrectionInput = {
+    subreddit,
+    actionId,
+    originalConfidence,
+    correctedRuleKey,
+    correctedBy: body.correctedBy ?? context.username ?? 'unknown',
+  };
+
+  copyString(body.targetThingId ?? originalAction?.targetThingId, (value) => {
+    input.targetThingId = value;
+  });
+  copyString(body.sourceScanId, (value) => {
+    input.sourceScanId = value;
+  });
+  copyString(body.originalRuleKey ?? originalAction?.inferredRuleKey, (value) => {
+    input.originalRuleKey = value;
+  });
+  copyString(body.originalRuleName ?? originalAction?.inferredRuleName, (value) => {
+    input.originalRuleName = value;
+  });
+  copyString(body.correctedRuleName, (value) => {
+    input.correctedRuleName = value;
+  });
+  copyString(body.note, (value) => {
+    input.note = value;
+  });
+
+  return input;
+}
+
+function copyString(value: string | undefined, assign: (value: string) => void) {
+  const trimmed = value?.trim();
+  if (trimmed) {
+    assign(trimmed);
+  }
 }
 
 function policyError(error: unknown): ApiResponse<RulePolicy> {

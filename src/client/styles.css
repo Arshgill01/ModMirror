@@ -931,6 +931,43 @@ dd {
   font-size: 13px;
 }
 
+.calibration-list {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+}
+
+.calibration-item {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.calibration-item-main {
+  display: grid;
+  gap: 4px;
+}
+
+.calibration-item-main span {
+  color: var(--mm-muted);
+  font-size: 13px;
+}
+
+.calibration-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+
+.calibration-form label {
+  min-width: 0;
+}
+
+.calibration-form button {
+  align-self: end;
+}
+
 .receipt-ledger {
   border-top: 1px solid var(--mm-line);
   padding-top: 18px;
@@ -1461,6 +1498,10 @@ dd {
 
   .policy-step {
     align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .calibration-form {
     grid-template-columns: 1fr;
   }
 }

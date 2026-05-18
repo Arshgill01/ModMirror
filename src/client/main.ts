@@ -27,6 +27,8 @@ import type {
   AiAdvisoryCapabilities,
   ApiResponse,
   ActionReceipt,
+  AttributionCorrection,
+  AttributedModAction,
   CasePacket,
   Confidence,
   ConsistencyAnalyticsSummary,
@@ -42,6 +44,7 @@ import type {
   MessageDeliveryMode,
   MirrorScan,
   MirrorScanDepth,
+  MirrorScanRecord,
   ModqueueTriageItem,
   ModqueueTriageResponse,
   OverrideReason,
@@ -76,8 +79,12 @@ type ScanUiState = {
   loading: boolean;
   mode?: ScanMode;
   depth?: MirrorScanDepth;
-  error?: string;
+  error?: string | undefined;
+  calibrationError?: string | undefined;
+  calibrationMessage?: string | undefined;
+  calibrationSavingActionId?: string | undefined;
   result?: MirrorScan;
+  record?: MirrorScanRecord | undefined;
   warnings: string[];
 };
 
@@ -817,6 +824,7 @@ function renderScanBody() {
 
   return `
     ${renderScanSummary(scanState.result)}
+    ${renderAttributionCalibrationPanel()}
     ${renderDriftCandidates(scanState.result.driftCandidates)}
   `;
 }
@@ -844,6 +852,82 @@ function renderScanSummary(scan: MirrorScan) {
         ).join('')}
       </div>
     </section>
+  `;
+}
+
+function renderAttributionCalibrationPanel() {
+  const record = scanState.record;
+  if (record === undefined) {
+    return `
+      <section class="section-panel">
+        <div class="section-header">
+          <div>
+            <h3>Attribution Calibration</h3>
+            <p>Run through Devvit runtime to load saved scan actions and correct inferred rule matches.</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  const calibratable = record.attributedActions
+    .filter((action) => action.attributionKind !== 'direct')
+    .slice(0, 8);
+
+  return `
+    <section class="section-panel calibration-panel" aria-label="Attribution calibration">
+      <div class="section-header">
+        <div>
+          <h3>Attribution Calibration</h3>
+          <p>Corrections are stored separately and applied to future scans with correction evidence.</p>
+          ${scanState.calibrationError ? `<p class="inline-error">${escapeHtml(scanState.calibrationError)}</p>` : ''}
+          ${scanState.calibrationMessage ? `<p class="inline-success">${escapeHtml(scanState.calibrationMessage)}</p>` : ''}
+        </div>
+      </div>
+      ${
+        calibratable.length > 0
+          ? `<ol class="calibration-list">${calibratable.map(renderCalibrationItem).join('')}</ol>`
+          : '<p class="inline-note">No inferred or unmatched actions were stored for this scan.</p>'
+      }
+    </section>
+  `;
+}
+
+function renderCalibrationItem(action: AttributedModAction) {
+  const correction = action.correction;
+  const currentRule = action.inferredRuleName ?? action.inferredRuleKey ?? 'Unmatched';
+  const correctedRuleName = correction?.correctedRuleName ?? action.inferredRuleName ?? '';
+  const correctedRuleKey = correction?.correctedRuleKey ?? action.inferredRuleKey ?? '';
+
+  return `
+    <li class="calibration-item">
+      <div class="calibration-item-main">
+        <strong>${escapeHtml(currentRule)}</strong>
+        <span>${escapeHtml(action.id)} · ${escapeHtml(action.rawActionType)} · ${escapeHtml(action.confidence)}</span>
+      </div>
+      <p class="inline-note">${escapeHtml(action.evidence[0] ?? 'No attribution evidence recorded.')}</p>
+      <form class="calibration-form" data-calibration-form>
+        <input type="hidden" name="actionId" value="${escapeAttribute(action.id)}">
+        <input type="hidden" name="targetThingId" value="${escapeAttribute(action.targetThingId ?? '')}">
+        <input type="hidden" name="sourceScanId" value="${escapeAttribute(scanState.record?.id ?? '')}">
+        <input type="hidden" name="originalRuleKey" value="${escapeAttribute(action.inferredRuleKey ?? '')}">
+        <input type="hidden" name="originalRuleName" value="${escapeAttribute(action.inferredRuleName ?? '')}">
+        <input type="hidden" name="originalConfidence" value="${escapeAttribute(action.confidence)}">
+        <label>
+          Corrected rule key
+          <input name="correctedRuleKey" value="${escapeAttribute(correctedRuleKey)}" required>
+        </label>
+        <label>
+          Corrected rule name
+          <input name="correctedRuleName" value="${escapeAttribute(correctedRuleName)}">
+        </label>
+        <label>
+          Note
+          <input name="note" value="${escapeAttribute(correction?.note ?? '')}" placeholder="Optional team context">
+        </label>
+        <button class="secondary-button compact-button" type="submit" ${scanState.calibrationSavingActionId === action.id ? 'disabled' : ''}>Save correction</button>
+      </form>
+    </li>
   `;
 }
 
@@ -2046,6 +2130,7 @@ function bindAllActions() {
   bindAppearanceActions();
   bindActionIntents();
   bindScanActions();
+  bindCalibrationActions();
   bindModqueueActions();
   bindPolicyActions();
   bindApplyPolicyActions();
@@ -2262,6 +2347,19 @@ function bindPolicyActions() {
   );
 }
 
+function bindCalibrationActions() {
+  document
+    .querySelectorAll<HTMLFormElement>('[data-calibration-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void saveAttributionCorrection(
+          new FormData(event.currentTarget as HTMLFormElement)
+        );
+      });
+    });
+}
+
 function bindModqueueActions() {
   document.querySelectorAll<HTMLButtonElement>('[data-load-modqueue]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -2465,11 +2563,13 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ mode, depth }),
     });
+    const record = await loadScanRecord(payload).catch(() => undefined);
     scanState = {
       loading: false,
       mode,
       depth,
       result: payload,
+      record,
       warnings: payload.warnings,
     };
   } catch (error) {
@@ -2480,6 +2580,7 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
         mode,
         depth,
         result: payload,
+        record: undefined,
         warnings: payload.warnings,
       };
       render();
@@ -2496,6 +2597,140 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
   }
 
   render();
+}
+
+async function loadScanRecord(scan: MirrorScan): Promise<MirrorScanRecord> {
+  return fetchApi<MirrorScanRecord>(
+    `${API_ROUTES.scans}/${encodeURIComponent(scan.id)}?subreddit=${encodeURIComponent(scan.subreddit)}`
+  );
+}
+
+async function saveAttributionCorrection(formData: FormData) {
+  const actionId = String(formData.get('actionId') ?? '').trim();
+  if (!actionId || scanState.result === undefined) {
+    return;
+  }
+
+  scanState = {
+    ...scanState,
+    calibrationSavingActionId: actionId,
+    calibrationError: undefined,
+    calibrationMessage: undefined,
+  };
+  render();
+
+  const body = formDataToAttributionCorrection(formData);
+  try {
+    const correction = await fetchApi<AttributionCorrection>(
+      API_ROUTES.attributionCorrections,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    scanState = {
+      ...scanState,
+      calibrationSavingActionId: undefined,
+      calibrationMessage: `Correction saved for ${correction.actionId}. Future scans will use it.`,
+      record: applyCorrectionToScanRecord(scanState.record, correction),
+    };
+  } catch (error) {
+    scanState = {
+      ...scanState,
+      calibrationSavingActionId: undefined,
+      calibrationError: normalizeClientError(
+        error,
+        'Attribution correction could not be saved.'
+      ),
+    };
+  }
+
+  render();
+}
+
+function applyCorrectionToScanRecord(
+  record: MirrorScanRecord | undefined,
+  correction: AttributionCorrection
+): MirrorScanRecord | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  return {
+    ...record,
+    attributedActions: record.attributedActions.map((action) =>
+      action.id === correction.actionId
+        ? applyCorrectionToAction(action, correction)
+        : action
+    ),
+  };
+}
+
+function applyCorrectionToAction(
+  action: AttributedModAction,
+  correction: AttributionCorrection
+): AttributedModAction {
+  const correctionSnapshot: AttributedModAction['correction'] = {
+    correctionId: correction.id,
+    correctedRuleKey: correction.correctedRuleKey,
+    correctedBy: correction.correctedBy,
+    correctedAt: correction.correctedAt,
+    originalConfidence: correction.originalConfidence,
+  };
+  const corrected: AttributedModAction = {
+    ...action,
+    inferredRuleKey: correction.correctedRuleKey,
+    confidence: 'high',
+    attributionKind: 'corrected',
+    correction: correctionSnapshot,
+    evidence: [
+      `Moderator correction applied by ${correction.correctedBy}.`,
+      ...action.evidence,
+    ],
+  };
+  if (correction.correctedRuleName !== undefined) {
+    corrected.inferredRuleName = correction.correctedRuleName;
+    correctionSnapshot.correctedRuleName = correction.correctedRuleName;
+  } else {
+    delete corrected.inferredRuleName;
+  }
+  if (correction.originalRuleKey !== undefined) {
+    correctionSnapshot.originalRuleKey = correction.originalRuleKey;
+  }
+  if (correction.originalRuleName !== undefined) {
+    correctionSnapshot.originalRuleName = correction.originalRuleName;
+  }
+  if (correction.note !== undefined) {
+    correctionSnapshot.note = correction.note;
+  }
+  return corrected;
+}
+
+function formDataToAttributionCorrection(formData: FormData) {
+  const body: Record<string, string> = {
+    subreddit: scanState.result?.subreddit ?? '',
+    actionId: String(formData.get('actionId') ?? ''),
+    correctedRuleKey: String(formData.get('correctedRuleKey') ?? ''),
+    originalConfidence: String(formData.get('originalConfidence') ?? 'unmatched'),
+  };
+  copyFormString(body, 'targetThingId', formData);
+  copyFormString(body, 'sourceScanId', formData);
+  copyFormString(body, 'originalRuleKey', formData);
+  copyFormString(body, 'originalRuleName', formData);
+  copyFormString(body, 'correctedRuleName', formData);
+  copyFormString(body, 'note', formData);
+  return body;
+}
+
+function copyFormString(
+  body: Record<string, string>,
+  fieldName: string,
+  formData: FormData
+) {
+  const value = String(formData.get(fieldName) ?? '').trim();
+  if (value) {
+    body[fieldName] = value;
+  }
 }
 
 function parseScanDepth(value: string | undefined): MirrorScanDepth {

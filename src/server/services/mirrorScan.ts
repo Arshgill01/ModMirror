@@ -17,6 +17,10 @@ import type {
   MirrorScanRecord,
 } from '../../shared/schema';
 import { attributeActions } from './attribution';
+import {
+  createAttributionCorrectionIndex,
+  listAttributionCorrections,
+} from './attributionCalibration';
 import { getDemoMirrorScanSources } from './demoData';
 import { loadLiveMirrorScanSources } from './redditSources';
 import { saveScanRecord } from './scans';
@@ -36,10 +40,12 @@ export async function runMirrorScan(
       : await loadLiveMirrorScanSources(
           options.depth === undefined ? {} : { depth: options.depth }
         );
+  const calibration = await loadCalibrationForScan(sources.subreddit);
   const attributedActions = attributeActions(
     sources.actions,
     sources.rules,
-    sources.removalReasons
+    sources.removalReasons,
+    calibration.correctionIndex
   );
   const confidenceBreakdown = getConfidenceBreakdown(attributedActions);
   const unmatchedCount = confidenceBreakdown.unmatched;
@@ -60,7 +66,7 @@ export async function runMirrorScan(
     scanDepth:
       sources.scanDepth ??
       createDemoScanDepthMetadata(options.depth ?? 'standard', sources.actions.length),
-    warnings: [...sources.warnings],
+    warnings: [...sources.warnings, ...calibration.warnings],
   };
 
   if (options.createdBy) {
@@ -69,6 +75,30 @@ export async function runMirrorScan(
 
   await saveScanMetadata(scan, attributedActions);
   return scan;
+}
+
+async function loadCalibrationForScan(subreddit: string): Promise<{
+  correctionIndex?: ReturnType<typeof createAttributionCorrectionIndex>;
+  warnings: string[];
+}> {
+  try {
+    const corrections = await listAttributionCorrections(subreddit);
+    if (corrections.length === 0) {
+      return { warnings: [] };
+    }
+    return {
+      correctionIndex: createAttributionCorrectionIndex(corrections),
+      warnings: [
+        `Applied ${corrections.length} moderator attribution correction${corrections.length === 1 ? '' : 's'} during scan.`,
+      ],
+    };
+  } catch (error) {
+    return {
+      warnings: [
+        `Scan continued without attribution corrections because calibration lookup failed: ${formatError(error)}`,
+      ],
+    };
+  }
 }
 
 export function getConfidenceBreakdown(

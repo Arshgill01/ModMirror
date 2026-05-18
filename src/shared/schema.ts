@@ -651,6 +651,50 @@ export interface AttributedModAction {
   inferredRuleName?: string;
   confidence: Confidence;
   evidence: string[];
+  attributionKind?: 'direct' | 'inferred' | 'corrected' | 'unmatched';
+  correction?: AttributionCorrectionSnapshot;
+}
+
+export interface AttributionCorrectionSnapshot {
+  correctionId: string;
+  correctedRuleKey: string;
+  correctedRuleName?: string;
+  correctedBy: string;
+  correctedAt: string;
+  originalRuleKey?: string;
+  originalRuleName?: string;
+  originalConfidence: Confidence;
+  note?: string;
+}
+
+export interface AttributionCorrection {
+  id: string;
+  subreddit: string;
+  actionId: string;
+  targetThingId?: string;
+  sourceScanId?: string;
+  originalRuleKey?: string;
+  originalRuleName?: string;
+  originalConfidence: Confidence;
+  correctedRuleKey: string;
+  correctedRuleName?: string;
+  correctedBy: string;
+  correctedAt: string;
+  note?: string;
+}
+
+export interface AttributionCorrectionInput {
+  subreddit: string;
+  actionId: string;
+  targetThingId?: string;
+  sourceScanId?: string;
+  originalRuleKey?: string;
+  originalRuleName?: string;
+  originalConfidence: Confidence;
+  correctedRuleKey: string;
+  correctedRuleName?: string;
+  correctedBy: string;
+  note?: string;
 }
 
 export type MirrorScanSource = 'live' | 'demo';
@@ -710,6 +754,8 @@ export interface AttributionResult {
   confidence: Confidence;
   score: number;
   evidence: string[];
+  attributionKind?: 'direct' | 'inferred' | 'corrected' | 'unmatched';
+  correction?: AttributionCorrectionSnapshot;
 }
 
 export interface MirrorScan {

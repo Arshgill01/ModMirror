@@ -5,6 +5,7 @@ import {
   inferAttribution,
   tokenizeForAttribution,
 } from './attribution';
+import { createAttributionCorrectionIndex } from './attributionCalibration';
 import type {
   NormalizedModAction,
   NormalizedRemovalReason,
@@ -143,5 +144,45 @@ describe('deterministic attribution engine', () => {
       inferredRuleName: 'Low-effort questions',
       confidence: 'high',
     });
+  });
+
+  it('applies moderator corrections while preserving original evidence', () => {
+    const correctionIndex = createAttributionCorrectionIndex([
+      {
+        id: 'attr-correction-1',
+        subreddit: 'ExampleLearning',
+        actionId: 'act-test',
+        originalRuleKey: 'low-effort-questions-2',
+        originalRuleName: 'Low-effort questions',
+        originalConfidence: 'medium',
+        correctedRuleKey: 'self-promotion-3',
+        correctedRuleName: 'Self-promotion',
+        correctedBy: 'leadmod',
+        correctedAt: '2026-05-18T12:00:00.000Z',
+      },
+    ]);
+    const attributed = attributeAction(
+      action({
+        detailsText:
+          'Removed because the post has no context, no code, and no clear learning goal.',
+      }),
+      rules,
+      removalReasons,
+      correctionIndex
+    );
+
+    expect(attributed).toMatchObject({
+      inferredRuleKey: 'self-promotion-3',
+      inferredRuleName: 'Self-promotion',
+      confidence: 'high',
+      attributionKind: 'corrected',
+      correction: {
+        correctionId: 'attr-correction-1',
+        correctedBy: 'leadmod',
+        originalRuleKey: 'low-effort-questions-2',
+      },
+    });
+    expect(attributed.evidence.join(' ')).toContain('Moderator correction');
+    expect(attributed.evidence.join(' ')).toContain('Original attribution');
   });
 });

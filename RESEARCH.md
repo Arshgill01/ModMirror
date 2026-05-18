@@ -6,7 +6,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 17 modqueue triage is implemented locally with Devvit modqueue support verified from official docs and installed typings only; runtime playtest proof is still required.
+Status: Expansion Wave 18 attribution calibration is implemented locally; correction persistence is type/test verified but Redis runtime proof is still required.
 
 Last updated: 2026-05-18
 
@@ -64,6 +64,7 @@ Updated by: Codex
 | Verified locally | W08 Policy Agreement now has draft/propose/review/adopt lifecycle artifacts. | `RulePolicy` and `PolicyVersion` carry lifecycle/proposal/review/adoption metadata; `/api/policies/:id/propose`, `/reviews`, and `/adopt` exist; `policies.test.ts` covers draft, review, adopt, invalid transitions, and Apply Policy active-version snapshot behavior. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W09 Case Packets prefer immutable receipts and label evidence sources. | `casePacket.ts` loads receipts, emits packet types/evidence labels, includes receipt target snapshots and execution results, and falls back to action history with caveats. `casePacket.test.ts` covers receipt-backed packets and policy-changed-since-action. Runtime Redis/API behavior remains unverified. |
 | Type/build only | W17 modqueue triage can read Reddit modqueue items through Devvit when runtime permits. | Official Subreddit docs list `getModQueue(options?)` and `getReports(options?)` returning `Listing<Post | Comment>`; installed typings expose `Subreddit.getModQueue`, `RedditAPIClient.getModQueue`, `Subreddit.getReports`, and proto routes `/r/{subreddit}/about/modqueue` and `/about/reports`. `src/server/services/modqueueTriage.ts`, `/api/modqueue/triage`, and `src/server/services/modqueueTriage.test.ts` are local/type verified only. |
+| Verified locally | W18 attribution calibration can apply moderator corrections to future scan attribution. | `src/server/services/attributionCalibration.ts` stores corrections by subreddit/action ID, `mirrorScan.ts` loads corrections before attribution, and tests cover persistence plus correction application. Redis runtime remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -93,6 +94,9 @@ Updated by: Codex
   queue items if Devvit runtime or subreddit context is unavailable. The
   capability remains `type_only` because no playtest has yet proven
   `/api/modqueue/triage` against real queue content.
+- W18 stores attribution corrections separately from scan records and marks
+  corrected actions with `attributionKind: corrected`. This is local/test
+  verified only until Redis persistence is proven in Devvit playtest.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.

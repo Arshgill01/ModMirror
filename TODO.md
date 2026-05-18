@@ -2,14 +2,25 @@
 
 ## Current Phase
 
-Expansion Wave 17 — Modqueue Triage is in progress on
-`expansion/w17-modqueue-triage` after W16 content snapshotting.
+Expansion Wave 18 — Attribution Calibration is in progress on
+`expansion/w18-attribution-calibration` after W17 modqueue triage.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 18 Checklist
+
+- [x] Add attribution correction schema.
+- [x] Add Redis-backed attribution correction persistence.
+- [x] Apply moderator corrections during future scan attribution.
+- [x] Preserve inferred/corrected distinction and original evidence.
+- [x] Add correction API endpoints.
+- [x] Add scan-page calibration UI for stored scan actions.
+- [x] Add synthetic tests for correction persistence and future attribution.
+- [ ] Runtime-verify correction persistence through Devvit Web/Redis playtest.
 
 ## Expansion Wave 17 Checklist
 

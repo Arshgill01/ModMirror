@@ -328,6 +328,7 @@ export const API_ROUTES = {
   scans: '/api/scans',
   consistencyAnalytics: '/api/analytics/consistency',
   modqueueTriage: '/api/modqueue/triage',
+  attributionCorrections: '/api/attribution/corrections',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
   actions: '/api/actions',
