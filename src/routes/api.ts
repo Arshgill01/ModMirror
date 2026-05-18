@@ -72,6 +72,10 @@ import type {
   PolicyImpactMeasurement,
   PolicyReplayActionInput,
   PolicyReplayResult,
+  PortableConfigImportRequest,
+  PortableConfigImportResult,
+  PortableConfigPackage,
+  PortableConfigTemplateListResponse,
   PolicyReviewInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -157,6 +161,11 @@ import {
   getIncidentModeState,
   startIncidentMode,
 } from '../server/services/incidentMode';
+import {
+  exportPortableConfig,
+  getPortableConfigTemplates,
+  importPortableConfig,
+} from '../server/services/configPortability';
 
 export const api = new Hono();
 
@@ -1117,6 +1126,43 @@ api.post('/incidents/:id/end', async (c) => {
   }
 });
 
+api.get('/config/export', async (c) => {
+  const response: ApiResponse<PortableConfigPackage> = {
+    ok: true,
+    data: await exportPortableConfig({
+      subreddit: getRequestedSubreddit(c),
+      exportedBy: context.username ?? 'unknown',
+    }),
+  };
+  return c.json(response);
+});
+
+api.get('/config/templates', (c) => {
+  const response: ApiResponse<PortableConfigTemplateListResponse> = {
+    ok: true,
+    data: getPortableConfigTemplates(),
+  };
+  return c.json(response);
+});
+
+api.post('/config/import', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PortableConfigImportRequest>;
+
+  try {
+    const response: ApiResponse<PortableConfigImportResult> = {
+      ok: true,
+      data: await importPortableConfig({
+        subreddit: getRequestedBodySubreddit(body),
+        importedBy: context.username ?? 'unknown',
+        request: normalizePortableConfigImportRequest(body),
+      }),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(configPortabilityError(error), 400);
+  }
+});
+
 api.post('/digest/generate', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateDigestRequest>;
 
@@ -1655,6 +1701,39 @@ function incidentModeError(
       code: 'incident_mode_failed',
       message:
         error instanceof Error ? error.message : 'Incident Mode request failed',
+    },
+  };
+}
+
+function normalizePortableConfigImportRequest(
+  body: Partial<PortableConfigImportRequest>
+): PortableConfigImportRequest {
+  if (!('package' in body)) {
+    throw new Error('Portable config package is required.');
+  }
+  const request: PortableConfigImportRequest = {
+    package: body.package,
+  };
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.dryRun !== undefined) {
+    request.dryRun = body.dryRun === true;
+  }
+  return request;
+}
+
+function configPortabilityError(
+  error: unknown
+): ApiResponse<PortableConfigImportResult> {
+  return {
+    ok: false,
+    error: {
+      code: 'config_portability_failed',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Portable configuration request failed',
     },
   };
 }

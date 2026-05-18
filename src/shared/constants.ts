@@ -36,6 +36,8 @@ import type {
   OverrideReason,
   OverrideReviewStatus,
   PolicyHealthStatus,
+  PortableConfigSchemaVersion,
+  PortableConfigSource,
   ResponseTemplateKind,
   RedditModerationOperation,
   TeamDeliveryChannel,
@@ -176,6 +178,17 @@ export const INCIDENT_MODE_STATUS_VALUES = [
   'ended',
   'expired',
 ] as const satisfies readonly IncidentModeStatus[];
+
+export const PORTABLE_CONFIG_SCHEMA_VERSION_VALUES = [
+  'modmirror.config.v1',
+  'modmirror.config.v0',
+] as const satisfies readonly PortableConfigSchemaVersion[];
+
+export const PORTABLE_CONFIG_SOURCE_VALUES = [
+  'live_config',
+  'starter_template',
+  'demo_test_config',
+] as const satisfies readonly PortableConfigSource[];
 
 export const APPEAL_POSTURE_VALUES = [
   'policy_consistent',
@@ -397,6 +410,9 @@ export const API_ROUTES = {
   evidenceBoards: '/api/evidence-boards',
   incidents: '/api/incidents',
   incidentStart: '/api/incidents/start',
+  configExport: '/api/config/export',
+  configImport: '/api/config/import',
+  configTemplates: '/api/config/templates',
   digestGenerate: '/api/digest/generate',
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',

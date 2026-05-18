@@ -2,15 +2,32 @@
 
 ## Current Phase
 
-Expansion Wave 27 — Incident Mode is locally implemented on
-`expansion/w27-incident-mode` after W26 Evidence Board. Continue with Wave 28
-config portability next.
+Expansion Wave 28 — Configuration Portability is locally implemented on
+`expansion/w28-config-portability` after W27 Incident Mode. Continue with Wave
+29 multi-community support next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
+
+## Expansion Wave 28 Checklist
+
+- [x] Add portable config schema for versioned packages, policies, response
+      templates, digest settings, starter templates, and import results.
+- [x] Add export service that excludes private history by default.
+- [x] Add import validation and migration path for legacy v0 packages.
+- [x] Import policies as drafts/proposed updates instead of silently adopting
+      live enforcement.
+- [x] Add `/api/config/export`, `/api/config/import`, and
+      `/api/config/templates` routes.
+- [x] Add Settings UI for export JSON, import dry runs/imports, and starter
+      templates.
+- [x] Add tests for export privacy, safe dry run, bad import failure, v0
+      migration, and starter labels.
+- [ ] Runtime-verify config export/import persistence through Devvit Web/Redis
+      playtest.
 
 ## Expansion Wave 27 Checklist
 

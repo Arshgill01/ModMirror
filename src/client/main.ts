@@ -70,6 +70,9 @@ import type {
   PolicyImpactMeasurement,
   PolicyStep,
   PolicyReplayResult,
+  PortableConfigImportResult,
+  PortableConfigPackage,
+  PortableConfigTemplateListResponse,
   ResponseTemplateKind,
   RulePolicy,
   TeamDeliveryChannel,
@@ -288,6 +291,17 @@ type IncidentModeUiState = {
   report: IncidentModeReport | undefined;
 };
 
+type ConfigPortabilityUiState = {
+  loading: boolean;
+  importing: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  exportedPackage: PortableConfigPackage | undefined;
+  importText: string;
+  importResult: PortableConfigImportResult | undefined;
+  templates: PortableConfigPackage[];
+};
+
 type ModqueueTriageUiState = {
   loading: boolean;
   error: string | undefined;
@@ -431,6 +445,16 @@ let incidentModeState: IncidentModeUiState = {
   active: undefined,
   incidents: [],
   report: undefined,
+};
+let configPortabilityState: ConfigPortabilityUiState = {
+  loading: false,
+  importing: false,
+  error: undefined,
+  message: undefined,
+  exportedPackage: undefined,
+  importText: '',
+  importResult: undefined,
+  templates: [],
 };
 let modqueueState: ModqueueTriageUiState = {
   loading: false,
@@ -2504,6 +2528,7 @@ function renderSettingsPage() {
   return `
     <section class="settings-stack">
       ${renderIncidentSettings()}
+      ${renderConfigPortabilitySettings()}
     </section>
     <section class="settings-grid">
       ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
@@ -2523,6 +2548,120 @@ function renderSettingsPage() {
       ${renderSettingsCard('Team scheduler', teamDeliveryState.capabilities?.scheduler.state ?? 'unavailable', teamDeliveryState.capabilities?.scheduler.detail ?? 'Scheduled delivery is unavailable until a scheduler task is registered and runtime-verified.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
+  `;
+}
+
+function renderConfigPortabilitySettings() {
+  return `
+    <section class="document-panel config-portability" aria-label="Configuration portability">
+      <div class="section-header">
+        <div>
+          <h3>Configuration Portability</h3>
+          <p>Export policy ladders, response templates, and non-sensitive settings. Receipts, scans, overrides, content snapshots, and evidence boards are excluded.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-load-config-templates type="button" ${configPortabilityState.loading ? 'disabled' : ''}>Templates</button>
+          <button class="primary-button compact-button" data-export-config type="button" ${configPortabilityState.loading ? 'disabled' : ''}>Export</button>
+        </div>
+      </div>
+      ${renderConfigPortabilityMessage()}
+      <div class="config-grid">
+        <div class="config-column">
+          <h4>Export package</h4>
+          ${
+            configPortabilityState.exportedPackage
+              ? `<textarea class="markdown-export config-json" readonly>${escapeHtml(JSON.stringify(configPortabilityState.exportedPackage, null, 2))}</textarea>`
+              : renderEmptyState(
+                  'No export loaded',
+                  'Generate a package to review the exact portable JSON before sharing it with another community.',
+                  []
+                )
+          }
+        </div>
+        <div class="config-column">
+          <h4>Import package</h4>
+          <form class="policy-form config-import-form" data-config-import-form>
+            <label>
+              Portable JSON
+              <textarea name="configJson" rows="12" placeholder="{ &quot;schemaVersion&quot;: &quot;modmirror.config.v1&quot;, ... }">${escapeHtml(configPortabilityState.importText)}</textarea>
+            </label>
+            <div class="button-row">
+              <button class="secondary-button" name="mode" value="dry-run" type="submit" ${configPortabilityState.importing ? 'disabled' : ''}>Dry run</button>
+              <button class="primary-button" name="mode" value="import" type="submit" ${configPortabilityState.importing ? 'disabled' : ''}>Import drafts</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      ${renderConfigImportResult()}
+      ${renderConfigTemplates()}
+    </section>
+  `;
+}
+
+function renderConfigPortabilityMessage() {
+  if (configPortabilityState.error) {
+    return `<p class="inline-error">${escapeHtml(configPortabilityState.error)}</p>`;
+  }
+  if (configPortabilityState.message) {
+    return `<p class="inline-success">${escapeHtml(configPortabilityState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderConfigImportResult() {
+  const result = configPortabilityState.importResult;
+  if (result === undefined) {
+    return '';
+  }
+  return `
+    <div class="config-result">
+      <h4>${result.dryRun ? 'Dry-run result' : 'Import result'}</h4>
+      <dl class="compact-metrics">
+        <div><dt>Accepted</dt><dd>${result.accepted ? 'yes' : 'no'}</dd></div>
+        <div><dt>Policies</dt><dd>${result.importedPolicyCount}</dd></div>
+        <div><dt>Skipped</dt><dd>${result.skippedPolicyCount}</dd></div>
+        <div><dt>Settings</dt><dd>${result.updatedSettings ? (result.dryRun ? 'would update' : 'updated') : 'unchanged'}</dd></div>
+      </dl>
+      <ol class="incident-list compact">
+        ${result.policies
+          .map(
+            (policy) => `
+              <li>
+                <strong>${escapeHtml(policy.ruleName)} - ${formatAction(policy.status)}</strong>
+                <span>${escapeHtml(policy.message)}</span>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+      <ul class="plain-note-list">
+        ${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderConfigTemplates() {
+  if (configPortabilityState.templates.length === 0) {
+    return '';
+  }
+  return `
+    <div class="config-result">
+      <h4>Starter templates</h4>
+      <ol class="incident-list compact">
+        ${configPortabilityState.templates
+          .map(
+            (template) => `
+              <li>
+                <strong>${escapeHtml(template.packageId)}</strong>
+                <span>${template.policies.length} policy starter${template.policies.length === 1 ? '' : 's'} - ${formatAction(template.source)}</span>
+                <button class="secondary-button compact-button" data-load-config-template="${escapeAttribute(template.packageId)}" type="button">Load JSON</button>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+    </div>
   `;
 }
 
@@ -2793,6 +2932,7 @@ function bindAllActions() {
   bindCasePacketActions();
   bindEvidenceBoardActions();
   bindIncidentModeActions();
+  bindConfigPortabilityActions();
   bindGovernanceActions();
   bindDigestActions();
   bindReceiptActions();
@@ -3191,6 +3331,57 @@ function bindIncidentModeActions() {
         event.preventDefault();
         const note = String(new FormData(form).get('reviewNote') ?? '').trim();
         void endIncidentMode(note);
+      });
+    });
+}
+
+function bindConfigPortabilityActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-export-config]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void exportPortableConfig();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-config-templates]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadPortableConfigTemplates();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-config-template]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const packageId = button.dataset.loadConfigTemplate;
+        const template = configPortabilityState.templates.find(
+          (item) => item.packageId === packageId
+        );
+        if (template !== undefined) {
+          configPortabilityState = {
+            ...configPortabilityState,
+            importText: JSON.stringify(template, null, 2),
+            message: 'Starter template loaded into the import box.',
+            error: undefined,
+          };
+          render();
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-config-import-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const submitter = event.submitter as HTMLButtonElement | null;
+        const formData = new FormData(form);
+        const configJson = String(formData.get('configJson') ?? '').trim();
+        const dryRun = submitter?.value !== 'import';
+        void importPortableConfig(configJson, dryRun);
       });
     });
 }
@@ -5098,6 +5289,142 @@ function isIncidentModeReason(value: string): value is IncidentModeReason {
   return INCIDENT_MODE_REASON_VALUES.includes(value as IncidentModeReason);
 }
 
+async function exportPortableConfig() {
+  configPortabilityState = {
+    ...configPortabilityState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const portablePackage = await fetchApi<PortableConfigPackage>(
+      withWorkspaceSubreddit(API_ROUTES.configExport)
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      exportedPackage: portablePackage,
+      message: 'Portable config package generated without private history.',
+      error: undefined,
+    };
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      error: normalizeClientError(error, 'Portable config export failed.'),
+    };
+  }
+
+  render();
+}
+
+async function loadPortableConfigTemplates() {
+  configPortabilityState = {
+    ...configPortabilityState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<PortableConfigTemplateListResponse>(
+      API_ROUTES.configTemplates
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      templates: response.templates,
+      message: 'Starter templates loaded. Review JSON before importing.',
+      error: undefined,
+    };
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      error: normalizeClientError(error, 'Portable config templates failed to load.'),
+    };
+  }
+
+  render();
+}
+
+async function importPortableConfig(configJson: string, dryRun: boolean) {
+  if (!configJson) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importText: configJson,
+      error: 'Paste portable config JSON before importing.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  let parsedPackage: unknown;
+  try {
+    parsedPackage = JSON.parse(configJson);
+  } catch {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importText: configJson,
+      error: 'Portable config JSON is invalid.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  configPortabilityState = {
+    ...configPortabilityState,
+    importing: true,
+    importText: configJson,
+    error: undefined,
+    message: undefined,
+    importResult: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      package: parsedPackage,
+      dryRun,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const result = await fetchApi<PortableConfigImportResult>(
+      API_ROUTES.configImport,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      importing: false,
+      importResult: result,
+      message: dryRun
+        ? 'Dry run completed. No policies or settings were written.'
+        : 'Portable config imported as drafts and proposed updates.',
+      error: undefined,
+    };
+    if (!dryRun) {
+      void loadPolicies();
+      void loadDigestHistory();
+    }
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importing: false,
+      error: normalizeClientError(error, 'Portable config import failed safely.'),
+    };
+  }
+
+  render();
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -6344,6 +6671,7 @@ void loadAiAdvisoryCapabilities();
 void loadTeamDeliveryCapabilities();
 void loadEvidenceBoards();
 void loadIncidentMode();
+void loadPortableConfigTemplates();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

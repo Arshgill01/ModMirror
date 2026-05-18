@@ -6,10 +6,10 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 27 Incident Mode is implemented locally. It tags
-ModMirror receipts during an explicitly started temporary incident, but route
-persistence and active receipt tagging still require Devvit Web/Redis playtest
-proof.
+Status: Expansion Wave 28 Configuration Portability is implemented locally.
+Portable packages export policy configuration, response templates, and
+non-sensitive settings only; Devvit Web/Redis route persistence still requires
+playtest proof.
 
 Last updated: 2026-05-18
 
@@ -77,6 +77,7 @@ Updated by: Codex
 | Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
 | Verified locally | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Devvit Redis runtime persistence remains unverified. |
 | Verified locally | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Devvit Redis/API runtime remains unverified. |
+| Verified locally | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Devvit Redis/API runtime remains unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -133,6 +134,10 @@ Updated by: Codex
   auto-remove, auto-ban, override policy confirmation, or change Reddit state by
   itself. It only changes ModMirror context by showing preset suggestions,
   grouping triage priorities, and tagging confirmed Apply Policy receipts.
+- W28 portable config exports are intentionally configuration-only. They do not
+  include receipts, overrides, scans, content snapshots, case packets, evidence
+  boards, delivery receipts, incident reports, moderator activity logs, or
+  private queue history.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.

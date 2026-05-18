@@ -1620,6 +1620,79 @@ export interface DigestHistoryResponse {
   settings: DigestSettings;
 }
 
+export type PortableConfigSchemaVersion =
+  | 'modmirror.config.v1'
+  | 'modmirror.config.v0';
+
+export type PortableConfigSource =
+  | 'live_config'
+  | 'starter_template'
+  | 'demo_test_config';
+
+export type PortableConfigImportStatus =
+  | 'created'
+  | 'updated'
+  | 'skipped'
+  | 'invalid';
+
+export interface PortablePolicyConfig extends SubredditRuleRef {
+  steps: PolicyStep[];
+  defaultMessageMode: MessageDeliveryMode;
+  ratificationSettings?: PolicyRatificationSettings;
+}
+
+export interface PortableDigestSettings {
+  deliveryMode: DigestDeliveryMode;
+  scheduleEnabled: boolean;
+  scheduleCadence: DigestScheduleCadence;
+}
+
+export interface PortableConfigSettings {
+  digest?: PortableDigestSettings;
+  demoMode?: {
+    enabled: boolean;
+  };
+}
+
+export interface PortableConfigPackage {
+  schemaVersion: PortableConfigSchemaVersion;
+  packageId: string;
+  source: PortableConfigSource;
+  subreddit: string;
+  exportedAt: string;
+  exportedBy?: string;
+  includePrivateHistory: false;
+  policies: PortablePolicyConfig[];
+  settings: PortableConfigSettings;
+  warnings: string[];
+}
+
+export interface PortableConfigTemplateListResponse {
+  templates: PortableConfigPackage[];
+}
+
+export interface PortableConfigImportRequest {
+  subreddit?: string;
+  package: unknown;
+  dryRun?: boolean;
+}
+
+export interface PortableConfigImportPolicyResult extends SubredditRuleRef {
+  status: PortableConfigImportStatus;
+  message: string;
+}
+
+export interface PortableConfigImportResult {
+  schemaVersion: PortableConfigSchemaVersion;
+  accepted: boolean;
+  dryRun: boolean;
+  importedPolicyCount: number;
+  skippedPolicyCount: number;
+  updatedSettings: boolean;
+  policies: PortableConfigImportPolicyResult[];
+  warnings: string[];
+}
+
 export interface AiAdvisoryCapabilityStatus {
   state: AiAdvisoryCapabilityState;
   label: string;

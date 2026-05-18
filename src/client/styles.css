@@ -1490,23 +1490,39 @@ dd {
 
 .incident-active,
 .incident-form,
-.incident-report {
+.incident-report,
+.config-result,
+.config-column {
   display: grid;
   gap: 12px;
 }
 
 .incident-form-grid,
-.incident-guidance-grid {
+.incident-guidance-grid,
+.config-grid {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.incident-settings h4 {
+.incident-settings h4,
+.config-portability h4 {
   color: var(--mm-ink);
   font-size: 14px;
   font-weight: 740;
   margin-bottom: 8px;
+}
+
+.config-json {
+  min-height: 300px;
+}
+
+.config-portability {
+  background: var(--mm-paper);
+  border: 1px solid var(--mm-line);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
 }
 
 .incident-list {
@@ -1804,7 +1820,8 @@ dd {
   .demo-banner,
   .incident-banner,
   .incident-form-grid,
-  .incident-guidance-grid {
+  .incident-guidance-grid,
+  .config-grid {
     grid-template-columns: 1fr;
   }
 
