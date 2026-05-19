@@ -197,11 +197,41 @@ Verified in Reddit desktop host `Mobile` Devvit WebView:
   - native Mod Note `skipped (disabled)`
 - No Reddit moderation action was executed during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version observed: `v0.0.1.92`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: comment guidance custom post
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- UI driver: Computer Use against Zen in the Reddit-hosted Devvit WebView.
+- Screenshot:
+  - `output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`
+
+Verified in Reddit Devvit WebView:
+
+- The Act workspace Receipt Ledger loaded the persisted receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` after playtest advanced to
+  `v0.0.1.92`.
+- Clicking `Open evidence board` created a Redis-backed Evidence Board and
+  navigated to the Prove workspace.
+- The Prove workspace showed `Evidence board opened.`
+- The board list showed
+  `Review receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`,
+  `2 evidence items`, and status `Open`.
+- One evidence item was the receipt-backed content snapshot:
+  `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
+- Submitting the note `Runtime evidence-board smoke note.` through the board
+  status form returned `Evidence board status updated.`
+- No Reddit moderation action was executed during this proof.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
-  Reddit mobile app behavior, and non-mod access blocking.
+  Reddit mobile app behavior, Case Packet-origin evidence boards, and non-mod
+  access blocking.
 
 ## Commands Run
 
@@ -214,3 +244,7 @@ Verified in Reddit desktop host `Mobile` Devvit WebView:
 - Computer Use Zen mobile-modal interaction for the `v0.0.1.91` narrow
   WebView proof.
 - `screencapture -x output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+- `npm test -- src/server/services/evidenceBoard.test.ts src/server/services/contentSnapshots.test.ts src/server/services/receipts.test.ts`
+- Computer Use Zen Evidence Board creation/status interaction for the
+  `v0.0.1.92` receipt-backed board proof.
+- `screencapture -x output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`

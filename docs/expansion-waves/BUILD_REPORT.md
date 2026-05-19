@@ -162,13 +162,34 @@ Post-W34 mobile Devvit WebView proof:
 - This is desktop Reddit host mobile-modal proof, not native Reddit mobile app
   proof. No Reddit moderation action was executed.
 
+Post-W34 Evidence Board runtime proof:
+
+- Devvit playtest `v0.0.1.92` opened the comment guidance custom post
+  `1thheea` in Zen as `u/BrightyBrainiac`.
+- Computer Use drove the Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`
+- The Act workspace loaded the persisted receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` from Devvit Redis.
+- Clicking `Open evidence board` created a Redis-backed Evidence Board and
+  navigated to the Prove workspace.
+- The Prove workspace showed `Evidence board opened.`
+- The board list showed
+  `Review receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`,
+  `2 evidence items`, and status `Open`.
+- The board included the receipt-backed content snapshot evidence item:
+  `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
+- Submitting the note `Runtime evidence-board smoke note.` through the status
+  form returned `Evidence board status updated.`
+- No Reddit moderation action was executed during this proof.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
 - Native Mod Notes, modmail/mod discussion send, scheduler jobs, external AI,
-  native Reddit mobile app behavior, and non-mod access blocking remain
-  unverified or disabled.
+  native Reddit mobile app behavior, Case Packet-origin evidence boards, and
+  non-mod access blocking remain unverified or disabled.
 - W34 did not publish, submit, market, or prepare final demo material.
 
 ## Validation Status
@@ -216,6 +237,18 @@ Post-W34 mobile-modal runtime validation passed:
 - `npm run dev`
 - Computer Use Zen mobile-modal interaction on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+
+Post-W34 Evidence Board runtime validation passed:
+
+- `npx devvit whoami`
+- `npm run type-check`
+- `npm run lint`
+- `npm test -- src/server/services/evidenceBoard.test.ts src/server/services/contentSnapshots.test.ts src/server/services/receipts.test.ts`
+- `npm run build`
+- `npm run dev`
+- Computer Use Zen Evidence Board creation/status interaction on Reddit Devvit
+  WebView
+- `screencapture -x output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`
 
 ## Next Engineering Risks
 

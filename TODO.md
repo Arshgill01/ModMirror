@@ -8,7 +8,8 @@ safe Devvit WebView runtime evidence before more feature surface is expanded.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
-Apply Policy menu target capture and log-only receipt persistence are now
+Apply Policy menu target capture, log-only receipt persistence, receipt-backed
+content snapshots, and Evidence Board create/list/status persistence are now
 runtime-verified on desktop Reddit playtest. Live Reddit moderation execution,
 Mod Discussion delivery, scheduler, native Mod Notes, external AI, non-mod
 access, and native Reddit mobile app behavior remain unverified or disabled.
@@ -72,7 +73,7 @@ access, and native Reddit mobile app behavior remain unverified or disabled.
 - [x] Add Prove-page Evidence Board thread list and status update forms.
 - [x] Add receipt-ledger and Case Packet entrypoints for opening boards.
 - [x] Add lifecycle and privacy-preservation tests.
-- [ ] Runtime-verify Evidence Board route persistence through Devvit Web/Redis
+- [x] Runtime-verify Evidence Board route persistence through Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 25 Checklist
@@ -201,7 +202,7 @@ access, and native Reddit mobile app behavior remain unverified or disabled.
       target.
 - [x] Add Wave 16 implementation report.
 - [x] Run full W16 validation gate.
-- [ ] Runtime-verify snapshots through real post/comment menu entrypoints in
+- [x] Runtime-verify snapshots through real post/comment menu entrypoints in
       Devvit playtest.
 
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.

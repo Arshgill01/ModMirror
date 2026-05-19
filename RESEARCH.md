@@ -1119,3 +1119,47 @@ Decision:
 - The W12/W31 narrow Devvit WebView layout may now be described as
   runtime-verified for Reddit's desktop host `Mobile` modal.
 - Native Reddit mobile app behavior must remain a separate open runtime gap.
+
+## Post-W34 Evidence Board Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.92`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use opened the existing comment guidance custom post and drove the
+  Reddit-owned Devvit WebView modal.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshot captured:
+  `output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`.
+
+Verified:
+
+- The Act workspace Receipt Ledger still loaded
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` from Devvit Redis after the
+  playtest advanced to `v0.0.1.92`.
+- Clicking `Open evidence board` on that receipt created a Redis-backed
+  Evidence Board and navigated to the Prove workspace.
+- The UI reported `Evidence board opened.`
+- The Evidence Board list displayed
+  `Review receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with
+  `2 evidence items` and status `Open`.
+- The board included a receipt-backed content snapshot evidence item:
+  `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
+- Entering `Runtime evidence-board smoke note.` and clicking `Update`
+  exercised the status-update route and returned
+  `Evidence board status updated.`
+- No Reddit moderation action was executed.
+
+Decision:
+
+- W26 Evidence Board create/list/status persistence may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- W16 receipt-backed content snapshot persistence is runtime-verified for the
+  previously captured real comment menu target.
+- This proof does not cover Case Packet-origin evidence boards or native
+  mobile behavior.
