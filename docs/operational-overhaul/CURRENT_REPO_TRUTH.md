@@ -31,6 +31,9 @@ It currently supports:
   snapshot, policy snapshot, recommendation, selected action, override context,
   and execution result. Post-W34 runtime proof verified log-only receipt
   persistence in Devvit Redis.
+- Local Redis storage guardrails cap scan metadata plus action and override
+  audit indexes; exact Devvit Redis sorted-set ordering and practical storage
+  limits still require runtime confirmation.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,

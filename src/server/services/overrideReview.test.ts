@@ -25,6 +25,14 @@ vi.mock('@devvit/web/server', () => ({
       const normalizedEnd = end < 0 ? rows.length : end + 1;
       return Promise.resolve(rows.slice(start, normalizedEnd));
     }),
+    zRemRangeByRank: vi.fn((key: string, start: number, stop: number) => {
+      const rows = [...(redisState.sortedSets.get(key) ?? [])].sort(
+        (left, right) => left.score - right.score
+      );
+      rows.splice(start, stop < 0 ? rows.length + stop + 1 : stop - start + 1);
+      redisState.sortedSets.set(key, rows);
+      return Promise.resolve();
+    }),
   },
 }));
 

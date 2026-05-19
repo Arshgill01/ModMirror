@@ -422,7 +422,9 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       `modmirror:{subreddit}:overrides`.
 - [ ] Runtime-confirm Redis sorted-set ordering for
       `modmirror:{subreddit}:overrides`.
-- [ ] Confirm practical Redis storage limits for scan metadata and audit events before storing larger live datasets.
+- [x] Add local caps for scan metadata plus action and override audit indexes.
+- [ ] Runtime-confirm practical Redis storage limits for scan metadata and
+      audit events before storing larger live datasets.
 
 ## Wave 0 Completed Locally
 
