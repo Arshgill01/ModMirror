@@ -107,12 +107,16 @@ Post-W34 merged validation:
 - W29 context-derived subreddit isolation is closed for Devvit Web request
   context; cross-community dashboards and same-subreddit live modqueue item
   reads remain separate gaps.
+- Server-side protected API moderator access checks are locally verified for
+  live subreddit context, and the guarded build reached Devvit playtest ready
+  on `v0.0.1.126`, but true non-mod account runtime blocking and exact
+  permission strings remain separate gaps.
 - The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
   desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
   new pixel-level visual proof remain separate gaps.
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
-- Non-mod access blocking, native mobile, Mod Discussion delivery, scheduler,
-  native Mod Notes, and external AI are unverified/disabled.
+- Native mobile, Mod Discussion delivery, scheduler, native Mod Notes, and
+  external AI are unverified/disabled.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.
 

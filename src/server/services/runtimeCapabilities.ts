@@ -392,6 +392,25 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
         'Run dry-run cleanup in playtest before deleting any persisted operational records.',
     },
     {
+      id: 'moderator-access-guard',
+      domain: 'access_control',
+      label: 'Server-side moderator access guard',
+      state: 'verified_static',
+      evidenceKind: 'static',
+      summary:
+        'Protected API routes require a signed-in user with non-empty subreddit moderator permissions when Devvit supplies live subreddit context.',
+      evidence: [
+        'moderatorAccess.ts checks reddit.getCurrentUser().getModPermissionsForSubreddit before protected API routes continue.',
+        'moderatorAccess.test.ts covers missing user, unavailable permission API, empty permissions, permission failures, and local no-context fallback.',
+      ],
+      proofCommand: 'npm test -- src/server/services/moderatorAccess.test.ts',
+      destructive: false,
+      safeToTest: true,
+      canUpdateFromHealthEvents: true,
+      nextAction:
+        'Verify with a true non-moderator account before claiming runtime access blocking.',
+    },
+    {
       id: 'demo-fallbacks',
       domain: 'demo_fallbacks',
       label: 'Demo fallback data',
