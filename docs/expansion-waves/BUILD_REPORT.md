@@ -107,9 +107,20 @@ Post-W34 post-menu target proof:
   workspace.
 - No Reddit moderation action was executed during this proof.
 
+Post-W34 comment-menu target proof:
+
+- Devvit playtest `v0.0.1.84` on safe comment `t1_ommzgtz` showed
+  `Apply ModMirror Policy` in the comment moderation actions menu.
+- The Devvit form resolved `t1_ommzgtz`, target type `comment`, author
+  `BrightyBrainiac`, subreddit `modmirror_dev`, and body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- Devvit playtest `v0.0.1.89` displayed the expanded guidance WebView
+  `Selected Reddit target` strip with the captured comment ID, author,
+  subreddit, body excerpt, and source link in the Act workspace.
+- No Reddit moderation action was executed during this proof.
+
 ## Known Gaps
 
-- Comment Apply Policy menu runtime proof is still open.
 - Log-only receipt creation needs Devvit Redis proof.
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
@@ -141,6 +152,14 @@ Post-W34 post-menu target validation passed:
 
 - `npm run type-check`
 - `npm test -- src/server/services/targetContext.test.ts`
+- `npm run dev`
+
+Post-W34 comment-menu target validation passed:
+
+- `npm run type-check`
+- `npm run lint`
+- `npm test -- src/server/services/targetContext.test.ts`
+- `npm run build`
 - `npm run dev`
 
 ## Next Engineering Risks

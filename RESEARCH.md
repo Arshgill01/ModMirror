@@ -59,7 +59,7 @@ Updated by: Codex
 | Verified | Signed-in Wave 7/8 Reddit playtest opens the compact inline card and native expanded dashboard modal. | `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.65`; Safari opened the compact inline card, Open Dashboard triggered the Devvit WebView immersive-mode effect, and Reddit opened the native expanded modal with the host `Mobile` viewport dropdown and native theme control. |
 | Verified | The full demo workflow runs inside the Reddit playtest WebView. | On `v0.0.1.65`, Safari verified ExampleLearning demo scan, Low-effort questions policy creation, Apply Policy preview/confirm with an override, Case Packet generation with Markdown export, Review inbox/health update, Manual Digest generation, and Settings runtime state. |
 | Verified | Wave 9/10 digest history can use Redis sorted sets with the existing installation-scoped Redis client. | `src/server/services/digest.ts` stores reports in `modmirror:{subreddit}:digests` and `modmirror:{subreddit}:digest:{digestId}`; `npm run type-check` and `npm test -- src/server/services/digest.test.ts` pass. Runtime Redis read/write remains tracked separately. |
-| Type/build only | W01 post/comment Apply Policy menu entrypoints can use `MenuItemRequest.targetId`, `reddit.getPostById`, `reddit.getCommentById`, `reddit.getCurrentUser`, and `User.getModPermissionsForSubreddit` to build target context. | `devvit.json`, `src/routes/menu.ts`, `src/routes/forms.ts`, `src/server/services/targetContext.ts`, and `src/server/services/targetContext.test.ts`; `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` pass. Runtime menu/form behavior remains unverified. |
+| Verified | W01 post/comment Apply Policy menu entrypoints can use `MenuItemRequest.targetId`, `reddit.getPostById`, `reddit.getCommentById`, `reddit.getCurrentUser`, and `User.getModPermissionsForSubreddit` to build target context. | Local checks pass; post target capture was playtest-verified on `v0.0.1.83` with `t3_1texjev`, and comment target capture was playtest-verified on `v0.0.1.84` with `t1_ommzgtz`. Execution receipts remain separately unverified. |
 | Type/build only | Devvit scheduler client exists in installed typings. | `@devvit/web/server` re-exports `@devvit/scheduler`; `node_modules/@devvit/scheduler/SchedulerClient.d.ts` exposes `scheduler.runJob`, `cancelJob`, and `listJobs`, and `Devvit.addSchedulerJob` exists in `node_modules/@devvit/public-api/devvit/Devvit.d.ts`. No Wave 9/10 scheduler job is registered until runtime behavior is verified. |
 | Type/build only | Devvit modmail/mod discussion APIs exist in installed typings. | `node_modules/@devvit/reddit/models/ModMail.d.ts` and newmodmail proto typings expose modmail conversations including internal mod-only conversation fields. ModMirror keeps digest delivery disabled/unverified until a non-spam runtime playtest proves safe behavior. |
 | Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
@@ -890,9 +890,9 @@ Verified:
 
 Not verified:
 
-- Post/comment Apply Policy menu entries. The feed post overflow and moderator
-  menus checked in W13 did not expose `Apply ModMirror Policy`; test ordinary
-  post/comment detail pages next.
+- At W13 time, post/comment Apply Policy menu entries were still unverified.
+  Post and comment detail-page entrypoints were later verified in the
+  post-W34 runtime proof sections below.
 - Runtime `/api/smoke/redis` and `/api/smoke/reddit` responses.
 - Real target context capture from `MenuItemRequest.targetId`.
 - Devvit Redis receipt, scan, policy lifecycle, and case packet persistence.
@@ -933,7 +933,9 @@ Verified:
 
 Not verified:
 
-- Post/comment Apply Policy menu entries and target context capture.
+- Post/comment Apply Policy menu entries and target context capture were not
+  verified during the smoke-button pass; they were verified in the subsequent
+  post-W34 menu target proofs below.
 - Log-only Apply Policy receipt creation in Devvit Redis.
 - Any destructive moderation operation.
 - Native Mod Notes, modmail/mod discussion, scheduler, external AI, native
@@ -976,7 +978,6 @@ Verified:
 
 Not verified:
 
-- Comment menu target capture.
 - Log-only Apply Policy receipt creation from this real post target.
 - Destructive moderation execution.
 
@@ -984,4 +985,46 @@ Decision:
 
 - Post-level Apply Policy entrypoint discovery and target-context handoff may
   now be described as runtime-verified for this desktop Reddit playtest path.
-- Comment entrypoints and execution receipts remain unverified.
+- Execution receipts remain unverified.
+
+## Post-W34 Comment Menu Target Context Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest versions: `v0.0.1.84` for the initial comment form proof and
+  `v0.0.1.89` for the body-excerpt WebView proof.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Ordinary safe comment used: `t1_ommzgtz` on safe post `t3_1texjev`.
+
+Verified:
+
+- A safe test comment was posted with body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- The Reddit comment moderation actions menu displayed `Apply ModMirror Policy`.
+- The menu action opened the Devvit form and resolved the real comment target:
+  `t1_ommzgtz`, target type `comment`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, and the selected comment body.
+- Submitting `Open policy dashboard` created a guidance custom post.
+- The expanded WebView on the `v0.0.1.89` guidance custom post loaded the Act
+  workspace and displayed `Selected Reddit target` with the captured comment
+  ID, author, subreddit, body excerpt, and source link.
+- The working target handoff uses Devvit custom post `postData` and
+  `/api/launch-context`; the embedded WebView receives `#act`, while the parent
+  Reddit post URL preserves the full target payload.
+- No moderation action was executed.
+
+Not verified:
+
+- Log-only Apply Policy receipt creation from this real comment target.
+- Destructive moderation execution.
+
+Decision:
+
+- Comment-level Apply Policy entrypoint discovery and target-context handoff
+  may now be described as runtime-verified for this desktop Reddit playtest
+  path.
+- Execution receipts remain unverified.

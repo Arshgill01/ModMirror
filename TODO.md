@@ -8,7 +8,8 @@ with Wave 30 privacy controls next.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
-Apply Policy menus, Devvit Redis receipt persistence, live Reddit moderation
+Apply Policy menu target capture is now runtime-verified on desktop Reddit
+playtest, but Devvit Redis receipt persistence, live Reddit moderation
 execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
 non-mod access, and native mobile behavior remain unverified or disabled.
 
@@ -485,7 +486,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       WebView.
 - [x] Verify post Apply Policy menu entry on an ordinary safe post detail page.
 - [x] Verify post menu target context handoff into the Act workspace.
-- [ ] Verify comment Apply Policy menu entry on an ordinary safe comment.
+- [x] Verify comment Apply Policy menu entry on an ordinary safe comment.
+- [x] Verify comment menu target context handoff into the Act workspace.
 - [x] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
       result.
 - [x] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only

@@ -1519,6 +1519,9 @@ function renderApplyTargetContext() {
   if (form.targetTitle) {
     details.push(renderCommandSignal('Title', form.targetTitle));
   }
+  if (form.targetBody) {
+    details.push(renderCommandSignal('Body', formatTargetBodyExcerpt(form.targetBody)));
+  }
 
   return `
     <div class="target-context-strip" aria-label="Selected Reddit target">
@@ -1536,6 +1539,14 @@ function renderApplyTargetContext() {
       }
     </div>
   `;
+}
+
+function formatTargetBodyExcerpt(body: string) {
+  const collapsed = body.trim().replace(/\s+/g, ' ');
+  if (collapsed.length <= 140) {
+    return collapsed;
+  }
+  return `${collapsed.slice(0, 137)}...`;
 }
 
 function renderReceiptLedger() {

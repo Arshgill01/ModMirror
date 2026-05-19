@@ -28,6 +28,8 @@ curl calls that lack the WebView authorization token.
   parent Reddit URL hash.
 - Added an Act workspace target context strip that shows the selected Reddit
   target before any policy action is previewed or confirmed.
+- Added the selected comment body excerpt to the Act target context strip so
+  comment launches are visually attributable in the WebView.
 
 ## Runtime Proof
 
@@ -82,9 +84,39 @@ Verified in Reddit post menu and Devvit WebView:
   - `Open source item`
 - No Reddit moderation action was taken during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Versions observed: `v0.0.1.84` for the initial comment form proof and
+  `v0.0.1.89` for the body-excerpt WebView proof.
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: ordinary safe comment created for this runtime proof:
+  `t1_ommzgtz` on post `t3_1texjev`.
+
+Verified in Reddit comment menu and Devvit WebView:
+
+- A safe test comment was posted with body:
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- The comment moderation actions menu showed `Apply ModMirror Policy`.
+- Selecting it opened the `Apply ModMirror Policy` form with:
+  - target thing ID `t1_ommzgtz`
+  - target type `comment`
+  - target author `BrightyBrainiac`
+  - subreddit `modmirror_dev`
+  - resolved body `Runtime comment target smoke for ModMirror; safe test content.`
+- Accepting `Open policy dashboard` created and opened guidance custom posts.
+- Expanding the dashboard showed the Act workspace target strip:
+  - `Selected Reddit target`
+  - `t1_ommzgtz`
+  - `BrightyBrainiac`
+  - `modmirror_dev`
+  - the selected comment body excerpt
+  - `Open source item`
+- No Reddit moderation action was taken during this proof.
+
 ## Still Not Verified
 
-- Comment Apply Policy menu entrypoint.
 - Log-only Apply Policy receipt creation in Devvit Redis.
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
