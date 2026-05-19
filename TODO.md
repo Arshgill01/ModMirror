@@ -478,6 +478,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [ ] Verify whether a submitted removal comment can be distinguished/stickied.
 - [x] Add a public comment delivery runtime test plan before enabling comment
       delivery.
+- [x] Add a private message/modmail delivery runtime test plan before enabling
+      private delivery.
 - [ ] Verify private message and modmail delivery behavior.
 - [ ] Verify native Mod Notes add/read/delete behavior with real moderator permissions.
 - [x] Add server-side protected API moderator access checks for live subreddit context.

@@ -441,6 +441,7 @@ Conclusion:
 Conclusion:
 
 - Prefer public comments or modmail over subreddit PM. Do not rely on deprecated subreddit PM behavior.
+- `docs/operational-overhaul/PRIVATE_DELIVERY_TEST_PLAN.md` defines the required proof plan before private-message or modmail delivery can be marked runtime-verified. It requires explicit approval, consenting test accounts, and forbids deprecated `sendPrivateMessageAsSubreddit`.
 
 ### Native Mod Notes
 
