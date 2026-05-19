@@ -470,6 +470,21 @@ Post-W34 runtime matrix truth refresh passed:
   `v0.0.1.109`.
 - `screencapture -x output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
 
+Post-W34 UI uniformity pass:
+
+- `src/client/styles.css` now normalizes shared panel padding/radius, primary
+  button contrast, Agree policy-step/template grids, no-policy workbench span,
+  and Settings runtime capability card sizing/status alignment.
+- Computer Use opened a fresh Zen window and reached the Reddit-hosted Devvit
+  fullscreen path for the current playtest build, including `v0.0.1.119`.
+- Screenshot evidence:
+  - `output/runtime-proof/post34-v113-ui-pass-embedded-launch.png`
+  - `output/runtime-proof/post34-v119-ui-pass-agree-local.png`
+  - `output/runtime-proof/post34-v119-ui-pass-settings-matrix-local.png`
+- Local built-client proof shows the reported Agree response-template boxes and
+  Settings runtime matrix cards aligned into consistent grids. A broader
+  Act/Scan/Review/Prove fullscreen and narrow/mobile sweep remains open.
+
 ## Next Engineering Risks
 
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:

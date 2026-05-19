@@ -21,6 +21,23 @@ Discussion delivery, scheduler, native Mod Notes, live modqueue reads, external
 AI, non-mod access, reviewed adoption with multiple distinct moderators, and
 native Reddit mobile app behavior remain unverified or disabled.
 
+UI consistency pass is now part of this batch: align dashboard cards, forms,
+metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
+column rhythm, and responsive wrapping are uniform across Act, Scan, Agree,
+Review, Prove, and Settings.
+
+## Post-W34 UI Uniformity Pass
+
+- [x] Audit the fullscreen Devvit WebView and embedded launch card with
+      Computer Use, plus screenshot evidence for the affected UI surfaces.
+- [x] Normalize shared card, form, metric, and button alignment in
+      `src/client/styles.css`.
+- [x] Verify the reported Agree and Settings alignment issues in desktop
+      fullscreen/static-rendered layouts.
+- [ ] Verify Act, Scan, Review, Prove, and the embedded launch card in both
+      fullscreen and narrow/mobile Devvit host modes after this CSS pass.
+- [x] Add screenshot evidence and update the post-W34 build report.
+
 ## Expansion Wave 29 Checklist
 
 - [x] Add central subreddit scope resolver for current context, demo exception,

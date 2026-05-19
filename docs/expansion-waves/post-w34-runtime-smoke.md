@@ -487,6 +487,44 @@ Runtime gap found and fixed:
   native Mod Notes, Mod Discussion send, scheduler, and retention deletion
   gated.
 
+## UI Uniformity Pass
+
+Validated after the user-reported Agree and Settings alignment issues.
+
+Screenshots:
+
+- `output/runtime-proof/post34-v113-ui-pass-embedded-launch.png`
+- `output/runtime-proof/post34-v119-ui-pass-agree-local.png`
+- `output/runtime-proof/post34-v119-ui-pass-settings-matrix-local.png`
+
+Verified:
+
+- Computer Use opened a fresh Zen window for the Reddit-hosted Devvit flow
+  instead of reusing the user's active browser page.
+- The Devvit launch card and fullscreen control path were reachable on the
+  current playtest build, including `v0.0.1.119`.
+- The embedded launch button now uses theme-safe primary button colors so it
+  remains readable in dark/system host modes.
+- The Agree Policy Editor no longer squeezes response templates into five
+  uneven columns. Template fields wrap through a stable auto-fit grid with
+  consistent textarea heights and panel padding.
+- Single-column no-policy/static Agree states now span the available workbench
+  width instead of leaving an empty right column.
+- The Settings Runtime Capability Matrix now uses uniform card padding, fixed
+  status alignment, stable card heights, and exactly three desktop columns at
+  wide widths.
+
+Notes:
+
+- macOS `screencapture` was unreliable during one Computer Use run because the
+  active desktop Space changed underneath the browser. The bad capture was
+  discarded. Local Playwright screenshots from the built client were retained
+  for visual proof, while Computer Use was used for the Reddit/Devvit fullscreen
+  navigation proof.
+- This UI pass targeted the two reported surfaces. A full Act, Scan, Review,
+  Prove, embedded launch, fullscreen, and narrow/mobile sweep remains listed in
+  `TODO.md`.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -565,3 +603,13 @@ Runtime gap found and fixed:
 - Computer Use Zen Fullscreen Settings inspection for the `v0.0.1.109`
   runtime matrix proof.
 - `screencapture -x output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
+- Computer Use Zen fresh-window launch and fullscreen inspection for the
+  `v0.0.1.119` UI uniformity pass.
+- `npx --yes http-server dist/client -a 127.0.0.1 -p 4173 -c-1`
+- Playwright local built-client screenshots for Agree and Settings runtime
+  matrix UI uniformity.
+- `npm run type-check`
+- `npm run lint`
+- `npm test -- src/client/mobileResilience.test.ts src/shared/clientResilience.test.ts`
+- `npm run build`
+- `git diff --check`
