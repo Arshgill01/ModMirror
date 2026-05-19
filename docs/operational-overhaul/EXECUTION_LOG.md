@@ -983,3 +983,22 @@ Validation:
 - `git diff --check` - passed.
 
 Runtime playtest was not run. This was an audit refresh only.
+
+### 2026-05-20 - Post-W34 Legacy Page ID Audit
+
+Audited tracked references for old W12 page IDs:
+
+- Ran a repo search for `#command-center`, `#policies`, `#case-packets`,
+  `#digest`, old page-ID wording, bookmarks, and related legacy route names.
+- Found only the intentional client compatibility mapping in
+  `src/client/main.ts` plus historical wave/report references.
+- Updated `TODO.md` and `wave12-operational-ui.md` to record that tracked
+  repo-side docs/bookmark-like references do not require migration. User-owned
+  external docs/bookmarks, if any exist outside this repository, remain a
+  separate manual follow-up.
+
+Validation:
+
+- `git diff --check` - passed.
+
+Runtime playtest was not run. This was a tracked-docs audit only.
