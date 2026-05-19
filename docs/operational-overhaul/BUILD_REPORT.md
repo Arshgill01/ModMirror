@@ -76,6 +76,12 @@ Post-W34 runtime proof obtained after integration:
   Reddit host `Mobile` and `Fullscreen` modes. This proof is based on the
   rendered accessibility tree; the Computer Use bitmap payload was blank/white
   during the session, so no new pixel screenshot proof is claimed.
+- Follow-up Devvit playtest `v0.0.1.122` verified W29 subreddit isolation
+  through authenticated WebView API probes: `/api/health` returned
+  `modmirror_dev` / `BrightyBrainiac`, default and explicit-current policy
+  reads stayed in the current namespace, `ExampleLearning` remained the labeled
+  demo exception, and cross-subreddit query/body requests returned isolation
+  errors before any write. The Devvit JWT was redacted from docs.
 - Earlier post-W34 playtests verified safe Redis smoke, Reddit read-only smoke,
   post/comment Apply Policy menu target capture, log-only receipt persistence,
   receipt-backed Evidence Boards and Case Packets, Incident Mode receipt
@@ -98,6 +104,9 @@ Post-W34 merged validation:
 - Devvit Redis receipt/scan/policy persistence needs route-level runtime proof.
   Closed for selected safe routes by post-W34 proof; live modqueue reads and
   destructive cleanup remain unverified.
+- W29 context-derived subreddit isolation is closed for Devvit Web request
+  context; cross-community dashboards and same-subreddit live modqueue item
+  reads remain separate gaps.
 - The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
   desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
   new pixel-level visual proof remain separate gaps.

@@ -50,6 +50,7 @@ Concrete success criteria:
 | Team delivery spike | W11 reports and post-W34 proof record manual/skipped delivery receipts; real Mod Discussion send remains disabled. | Partially satisfied |
 | Operational IA | W12/W13 and post-W34 UI proof record Act / Scan / Agree / Review / Prove / Settings in Reddit-hosted WebView. | Satisfied for desktop WebView |
 | Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. | Satisfied |
+| Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. | Satisfied for Devvit Web request context |
 | Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
@@ -68,7 +69,8 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Mod Discussion delivery and scheduler behavior are not runtime-proven.
 - Actual retention deletion is not runtime-proven; only dry-run controls are.
 - Live modqueue reads still return the labeled fallback instead of verified
-  Reddit queue items.
+  Reddit queue items. W29 proved cross-subreddit live modqueue requests are
+  rejected, not that same-subreddit queue reads return live Reddit items.
 - Policy ratification has not been proven with multiple distinct moderators.
 - The post-W34 UI sweep now has accessibility-tree proof for the embedded
   launch card plus Act, Scan, Review, and Prove in Reddit host Mobile and

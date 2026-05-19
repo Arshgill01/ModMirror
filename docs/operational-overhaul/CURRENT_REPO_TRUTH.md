@@ -127,6 +127,11 @@ It does not yet support:
   form behavior, dashboard navigation, and target fetch in the desktop Reddit
   WebView path. Exact moderator permission shape, non-mod access behavior, and
   native Reddit mobile behavior remain pending.
+- W29 subreddit isolation is runtime-verified for Devvit Web request context:
+  authenticated playtest `v0.0.1.122` exposed current subreddit
+  `modmirror_dev`, kept default and explicit-current API reads in that
+  namespace, allowed only the labeled `ExampleLearning` demo exception, and
+  rejected cross-subreddit query/body requests before writes.
 
 ## Runtime Truth
 
@@ -135,8 +140,9 @@ Runtime evidence exists for:
 - Devvit app identity and playtest readiness.
 - Compact inline card and expanded dashboard modal.
 - W12 operational IA inside the desktop expanded WebView on playtest
-  `v0.0.1.71`, plus latest launch/fullscreen/Agree/Settings proof on
-  `v0.0.1.120`.
+  `v0.0.1.71`, plus launch/fullscreen/Agree/Settings proof on `v0.0.1.120`
+  and later UI/accessibility-tree plus subreddit-isolation proof through
+  `v0.0.1.122`.
 - Safe Redis smoke and Reddit read-only smoke from inside the Devvit WebView.
 - Post/comment Apply Policy menu target capture and Act target strip handoff.
 - Log-only Apply Policy receipt persistence in Devvit Redis.
@@ -145,6 +151,8 @@ Runtime evidence exists for:
   response preview receipt persistence, attribution correction, replay, review
   health, policy impact, and policy ratification in desktop Reddit WebView
   playtest paths.
+- Context-derived subreddit isolation and cross-subreddit API rejection in the
+  authenticated Devvit WebView path.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 
@@ -161,6 +169,7 @@ Runtime evidence does not yet exist for:
 - Non-moderator access blocking.
 - Exact moderator permission strings.
 - Native Reddit mobile app behavior.
+- Same-subreddit live modqueue item reads.
 
 ## Product Boundary
 
