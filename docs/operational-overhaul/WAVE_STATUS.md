@@ -11,8 +11,9 @@ W16-W34 and the post-W34 runtime-smoke/UI follow-up are also merged. PR #12
 merged at `7598f122fc704468bd01d212575b87741fb7ef2c`; later proof PRs closed
 the UI sweep, W29 subreddit-isolation runtime gap, full-access visibility gate,
 Settings manual runtime event recorder, audit storage caps, AI privacy readiness
-gate, and local scheduler-delivery guard. The latest Devvit playtest observed
-while continuing runtime proof work is `v0.0.1.130`.
+gate, local scheduler-delivery guard, legacy page-ID audit, and synthetic
+multi-community isolation fixture. The latest Devvit playtest observed while
+continuing runtime proof work is `v0.0.1.130`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -127,7 +128,9 @@ not itself prove the remaining unverified Reddit runtime behaviors. PR #31
 added the AI privacy readiness gate before any external AI fetch can be enabled.
 PR #32 locally proves scheduler delivery confirmations are skipped rather than
 sent through the Mod Discussion adapter, but scheduler jobs and live Mod
-Discussion sends remain runtime-unverified.
+Discussion sends remain runtime-unverified. PR #35 adds local synthetic
+coverage for the W29 isolation-first multi-community contract without adding
+cross-community analytics or new runtime claims.
 
 ## W00 Definition Of Done
 
