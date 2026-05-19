@@ -36,10 +36,10 @@ It currently supports:
   `/api/smoke/redis-zset` diagnostic and recorded a failed empty observed-order
   result; after the diagnostic switched to Devvit's documented variadic `zAdd`
   call, Devvit playtest `v0.0.1.136` verified reverse-rank sorted-set ordering
-  with `observed newest, middle, oldest`. A local `/api/smoke/redis-storage`
-  diagnostic now writes bounded scan/action/override smoke envelopes and
-  verifies cleanup, but practical storage limits still require a Devvit
-  runtime pass.
+  with `observed newest, middle, oldest`. Devvit playtest `v0.0.1.137` ran
+  `/api/smoke/redis-storage` and verified the current bounded storage envelope:
+  scan metadata `10/10`, action rows `500/500`, override rows `500/500`, and
+  cleanup `0`.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
@@ -226,10 +226,10 @@ Runtime evidence does not yet exist for:
 - Native Reddit mobile app behavior.
 - Same-subreddit live modqueue item reads; the Operational Queue fallback was
   observed on playtests `v0.0.1.94` and `v0.0.1.123`.
-- Practical Redis storage limits for larger live scan/audit datasets; reverse
-  sorted-set ordering itself is now runtime verified through
-  `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, and the
-  `/api/smoke/redis-storage` diagnostic is ready for the next runtime pass.
+- Raising Redis storage caps beyond the current scan metadata/action/override
+  envelope; the current `10/500/500` envelope and reverse sorted-set ordering
+  are runtime verified through `/api/smoke/redis-storage` on Devvit playtest
+  `v0.0.1.137` and `/api/smoke/redis-zset` on `v0.0.1.136`.
 
 ## Product Boundary
 

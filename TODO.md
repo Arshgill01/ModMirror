@@ -7,7 +7,7 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.136`.
+playtest observed while continuing runtime proof work is `v0.0.1.137`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -40,9 +40,10 @@ safety constraints used by the post-W34 probes. Settings now includes a manual
 runtime capability event recorder for safe proof bookkeeping; those manual
 events do not replace runtime proof for destructive or platform-dependent
 capabilities. The expanded Redis sorted-set diagnostic passed on Devvit
-playtest `v0.0.1.136`. A safe Redis storage-envelope diagnostic has been added
-locally for the remaining practical storage-limit proof, but it still needs a
-Devvit playtest run.
+playtest `v0.0.1.136`. The Redis storage-envelope diagnostic passed on Devvit
+playtest `v0.0.1.137` for the current bounded storage caps: 10 scan metadata
+rows, 500 action rows, 500 override rows, one scan-like record, and smoke-key
+cleanup.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -430,10 +431,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add local caps for scan metadata plus action and override audit indexes.
 - [x] Add a safe Redis storage-envelope diagnostic route and Settings control
       for scan metadata, action-event, and override-event cap proof.
-- [ ] Runtime-run `/api/smoke/redis-storage` in Devvit playtest and verify
+- [x] Runtime-run `/api/smoke/redis-storage` in Devvit playtest and verify
       expected counts plus smoke-key cleanup.
-- [ ] Runtime-confirm practical Redis storage limits for scan metadata and
-      audit events before storing larger live datasets.
+- [x] Runtime-confirm practical Redis storage limits for the current scan
+      metadata and audit-event caps before storing larger live datasets.
 
 ## Wave 0 Completed Locally
 
@@ -665,8 +666,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       `Redis sorted-set smoke passed: observed newest, middle, oldest.`
 - [x] Add a safe Redis storage-envelope diagnostic route and Settings control
       for bounded scan metadata, action-event, and override-event proof.
-- [ ] Runtime-run `/api/smoke/redis-storage` in Devvit playtest and verify
-      expected counts plus smoke-key cleanup.
+- [x] Runtime-run `/api/smoke/redis-storage` in Devvit playtest `v0.0.1.137`
+      and verify expected counts plus smoke-key cleanup.
 
 ## Expansion Wave 34 Follow-up
 

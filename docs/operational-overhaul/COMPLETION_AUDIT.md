@@ -85,9 +85,10 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Actual retention deletion is not runtime-proven; only dry-run controls are.
 - Redis sorted-set ordering is now runtime verified through
   `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, after the earlier
-  `v0.0.1.131` empty observed-order failure. Practical Redis storage limits
-  remain unproven; `/api/smoke/redis-storage` is now locally available for the
-  next bounded storage-envelope runtime pass.
+  `v0.0.1.131` empty observed-order failure. The current bounded Redis storage
+  envelope is runtime verified through `/api/smoke/redis-storage` on Devvit
+  playtest `v0.0.1.137`: scan `10/10`, actions `500/500`, overrides
+  `500/500`, cleanup `0`. Raising caps remains unproven.
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
   rejected, not that same-subreddit queue reads return live Reddit items.

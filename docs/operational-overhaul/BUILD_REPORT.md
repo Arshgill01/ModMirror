@@ -214,6 +214,21 @@ Latest Redis storage-envelope diagnostic local validation:
   implementation pass; practical Redis storage limits remain open until the
   safe smoke returns expected counts and cleanup in runtime.
 
+Latest Redis storage-envelope runtime follow-up:
+
+- `npx devvit whoami` - passed as `u/BrightyBrainiac`.
+- `npm run type-check && npm run lint && npm run build && npm test` - passed
+  on merged `master` commit `04bf7c1`, including 47 files and 214 tests.
+- `npm run dev` - reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.137`.
+- Reddit desktop WebView Settings `Run Redis storage` - passed:
+  `Redis storage smoke passed: scan 10/10, actions 500/500, overrides
+  500/500, cleanup 0.` The runtime capability matrix showed `5 runtime`,
+  `1 type-only`, `1 demo-only`, and `0 failed`.
+- No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
+  jobs, external AI calls, or retention deletion were run.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -247,9 +262,9 @@ Latest Redis storage-envelope diagnostic local validation:
 - Redis sorted-set ordering now has a safe local diagnostic endpoint. The first
   Devvit playtest on `v0.0.1.131` failed with an empty observed order, and the
   follow-up on `v0.0.1.136` passed after the diagnostic switched to the
-  documented variadic `zAdd` call. `/api/smoke/redis-storage` is locally
-  implemented for bounded storage-envelope proof, but practical Redis storage
-  limits remain unverified until that route passes in Devvit playtest.
+  documented variadic `zAdd` call. `/api/smoke/redis-storage` passed on
+  Devvit playtest `v0.0.1.137` for the current `10/500/500` bounded envelope;
+  raising storage caps remains unverified.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.
 
