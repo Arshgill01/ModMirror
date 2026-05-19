@@ -335,6 +335,9 @@ Post-W34 server moderator access guard:
 - Added `src/server/services/moderatorAccess.test.ts` coverage for missing
   users, unavailable permission APIs, empty permission lists, permission-check
   failures, and local no-subreddit-context fallback.
+- Added client access-denied classification so `moderator_access_required`
+  failures are shown as moderator-account access issues rather than generic API
+  validation errors.
 - This is local/type proof only. A true non-moderator account runtime test is
   still required before claiming runtime non-mod access blocking.
 - `npm run dev` reached Devvit playtest ready for `r/modmirror_dev` on
@@ -473,6 +476,7 @@ proof still open:
 
 - `npm run type-check`
 - `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
+- `npm test -- src/shared/clientResilience.test.ts`
 - `npx devvit whoami`
 - `npm run dev`
 

@@ -43,6 +43,19 @@ describe('client resilience helpers', () => {
     expect(api.message).toContain('targetThingId is required');
   });
 
+  it('labels moderator access failures with a moderator-account action', () => {
+    const notice = classifyClientError(
+      new Error(
+        'API error (moderator_access_required): Moderator permissions are required for ModMirror API access.'
+      ),
+      'Policies are unavailable.'
+    );
+
+    expect(notice.kind).toBe('access_denied');
+    expect(notice.message).toContain('moderator_access_required');
+    expect(notice.action).toContain('moderator account');
+  });
+
   it('labels missing and denied clipboard paths separately', () => {
     const unavailable = classifyClipboardFailure({
       hasClipboardApi: false,
