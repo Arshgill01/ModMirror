@@ -242,11 +242,56 @@ Verified in Reddit Devvit WebView:
   content snapshot and a case-packet summary.
 - No Reddit moderation action was executed during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version reported by Devvit CLI: `v0.0.1.93`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: comment guidance custom post
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- UI driver: Computer Use against Zen in the Reddit-hosted Devvit WebView.
+- Note: the already-open Reddit WebView token still reported app version
+  `0.0.1.92`; no production source code changed between the `v0.0.1.92` and
+  `v0.0.1.93` playtest starts.
+- Screenshots:
+  - `output/runtime-proof/post34-v93-config-export-import.png`
+  - `output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+
+Verified in Reddit Devvit WebView:
+
+- Settings export generated live package
+  `config-4c9fe762-2146-46ce-b9e3-3dfd8797327d` with schema
+  `modmirror.config.v1`, source `live_config`, subreddit `modmirror_dev`,
+  `includePrivateHistory: false`, `Runtime Smoke Policy`, digest settings, and
+  private-history exclusion warnings.
+- Loading starter template `template-spam-flood-review` populated the import
+  JSON with `Spam and repeated promotion`.
+- Import dry-run returned `Dry run completed. No policies or settings were
+  written.`, accepted `1` policy, skipped `0`, and left settings unchanged.
+- `Import drafts` returned
+  `Portable config imported as drafts and proposed updates.`, accepted `1`
+  policy, skipped `0`, and the Settings summary showed `2 policies loaded in
+  this session`.
+- Saving retention settings returned
+  `Retention settings saved. Policy history remains protected.`
+- Privacy inventory returned `Privacy inventory loaded. It reports counts, not
+  private payloads.` and showed `1` retained action receipt, `2` retained
+  evidence boards, `0` scan history, `0` team delivery receipts, `0` persisted
+  case packets, `0` persisted AI advisory logs, and protected policy history.
+- Dry-run deletion for action receipts, evidence boards, and case packets
+  returned `Dry run completed. No data was deleted.`, mode `dry run`, action
+  receipts `1 selected`, evidence boards `2 selected`, case packets
+  `0 selected`, and protected policy history.
+- No destructive retention deletion and no Reddit moderation action were
+  executed during this proof.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
-- Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
-  Reddit mobile app behavior, and non-mod access blocking.
+- Actual retention deletion, native Mod Notes, modmail/mod discussion delivery,
+  scheduler jobs, native Reddit mobile app behavior, and non-mod access
+  blocking.
 
 ## Commands Run
 
@@ -266,3 +311,10 @@ Verified in Reddit Devvit WebView:
 - Computer Use Zen Case Packet generation and Case Packet-origin Evidence Board
   interaction for the `v0.0.1.92` proof.
 - `screencapture -x output/runtime-proof/post34-v92-case-packet-evidence-board.png`
+- `npx devvit whoami`
+- `npm run type-check`
+- `npm test -- src/server/services/configPortability.test.ts src/server/services/privacyRetention.test.ts`
+- Computer Use Zen config export/import and privacy retention dry-run
+  interaction for the `v0.0.1.93` proof.
+- `screencapture -x output/runtime-proof/post34-v93-config-export-import.png`
+- `screencapture -x output/runtime-proof/post34-v93-privacy-retention-dry-run.png`

@@ -9,11 +9,12 @@ safe Devvit WebView runtime evidence before more feature surface is expanded.
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menu target capture, log-only receipt persistence, receipt-backed
-content snapshots, receipt-backed Case Packet generation, and Evidence Board
-create/list/status persistence are now runtime-verified on desktop Reddit
-playtest. Live Reddit moderation execution, Mod Discussion delivery, scheduler,
-native Mod Notes, external AI, non-mod access, and native Reddit mobile app
-behavior remain unverified or disabled.
+content snapshots, receipt-backed Case Packet generation, Evidence Board
+create/list/status persistence, portable config export/import, and privacy
+retention inventory/dry-run controls are now runtime-verified on desktop Reddit
+playtest. Live Reddit moderation execution, actual retention deletion, Mod
+Discussion delivery, scheduler, native Mod Notes, external AI, non-mod access,
+and native Reddit mobile app behavior remain unverified or disabled.
 
 ## Expansion Wave 29 Checklist
 
@@ -44,7 +45,7 @@ behavior remain unverified or disabled.
       templates.
 - [x] Add tests for export privacy, safe dry run, bad import failure, v0
       migration, and starter labels.
-- [ ] Runtime-verify config export/import persistence through Devvit Web/Redis
+- [x] Runtime-verify config export/import persistence through Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 27 Checklist
@@ -509,8 +510,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       controls.
 - [x] Add service tests for defaults, setting updates, inventory export,
       dry-run behavior, and expired cleanup.
-- [ ] Runtime-verify retention settings and deletion controls against Devvit
-      Redis on a safe test subreddit before claiming live cleanup proof.
+- [x] Runtime-verify retention settings, privacy inventory, and dry-run deletion
+      controls against Devvit Redis on a safe test subreddit.
+- [ ] Runtime-verify actual expired-data cleanup only after a controlled
+      destructive cleanup test is planned.
 - [ ] Add a scheduled cleanup task only after scheduler behavior is
       runtime-verified in this app shape.
 

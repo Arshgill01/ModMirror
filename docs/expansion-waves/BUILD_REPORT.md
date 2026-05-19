@@ -197,13 +197,47 @@ Post-W34 Evidence Board runtime proof:
   - `output/runtime-proof/post34-v92-case-packet-evidence-board.png`
 - No Reddit moderation action was executed during this proof.
 
+Post-W34 config/privacy runtime proof:
+
+- Devvit CLI playtest reported `v0.0.1.93`; the already-open Reddit WebView
+  token still reported app version `0.0.1.92`, with no production source code
+  changes between those playtest starts.
+- Computer Use drove the Settings UI in the Reddit-hosted Devvit WebView as
+  signed-in moderator `u/BrightyBrainiac`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v93-config-export-import.png`
+  - `output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+- Config export generated `config-4c9fe762-2146-46ce-b9e3-3dfd8797327d`
+  with schema `modmirror.config.v1`, source `live_config`, subreddit
+  `modmirror_dev`, `includePrivateHistory: false`, `Runtime Smoke Policy`,
+  digest settings, and private-history exclusion warnings.
+- Starter template `template-spam-flood-review` dry-run accepted `1` policy,
+  skipped `0`, left settings unchanged, and reported that
+  `Spam and repeated promotion` would be imported as a new draft.
+- `Import drafts` returned
+  `Portable config imported as drafts and proposed updates.`, accepted `1`
+  policy, skipped `0`, and the Settings summary then showed `2 policies loaded
+  in this session`.
+- Retention save returned
+  `Retention settings saved. Policy history remains protected.`
+- Privacy inventory returned counts, not private payloads: `1` retained action
+  receipt, `2` retained evidence boards, `0` scan history, `0` team delivery
+  receipts, `0` persisted case packets, `0` persisted AI advisory logs, and
+  `Policy history Protected`.
+- Retention dry-run for action receipts, evidence boards, and case packets
+  returned `Dry run completed. No data was deleted.`, mode `dry run`, action
+  receipts `1 selected`, evidence boards `2 selected`, case packets
+  `0 selected`, and protected policy history.
+- No destructive retention deletion or Reddit moderation action was executed
+  during this proof.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
-- Native Mod Notes, modmail/mod discussion send, scheduler jobs, external AI,
-  native Reddit mobile app behavior, and non-mod access blocking remain
-  unverified or disabled.
+- Actual retention deletion, native Mod Notes, modmail/mod discussion send,
+  scheduler jobs, external AI, native Reddit mobile app behavior, and non-mod
+  access blocking remain unverified or disabled.
 - W34 did not publish, submit, market, or prepare final demo material.
 
 ## Validation Status
@@ -266,6 +300,17 @@ Post-W34 Evidence Board runtime validation passed:
 - Computer Use Zen Case Packet generation and Case Packet-origin Evidence Board
   interaction on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v92-case-packet-evidence-board.png`
+
+Post-W34 config/privacy runtime validation passed:
+
+- `npx devvit whoami`
+- `npm run type-check`
+- `npm test -- src/server/services/configPortability.test.ts src/server/services/privacyRetention.test.ts`
+- `npm run dev`
+- Computer Use Zen Settings interaction for config export/import and privacy
+  retention inventory/dry-run controls on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v93-config-export-import.png`
+- `screencapture -x output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
 
 ## Next Engineering Risks
 

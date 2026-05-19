@@ -74,9 +74,9 @@ Updated by: Codex
 | Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
-| Verified locally | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Devvit Redis runtime persistence remains unverified. |
+| Runtime verified | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Post-W34 Devvit playtest verified receipt-backed board create/list/status persistence in the Reddit-hosted WebView. |
 | Verified locally | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Devvit Redis/API runtime remains unverified. |
-| Verified locally | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Devvit Redis/API runtime remains unverified. |
+| Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
 | Verified locally | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit context behavior remains runtime-unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
@@ -798,8 +798,9 @@ Runtime status:
 
 - Evidence Board service and routes are locally/type verified only.
 - Redis persistence is tested with mocked Redis.
-- Devvit Web/Redis route proof is still required before treating boards as
-  runtime-proven records.
+- Devvit Web/Redis route proof now exists for safe smoke routes, log-only
+  receipts, content snapshots, Evidence Boards, Case Packets, config
+  export/import, and retention inventory/dry-run controls.
 
 ## Wave 30 Privacy Retention Controls
 
@@ -830,8 +831,10 @@ Runtime status:
 
 - Privacy retention service, API contracts, and Settings UI are locally
   type-verified.
-- Redis deletion behavior is tested with mocked dependencies only.
-- No Devvit playtest was run in W30. Runtime proof is still required before
+- Post-W34 Devvit playtest verified Settings save, privacy inventory counts,
+  and selected-category dry-run deletion controls in the Reddit-hosted WebView.
+- Actual Redis deletion behavior is tested with mocked dependencies only; no
+  destructive Devvit deletion was run. Runtime proof is still required before
   claiming live Redis cleanup or scheduled cleanup behavior.
 
 ## Wave 31 Mobile And Runtime Resilience
@@ -1187,3 +1190,75 @@ Additional Case Packet proof on the same playtest:
   `Case packet appeal_context: matched_policy; posture policy_consistent; 5 evidence labels.`
 - Screenshot captured:
   `output/runtime-proof/post34-v92-case-packet-evidence-board.png`.
+
+## Post-W34 Config And Privacy Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npx devvit whoami` reported `Logged in as u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Devvit CLI reported playtest version `v0.0.1.93`. The already-open Reddit
+  WebView token still reported app version `0.0.1.92`; no production source
+  code changed between the `v0.0.1.92` and `v0.0.1.93` playtest starts.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit-owned Devvit WebView modal on the comment
+  guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v93-config-export-import.png`
+  - `output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+
+Verified config portability:
+
+- Settings export generated a live portable config package with
+  `schemaVersion` `modmirror.config.v1`, package ID
+  `config-4c9fe762-2146-46ce-b9e3-3dfd8797327d`, source `live_config`,
+  subreddit `modmirror_dev`, `includePrivateHistory: false`, and exported-by
+  moderator `BrightyBrainiac`.
+- The exported package contained `Runtime Smoke Policy` and digest settings,
+  but explicitly warned that private history is excluded: receipts, overrides,
+  scans, content snapshots, case packets, evidence boards, delivery receipts,
+  and incident reports are not exported.
+- Loading starter template `template-spam-flood-review` filled the import box
+  with one starter policy, `Spam and repeated promotion`.
+- Import dry-run returned `Dry run completed. No policies or settings were
+  written.`, accepted `yes`, policies `1`, skipped `0`, settings `unchanged`,
+  and `Spam and repeated promotion - created Policy will be imported as a new draft.`
+- Clicking `Import drafts` returned
+  `Portable config imported as drafts and proposed updates.`, accepted `yes`,
+  policies `1`, skipped `0`, settings `unchanged`, and retained the private
+  history exclusion warnings.
+- The Settings side summary then showed `2 policies loaded in this session`,
+  proving the imported draft was visible after the Redis-backed import route.
+
+Verified privacy retention controls:
+
+- Clicking `Save retention` with the visible default windows returned
+  `Retention settings saved. Policy history remains protected.`
+- Clicking `Export inventory` returned
+  `Privacy inventory loaded. It reports counts, not private payloads.`
+- Inventory export reported subreddit `r/modmirror_dev`, `7` categories,
+  `1` retained action receipt, `2` retained evidence boards, `0` retained scan
+  history, `0` retained team delivery receipts, `0` persisted case packets,
+  `0` persisted AI advisory logs, and `Policy history Protected`.
+- Selecting action receipts, evidence boards, and case packets, then clicking
+  `Dry run selected`, returned `Dry run completed. No data was deleted.`
+- The dry-run deletion report showed mode `dry run`, action receipts
+  `0 retained / 1 selected`, evidence boards `0 retained / 2 selected`, case
+  packets `0 retained / 0 selected`, and `Policy history Protected`.
+- The dry-run warnings stated `Dry run only. No keys were deleted.` and
+  `Policy history remains protected by default.`
+- No destructive retention deletion was clicked.
+
+Decision:
+
+- W28 config export/import persistence may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- W30 retention settings, privacy inventory, and dry-run deletion controls may
+  now be described as runtime-verified for this desktop Reddit Devvit WebView
+  playtest path.
+- Actual expired-data cleanup/deletion remains unverified and should require a
+  separate controlled destructive cleanup test.
