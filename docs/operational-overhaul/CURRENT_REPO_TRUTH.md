@@ -126,9 +126,9 @@ It does not yet support:
 - W01 target context is runtime-verified for post/comment menu visibility,
   form behavior, dashboard navigation, and target fetch in the desktop Reddit
   WebView path. Server-side protected API moderator access checks are locally
-  verified for live subreddit context. Exact moderator permission shape,
-  non-mod account runtime behavior, and native Reddit mobile behavior remain
-  pending.
+  verified for live subreddit context. The current full moderator account
+  returned permission `all`; lower-permission moderator role strings, non-mod
+  account runtime behavior, and native Reddit mobile behavior remain pending.
 - W29 subreddit isolation is runtime-verified for Devvit Web request context:
   authenticated playtest `v0.0.1.122` exposed current subreddit
   `modmirror_dev`, kept default and explicit-current API reads in that
@@ -139,7 +139,9 @@ It does not yet support:
   refresh path for `modmirror_dev`, but still returned the labeled
   type-supported/no-items fallback instead of live queue items.
 - Server-side protected API moderator access checks are locally verified and
-  the guarded build reached Devvit playtest ready on `v0.0.1.126`.
+  the guarded build reached Devvit playtest ready on `v0.0.1.126`; a follow-up
+  Devvit WebView Settings diagnostic on `v0.0.1.129` returned current
+  moderator permission `all`.
 
 ## Runtime Truth
 
