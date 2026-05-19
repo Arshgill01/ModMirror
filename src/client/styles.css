@@ -1580,6 +1580,18 @@ dd {
   margin: 4px 0 0;
 }
 
+.runtime-manual-event-form {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  padding: 12px;
+}
+
+.runtime-event-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.45fr) minmax(130px, 0.45fr);
+}
+
 .runtime-capability-row {
   border: 1px solid var(--mm-line);
   border-radius: var(--mm-panel-radius);
@@ -2052,6 +2064,7 @@ dd {
   .incident-form-grid,
   .incident-guidance-grid,
   .config-grid,
+  .runtime-event-grid,
   .retention-grid,
   .retention-protected-row,
   .category-checks {

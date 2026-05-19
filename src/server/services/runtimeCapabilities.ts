@@ -215,6 +215,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       evidence: [
         'POST /api/smoke/reddit exercises read-only Reddit SDK calls.',
         'W13 did not complete the Reddit smoke route in Devvit runtime.',
+        'Settings can record protected manual playtest/manual QA events for observations that are not covered by smoke routes.',
       ],
       diagnosticRoute: '/api/smoke/reddit',
       proofCommand: 'curl -X POST <playtest-origin>/api/smoke/reddit',
@@ -234,6 +235,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       evidence: [
         'POST /api/smoke/redis writes and reads a namespaced smoke key.',
         'W13 left Redis runtime proof open.',
+        'Settings can record protected manual playtest/manual QA events for observations that are not covered by smoke routes.',
       ],
       diagnosticRoute: '/api/smoke/redis',
       proofCommand: 'curl -X POST <playtest-origin>/api/smoke/redis',

@@ -87,6 +87,8 @@ import type {
   PrivacyRetentionSettings,
   RedisSmokeResult,
   ResponseTemplateKind,
+  RuntimeCapabilityHealthEvent,
+  RuntimeCapabilityHealthEventInput,
   RuntimeCapabilityMatrix,
   RuntimeCapabilityMatrixEntry,
   RulePolicy,
@@ -332,6 +334,7 @@ type PrivacyRetentionUiState = {
 type RuntimeCapabilityUiState = {
   loading: boolean;
   smokeRunning: RuntimeSmokeCheck | undefined;
+  eventRecording: boolean;
   error: string | undefined;
   message: string | undefined;
   matrix: RuntimeCapabilityMatrix | undefined;
@@ -505,6 +508,7 @@ let privacyRetentionState: PrivacyRetentionUiState = {
 let runtimeCapabilityState: RuntimeCapabilityUiState = {
   loading: false,
   smokeRunning: undefined,
+  eventRecording: false,
   error: undefined,
   message: undefined,
   matrix: undefined,
@@ -2742,6 +2746,7 @@ function renderRuntimeCapabilitySettings() {
         </div>
       </div>
       ${renderRuntimeSmokeMessage()}
+      ${renderManualRuntimeEventForm(entries)}
       <div class="runtime-capability-grid">
         ${entries.map(renderRuntimeCapabilityEntry).join('')}
       </div>
@@ -2751,6 +2756,67 @@ function renderRuntimeCapabilitySettings() {
           : ''
       }
     </section>
+  `;
+}
+
+function renderManualRuntimeEventForm(entries: RuntimeCapabilityMatrixEntry[]) {
+  const disabled =
+    runtimeCapabilityState.eventRecording ||
+    runtimeCapabilityState.smokeRunning !== undefined ||
+    entries.length === 0;
+  return `
+    <form class="policy-form runtime-manual-event-form" data-runtime-event-form>
+      <div class="section-header">
+        <div>
+          <h4>Manual runtime event</h4>
+          <p>Record moderator-observed playtest proof that is not covered by a smoke route.</p>
+        </div>
+        <span class="status-pill">${runtimeCapabilityState.eventRecording ? 'saving' : 'manual QA'}</span>
+      </div>
+      <div class="runtime-event-grid">
+        <label>
+          Capability
+          <select name="capabilityId" ${disabled ? 'disabled' : ''} required>
+            ${
+              entries.length
+                ? entries
+                    .map(
+                      (entry) =>
+                        `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.label)} (${escapeHtml(formatRuntimeCapabilityState(entry.state))})</option>`
+                    )
+                    .join('')
+                : '<option value="">Load capability matrix first</option>'
+            }
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status" ${disabled ? 'disabled' : ''} required>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="skipped">Skipped</option>
+          </select>
+        </label>
+        <label>
+          Source
+          <select name="source" ${disabled ? 'disabled' : ''} required>
+            <option value="playtest">Playtest</option>
+            <option value="manual_qa">Manual QA</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        Evidence note
+        <textarea name="message" ${disabled ? 'disabled' : ''} maxlength="280" required placeholder="Example: Native mobile opened Act and preserved the target strip."></textarea>
+      </label>
+      <label>
+        Error detail
+        <textarea name="errorMessage" ${disabled ? 'disabled' : ''} maxlength="280" placeholder="Only fill this for a failed observation."></textarea>
+      </label>
+      <div class="button-row">
+        <button class="secondary-button compact-button" type="submit" ${disabled ? 'disabled' : ''}>Record event</button>
+      </div>
+    </form>
   `;
 }
 
@@ -3833,6 +3899,14 @@ function bindRuntimeCapabilityActions() {
         if (check === 'redis' || check === 'reddit' || check === 'access') {
           void runRuntimeSmokeCheck(check);
         }
+      });
+    });
+  document
+    .querySelectorAll<HTMLFormElement>('[data-runtime-event-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void recordManualRuntimeEvent(new FormData(form));
       });
     });
 }
@@ -5249,6 +5323,7 @@ async function loadRuntimeCapabilities() {
     runtimeCapabilityState = {
       loading: false,
       smokeRunning: runtimeCapabilityState.smokeRunning,
+      eventRecording: runtimeCapabilityState.eventRecording,
       error: undefined,
       message: runtimeCapabilityState.message,
       matrix,
@@ -5296,6 +5371,7 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
     runtimeCapabilityState = {
       loading: false,
       smokeRunning: undefined,
+      eventRecording: false,
       error: undefined,
       message: summarizeRuntimeSmokeResult(check, result),
       matrix,
@@ -5311,6 +5387,108 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
   }
 
   render();
+}
+
+async function recordManualRuntimeEvent(formData: FormData) {
+  const input = buildManualRuntimeEventInput(formData);
+  if (input === undefined) {
+    render();
+    return;
+  }
+
+  runtimeCapabilityState = {
+    ...runtimeCapabilityState,
+    eventRecording: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const event = await fetchApi<RuntimeCapabilityHealthEvent>(
+      API_ROUTES.runtimeCapabilityEvents,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(input),
+      }
+    );
+    const matrix = await fetchApi<RuntimeCapabilityMatrix>(
+      `${API_ROUTES.runtimeCapabilities}?subreddit=${encodeURIComponent(input.subreddit)}`
+    );
+    const entry = matrix.entries.find(
+      (candidate) => candidate.id === event.capabilityId
+    );
+    runtimeCapabilityState = {
+      loading: false,
+      smokeRunning: undefined,
+      eventRecording: false,
+      error: undefined,
+      message: `Recorded ${event.status} event for ${entry?.label ?? event.capabilityId}.`,
+      matrix,
+    };
+  } catch (error) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      loading: false,
+      eventRecording: false,
+      error: normalizeClientError(
+        error,
+        'Runtime capability event could not be recorded.'
+      ),
+      message: undefined,
+    };
+  }
+
+  render();
+}
+
+function buildManualRuntimeEventInput(
+  formData: FormData
+): RuntimeCapabilityHealthEventInput | undefined {
+  const capabilityId = String(formData.get('capabilityId') ?? '').trim();
+  const status = normalizeRuntimeHealthStatus(formData.get('status'));
+  const source = normalizeRuntimeHealthSource(formData.get('source'));
+  const message = String(formData.get('message') ?? '').trim();
+  const errorMessage = String(formData.get('errorMessage') ?? '').trim();
+  const subreddit =
+    runtimeCapabilityState.matrix?.subreddit ??
+    getWorkspaceSubreddit() ??
+    DEMO_SUBREDDIT_NAME;
+
+  if (!capabilityId || status === undefined || source === undefined || !message) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      error: 'Choose a capability, status, source, and evidence note before recording an event.',
+      message: undefined,
+    };
+    return undefined;
+  }
+
+  return {
+    subreddit,
+    capabilityId,
+    status,
+    source,
+    message,
+    ...(errorMessage ? { errorMessage } : {}),
+  };
+}
+
+function normalizeRuntimeHealthStatus(
+  value: FormDataEntryValue | null
+): RuntimeCapabilityHealthEventInput['status'] | undefined {
+  return value === 'passed' || value === 'failed' || value === 'skipped'
+    ? value
+    : undefined;
+}
+
+function normalizeRuntimeHealthSource(
+  value: FormDataEntryValue | null
+): RuntimeCapabilityHealthEventInput['source'] | undefined {
+  return value === 'playtest' || value === 'manual_qa' ? value : undefined;
 }
 
 async function fetchRawJson<T>(url: string, init?: RequestInit): Promise<T> {
