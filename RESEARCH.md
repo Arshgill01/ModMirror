@@ -774,6 +774,10 @@ Runtime status:
   receipt persistence, but not live Mod Discussion sending or scheduler jobs.
 - Runtime proof still requires a safe playtest that confirms internal-only
   destination, permission failure shape, and no accidental user-facing message.
+- `docs/operational-overhaul/MOD_DISCUSSION_DELIVERY_TEST_PLAN.md` defines the
+  required proof plan before internal Mod Discussion delivery can be marked
+  runtime-verified. It requires explicit approval, test-only content, exact
+  destination/sender evidence, and keeps scheduler delivery separate.
 
 ## Wave 25 Appeal / Case Packet Delivery
 
@@ -808,6 +812,9 @@ Runtime status:
 - Runtime proof still requires safe playtest verification of internal-only
   destination, permission failure shape, and Redis receipt persistence before
   any live send adapter is exposed.
+- Use `docs/operational-overhaul/MOD_DISCUSSION_DELIVERY_TEST_PLAN.md` for that
+  proof pass; direct private-message and user-facing modmail proof is covered
+  separately by `PRIVATE_DELIVERY_TEST_PLAN.md`.
 
 ## Wave 26 Collaborative Evidence Board
 

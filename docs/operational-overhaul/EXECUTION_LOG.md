@@ -1457,3 +1457,21 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. No private message,
 modmail, or Mod Discussion message was sent.
+
+### 2026-05-20 - Mod Discussion Delivery Test Plan
+
+- Added `docs/operational-overhaul/MOD_DISCUSSION_DELIVERY_TEST_PLAN.md` as the
+  required proof plan before internal Mod Discussion delivery can be marked
+  runtime-verified.
+- The plan requires explicit approval, test-only content, exact moderator
+  destination/sender evidence, and keeps scheduler behavior separate.
+- Updated `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`,
+  `RUNTIME_VERIFICATION_MATRIX.md`, `RUNTIME_PROOF_BACKLOG.md`, and
+  `COMPLETION_AUDIT.md` while keeping live delivery disabled.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. No Mod Discussion message
+was sent.

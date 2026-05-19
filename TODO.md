@@ -162,6 +162,8 @@ the repo root are intentionally left untouched.
       sending a Reddit message.
 - [x] Add tests for case packet delivery draft generation and delivery receipt
       subject storage.
+- [x] Add an internal Mod Discussion delivery runtime test plan before enabling
+      any real send path.
 - [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
       before enabling any real send path.
 - [x] Runtime-verify delivery receipt persistence through Devvit Web/Redis
@@ -563,6 +565,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add preview-first delivery APIs for digest/policy proposal content.
 - [x] Store manual/skipped delivery receipts without sending Reddit messages.
 - [x] Keep product routes from injecting a live delivery adapter.
+- [x] Add an internal Mod Discussion delivery runtime test plan before enabling
+      any real send path.
 - [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
       before enabling any real send path.
 - [ ] Register and runtime-verify a scheduler task before scheduler delivery is
