@@ -1247,3 +1247,24 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run in this reconciliation.
 The change only aligns code metadata with already recorded playtest evidence.
+
+### 2026-05-20 - Legacy Runtime Verification Matrix Reconciliation
+
+- Updated `src/server/services/runtimeVerification.ts` so the legacy
+  `/api/runtime-verification` matrix also lists the runtime-verified Redis
+  sorted-set ordering, current Redis storage envelope, and synthetic retention
+  cleanup diagnostics.
+- Kept actual real-record retention deletion out of the verified scope; the
+  synthetic cleanup entry remains destructive-flagged and points to a separate
+  controlled destructive cleanup test before deleting operational records.
+- Updated `runtimeVerification.test.ts` to assert those entries and diagnostic
+  routes.
+
+Validation:
+
+- `npm test -- src/server/services/runtimeVerification.test.ts` passed.
+- `npm run type-check` passed.
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. The change only aligns
+the legacy verification matrix with already recorded playtest evidence.

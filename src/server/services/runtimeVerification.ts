@@ -118,6 +118,41 @@ function buildRuntimeVerificationItems(): RuntimeVerificationItem[] {
         'Keep the Redis smoke route in the runtime regression checklist.',
     },
     {
+      id: 'redis-zset-ordering',
+      category: 'data_persistence',
+      capability: 'Redis sorted-set ordering',
+      status: 'runtime_verified',
+      evidence: [
+        'POST /api/smoke/redis-zset writes deterministic members, reads reverse-rank order, and deletes the smoke key.',
+        'Devvit playtest v0.0.1.131 first recorded an empty observed-order failure.',
+        'After switching to Devvit Redis variadic zAdd, playtest v0.0.1.136 reported: Redis sorted-set smoke passed: observed newest, middle, oldest.',
+      ],
+      diagnosticRoute: '/api/smoke/redis-zset',
+      proofCommand: 'curl -X POST <playtest-webview-origin>/api/smoke/redis-zset',
+      safeToRunInPlaytest: true,
+      destructive: false,
+      nextAction:
+        'Keep the sorted-set smoke route in regression checks before relying on newest-first audit reads.',
+    },
+    {
+      id: 'redis-storage-envelope',
+      category: 'data_persistence',
+      capability: 'Redis storage envelope',
+      status: 'runtime_verified',
+      evidence: [
+        'POST /api/smoke/redis-storage writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to namespaced smoke keys.',
+        'The route deletes the smoke keys and verifies post-cleanup key absence.',
+        'Devvit playtest v0.0.1.137 reported: Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.',
+      ],
+      diagnosticRoute: '/api/smoke/redis-storage',
+      proofCommand:
+        'curl -X POST <playtest-webview-origin>/api/smoke/redis-storage',
+      safeToRunInPlaytest: true,
+      destructive: false,
+      nextAction:
+        'Keep the storage smoke route in regression checks before raising scan/action/override caps.',
+    },
+    {
       id: 'reddit-read-smoke',
       category: 'data_persistence',
       capability: 'Read-only Reddit API smoke',
@@ -149,6 +184,24 @@ function buildRuntimeVerificationItems(): RuntimeVerificationItem[] {
       destructive: false,
       nextAction:
         'Keep live scan list/detail/replay in the runtime regression checklist.',
+    },
+    {
+      id: 'retention-cleanup-synthetic',
+      category: 'data_persistence',
+      capability: 'Synthetic retention cleanup',
+      status: 'runtime_verified',
+      evidence: [
+        'POST /api/smoke/retention-cleanup creates old synthetic scan, receipt, evidence board, and team-delivery receipt records.',
+        'The smoke route deletes only those synthetic records through retention cleanup and verifies detail keys plus sorted-set index references are gone.',
+        'Devvit playtest v0.0.1.138 reported: Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.',
+      ],
+      diagnosticRoute: '/api/smoke/retention-cleanup',
+      proofCommand:
+        'curl -X POST <playtest-webview-origin>/api/smoke/retention-cleanup',
+      safeToRunInPlaytest: true,
+      destructive: true,
+      nextAction:
+        'Keep the synthetic cleanup smoke route in regression checks; do not delete real operational records without a controlled destructive cleanup test.',
     },
     {
       id: 'policy-agreement-lifecycle',

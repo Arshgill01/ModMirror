@@ -25,6 +25,26 @@ describe('runtime verification matrix', () => {
     expect(matrix.summary.runtimeVerified).toBeGreaterThanOrEqual(8);
     expect(matrix.summary.disabled).toBeGreaterThanOrEqual(3);
     expect(matrix.summary.typeOnly).toBe(0);
+    expect(matrix.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'redis-zset-ordering',
+          status: 'runtime_verified',
+          diagnosticRoute: '/api/smoke/redis-zset',
+        }),
+        expect.objectContaining({
+          id: 'redis-storage-envelope',
+          status: 'runtime_verified',
+          diagnosticRoute: '/api/smoke/redis-storage',
+        }),
+        expect.objectContaining({
+          id: 'retention-cleanup-synthetic',
+          status: 'runtime_verified',
+          diagnosticRoute: '/api/smoke/retention-cleanup',
+          destructive: true,
+        }),
+      ])
+    );
     expect(matrix.criticalBlockers.some((item) => item.includes('Real Reddit'))).toBe(
       true
     );
