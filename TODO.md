@@ -551,3 +551,15 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       playtest so the matrix can promote safe capabilities with real proof.
 - [ ] Add operator UI for recording manual playtest events if W34 keeps this
       API as part of the integrated product surface.
+
+## Expansion Wave 34 Follow-up
+
+- [x] Create the W34 integration branch from the sequential expansion line.
+- [x] Add expansion architecture notes.
+- [x] Add the expansion build report.
+- [ ] Push/review the W16-W34 branches if PR workflow is used.
+- [ ] Run Devvit playtest proof for the W33 runtime capability matrix on a safe
+      subreddit before promoting Redis/Reddit smoke beyond local/static proof.
+- [ ] Decide whether `expansion/w34-integration` should be merged into
+      `integration/operational-overhaul` or a new long-lived expansion
+      integration branch.
