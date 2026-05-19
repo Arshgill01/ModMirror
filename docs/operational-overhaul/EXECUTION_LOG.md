@@ -894,3 +894,33 @@ Validation:
 
 Runtime playtest was not run for this local test slice. Exact Devvit Redis
 sorted-set ordering remains a runtime follow-up.
+
+### 2026-05-20 - Post-W34 Local Audit Storage Caps
+
+Implemented local caps for audit event indexes:
+
+- Added `ACTION_EVENT_HISTORY_LIMIT` and `OVERRIDE_EVENT_HISTORY_LIMIT` in
+  `src/shared/constants.ts`.
+- `saveActionEvent` now trims global and per-user action event sorted sets to
+  the local action history cap.
+- `saveAuditEvent` now trims the override audit sorted set to the local
+  override history cap.
+- Extended `src/server/services/auditPersistence.test.ts` to cover action and
+  override cap trimming while preserving newest-first reads.
+- Updated TODO, research, current-truth, and capability docs to distinguish
+  local storage guardrails from still-open runtime Redis limit proof.
+
+Validation:
+
+- `npm test -- src/server/services/auditPersistence.test.ts src/server/services/audit.test.ts`
+  - passed, 2 files and 7 tests.
+- `npm test -- src/server/services/auditPersistence.test.ts src/server/services/audit.test.ts src/server/services/overrideReview.test.ts`
+  - passed, 3 files and 11 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 207 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run for this local cap slice. Practical Devvit Redis
+storage limits remain a runtime follow-up before larger live datasets.

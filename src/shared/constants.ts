@@ -378,6 +378,8 @@ export const DEFAULT_POLICY_REQUIRED_APPROVALS = 1;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
 export const SCAN_HISTORY_LIMIT = 10;
+export const ACTION_EVENT_HISTORY_LIMIT = 500;
+export const OVERRIDE_EVENT_HISTORY_LIMIT = 500;
 export const MIRROR_SCAN_DEPTH_CONFIG = {
   quick: {
     requestedLimit: 25,

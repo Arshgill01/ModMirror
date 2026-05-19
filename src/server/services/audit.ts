@@ -1,6 +1,8 @@
 import { redis } from '@devvit/web/server';
 import { randomUUID } from 'node:crypto';
 import {
+  ACTION_EVENT_HISTORY_LIMIT,
+  OVERRIDE_EVENT_HISTORY_LIMIT,
   OVERRIDE_REASON_VALUES,
   OVERRIDE_REVIEW_STATUS_VALUES,
 } from '../../shared/constants';
@@ -100,12 +102,18 @@ export async function saveActionEvent(
     member: serializeJson(event),
     score,
   });
+  await trimAuditIndex(
+    redisKeys.actions(event.subreddit),
+    ACTION_EVENT_HISTORY_LIMIT
+  );
 
   if (event.modUsername) {
-    await redis.zAdd(redisKeys.actionsByUser(event.subreddit, event.modUsername), {
+    const userKey = redisKeys.actionsByUser(event.subreddit, event.modUsername);
+    await redis.zAdd(userKey, {
       member: serializeJson(event),
       score,
     });
+    await trimAuditIndex(userKey, ACTION_EVENT_HISTORY_LIMIT);
   }
 
   return event;
@@ -141,6 +149,10 @@ export async function saveAuditEvent(event: OverrideEvent): Promise<void> {
     member: serializeJson(event),
     score: Number.isNaN(createdAtScore) ? Date.now() : createdAtScore,
   });
+  await trimAuditIndex(
+    redisKeys.overrides(event.subreddit),
+    OVERRIDE_EVENT_HISTORY_LIMIT
+  );
 }
 
 export async function listRecentAuditEvents(
@@ -366,6 +378,13 @@ function applyOverrideReview(
   }
 
   return updated;
+}
+
+async function trimAuditIndex(key: string, maxCount: number): Promise<void> {
+  if (maxCount <= 0) {
+    return;
+  }
+  await redis.zRemRangeByRank(key, 0, -(maxCount + 1));
 }
 
 export function createLogOnlyActionInput(options: {
