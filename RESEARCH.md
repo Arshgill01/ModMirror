@@ -744,7 +744,9 @@ Decision:
 - Mod discussion delivery is type-supported but runtime-unverified. Confirming
   it without runtime proof stores a skipped receipt.
 - Scheduler delivery is marked unavailable because no ModMirror scheduler task
-  is registered in `devvit.json`.
+  is registered in `devvit.json`. Post-W34 local regression coverage also
+  verifies scheduler confirmations do not route through the Mod Discussion
+  adapter even when live-delivery flags are supplied.
 - Actual mod discussion delivery can only happen through an explicitly injected
   adapter plus live-delivery and runtime-proof flags. Product routes do not
   inject an adapter.
@@ -753,10 +755,11 @@ Runtime status:
 
 - No modmail/mod discussion message was sent in W11.
 - No scheduler task was registered or run in W11.
-- Delivery receipt persistence is locally tested with mocked Redis only.
+- Delivery receipt persistence is locally tested with mocked Redis only. Later
+  post-W34 playtest verified manual-ready and skipped Mod Discussion draft
+  receipt persistence, but not live Mod Discussion sending or scheduler jobs.
 - Runtime proof still requires a safe playtest that confirms internal-only
-  destination, permission failure shape, receipt persistence, and no accidental
-  user-facing message.
+  destination, permission failure shape, and no accidental user-facing message.
 
 ## Wave 25 Appeal / Case Packet Delivery
 

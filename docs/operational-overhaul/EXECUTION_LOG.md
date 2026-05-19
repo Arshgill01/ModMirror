@@ -939,3 +939,28 @@ Added the W10 terms/privacy readiness note without enabling external AI:
 
 Runtime playtest was not run. No external fetch, provider secret retrieval, AI
 provider call, or AI enforcement behavior was added.
+
+### 2026-05-20 - Post-W34 Team Delivery Scheduler Guard
+
+Closed a local W11 safety gap without enabling live delivery:
+
+- `src/server/services/teamDelivery.ts` now always records scheduler delivery
+  confirmations as skipped because no scheduler task is registered.
+- Added regression coverage proving a scheduler confirmation does not call the
+  injected Mod Discussion adapter even when live-delivery and runtime-verified
+  flags are supplied.
+- Split the W11 TODO so the local no-accidental-scheduler-delivery guard is
+  complete while live Mod Discussion permission failure proof remains open.
+
+Validation:
+
+- `npm test -- src/server/services/teamDelivery.test.ts` - passed, 1 file and
+  6 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 208 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run. No Mod Discussion send, scheduler task, Reddit
+message, or user-facing delivery behavior was enabled.
