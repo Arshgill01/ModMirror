@@ -38,11 +38,31 @@ segments.
 
 ## Runtime Proof Status
 
-Local/type/build verified only.
+Runtime verified for Devvit Web request context and API isolation.
 
-No Devvit playtest was run for this wave. The exact `context.subredditName`
-values attached to Devvit Web requests and menu-origin requests still need
-runtime proof before claiming live multi-community behavior is verified.
+On 2026-05-19, Devvit playtest `v0.0.1.122` for `r/modmirror_dev` exposed the
+WebView API with an authenticated Devvit JWT. The token itself was not stored.
+Redacted API probes verified:
+
+- `GET /api/health` returned version `0.0.1.122`, subreddit
+  `modmirror_dev`, and user `BrightyBrainiac`.
+- `GET /api/policies` with no query returned two policies, all scoped to
+  `modmirror_dev`.
+- `GET /api/policies?subreddit=modmirror_dev` returned the same current
+  subreddit scope.
+- `GET /api/policies?subreddit=ExampleLearning` returned the labeled demo
+  namespace without crossing into another live subreddit.
+- `GET /api/policies?subreddit=OtherCommunity` and
+  `GET /api/runtime-capabilities?subreddit=OtherCommunity` returned
+  `403 subreddit_isolation_failed`.
+- `GET /api/modqueue/triage?subreddit=OtherCommunity&limit=1` returned
+  `403 subreddit_isolation_failed` with the live-context mismatch message.
+- `POST /api/policies` with body `subreddit: OtherCommunity` returned
+  `400 policy_validation_failed` with the cross-subreddit isolation message
+  before any policy write.
+
+No public Reddit writes, live scan/demo load actions, moderation actions, or
+Mod Discussion/native Mod Note operations were performed.
 
 ## Commands Run
 
@@ -53,6 +73,12 @@ runtime proof before claiming live multi-community behavior is verified.
 - `npm test`
 - `npm run build`
 - `git diff --check`
+- `npx devvit whoami`
+- `npm run dev`
+- `curl -sS -i https://modmirror-hw8un4-0-0-1-121-webview.devvit.net/api/health`
+- `curl` / `node` probes against
+  `https://modmirror-hw8un4-0-0-1-122-webview.devvit.net` with
+  `Authorization: Bearer <redacted Devvit JWT>`
 
 ## Known Gaps
 
