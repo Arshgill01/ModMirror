@@ -964,3 +964,22 @@ Validation:
 
 Runtime playtest was not run. No Mod Discussion send, scheduler task, Reddit
 message, or user-facing delivery behavior was enabled.
+
+### 2026-05-20 - Post-W34 Completion Audit Refresh
+
+Refreshed operational control artifacts after PR #31 and PR #32:
+
+- Updated `COMPLETION_AUDIT.md` so the prompt-to-artifact checklist includes
+  the AI privacy readiness gate, the local scheduler skipped-delivery guard,
+  and the latest broad validation count of 46 files and 208 tests.
+- Updated `CURRENT_REPO_TRUTH.md` with the current AI readiness gate and
+  scheduler-confirmation behavior.
+- Updated `WAVE_STATUS.md` so the post-W34 status summary includes the AI
+  privacy and scheduler guard slices while keeping external AI, live Mod
+  Discussion sends, and scheduler jobs marked unverified or disabled.
+
+Validation:
+
+- `git diff --check` - passed.
+
+Runtime playtest was not run. This was an audit refresh only.
