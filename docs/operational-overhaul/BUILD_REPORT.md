@@ -249,6 +249,16 @@ truth-doc refreshes:
 - `git diff --check` - passed.
 - No Devvit playtest was run in this validation pass.
 
+Latest completion-audit closure validation:
+
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 217 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- No Devvit playtest was run in this validation pass; no runtime capability was
+  promoted.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
