@@ -11,6 +11,7 @@ Date: 2026-05-19
   verification/capability evidence.
 - Added client-side access-denied classification for
   `moderator_access_required` and related permission failures.
+- Added route-level Hono middleware tests in `src/routes/apiAccess.test.ts`.
 
 The guard requires a signed-in current Reddit user and a non-empty
 `getModPermissionsForSubreddit(currentSubreddit)` result before protected API
@@ -29,6 +30,8 @@ allowed so static/demo fallback work is not blocked by missing Devvit context.
 - Any non-empty subreddit moderator permission list is accepted for aggregate
   ModMirror access.
 - Local no-subreddit-context execution skips the guard.
+- `/api/health` stays reachable without a current user, while protected routes
+  deny missing-current-user requests and allow users with moderator permissions.
 - The client labels moderator-access API failures as `access_denied` and tells
   the user to open ModMirror with a moderator account instead of treating the
   error as a generic validation problem.
@@ -36,6 +39,7 @@ allowed so static/demo fallback work is not blocked by missing Devvit context.
 ## Commands run
 
 - `npm run type-check`
+- `npm test -- src/routes/apiAccess.test.ts`
 - `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
 - `npm test -- src/shared/clientResilience.test.ts`
 - `npx devvit whoami`

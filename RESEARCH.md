@@ -51,7 +51,7 @@ Updated by: Codex
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
-| Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts` and `npm run type-check` pass. Runtime proof with a true non-mod account remains open. |
+| Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `src/routes/apiAccess.test.ts` proves the route middleware leaves `/api/health` reachable without a current user, denies `/api/policies` without a current user, and allows `/api/runtime-capabilities` when moderator permissions are present. `npm test -- src/routes/apiAccess.test.ts`, `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`, and `npm run type-check` pass. Runtime proof with a true non-mod account remains open. |
 | Verified locally | Client errors distinguish moderator access failures from generic API errors. | `src/shared/clientResilience.ts` classifies `moderator_access_required` and related permission messages as `access_denied`, and `src/client/main.ts` preserves API error codes in common fetch failures. `npm test -- src/shared/clientResilience.test.ts` and `npm run type-check` pass. |
 | Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
@@ -1546,6 +1546,9 @@ Evidence source:
 - `npm run type-check` passed after adding the guard.
 - `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
   passed after updating the guard and truth matrices.
+- `npm test -- src/routes/apiAccess.test.ts` passed after adding route-level
+  middleware proof for public health, denied protected access, and allowed
+  moderator access.
 - `npx devvit whoami` reported `u/BrightyBrainiac`.
 - `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.126`.
 
@@ -1558,6 +1561,8 @@ Implemented behavior:
   lists, and permission-check failures.
 - `src/routes/api.ts` applies the guard to protected API routes and leaves
   health/status/capability metadata routes available.
+- `src/routes/apiAccess.test.ts` proves the middleware behavior at the Hono API
+  route layer.
 - Local no-subreddit-context execution is allowed so static/demo development
   does not depend on Devvit runtime context.
 - `src/shared/clientResilience.ts` classifies `moderator_access_required` and

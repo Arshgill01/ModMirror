@@ -335,6 +335,9 @@ Post-W34 server moderator access guard:
 - Added `src/server/services/moderatorAccess.test.ts` coverage for missing
   users, unavailable permission APIs, empty permission lists, permission-check
   failures, and local no-subreddit-context fallback.
+- Added `src/routes/apiAccess.test.ts` route-level coverage proving
+  `/api/health` remains public, `/api/policies` is denied without a current
+  user, and `/api/runtime-capabilities` is allowed with moderator permissions.
 - Added client access-denied classification so `moderator_access_required`
   failures are shown as moderator-account access issues rather than generic API
   validation errors.

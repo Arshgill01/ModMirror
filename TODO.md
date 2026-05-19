@@ -431,6 +431,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [ ] Verify private message and modmail delivery behavior.
 - [ ] Verify native Mod Notes add/read/delete behavior with real moderator permissions.
 - [x] Add server-side protected API moderator access checks for live subreddit context.
+- [x] Add route-level middleware tests proving public health stays reachable and
+      protected API routes require moderator access.
 - [x] Classify moderator-access API failures separately in the client so blocked
       users see moderator-account guidance instead of generic input-fix text.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.
