@@ -1,0 +1,279 @@
+{
+  "schemaVersion": "modmirror.synthetic-eval.v1",
+  "generatedAt": "2026-05-18T18:00:00.000Z",
+  "scenarioCount": 8,
+  "scenarios": [
+    {
+      "id": "stable_rule",
+      "actionCount": 6,
+      "scanCount": 2,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 6,
+        "matchedPolicyCount": 6,
+        "changedRecommendationCount": 0,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "limited",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 3,
+        "latestTotalActions": 6,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "high_drift",
+      "actionCount": 8,
+      "scanCount": 2,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 8,
+        "matchedPolicyCount": 2,
+        "changedRecommendationCount": 6,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "limited",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 5,
+        "latestTotalActions": 8,
+        "smallSubredditMeetsThreshold": true,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "policy_improved",
+      "actionCount": 5,
+      "scanCount": 2,
+      "receiptCount": 9,
+      "overrideCount": 4,
+      "replay": {
+        "totalActionsEvaluated": 5,
+        "matchedPolicyCount": 3,
+        "changedRecommendationCount": 2,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "usable",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "improving"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "improving"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 1,
+        "latestTotalActions": 3,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "small_subreddit",
+      "actionCount": 3,
+      "scanCount": 1,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 3,
+        "matchedPolicyCount": 2,
+        "changedRecommendationCount": 1,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "insufficient",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 2,
+        "latestTotalActions": 3,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 1
+      }
+    },
+    {
+      "id": "noisy_attribution",
+      "actionCount": 8,
+      "scanCount": 2,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 5,
+        "matchedPolicyCount": 3,
+        "changedRecommendationCount": 2,
+        "skippedActionCount": 3
+      },
+      "analytics": {
+        "dataQuality": "limited",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 3,
+        "latestTotalActions": 5,
+        "smallSubredditMeetsThreshold": true,
+        "unmatchedCount": 2
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "repeated_offender",
+      "actionCount": 5,
+      "scanCount": 2,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 5,
+        "matchedPolicyCount": 2,
+        "changedRecommendationCount": 3,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "limited",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 3,
+        "latestTotalActions": 5,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "policy_version_change",
+      "actionCount": 5,
+      "scanCount": 2,
+      "receiptCount": 6,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 5,
+        "matchedPolicyCount": 2,
+        "changedRecommendationCount": 3,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "usable",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "stable"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "improving"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 1,
+        "latestTotalActions": 2,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2
+      }
+    },
+    {
+      "id": "incident_mode",
+      "actionCount": 4,
+      "scanCount": 2,
+      "receiptCount": 4,
+      "overrideCount": 1,
+      "replay": {
+        "totalActionsEvaluated": 4,
+        "matchedPolicyCount": 1,
+        "changedRecommendationCount": 3,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "usable",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "new_policy_tracking"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 3,
+        "latestTotalActions": 4,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 4,
+        "syntheticScanWarningCount": 2
+      }
+    }
+  ]
+}

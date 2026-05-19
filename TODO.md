@@ -2,6 +2,234 @@
 
 ## Current Phase
 
+Post-W34 runtime-smoke follow-up is in progress on
+`post34/runtime-smoke-controls`, focused on replacing type/static proof with
+safe Devvit WebView runtime evidence before more feature surface is expanded.
+
+The operational overhaul remains build-only/type-verified for several runtime
+paths unless a wave report explicitly says playtest was run. Post/comment
+Apply Policy menu target capture, log-only receipt persistence, receipt-backed
+content snapshots, receipt-backed Case Packet generation, Evidence Board
+create/list/status persistence, portable config export/import, privacy
+retention inventory/dry-run controls, Incident Mode receipt tagging/reporting,
+response template preview receipt persistence, community health aggregate
+review, policy impact summaries, policy ratification propose/review/blocking,
+attribution correction persistence, stored-scan replay, and manual/skipped Case
+Packet delivery receipt persistence are now runtime-verified on desktop Reddit
+playtest. Live Reddit moderation execution, actual retention deletion, Mod
+Discussion delivery, scheduler, native Mod Notes, live modqueue reads, external
+AI, non-mod access, reviewed adoption with multiple distinct moderators, and
+native Reddit mobile app behavior remain unverified or disabled.
+
+UI consistency pass is now part of this batch: align dashboard cards, forms,
+metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
+column rhythm, and responsive wrapping are uniform across Act, Scan, Agree,
+Review, Prove, and Settings.
+
+## Post-W34 UI Uniformity Pass
+
+- [x] Audit the fullscreen Devvit WebView and embedded launch card with
+      Computer Use, plus screenshot evidence for the affected UI surfaces.
+- [x] Normalize shared card, form, metric, and button alignment in
+      `src/client/styles.css`.
+- [x] Verify the reported Agree and Settings alignment issues in desktop
+      fullscreen/static-rendered layouts.
+- [ ] Verify Act, Scan, Review, Prove, and the embedded launch card in both
+      fullscreen and narrow/mobile Devvit host modes after this CSS pass.
+- [x] Add screenshot evidence and update the post-W34 build report.
+
+## Expansion Wave 29 Checklist
+
+- [x] Add central subreddit scope resolver for current context, demo exception,
+      and live-only requests.
+- [x] Reject cross-subreddit API requests instead of silently falling back to
+      the current subreddit.
+- [x] Route policy creation, drift-policy creation, attribution correction, and
+      Apply Policy normalization through the shared subreddit guard.
+- [x] Add API isolation error response handling.
+- [x] Add Redis key guard for unsafe subreddit namespace segments.
+- [x] Confirm starter template reuse remains non-sensitive through W28 portable
+      config tests.
+- [x] Add key/subreddit isolation tests.
+- [ ] Runtime-verify context-derived subreddit behavior in Devvit Web playtest.
+
+## Expansion Wave 28 Checklist
+
+- [x] Add portable config schema for versioned packages, policies, response
+      templates, digest settings, starter templates, and import results.
+- [x] Add export service that excludes private history by default.
+- [x] Add import validation and migration path for legacy v0 packages.
+- [x] Import policies as drafts/proposed updates instead of silently adopting
+      live enforcement.
+- [x] Add `/api/config/export`, `/api/config/import`, and
+      `/api/config/templates` routes.
+- [x] Add Settings UI for export JSON, import dry runs/imports, and starter
+      templates.
+- [x] Add tests for export privacy, safe dry run, bad import failure, v0
+      migration, and starter labels.
+- [x] Runtime-verify config export/import persistence through Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 27 Checklist
+
+- [x] Add explicit temporary Incident Mode schema for reason, status, duration,
+      preset suggestions, triage groups, and post-incident report.
+- [x] Add Redis-backed Incident Mode service and namespaced keys.
+- [x] Add `/api/incidents`, `/api/incidents/start`, and
+      `/api/incidents/:id/end` routes.
+- [x] Tag Apply Policy receipts with the active incident ID without changing
+      execution mode or confirmation requirements.
+- [x] Add Settings workflow to start/end incidents and view preset suggestions,
+      triage groups, recent incidents, and the last incident report.
+- [x] Add active Incident Mode banner and receipt-ledger incident tags.
+- [x] Add tests for start/end/expiry behavior and receipt tagging.
+- [x] Runtime-verify Incident Mode route persistence and active receipt tagging
+      through Devvit Web/Redis playtest.
+
+## Expansion Wave 26 Checklist
+
+- [x] Add Evidence Board schema for review-thread status, source references,
+      evidence summaries, privacy metadata, and status history.
+- [x] Add Redis-backed Evidence Board service and namespaced keys.
+- [x] Add `/api/evidence-boards` list/create and status-update routes.
+- [x] Collect evidence summaries from receipts, content snapshots, overrides,
+      Case Packets, comparable cases, and policy changes.
+- [x] Add Prove-page Evidence Board thread list and status update forms.
+- [x] Add receipt-ledger and Case Packet entrypoints for opening boards.
+- [x] Add lifecycle and privacy-preservation tests.
+- [x] Runtime-verify Evidence Board route persistence through Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 25 Checklist
+
+- [x] Re-check Devvit ModMail / Mod Discussion support in installed typings and
+      official docs.
+- [x] Add `case_packet` as a team delivery subject type.
+- [x] Add a shared Case Packet delivery draft model.
+- [x] Add Prove-page controls to copy Markdown and store manual delivery
+      receipts.
+- [x] Add Prove-page control to store a Mod Discussion draft receipt without
+      sending a Reddit message.
+- [x] Add tests for case packet delivery draft generation and delivery receipt
+      subject storage.
+- [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
+      before enabling any real send path.
+- [x] Runtime-verify delivery receipt persistence through Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 24 Checklist
+
+- [x] Re-check native Mod Notes support in installed Devvit typings and
+      official docs.
+- [x] Add native Mod Note attempt schema and receipt status.
+- [x] Add gated native Mod Notes service.
+- [x] Add Apply Policy opt-in mode for native/log-only/no Mod Note.
+- [x] Record skipped, sent, and failed Mod Note attempts on receipts.
+- [x] Add fallback, success, and failure tests.
+- [ ] Runtime-verify `reddit.addModNote` in Devvit playtest on safe test
+      content before enabling native mode.
+
+## Expansion Wave 23 Checklist
+
+- [x] Add response template schema tied to policy steps.
+- [x] Add safe template rendering with explicit missing-variable placeholders.
+- [x] Add policy editor fields for warning, removal explanation, mod note,
+      modmail, and private-message drafts.
+- [x] Add Apply Policy preview integration.
+- [x] Store gated response previews on receipts.
+- [x] Add escaping, fallback, and Apply preview tests.
+- [x] Runtime-verify response preview persistence through Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 22 Checklist
+
+- [x] Add policy impact measurement schema.
+- [x] Add before/after policy impact service.
+- [x] Add policy impact API route.
+- [x] Add policy-detail before/after UI.
+- [x] Add demo-labeled impact fallback.
+- [x] Add tests for thresholds, insufficient data, and demo labeling.
+- [x] Runtime-verify policy impact route through Devvit Web/Redis playtest.
+
+## Expansion Wave 21 Checklist
+
+- [x] Add aggregate community health schema.
+- [x] Add aggregate-only community health service.
+- [x] Include repeat-author buckets without exposing usernames.
+- [x] Include unresolved overrides, policy churn, drift stability, and
+      receipt-backed case packet readiness.
+- [x] Add `/api/community-health`.
+- [x] Surface community health on the Review page.
+- [x] Add empty/small-community tests.
+- [x] Runtime-verify community health route through Devvit Web/Redis playtest.
+
+## Expansion Wave 20 Checklist
+
+- [x] Add read-only replay contracts.
+- [x] Add replay service for stored or synthetic attributed actions.
+- [x] Add replay API route under policy records.
+- [x] Add policy replay UI on the Agree page.
+- [x] Add replay fixtures and edge-case tests.
+- [x] Keep replay from mutating action receipts or live Reddit state.
+- [x] Runtime-verify replay route against a stored scan in Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 19 Checklist
+
+- [x] Add explicit ratification settings and summary schema.
+- [x] Add a pure policy ratification helper service.
+- [x] Store proposal notes with proposed versions.
+- [x] Enforce approval thresholds before reviewed adoption.
+- [x] Keep quick adoption explicit and block it when policy settings disable it.
+- [x] Show approval thresholds and proposal notes in the Agree UI.
+- [x] Add threshold and invalid-transition tests.
+- [x] Runtime-verify policy lifecycle API writes through Devvit Web/Redis
+      playtest.
+
+## Expansion Wave 18 Checklist
+
+- [x] Add attribution correction schema.
+- [x] Add Redis-backed attribution correction persistence.
+- [x] Apply moderator corrections during future scan attribution.
+- [x] Preserve inferred/corrected distinction and original evidence.
+- [x] Add correction API endpoints.
+- [x] Add scan-page calibration UI for stored scan actions.
+- [x] Add synthetic tests for correction persistence and future attribution.
+- [x] Runtime-verify correction persistence through Devvit Web/Redis playtest.
+
+## Expansion Wave 17 Checklist
+
+- [x] Research current Devvit modqueue/report API support from official docs
+      and installed typings.
+- [x] Record modqueue capability as type-only until playtest proves it.
+- [x] Add shared triage contracts for capability, queue item, policy hint,
+      history summary, and response.
+- [x] Add read-only triage service that normalizes Reddit queue items.
+- [x] Add `/api/modqueue/triage` without demo/fake queue fallback.
+- [x] Surface Operational Queue triage on the Act page.
+- [x] Link triage items into Apply Policy target fields.
+- [x] Add targeted service tests for capability, normalization, adapter failure,
+      and missing subreddit context.
+- [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
+      content. Post-W34 playtest refreshed the panel but still returned the
+      type-supported fallback instead of a verified Reddit modqueue read.
+
+## Expansion Wave 16 Checklist
+
+- [x] Create `docs/expansion-waves/REPO_CONTEXT_RELOAD.md` before production
+      coding.
+- [x] Add content snapshot schema/types.
+- [x] Add content snapshot server service.
+- [x] Capture target snapshots in Apply Policy previews.
+- [x] Persist snapshots on action receipts.
+- [x] Surface receipt-backed snapshots in Case Packets.
+- [x] Add content snapshot tests for post, comment, failed fetch, and missing
+      target.
+- [x] Add Wave 16 implementation report.
+- [x] Run full W16 validation gate.
+- [x] Runtime-verify snapshots through real post/comment menu entrypoints in
+      Devvit playtest.
+
 Wave 9/10 — Digest, Delivery Status, Launch Hardening.
 
 Status: Wave 7/8 and the redesign rescue branch are merged to `master` and
@@ -235,3 +463,141 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - private message, modmail, or native Mod Notes delivery.
 - override audit dashboard.
 - Devpost final copy.
+
+## Operational Overhaul W10 Follow-up
+
+- [x] Add disabled-by-default AI advisory contracts and capability endpoint.
+- [x] Add mocked-provider tests that require deterministic evidence citations.
+- [x] Keep AI advisory unable to decide or execute enforcement.
+- [ ] Runtime-verify Devvit external fetch with a safe test provider before
+      enabling any live AI advisory path.
+- [ ] Runtime-verify Devvit app secret retrieval for any provider key before
+      marking AI advisory available.
+- [ ] Add Terms/Privacy readiness notes before any uploaded build uses
+      external fetch for AI.
+
+## Operational Overhaul W11 Follow-up
+
+- [x] Add team delivery capability states for manual copy, mod discussion, and
+      scheduler.
+- [x] Add preview-first delivery APIs for digest/policy proposal content.
+- [x] Store manual/skipped delivery receipts without sending Reddit messages.
+- [x] Keep product routes from injecting a live delivery adapter.
+- [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
+      before enabling any real send path.
+- [ ] Register and runtime-verify a scheduler task before scheduler delivery is
+      marked anything stronger than unavailable.
+- [ ] Verify permission failure shape and no accidental user-facing delivery.
+
+## Operational Overhaul W12 Follow-up
+
+- [x] Reframe the dashboard around Act, Scan, Agree, Review, Prove, and
+      Settings.
+- [x] Put Apply Policy and the action receipt ledger on the Act workspace.
+- [x] Move policy lifecycle work into Agree and proof artifacts into Prove.
+- [x] Capture static desktop and mobile screenshots for the Act workspace.
+- [x] Runtime-verify the new IA inside Devvit WebView on desktop Reddit.
+- [x] Runtime-verify the new IA inside Reddit desktop host `Mobile` Devvit
+      modal/narrow WebView.
+- [ ] Update any external docs/bookmarks that still reference the old page IDs
+      after integration.
+
+## Operational Overhaul W13 Follow-up
+
+- [x] Add a runtime verification matrix endpoint.
+- [x] Add a runtime verification matrix document.
+- [x] Run Devvit playtest to readiness on `r/modmirror_dev`.
+- [x] Verify the subreddit dashboard launcher appears and opens its
+      confirmation form.
+- [x] Verify the W12 operational IA renders inside Reddit's desktop expanded
+      WebView.
+- [x] Verify post Apply Policy menu entry on an ordinary safe post detail page.
+- [x] Verify post menu target context handoff into the Act workspace.
+- [x] Verify comment Apply Policy menu entry on an ordinary safe comment.
+- [x] Verify comment menu target context handoff into the Act workspace.
+- [x] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
+      result.
+- [x] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only
+      context.
+- [x] Verify log-only Apply Policy creates a receipt in Devvit Redis.
+- [ ] Verify native Reddit mobile app layout and interaction behavior.
+
+## Expansion Wave 30 Follow-up
+
+- [x] Add privacy retention settings for scan history, action receipts,
+      evidence boards, team delivery receipts, case packets, and AI advisory
+      logs.
+- [x] Keep policy history protected by default and outside deletion controls.
+- [x] Add inventory export and manual deletion APIs with dry-run support.
+- [x] Add Settings UI for retention windows, privacy inventory, and deletion
+      controls.
+- [x] Add service tests for defaults, setting updates, inventory export,
+      dry-run behavior, and expired cleanup.
+- [x] Runtime-verify retention settings, privacy inventory, and dry-run deletion
+      controls against Devvit Redis on a safe test subreddit.
+- [ ] Runtime-verify actual expired-data cleanup only after a controlled
+      destructive cleanup test is planned.
+- [ ] Add a scheduled cleanup task only after scheduler behavior is
+      runtime-verified in this app shape.
+
+## Expansion Wave 31 Follow-up
+
+- [x] Add client error taxonomy for static preview, timeout, network, API, and
+      clipboard failures.
+- [x] Add timeout-aware API fetches with actionable retry/fallback messages.
+- [x] Add static-preview/runtime resilience notice in the dashboard shell.
+- [x] Add clipboard failure handling for Case Packet and Digest Markdown copy.
+- [x] Add mobile CSS/static checks for core workspace collapse and wrapped
+      runtime data.
+- [x] Run a 390px Playwright static-client smoke check for Act, Scan, Review,
+      Prove, and Settings with no horizontal overflow.
+- [x] Runtime-verify the same narrow layouts inside Reddit's Devvit WebView on
+      desktop mobile mode.
+- [ ] Runtime-verify the same narrow layouts inside the native Reddit mobile
+      app.
+- [x] Replace static-client browser proof with Devvit WebView screenshots after
+      playtest access is available for W31.
+
+## Expansion Wave 32 Follow-up
+
+- [x] Add deterministic synthetic fixtures for stable, drifted, improving,
+      small-subreddit, noisy-attribution, repeated-offender, policy-version,
+      and incident-mode histories.
+- [x] Add a golden synthetic evaluation manifest.
+- [x] Add a local synthetic evaluation command.
+- [x] Cover replay, drift, policy-impact, and safety-label expectations in
+      tests.
+- [ ] Update the golden manifest intentionally when replay or analytics
+      semantics change.
+- [ ] Add future scenario coverage for multi-community comparison after W34
+      integration decides the cross-community contract.
+
+## Expansion Wave 33 Follow-up
+
+- [x] Add a Settings-facing runtime capability matrix.
+- [x] Distinguish verified runtime, verified static, type-only, demo-only,
+      disabled, deferred, unsupported, and failed runtime states.
+- [x] Record Redis/Reddit smoke route health events without changing smoke
+      response shapes.
+- [x] Prevent health events from enabling destructive live moderation
+      operations.
+- [x] Runtime-run `/api/smoke/redis` and `/api/smoke/reddit` in Devvit
+      playtest so the matrix can promote safe capabilities with real proof.
+- [x] Add operator UI for running safe Redis and Reddit read-only smoke checks
+      from inside the authenticated WebView.
+- [x] Runtime-verify post-menu Apply Policy target capture in Devvit playtest.
+- [ ] Add operator UI for recording manual playtest events if future runtime
+      proof needs moderator-observed states that are not reachable by smoke
+      routes.
+
+## Expansion Wave 34 Follow-up
+
+- [x] Create the W34 integration branch from the sequential expansion line.
+- [x] Add expansion architecture notes.
+- [x] Add the expansion build report.
+- [ ] Push/review the W16-W34 branches if PR workflow is used.
+- [x] Run Devvit playtest proof for the W33 runtime capability matrix on a safe
+      subreddit before promoting Redis/Reddit smoke beyond local/static proof.
+- [ ] Decide whether `expansion/w34-integration` should be merged into
+      `integration/operational-overhaul` or a new long-lived expansion
+      integration branch.

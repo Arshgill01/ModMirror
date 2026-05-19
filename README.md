@@ -29,24 +29,26 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Wave 7/8 productization and the follow-up visual rescue are merged to
-`master`. Wave 9/10 launch-readiness work is active on
-`integration/wave9-10-launch-readiness`.
+Operational overhaul W00-W14 is integrated on
+`integration/operational-overhaul`.
 
-The app now opens with a compact Reddit inline launch card instead of rendering
-the full dashboard inside the post. Opening the dashboard uses Reddit's native
-expanded WebView modal when available, preserving the Devvit viewport dropdown,
-and still has an in-post fallback. The productized Command Center shows scan
-status, policy health, unresolved overrides, setup progress, and the
-ExampleLearning demo path.
+The app opens with a compact Reddit inline launch card and can expand into
+Reddit's native WebView modal. The dashboard is now organized around moderator
+jobs: Act, Scan, Agree, Review, Prove, and Settings.
 
-Implemented product surfaces include Mirror Scan, Policy Agreement Flow, Apply
-Policy simulator, consistency nudges, aggregate override review, immutable
-policy versions, policy health, Case Packets, manual Markdown Digest, and
-runtime Settings. Wave 9/10 adds persisted digest history and launch-readiness
-materials. Destructive or externally delivered moderation actions remain
-disabled by default; Apply Policy records are `log_only` until runtime delivery
-behavior is playtest-verified.
+Implemented product surfaces include target-aware Apply Policy preview,
+explicit confirmation and log-only fallback, immutable action receipts, Mirror
+Scan history, deep scan depth controls, drift-over-time analytics, policy
+proposal/review/adoption, receipt-backed Case Packets, manual Markdown Digest,
+disabled-by-default AI advisory, preview-first team delivery, and a runtime
+verification matrix.
+
+W13 runtime proof verified the subreddit dashboard launcher and the operational
+IA in the desktop expanded WebView on `r/modmirror_dev` playtest `v0.0.1.71`.
+Post/comment Apply Policy menus, Devvit Redis receipts, native mobile behavior,
+real Reddit moderation execution, Mod Discussion delivery, scheduler, native
+Mod Notes, and external AI calls remain disabled or unverified until dedicated
+runtime proof exists.
 
 ## Local Commands
 

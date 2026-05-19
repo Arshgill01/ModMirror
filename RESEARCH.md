@@ -6,9 +6,13 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Wave 7/8 Productization implementation complete locally; Devvit app identity exists; signed-in Wave 7/8 playtest reached the compact inline card and native expanded dashboard modal on Reddit.
+Status: Expansion Waves 16-34 are implemented with post-W34 runtime proof in
+progress. Several safe Devvit WebView paths are runtime-verified; destructive
+moderation, native Mod Notes, Mod Discussion sending, scheduler jobs, native
+mobile, non-mod access, external AI provider calls, and live modqueue content
+remain disabled or unverified.
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 Updated by: Codex
 
@@ -40,9 +44,9 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Verified | Reddit API methods work in the target subreddit during playtest for dashboard launch and demo scan. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`; Safari created `t3_1teywdj` and rendered the dashboard WebView. Broader smoke routes still need manual QA. |
-| Unverified | Redis read/write works in playtest. | Type/build proof only; hit `/api/smoke/redis` after auth. |
-| Unverified | Menu actions and chained forms work in the Reddit UI. | Type/build proof only; invoke smoke menu actions after auth. |
+| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`; `/api/smoke/reddit`, post/comment menu target capture, and live quick scan have been playtest-verified. Write operations remain separately gated. |
+| Verified | Redis read/write works in playtest. | `/api/smoke/redis` and later WebView flows verified Redis-backed policies, scans, corrections, receipts, evidence boards, config import/export, privacy retention inventories/dry runs, incident mode, delivery receipts, and replay state. |
+| Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
 | Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
@@ -57,8 +61,26 @@ Updated by: Codex
 | Verified | Signed-in Wave 7/8 Reddit playtest opens the compact inline card and native expanded dashboard modal. | `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.65`; Safari opened the compact inline card, Open Dashboard triggered the Devvit WebView immersive-mode effect, and Reddit opened the native expanded modal with the host `Mobile` viewport dropdown and native theme control. |
 | Verified | The full demo workflow runs inside the Reddit playtest WebView. | On `v0.0.1.65`, Safari verified ExampleLearning demo scan, Low-effort questions policy creation, Apply Policy preview/confirm with an override, Case Packet generation with Markdown export, Review inbox/health update, Manual Digest generation, and Settings runtime state. |
 | Verified | Wave 9/10 digest history can use Redis sorted sets with the existing installation-scoped Redis client. | `src/server/services/digest.ts` stores reports in `modmirror:{subreddit}:digests` and `modmirror:{subreddit}:digest:{digestId}`; `npm run type-check` and `npm test -- src/server/services/digest.test.ts` pass. Runtime Redis read/write remains tracked separately. |
+| Verified | W01 post/comment Apply Policy menu entrypoints can use `MenuItemRequest.targetId`, `reddit.getPostById`, `reddit.getCommentById`, `reddit.getCurrentUser`, and `User.getModPermissionsForSubreddit` to build target context. | Local checks pass; post target capture was playtest-verified on `v0.0.1.83` with `t3_1texjev`, and comment target capture was playtest-verified on `v0.0.1.84` with `t1_ommzgtz`. Execution receipts remain separately unverified. |
 | Type/build only | Devvit scheduler client exists in installed typings. | `@devvit/web/server` re-exports `@devvit/scheduler`; `node_modules/@devvit/scheduler/SchedulerClient.d.ts` exposes `scheduler.runJob`, `cancelJob`, and `listJobs`, and `Devvit.addSchedulerJob` exists in `node_modules/@devvit/public-api/devvit/Devvit.d.ts`. No Wave 9/10 scheduler job is registered until runtime behavior is verified. |
 | Type/build only | Devvit modmail/mod discussion APIs exist in installed typings. | `node_modules/@devvit/reddit/models/ModMail.d.ts` and newmodmail proto typings expose modmail conversations including internal mod-only conversation fields. ModMirror keeps digest delivery disabled/unverified until a non-spam runtime playtest proves safe behavior. |
+| Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
+| Verified locally | W08 Policy Agreement now has draft/propose/review/adopt lifecycle artifacts. | `RulePolicy` and `PolicyVersion` carry lifecycle/proposal/review/adoption metadata; `/api/policies/:id/propose`, `/reviews`, and `/adopt` exist; `policies.test.ts` covers draft, review, adopt, invalid transitions, and Apply Policy active-version snapshot behavior. Runtime Redis/API behavior remains unverified. |
+| Verified locally | W09 Case Packets prefer immutable receipts and label evidence sources. | `casePacket.ts` loads receipts, emits packet types/evidence labels, includes receipt target snapshots and execution results, and falls back to action history with caveats. `casePacket.test.ts` covers receipt-backed packets and policy-changed-since-action. Runtime Redis/API behavior remains unverified. |
+| Type/build only | W17 modqueue triage can read Reddit modqueue items through Devvit when runtime permits. | Official Subreddit docs list `getModQueue(options?)` and `getReports(options?)` returning `Listing<Post | Comment>`; installed typings expose `Subreddit.getModQueue`, `RedditAPIClient.getModQueue`, `Subreddit.getReports`, and proto routes `/r/{subreddit}/about/modqueue` and `/about/reports`. `src/server/services/modqueueTriage.ts`, `/api/modqueue/triage`, and `src/server/services/modqueueTriage.test.ts` are local/type verified only. |
+| Runtime verified | W18 attribution calibration can apply moderator corrections to future scan attribution without relabeling unrelated non-content mod-log rows. | `src/server/services/attributionCalibration.ts` stores corrections by subreddit/action ID and only indexes content targets (`t1_`/`t3_`) for target-based correction reuse. Post-W34 playtest `v0.0.1.101` verified Redis correction persistence through a live quick scan: `1` corrected action, `24` unmatched actions, and the earlier over-broad `t5_` target correction bug was fixed. |
+| Runtime verified | W19 policy ratification enforces reviewer approval thresholds before non-quick adoption. | `src/server/services/policyRatification.ts` summarizes latest reviewer votes, `policies.ts` stores proposal notes/settings and blocks adoption until approval thresholds are met, and policy tests cover threshold success/failure plus disabled quick adoption. Post-W34 playtest `v0.0.1.104` verified Redis-backed propose/review writes in the Reddit-hosted WebView: Spam moved from draft to proposed to under review, recorded `1/2` approvals, kept adoption blocked, and no longer exposes the quick-adopt button when policy settings disable single-mod adoption. |
+| Runtime verified | W20 replay sandbox can simulate proposed policy outcomes from stored live scans without live Reddit calls or receipt mutation. | `src/server/services/replaySandbox.ts` runs read-only policy replay over supplied or scan-derived attributed actions, `/api/policies/:id/replay` reapplies persisted attribution corrections before converting stored scan actions, and replay tests cover changed recommendations, skipped rules, and input immutability. Post-W34 playtest `v0.0.1.101` verified replay evaluated the `1` corrected live action and skipped `24` unrelated actions. |
+| Runtime verified | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Post-W34 Devvit playtest verified the Review-page community health route in the Reddit-hosted WebView with small-sample labels and aggregate guardrails. |
+| Runtime verified | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Post-W34 Devvit playtest verified stored policy impact summaries on Review in the Reddit-hosted WebView; the sample remained below before-adoption threshold. |
+| Runtime verified | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts persist the preview. Post-W34 Devvit playtest verified the response preview gate and receipt-ledger persisted draft count in the Reddit-hosted WebView. Delivery remains disabled. |
+| Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
+| Runtime verified / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Post-W34 Devvit playtest verified manual-ready and skipped Mod Discussion draft receipt persistence in the Reddit-hosted WebView. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
+| Runtime verified | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Post-W34 Devvit playtest verified receipt-backed board create/list/status persistence in the Reddit-hosted WebView. |
+| Runtime verified | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Post-W34 Devvit playtest verified start persistence, active banner, receipt tagging, and post-incident reporting in the Reddit-hosted WebView. |
+| Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
+| Verified locally | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit context behavior remains runtime-unverified. |
+| Runtime fallback observed | W17 modqueue triage route is reachable from the WebView but has not proven live Reddit modqueue reads. | Post-W34 Devvit playtest refreshed the Act-page Operational Queue panel on `v0.0.1.94`; it returned the labeled `type-supported` fallback and no queue items, not a verified Reddit modqueue adapter result. Keep W17 runtime verification open until safe queue content returns `source: reddit_modqueue` or an exact permission/runtime failure is captured. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -78,6 +100,59 @@ Updated by: Codex
 - Wave 7/8 playtest reached `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on Devvit version `v0.0.1.65`. Signed-in Safari verification opened the compact inline card, used Open Dashboard, and confirmed Reddit opened the native expanded modal with the host `Mobile` viewport dropdown and native theme control. That host chrome is Reddit-owned and is not part of the app DOM; it is intentionally preserved so moderators can switch viewport modes.
 - The same `v0.0.1.65` runtime pass loaded demo data, created a Low-effort questions policy from drift, preserved the selected stricter Apply Policy action through preview, confirmed a log-only override, generated a Case Packet with Markdown export, showed the new override in Review, generated a manual Digest, and rendered Settings with demo data state. This caught and fixed a namespace mismatch where demo policies under `ExampleLearning` were not consistently read by governance and Case Packet routes.
 - Wave 9/10 adds a persisted digest history model. The safe launch path is still manual generation plus Markdown copy. Mod discussion delivery and weekly scheduling are shown as unverified capabilities, not enabled behavior.
+- W01 replaces the production-facing post/comment smoke menu entries with
+  `Apply ModMirror Policy` entries that open a target-context form. This is
+  type/build verified only; runtime playtest still needs to verify menu
+  visibility, form submission, target fetch behavior, and exact permission
+  strings. The flow remains non-destructive and does not execute moderation
+  actions.
+- W17 adds a read-only modqueue triage route and UI panel. It does not fake
+  queue items if Devvit runtime or subreddit context is unavailable. The
+  capability remains `type_only` because no playtest has yet proven
+  `/api/modqueue/triage` against real queue content.
+- W18 stores attribution corrections separately from scan records and marks
+  corrected actions with `attributionKind: corrected`. This is local/test
+  verified only until Redis persistence is proven in Devvit playtest.
+- W19 keeps unadopted policies out of Apply Policy. Reviewed adoption now
+  requires the configured approval threshold unless the moderator deliberately
+  uses quick adoption and the policy allows that small-team escape hatch.
+  Post-W34 playtest found and fixed a UI affordance gap: the API correctly
+  blocked disabled quick adoption, but the Agree UI still rendered a Quick
+  adopt button. The UI now hides that action unless the policy allows it.
+- W20 replay is intentionally read-only. It does not write receipts, action
+  events, overrides, or Reddit moderation state, and it uses synthetic data only
+  when that source is explicitly labeled.
+- Post-W34 W18/W20 playtest found two runtime-only replay/calibration gaps:
+  scan replay originally loaded stored scan actions without reapplying
+  corrections saved after the scan, and one non-content target correction could
+  relabel unrelated mod-log rows that shared a subreddit/app target. The
+  `v0.0.1.101` fix reapplies corrections for replay and restricts target-based
+  correction reuse to content thing IDs (`t1_` comments and `t3_` posts).
+- W21 community health avoids per-mod leaderboards and does not emit moderator
+  usernames. Repeat-offense signals are aggregate counts only, and empty/small
+  samples are labeled before health claims are made.
+- W22 policy impact requires minimum before/after receipt windows before
+  claiming improvement or regression. Demo impact remains labeled as demo and
+  is not live subreddit proof.
+- W23 response templates are drafts only. They do not send public comments,
+  private messages, modmail, or native Mod Notes, and template delivery remains
+  gated until explicit delivery waves are runtime-verified.
+- W24 adds an opt-in `native` Mod Note mode, but native writes remain disabled
+  unless both `MODMIRROR_ENABLE_NATIVE_MOD_NOTES=true` and
+  `MODMIRROR_NATIVE_MOD_NOTES_RUNTIME_VERIFIED=true` are set. This wave did not
+  run a playtest Mod Note write, so production behavior remains unverified.
+- W27 Incident Mode is not an emergency automation system. It does not
+  auto-remove, auto-ban, override policy confirmation, or change Reddit state by
+  itself. It only changes ModMirror context by showing preset suggestions,
+  grouping triage priorities, and tagging confirmed Apply Policy receipts.
+- W28 portable config exports are intentionally configuration-only. They do not
+  include receipts, overrides, scans, content snapshots, case packets, evidence
+  boards, delivery receipts, incident reports, moderator activity logs, or
+  private queue history.
+- W29 treats `context.subredditName` as the authority for live subreddit access.
+  The only explicit cross-context exception is the labeled ExampleLearning demo
+  namespace. Runtime playtest still needs to verify the exact context values
+  attached to Devvit Web requests.
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.
@@ -479,3 +554,965 @@ Digest delivery/scheduler status:
 - Manual Markdown copy remains the verified launch path.
 - Mod discussion delivery is still unverified and disabled.
 - Scheduler execution is still unverified and disabled.
+
+## Operational Overhaul W03 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Installed typings in `node_modules/@devvit/reddit/RedditClient.d.ts`
+  expose `reddit.approve(id)`, `reddit.remove(id, isSpam)`,
+  `reddit.getPostById(id)`, and `reddit.getCommentById(id)`.
+- Installed typings in `node_modules/@devvit/reddit/models/Post.d.ts` and
+  `node_modules/@devvit/reddit/models/Comment.d.ts` expose
+  `ignoreReports()`.
+- Local W03 tests mock success, failure, and permission-denied execution paths.
+
+Decision:
+
+- W03 adds a typed execution engine, but product-integrated live Reddit actions
+  remain disabled by default. The live path requires all of:
+  `MODMIRROR_ENABLE_LIVE_REDDIT_ACTIONS=true`,
+  `MODMIRROR_REDDIT_ACTIONS_RUNTIME_VERIFIED=true`, and
+  `MODMIRROR_ACTION_RECEIPTS_AVAILABLE=true`.
+- `MODMIRROR_ACTION_RECEIPTS_AVAILABLE` intentionally remains false by default
+  because W04 has not added the receipt ledger yet.
+
+Runtime status:
+
+- Not playtest-verified in W03.
+- Do not claim remove/approve/ignore-reports behavior beyond installed typings
+  and mocked local tests until safe playtest proof is recorded.
+
+## Operational Overhaul W04 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- W04 adds Redis-backed receipt storage under namespaced keys:
+  `modmirror:{subreddit}:receipts`,
+  `modmirror:{subreddit}:receipt:{receiptId}`, and
+  `modmirror:{subreddit}:receipts:target:{targetThingId}`.
+- Local tests cover receipt creation, detail lookup, subreddit listing, and
+  per-target listing.
+
+Decision:
+
+- `MODMIRROR_ACTION_RECEIPTS_AVAILABLE` now defaults to available unless set to
+  `false`, because the receipt service exists. Live Reddit execution still also
+  requires explicit live-action and runtime-verified flags.
+
+Runtime status:
+
+- Receipt persistence is locally tested with mocked Redis only.
+- No Devvit playtest was run for W04 receipt storage.
+
+## Operational Overhaul W05 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- W05 adds full scan record persistence with `MirrorScanRecord` under
+  `modmirror:{subreddit}:scan:{scanId}`.
+- W05 adds capped metadata indexes under
+  `modmirror:{subreddit}:scans` and
+  `modmirror:{subreddit}:scans:source:{source}`.
+- W05 adds rule and target-author hash indexes for future analytics.
+
+Runtime status:
+
+- Scan persistence is locally tested with mocked Redis only.
+- No Devvit playtest was run for W05 scan storage, list, detail, or compare
+  routes.
+
+## Operational Overhaul W06 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Installed typings in `node_modules/@devvit/reddit/models/Listing.d.ts`
+  expose `ListingFetchOptions` with `limit`, `pageSize`, `after`, and
+  `before`, plus `Listing.all()` and `Listing.get(count)`.
+- Installed typings in `node_modules/@devvit/reddit/RedditClient.d.ts`
+  document `reddit.getModerationLog({ subredditName, limit, pageSize }).all()`
+  and show a `limit: 1000`, `pageSize: 100` example.
+- W06 local tests mock depth-specific `getModerationLog` calls and warning
+  behavior.
+
+Decision:
+
+- W06 exposes conservative scan depths:
+  - `quick`: 25 actions, page size 25
+  - `standard`: 60 actions, page size 60
+  - `deep`: 250 actions, page size 100
+- The live adapter records the requested cap, page size, fetched action count,
+  whether the cap was hit, and that pagination remains runtime-unverified.
+- The product warns when live scans hit a cap or return fewer actions than
+  requested.
+
+Runtime status:
+
+- Not playtest-verified in W06.
+- Do not claim deep moderation-log pagination works in Reddit runtime until a
+  safe playtest records actual behavior and sample counts.
+
+## Operational Overhaul W10 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit Web documentation says server endpoints can use standard
+  server frameworks and server capabilities, including `fetch`, while client
+  fetch is restricted to the app's own webview domain:
+  `https://developers.reddit.com/docs/next/capabilities/devvit-web/devvit_web_overview`.
+- Official HTTP Fetch documentation says Devvit apps can fetch allow-listed
+  HTTPS domains from server-side code, lists a 30-second timeout, documents
+  `permissions.http.domains`, and lists `api.openai.com` and
+  `generativelanguage.googleapis.com` in the global fetch allowlist:
+  `https://developers.reddit.com/docs/capabilities/server/http-fetch`.
+- Official secrets documentation describes app-scoped secret settings set by
+  the developer via `devvit settings set` and retrieved during invocation:
+  `https://developers.reddit.com/docs/secrets_storage`.
+- Installed typings expose `SettingsClient.get()` in
+  `node_modules/@devvit/settings/SettingsClient.d.ts` and Devvit Web config
+  schema types for `permissions.http` and app/subreddit `settings` in
+  `node_modules/@devvit/shared-types/schemas/config-file.v1.d.ts`.
+
+Decision:
+
+- W10 does not enable HTTP permissions or commit any provider key path.
+- W10 adds a disabled-by-default provider abstraction and advisory endpoints:
+  `/api/ai/capabilities` and `/api/ai/advisory`.
+- The service only generates with an explicitly supplied provider and enabled
+  flag. Production/default runtime returns a disabled fallback.
+- AI output is advisory only, cannot decide enforcement, and must cite
+  deterministic evidence IDs supplied in the request. Provider output that
+  does not cite known evidence is rejected.
+
+Runtime status:
+
+- No external AI call was made in W10.
+- Devvit HTTP Fetch and secret-storage behavior remain docs/type-supported
+  only for ModMirror. Runtime proof requires a configured provider, HTTP
+  permission/domain review as needed, secret setting, terms/privacy readiness,
+  and playtest logs before any live advisory path can be labeled available.
+
+## Operational Overhaul W11 Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit ModMailService docs expose
+  `reddit.modMail.createModDiscussionConversation({ subject, bodyMarkdown, subredditId })`
+  and say it creates a Mod Discussions conversation for the moderators of an
+  installed subreddit:
+  `https://developers.reddit.com/docs/api/redditapi/models/classes/ModMailService`.
+- Installed typings in `node_modules/@devvit/reddit/models/ModMail.d.ts` and
+  `node_modules/@devvit/public-api/apis/reddit/models/ModMail.d.ts` expose
+  `createModDiscussionConversation`, `createModInboxConversation`,
+  `createModNotification`, and `createConversation`.
+- Official Devvit Scheduler docs require scheduler tasks to be declared in
+  `devvit.json`, document Hono internal scheduler endpoints, and show
+  `scheduler.runJob`, `scheduler.cancelJob`, and `scheduler.listJobs`:
+  `https://developers.reddit.com/docs/capabilities/server/scheduler`.
+- Installed typings in `node_modules/@devvit/scheduler/SchedulerClient.d.ts`
+  expose `runJob`, `cancelJob`, and `listJobs`; `@devvit/web/server` re-exports
+  scheduler types.
+
+Decision:
+
+- W11 adds preview-first team delivery APIs but does not send Reddit messages
+  in production/default paths.
+- W11 adds delivery capability states:
+  `unavailable`, `unverified`, `verified_disabled`, and `enabled`.
+- Manual Markdown copy is enabled and creates no Reddit-side message.
+- Mod discussion delivery is type-supported but runtime-unverified. Confirming
+  it without runtime proof stores a skipped receipt.
+- Scheduler delivery is marked unavailable because no ModMirror scheduler task
+  is registered in `devvit.json`.
+- Actual mod discussion delivery can only happen through an explicitly injected
+  adapter plus live-delivery and runtime-proof flags. Product routes do not
+  inject an adapter.
+
+Runtime status:
+
+- No modmail/mod discussion message was sent in W11.
+- No scheduler task was registered or run in W11.
+- Delivery receipt persistence is locally tested with mocked Redis only.
+- Runtime proof still requires a safe playtest that confirms internal-only
+  destination, permission failure shape, receipt persistence, and no accidental
+  user-facing message.
+
+## Wave 25 Appeal / Case Packet Delivery
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Official Devvit ModMailService docs expose
+  `reddit.modMail.createModDiscussionConversation({ subject, bodyMarkdown, subredditId })`
+  as an internal Mod Discussions conversation API for installed subreddits:
+  `https://developers.reddit.com/docs/api/redditapi/models/classes/ModMailService`.
+- Installed typings in `node_modules/@devvit/reddit/models/ModMail.d.ts` expose
+  `createConversation`, `createModDiscussionConversation`,
+  `createModInboxConversation`, `createModNotification`, and reply/archive
+  operations.
+- Installed `RedditClient.d.ts` exposes `get modMail(): ModMailService`.
+
+Decision:
+
+- W25 does not add a product-route live Modmail adapter.
+- Case packets can now be wrapped as delivery drafts with
+  `subjectType: case_packet`.
+- Manual Markdown delivery remains the supported path.
+- Saving a Mod Discussion draft receipt through the UI records a skipped
+  delivery receipt; it does not send a Reddit message in default/product routes.
+
+Runtime status:
+
+- No Modmail or Mod Discussion message was sent in W25.
+- Case packet delivery draft generation is locally tested.
+- Delivery receipt storage is locally tested with mocked Redis only.
+- Runtime proof still requires safe playtest verification of internal-only
+  destination, permission failure shape, and Redis receipt persistence before
+  any live send adapter is exposed.
+
+## Wave 26 Collaborative Evidence Board
+
+Date: 2026-05-18
+
+Evidence source:
+
+- Existing local services already persist action receipts, override events,
+  policy change events, and generated Case Packet data.
+- Shared privacy guidance requires minimizing copied data and avoiding per-mod
+  blame analytics.
+
+Decision:
+
+- Evidence Boards store review-thread summaries and source references rather
+  than full duplicate receipts or Case Packet Markdown.
+- Board evidence privacy metadata explicitly records that moderator names and
+  target authors are not copied into board summaries.
+- Board statuses are `open`, `needs_policy_change`, `accepted_exception`,
+  `resolved`, and `archived`.
+- Evidence Boards are a moderator review surface only; they do not execute or
+  recommend Reddit actions.
+
+Runtime status:
+
+- Evidence Board service and routes are locally/type verified only.
+- Redis persistence is tested with mocked Redis.
+- Devvit Web/Redis route proof now exists for safe smoke routes, log-only
+  receipts, content snapshots, Evidence Boards, Case Packets, config
+  export/import, and retention inventory/dry-run controls.
+
+## Wave 30 Privacy Retention Controls
+
+Date: 2026-05-19
+
+Evidence source:
+
+- Existing local services persist scan metadata/detail records, action
+  receipts, Evidence Boards, and team delivery receipts under namespaced Redis
+  keys.
+- Shared expansion privacy guidance requires data minimization,
+  moderator-visible retention/export/delete controls, and protected policy
+  history.
+
+Decision:
+
+- W30 adds retention settings for scan history, action receipts, Evidence
+  Boards, team delivery receipts, Case Packets, and AI advisory logs.
+- Policy history remains protected by default and is reported as protected in
+  inventory/deletion results.
+- Case Packets and AI advisory logs are included in settings and reports but
+  currently have no persisted first-class records to delete.
+- Privacy export is an inventory/count report, not a private payload export.
+- Manual deletion supports dry-run by default, selected categories, and expired
+  cleanup based on retention windows.
+
+Runtime status:
+
+- Privacy retention service, API contracts, and Settings UI are locally
+  type-verified.
+- Post-W34 Devvit playtest verified Settings save, privacy inventory counts,
+  and selected-category dry-run deletion controls in the Reddit-hosted WebView.
+- Actual Redis deletion behavior is tested with mocked dependencies only; no
+  destructive Devvit deletion was run. Runtime proof is still required before
+  claiming live Redis cleanup or scheduled cleanup behavior.
+
+## Wave 31 Mobile And Runtime Resilience
+
+Date: 2026-05-19
+
+Evidence source:
+
+- Static built client served from `dist/client` through `http-server`.
+- Playwright CLI at a 390px viewport.
+- Local CSS/static tests for narrow workspace collapse.
+
+Decision:
+
+- W31 adds timeout-aware client API calls and classifies static preview,
+  timeout, network, API, and clipboard failures into actionable messages.
+- Static preview and missing Devvit WebView signals are shown as runtime
+  resilience notices instead of silent fallback behavior.
+- Clipboard failures keep Markdown export text visible and tell moderators to
+  copy manually from the export box.
+
+Runtime status:
+
+- Static browser proof: Act, Scan, Review, Prove, and Settings reported
+  `documentElement.scrollWidth === window.innerWidth === 390`.
+- Screenshot artifact:
+  `output/playwright/w31/settings-390.png` (ignored local output).
+- No Devvit playtest or native mobile app verification was run in W31.
+  Runtime mobile/WebView proof remains required before claiming mobile runtime
+  readiness.
+
+## Operational Overhaul W13 Runtime Findings
+
+Date: 2026-05-18
+
+Evidence source:
+
+- `npx devvit whoami` succeeded as `u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.71`.
+- Zen desktop browser was signed in and opened the playtest subreddit.
+- Computer Use observed Reddit UI state and captured a screenshot at
+  `output/runtime/w13/devvit-w12-act-modal-v0.0.1.71.png`.
+
+Verified:
+
+- The subreddit overflow menu shows `Open ModMirror dashboard` for the
+  moderator account.
+- Selecting `Open ModMirror dashboard` opens the confirmation form. The W13 pass
+  canceled the form and did not create a new dashboard post.
+- An existing ModMirror dashboard custom post renders the W12 operational IA in
+  Reddit's expanded WebView modal: Act, Scan, Agree, Review, Prove, Settings.
+- Reddit host chrome remains present, including the host viewport control
+  labeled `Mobile`.
+
+Not verified:
+
+- At W13 time, post/comment Apply Policy menu entries were still unverified.
+  Post and comment detail-page entrypoints were later verified in the
+  post-W34 runtime proof sections below.
+- Runtime `/api/smoke/redis` and `/api/smoke/reddit` responses.
+- Real target context capture from `MenuItemRequest.targetId`.
+- Devvit Redis receipt, scan, policy lifecycle, and case packet persistence.
+- Non-mod access blocking and native Reddit mobile app behavior.
+
+Decision:
+
+- W13 upgrades the operational IA and subreddit dashboard launcher to runtime
+  verified on desktop WebView.
+- W13 does not upgrade post/comment Apply Policy, Redis persistence, receipts,
+  destructive moderation execution, delivery, scheduler, native Mod Notes, AI,
+  non-mod access, or native mobile status.
+
+## Post-W34 Runtime Smoke Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Existing `ModMirror policy dashboard` custom post opened the Devvit WebView.
+- Settings safe smoke controls were executed inside the authenticated WebView.
+
+Verified:
+
+- Playtest `v0.0.1.73` executed `POST /api/smoke/redis` from the WebView and
+  returned the UI success message:
+  `Redis smoke passed: write/read matched inside Devvit playtest.`
+- Playtest `v0.0.1.73` executed `POST /api/smoke/reddit` from the WebView and
+  returned the UI success message:
+  `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).`
+- The runtime capability matrix promoted Redis and Reddit read-only access to
+  `verified runtime`.
+- Playtest `v0.0.1.74` confirmed the Settings summary cards now also show
+  Redis and Reddit source status as `verified runtime`.
+
+Not verified:
+
+- Post/comment Apply Policy menu entries and target context capture were not
+  verified during the smoke-button pass; they were verified in the subsequent
+  post-W34 menu target proofs below.
+- Log-only Apply Policy receipt creation in Devvit Redis.
+- Any destructive moderation operation.
+- Native Mod Notes, modmail/mod discussion, scheduler, external AI, native
+  mobile, or non-mod access blocking.
+
+Decision:
+
+- Redis read/write and Reddit read-only source access may now be described as
+  runtime-verified for this test subreddit and playtest path.
+- This proof does not authorize destructive moderation execution or delivery
+  features.
+
+## Post-W34 Post Menu Target Context Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.83`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Ordinary safe post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1texjev/modmirror_wave_2_smoke_test/?playtest=modmirror`.
+
+Verified:
+
+- The Reddit post moderation actions menu displayed `Apply ModMirror Policy`.
+- The menu action opened the Devvit form and resolved the real post target:
+  `t3_1texjev`, target type `post`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, title `ModMirror Wave 2 smoke test`.
+- Submitting `Open policy dashboard` created a guidance custom post.
+- The expanded WebView on that guidance custom post loaded the Act workspace
+  and displayed `Selected Reddit target` with the captured target ID, author,
+  subreddit, title, and source link.
+- The working target handoff uses Devvit custom post `postData` and
+  `/api/launch-context`, because Reddit preserves `#act?...` on the parent
+  post URL while the embedded WebView only receives `#act`.
+- No moderation action was executed.
+
+Not verified:
+
+- Log-only Apply Policy receipt creation from this real post target.
+- Destructive moderation execution.
+
+Decision:
+
+- Post-level Apply Policy entrypoint discovery and target-context handoff may
+  now be described as runtime-verified for this desktop Reddit playtest path.
+- Execution receipts remain unverified.
+
+## Post-W34 Comment Menu Target Context Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest versions: `v0.0.1.84` for the initial comment form proof and
+  `v0.0.1.89` for the body-excerpt WebView proof.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Ordinary safe comment used: `t1_ommzgtz` on safe post `t3_1texjev`.
+
+Verified:
+
+- A safe test comment was posted with body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- The Reddit comment moderation actions menu displayed `Apply ModMirror Policy`.
+- The menu action opened the Devvit form and resolved the real comment target:
+  `t1_ommzgtz`, target type `comment`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, and the selected comment body.
+- Submitting `Open policy dashboard` created a guidance custom post.
+- The expanded WebView on the `v0.0.1.89` guidance custom post loaded the Act
+  workspace and displayed `Selected Reddit target` with the captured comment
+  ID, author, subreddit, body excerpt, and source link.
+- The working target handoff uses Devvit custom post `postData` and
+  `/api/launch-context`; the embedded WebView receives `#act`, while the parent
+  Reddit post URL preserves the full target payload.
+- No moderation action was executed.
+
+Not verified:
+
+- Log-only Apply Policy receipt creation from this real comment target.
+- Destructive moderation execution.
+
+Decision:
+
+- Comment-level Apply Policy entrypoint discovery and target-context handoff
+  may now be described as runtime-verified for this desktop Reddit playtest
+  path.
+- Execution receipts remain unverified.
+
+## Post-W34 Log-Only Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.90`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit page and switched the Devvit modal from
+  `Mobile` to `Fullscreen` before confirmation.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v90-after-confirm-click.png`
+  - `output/runtime-proof/post34-v90-receipt-ledger.png`
+
+Verified:
+
+- The fullscreen WebView displayed the Act workspace with the menu-captured
+  comment target `t1_ommzgtz`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, and body `Runtime comment target smoke for ModMirror; safe
+  test content.`
+- `Runtime Smoke Policy` was selected.
+- The selected action was changed to `warn`, matching the policy
+  recommendation; Native Mod Note stayed `log only`.
+- Confirming the log-only action showed `Policy action recorded with receipt.`
+- The response proof reported:
+  `Receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0 recorded. No Reddit action was applicable.`
+- The Receipt Ledger displayed the same receipt with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, a gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- No Reddit moderation action was executed.
+
+Decision:
+
+- Log-only Apply Policy receipt creation may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- This proof does not authorize destructive Reddit moderation execution or
+  native Mod Note delivery.
+
+## Post-W34 Mobile Devvit WebView Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.91`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use inspected the Reddit-owned Devvit modal while the host viewport
+  selector remained on `Mobile`.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v91-mobile-act-ledger.png`
+  - `output/runtime-proof/post34-v91-mobile-target-form.png`
+  - `output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+
+Verified:
+
+- The Reddit desktop host `Mobile` Devvit modal rendered the ModMirror shell,
+  nav, Act workspace, target context, Apply Policy form, Operational Queue,
+  guided setup, demo scenario, and Receipt Ledger without requiring fullscreen.
+- The Act workspace showed the selected comment target `t1_ommzgtz`, author
+  `BrightyBrainiac`, subreddit `modmirror_dev`, and body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- The Apply Policy form retained the captured target fields and allowed the
+  safe log-only control state to remain visible in the narrow modal.
+- The Receipt Ledger displayed
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- No Reddit moderation action was executed.
+
+Not verified:
+
+- This is a desktop Reddit host mobile-modal proof, not native Reddit mobile
+  app proof. Native mobile app layout and interaction behavior remain
+  unverified.
+
+Decision:
+
+- The W12/W31 narrow Devvit WebView layout may now be described as
+  runtime-verified for Reddit's desktop host `Mobile` modal.
+- Native Reddit mobile app behavior must remain a separate open runtime gap.
+
+## Post-W34 Evidence Board Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.92`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use opened the existing comment guidance custom post and drove the
+  Reddit-owned Devvit WebView modal.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshot captured:
+  `output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`.
+
+Verified:
+
+- The Act workspace Receipt Ledger still loaded
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` from Devvit Redis after the
+  playtest advanced to `v0.0.1.92`.
+- Clicking `Open evidence board` on that receipt created a Redis-backed
+  Evidence Board and navigated to the Prove workspace.
+- The UI reported `Evidence board opened.`
+- The Evidence Board list displayed
+  `Review receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with
+  `2 evidence items` and status `Open`.
+- The board included a receipt-backed content snapshot evidence item:
+  `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
+- Entering `Runtime evidence-board smoke note.` and clicking `Update`
+  exercised the status-update route and returned
+  `Evidence board status updated.`
+- No Reddit moderation action was executed.
+
+Decision:
+
+- W26 Evidence Board create/list/status persistence may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- W16 receipt-backed content snapshot persistence is runtime-verified for the
+  previously captured real comment menu target.
+- This proof does not cover native mobile behavior.
+
+Additional Case Packet proof on the same playtest:
+
+- Entering `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` into the tracked
+  action/receipt field and clicking `Generate from action` returned
+  `Case packet generated.`
+- The generated packet was labeled `Official Case Packet` for
+  `r/modmirror_dev`, posture `Policy Consistent`, action
+  `action-4f669df3-18a2-411a-a13d-78a66ec1fdbb`, and receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`.
+- The packet's evidence labels included:
+  - `Action receipt: verified receipt`
+  - `Content snapshot: verified receipt`
+  - `Policy version: verified modmirror action`
+  - `Override context: missing`
+  - `Comparable cases: missing`
+- The Markdown export included `Content snapshot: captured` and retained the
+  deterministic caveats.
+- Clicking `Open from packet` created a second Evidence Board:
+  `Review case packet case-packet-a7146342-1d4d-4a69-b333-790ad3e9e986`.
+- The Case Packet-origin board displayed `3 evidence items`, including the
+  content snapshot and a case-packet evidence summary:
+  `Case packet appeal_context: matched_policy; posture policy_consistent; 5 evidence labels.`
+- Screenshot captured:
+  `output/runtime-proof/post34-v92-case-packet-evidence-board.png`.
+
+## Post-W34 Config And Privacy Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npx devvit whoami` reported `Logged in as u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Devvit CLI reported playtest version `v0.0.1.93`. The already-open Reddit
+  WebView token still reported app version `0.0.1.92`; no production source
+  code changed between the `v0.0.1.92` and `v0.0.1.93` playtest starts.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit-owned Devvit WebView modal on the comment
+  guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v93-config-export-import.png`
+  - `output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+
+Verified config portability:
+
+- Settings export generated a live portable config package with
+  `schemaVersion` `modmirror.config.v1`, package ID
+  `config-4c9fe762-2146-46ce-b9e3-3dfd8797327d`, source `live_config`,
+  subreddit `modmirror_dev`, `includePrivateHistory: false`, and exported-by
+  moderator `BrightyBrainiac`.
+- The exported package contained `Runtime Smoke Policy` and digest settings,
+  but explicitly warned that private history is excluded: receipts, overrides,
+  scans, content snapshots, case packets, evidence boards, delivery receipts,
+  and incident reports are not exported.
+- Loading starter template `template-spam-flood-review` filled the import box
+  with one starter policy, `Spam and repeated promotion`.
+- Import dry-run returned `Dry run completed. No policies or settings were
+  written.`, accepted `yes`, policies `1`, skipped `0`, settings `unchanged`,
+  and `Spam and repeated promotion - created Policy will be imported as a new draft.`
+- Clicking `Import drafts` returned
+  `Portable config imported as drafts and proposed updates.`, accepted `yes`,
+  policies `1`, skipped `0`, settings `unchanged`, and retained the private
+  history exclusion warnings.
+- The Settings side summary then showed `2 policies loaded in this session`,
+  proving the imported draft was visible after the Redis-backed import route.
+
+Verified privacy retention controls:
+
+- Clicking `Save retention` with the visible default windows returned
+  `Retention settings saved. Policy history remains protected.`
+- Clicking `Export inventory` returned
+  `Privacy inventory loaded. It reports counts, not private payloads.`
+- Inventory export reported subreddit `r/modmirror_dev`, `7` categories,
+  `1` retained action receipt, `2` retained evidence boards, `0` retained scan
+  history, `0` retained team delivery receipts, `0` persisted case packets,
+  `0` persisted AI advisory logs, and `Policy history Protected`.
+- Selecting action receipts, evidence boards, and case packets, then clicking
+  `Dry run selected`, returned `Dry run completed. No data was deleted.`
+- The dry-run deletion report showed mode `dry run`, action receipts
+  `0 retained / 1 selected`, evidence boards `0 retained / 2 selected`, case
+  packets `0 retained / 0 selected`, and `Policy history Protected`.
+- The dry-run warnings stated `Dry run only. No keys were deleted.` and
+  `Policy history remains protected by default.`
+- No destructive retention deletion was clicked.
+
+Decision:
+
+- W28 config export/import persistence may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- W30 retention settings, privacy inventory, and dry-run deletion controls may
+  now be described as runtime-verified for this desktop Reddit Devvit WebView
+  playtest path.
+- Actual expired-data cleanup/deletion remains unverified and should require a
+  separate controlled destructive cleanup test.
+
+## Post-W34 Incident Mode Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npx devvit whoami` reported `Logged in as u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Devvit CLI reported playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit-owned Devvit WebView modal on the comment
+  guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-incident-mode-start.png`
+  - `output/runtime-proof/post34-v94-incident-receipt-tag.png`
+  - `output/runtime-proof/post34-v94-incident-report.png`
+
+Verified Incident Mode behavior:
+
+- Settings started Incident Mode with reason `raid`, default duration
+  `120` minutes, and description
+  `Runtime Incident Mode smoke for ModMirror.`
+- The active incident banner rendered and showed incident ID
+  `incident-7aa9f981-7461-4975-a4e1-d0925cb00b36`, expiring at
+  `May 19, 06:43 PM`.
+- The Incident Mode panel persisted status `active`, reason `raid`, start time
+  `May 19, 04:43 PM`, expiry `May 19, 06:43 PM`, policy preset suggestions,
+  and triage groups.
+- While the incident was active, Apply Policy created safe receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` for target `t1_ommzgtz`.
+- The receipt ledger tagged that receipt with
+  `Incident: incident-7aa9f981-7461-4975-a4e1-d0925cb00b36. Tagged for post-incident review.`
+- The receipt execution was skipped and gated: rule `Runtime Smoke Policy`,
+  recommended action `remove`, selected action `remove`, execution `skipped`,
+  mode `unverified disabled`, capability `disabled`, and Native Mod Note
+  `skipped (disabled)`.
+- Ending the incident produced a post-incident report with `1` receipt,
+  `0` overrides, `0` successes, `0` failures, and `1` skipped execution.
+- The recent incidents list changed the incident from `active` to `ended`.
+- No Reddit moderation action was executed during this proof.
+
+Decision:
+
+- W27 Incident Mode route persistence, active banner behavior, receipt tagging,
+  and post-incident reporting may now be described as runtime-verified for this
+  desktop Reddit Devvit WebView playtest path.
+- Incident Mode remains a context and evidence workflow only. It does not
+  enable auto-remove, auto-ban, or policy override automation.
+
+## Post-W34 Case Packet Delivery Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/teamDelivery.test.ts src/shared/casePacketDelivery.test.ts src/server/services/privacyRetention.test.ts`
+  passed before the playtest interaction.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Prove tab in the fullscreen Reddit-owned Devvit
+  WebView modal on the comment guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+  - `output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+
+Verified delivery receipt behavior:
+
+- Prove generated a Case Packet from latest action
+  `action-b10aa953-9338-4932-82de-caaa6aeaa29a` and receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1`.
+- Clicking `Save manual receipt` returned
+  `Manual delivery receipt saved. Copy the Markdown into your review thread.`
+- The UI displayed delivery receipt
+  `delivery-df85dc45-32e0-41fb-86be-f354247094be` recorded as
+  `manual ready`.
+- Clicking `Save mod discussion draft` returned
+  `Mod Discussion draft receipt saved. No Reddit message was sent.`
+- The UI displayed delivery receipt
+  `delivery-615df3a3-5dfc-422a-a474-293fa1312c5b` recorded as `skipped`.
+- The Prove tab retained the safety note that manual copy is the supported path
+  and Mod Discussion delivery is unverified unless runtime delivery is
+  explicitly proven and enabled.
+
+Decision:
+
+- W25 delivery receipt persistence may now be described as runtime-verified for
+  manual-ready receipts and skipped Mod Discussion draft receipts in this
+  desktop Reddit Devvit WebView playtest path.
+- Live Mod Discussion sending remains unverified and disabled. No Reddit
+  message was sent during this proof.
+
+## Post-W34 Response Preview Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/shared/responseTemplates.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+  passed before documenting this proof.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Act tab in the Reddit-owned Devvit WebView modal on
+  the comment guidance custom post.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-response-preview-receipt.png`
+
+Verified response preview behavior:
+
+- The Apply Policy recommendation panel rendered `Response Templates` with the
+  explicit note `Drafts are rendered for copy/review only; Apply Policy will not send them.`
+- The panel showed `Delivery Gated` and the warning that confirming Apply
+  Policy does not send comments, messages, modmail, or native mod notes.
+- The persisted Receipt Ledger showed receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` and receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with
+  `1 response template draft captured; delivery remained gated.`
+- The receipts remained gated: execution `skipped`, mode `unverified disabled`
+  or `log only`, and native Mod Note `skipped (disabled)`.
+
+Decision:
+
+- W23 response preview rendering and receipt persistence may now be described
+  as runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- Response templates remain preview-only. No comment, private message, modmail,
+  Mod Discussion, or native Mod Note was sent during this proof.
+
+## Post-W34 Modqueue Runtime Fallback Observation
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/modqueueTriage.test.ts` passed before
+  documenting this observation.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Computer Use refreshed the Act-page Operational Queue panel in the
+  Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+
+Observed behavior:
+
+- The Operational Queue panel remained reachable and non-destructive.
+- Refresh briefly entered the loading state:
+  `Reading Reddit modqueue items without taking action.`
+- The final panel still reported
+  `Modqueue triage type-supported: Devvit typings expose read-only modqueue APIs, but ModMirror has not runtime-verified this endpoint in playtest.`
+- The panel returned no queue items and told the moderator to use post/comment
+  menus or enter a target thing ID directly.
+
+Decision:
+
+- W17 remains open. This proof validates the safe fallback path, not live
+  Reddit modqueue read capability.
+- Runtime verification requires safe queue content that returns
+  `source: reddit_modqueue` or an exact Devvit permission/runtime failure from
+  the Reddit adapter path.
+
+## Post-W34 Review Health And Impact Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/communityHealth.test.ts src/server/services/policyImpact.test.ts src/server/services/policyHealth.test.ts`
+  passed before documenting this proof.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Computer Use opened the Review tab in the Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-review-health-impact.png`
+
+Verified Review behavior:
+
+- Governance overview loaded from runtime state with `1` active policy,
+  `0` stable policies, `0` policies needing review, and `0` unresolved
+  overrides.
+- Community Health reported small-sample status with `2` tracked actions,
+  `0` unresolved overrides, churn `4`, drift `insufficient data`, and
+  `2` case-ready receipts.
+- The health panel showed the aggregate guardrails:
+  no per-moderator leaderboard fields, repeat-offense signals aggregated by
+  rule, and small-sample labels before health claims.
+- Runtime Smoke Policy showed `100%` consistency across `2` tracked actions and
+  stayed labeled `Insufficient Data` because the health threshold is `5`
+  actions.
+- Policy Versions displayed stored version history for Runtime Smoke Policy and
+  the imported Spam and repeated promotion draft.
+- Policy Impact loaded stored summaries: Runtime Smoke Policy had source
+  `stored`, before receipts `0`, after receipts `2`, before `0%`, after
+  `100%`, and remained `Insufficient Data` because before-adoption receipts are
+  below threshold.
+
+Decision:
+
+- W21 community health route and W22 policy impact route may now be described
+  as runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- The proof confirms small-sample/insufficient-data labeling, not a mature
+  before/after impact claim.
+
+## Post-W34 Runtime Matrix Truth Refresh
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/runtimeCapabilities.test.ts src/server/services/runtimeVerification.test.ts`
+  passed after the matrix truth-state updates.
+- `npm run type-check`, `npm run lint`, `npm run build`, and
+  `git diff --check` passed.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.109`.
+- Computer Use switched the Reddit host modal to `Fullscreen` and inspected the
+  Settings runtime matrix.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
+
+Verified behavior:
+
+- Settings rendered build `0.0.1.109`.
+- Reddit API reads, Redis read/write, and Menu entrypoints were shown as
+  `verified runtime`.
+- Menu entrypoints now cite the subreddit launcher plus post/comment Apply
+  Policy menu target capture as runtime-proven.
+- The stale post/comment target-context warning is gone.
+- Modmail/mod discussion delivery remains `type only`, and destructive or
+  externally visible operations remain disabled/gated.
+
+Decision:
+
+- Runtime capability and runtime verification matrices may now describe the
+  safe, already-proven menu, target-context, Redis, Reddit-read, scan replay,
+  policy lifecycle, log-only receipt, and Case Packet paths as runtime-verified.
+- This does not promote native Mod Notes, Mod Discussion send, scheduler,
+  destructive moderation, public/private message delivery, actual retention
+  deletion, or AI provider calls.

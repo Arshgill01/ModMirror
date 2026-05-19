@@ -1,139 +1,149 @@
 import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import type { UiResponse } from '@devvit/web/shared';
-import type { FormField } from '@devvit/shared-types/shared/form.js';
-import { getTargetSummary, runRedisSmoke } from '../core/smoke';
+import type { ModerationTargetContext } from '../shared/schema';
+import {
+  buildApplyPolicyLaunchPostData,
+  resolveModerationTargetContext,
+} from '../server/services/targetContext';
 
-type SmokeFormValues = {
-  targetId?: string;
-  location?: string;
-  note?: string;
+type ApplyPolicyTargetFormValues = {
+  targetThingId?: string;
+  targetAuthor?: string;
+  subreddit?: string;
 };
 
 export const forms = new Hono();
 
-const getTargetId = (values: SmokeFormValues) => {
-  if (typeof values.targetId === 'string' && values.targetId.trim()) {
-    return values.targetId.trim();
-  }
-
-  return undefined;
-};
-
-const buildChainedFields = (
-  targetId: string,
-  authorName: string | undefined
-): FormField[] => [
-  {
-    name: 'targetId',
-    label: 'Target ID',
-    type: 'string',
-    required: true,
-    defaultValue: targetId,
-    disabled: true,
-  },
-  {
-    name: 'authorName',
-    label: 'Resolved author',
-    type: 'string',
-    defaultValue: authorName ?? 'unavailable',
-    disabled: true,
-  },
-  {
-    name: 'note',
-    label: 'Smoke note',
-    type: 'paragraph',
-    helpText: 'Stored only in the Wave 0 Redis smoke key.',
-    defaultValue: 'Wave 0 form chaining proof',
-  },
-];
-
-forms.post('/smoke-target-submit', async (c) => {
-  const values = await c.req.json<SmokeFormValues>();
-  const targetId = getTargetId(values);
-  if (!targetId) {
-    return c.json<UiResponse>(
-      {
-        showToast: 'Smoke test failed: missing target ID.',
-      },
-      200
-    );
-  }
-
-  const target = await getTargetSummary(targetId);
-
-  return c.json<UiResponse>(
-    {
-      showForm: {
-        name: 'smokeChained',
-        form: {
-          title: 'ModMirror Chained Form Smoke Test',
-          fields: buildChainedFields(target.id, target.authorName),
-          acceptLabel: 'Write Redis Smoke',
-          cancelLabel: 'Cancel',
-        },
-      },
-    },
-    200
-  );
-});
-
-forms.post('/smoke-chained-submit', async (c) => {
-  const values = await c.req.json<SmokeFormValues>();
-  const targetId = getTargetId(values);
-  if (!targetId) {
-    return c.json<UiResponse>(
-      {
-        showToast: 'Smoke test failed: missing target ID.',
-      },
-      200
-    );
-  }
-
-  const [target, redisResult] = await Promise.all([
-    getTargetSummary(targetId),
-    runRedisSmoke(),
-  ]);
-
-  return c.json<UiResponse>(
-    {
-      showToast: {
-        text: `Smoke ok: ${target.kind} by ${
-          target.authorName ?? 'unknown author'
-        }; Redis ${redisResult.ok ? 'read/write passed' : 'read/write failed'}.`,
-        appearance: redisResult.ok ? 'success' : 'neutral',
-      },
-    },
-    200
-  );
-});
-
 forms.post('/dashboard-launch-submit', async (c) => {
   await c.req.json().catch(() => undefined);
 
+  return c.json<UiResponse>(await createDashboardNavigation(), 200);
+});
+
+forms.post('/apply-policy-target-submit', async (c) => {
+  const values = await c.req.json<ApplyPolicyTargetFormValues>();
+  const targetThingId = values.targetThingId?.trim();
+  if (!targetThingId) {
+    return c.json<UiResponse>(
+      {
+        showToast: {
+          text: 'ModMirror could not open policy guidance: missing target ID.',
+          appearance: 'neutral',
+        },
+      },
+      200
+    );
+  }
+
+  try {
+    const target = await resolveModerationTargetContext(targetThingId);
+    const navigationOptions: Parameters<typeof createDashboardNavigation>[0] = {
+      target,
+    };
+    const fallbackTargetAuthor = normalizeOptionalString(values.targetAuthor);
+    const fallbackSubreddit = normalizeOptionalString(values.subreddit);
+    if (fallbackTargetAuthor !== undefined) {
+      navigationOptions.fallbackTargetAuthor = fallbackTargetAuthor;
+    }
+    if (fallbackSubreddit !== undefined) {
+      navigationOptions.fallbackSubreddit = fallbackSubreddit;
+    }
+
+    return c.json<UiResponse>(await createDashboardNavigation(navigationOptions), 200);
+  } catch (error) {
+    return c.json<UiResponse>(
+      {
+        showToast: {
+          text: `ModMirror could not resolve this target: ${formatError(error)}`,
+          appearance: 'neutral',
+        },
+      },
+      200
+    );
+  }
+});
+
+async function createDashboardNavigation(options?: {
+  target?: ModerationTargetContext;
+  fallbackTargetAuthor?: string;
+  fallbackSubreddit?: string;
+}): Promise<UiResponse> {
   const subredditName =
-    context.subredditName ?? (await reddit.getCurrentSubreddit()).name;
+    options?.target?.subreddit ??
+    normalizeOptionalString(options?.fallbackSubreddit) ??
+    context.subredditName ??
+    (await reddit.getCurrentSubreddit()).name;
   const post = await reddit.submitCustomPost({
     subredditName,
-    title: 'ModMirror policy dashboard',
+    title: options?.target
+      ? `ModMirror policy guidance for ${options.target.targetType}`
+      : 'ModMirror policy dashboard',
     entry: 'default',
+    ...(options?.target
+      ? { postData: buildApplyPolicyLaunchPostData(options.target) }
+      : {}),
     textFallback: {
       text: 'Open this post in Reddit to use the ModMirror policy dashboard.',
     },
   });
 
-  const url = post.permalink.startsWith('http')
-    ? post.permalink
-    : `https://www.reddit.com${post.permalink}`;
-
-  return c.json<UiResponse>(
-    {
-      navigateTo: url,
-      showToast: {
-        text: 'Opening ModMirror dashboard',
-        appearance: 'success',
-      },
+  return {
+    navigateTo: buildDashboardUrl(post.permalink, options),
+    showToast: {
+      text: options?.target
+        ? 'Opening ModMirror policy guidance'
+        : 'Opening ModMirror dashboard',
+      appearance: 'success',
     },
-    200
-  );
-});
+  };
+}
+
+function buildDashboardUrl(
+  permalink: string,
+  options?: {
+    target?: ModerationTargetContext;
+    fallbackTargetAuthor?: string;
+  }
+): string {
+  const url = permalink.startsWith('http')
+    ? permalink
+    : `https://www.reddit.com${permalink}`;
+  const target = options?.target;
+  if (!target) {
+    return url;
+  }
+
+  const params = new URLSearchParams({
+    targetThingId: target.targetThingId,
+    targetType: target.targetType,
+  });
+  const targetAuthor =
+    target.authorName ?? normalizeOptionalString(options?.fallbackTargetAuthor);
+  if (targetAuthor !== undefined) {
+    params.set('targetAuthor', targetAuthor);
+  }
+  if (target.subreddit !== undefined) {
+    params.set('subreddit', target.subreddit);
+  }
+  if (target.title !== undefined) {
+    params.set('targetTitle', target.title);
+  }
+  if (target.body !== undefined) {
+    params.set('targetBody', target.body);
+  }
+  if (target.permalink !== undefined) {
+    params.set('targetPermalink', target.permalink);
+  }
+
+  return `${url}#act?${params.toString()}`;
+}
+
+function normalizeOptionalString(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function formatError(error: unknown): string {
+  return error instanceof Error ? error.message : 'unknown error';
+}

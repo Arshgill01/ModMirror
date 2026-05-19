@@ -1,6 +1,8 @@
 import {
   CONFIDENCE_VALUES,
+  MIRROR_SCAN_DEPTH_CONFIG,
   MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY,
+  SCAN_HISTORY_LIMIT,
 } from '../../shared/constants';
 import { getSmallSubredditThresholdStatus } from '../../shared/scoring';
 import type {
@@ -10,14 +12,22 @@ import type {
   DriftCandidate,
   EnforcementAction,
   MirrorScan,
+  MirrorScanDepth,
+  MirrorScanDepthMetadata,
+  MirrorScanRecord,
 } from '../../shared/schema';
 import { attributeActions } from './attribution';
+import {
+  createAttributionCorrectionIndex,
+  listAttributionCorrections,
+} from './attributionCalibration';
 import { getDemoMirrorScanSources } from './demoData';
 import { loadLiveMirrorScanSources } from './redditSources';
-import { saveLastScanMetadata } from './scans';
+import { saveScanRecord } from './scans';
 
 export type RunMirrorScanOptions = {
   mode: 'live' | 'demo';
+  depth?: MirrorScanDepth;
   createdBy?: string;
 };
 
@@ -27,11 +37,15 @@ export async function runMirrorScan(
   const sources =
     options.mode === 'demo'
       ? getDemoMirrorScanSources()
-      : await loadLiveMirrorScanSources();
+      : await loadLiveMirrorScanSources(
+          options.depth === undefined ? {} : { depth: options.depth }
+        );
+  const calibration = await loadCalibrationForScan(sources.subreddit);
   const attributedActions = attributeActions(
     sources.actions,
     sources.rules,
-    sources.removalReasons
+    sources.removalReasons,
+    calibration.correctionIndex
   );
   const confidenceBreakdown = getConfidenceBreakdown(attributedActions);
   const unmatchedCount = confidenceBreakdown.unmatched;
@@ -49,15 +63,42 @@ export async function runMirrorScan(
     smallSubredditStatus: getSmallSubredditThresholdStatus(
       sources.actions.length
     ),
-    warnings: [...sources.warnings],
+    scanDepth:
+      sources.scanDepth ??
+      createDemoScanDepthMetadata(options.depth ?? 'standard', sources.actions.length),
+    warnings: [...sources.warnings, ...calibration.warnings],
   };
 
   if (options.createdBy) {
     scan.createdBy = options.createdBy;
   }
 
-  await saveScanMetadata(scan);
+  await saveScanMetadata(scan, attributedActions);
   return scan;
+}
+
+async function loadCalibrationForScan(subreddit: string): Promise<{
+  correctionIndex?: ReturnType<typeof createAttributionCorrectionIndex>;
+  warnings: string[];
+}> {
+  try {
+    const corrections = await listAttributionCorrections(subreddit);
+    if (corrections.length === 0) {
+      return { warnings: [] };
+    }
+    return {
+      correctionIndex: createAttributionCorrectionIndex(corrections),
+      warnings: [
+        `Applied ${corrections.length} moderator attribution correction${corrections.length === 1 ? '' : 's'} during scan.`,
+      ],
+    };
+  } catch (error) {
+    return {
+      warnings: [
+        `Scan continued without attribution corrections because calibration lookup failed: ${formatError(error)}`,
+      ],
+    };
+  }
 }
 
 export function getConfidenceBreakdown(
@@ -151,20 +192,12 @@ function summarizeConfidence(actions: AttributedModAction[]): Confidence {
   return 'low';
 }
 
-async function saveScanMetadata(scan: MirrorScan): Promise<void> {
+async function saveScanMetadata(
+  scan: MirrorScan,
+  attributedActions: AttributedModAction[]
+): Promise<void> {
   try {
-    await saveLastScanMetadata({
-      id: scan.id,
-      subreddit: scan.subreddit,
-      createdAt: scan.createdAt,
-      createdBy: scan.createdBy ?? 'unknown',
-      source: scan.source,
-      totalActionsScanned: scan.totalActionsScanned,
-      attributedCount: scan.attributedCount,
-      unmatchedCount: scan.unmatchedCount,
-      confidenceBreakdown: scan.confidenceBreakdown,
-      driftCandidateCount: scan.driftCandidates.length,
-    });
+    await saveScanRecord(toScanRecord(scan, attributedActions));
   } catch (error) {
     scan.warnings.push(
       `Scan completed, but saving scan metadata failed: ${formatError(error)}`
@@ -172,8 +205,42 @@ async function saveScanMetadata(scan: MirrorScan): Promise<void> {
   }
 }
 
+function toScanRecord(
+  scan: MirrorScan,
+  attributedActions: AttributedModAction[]
+): MirrorScanRecord {
+  return {
+    ...scan,
+    attributedActions,
+    unmatchedActions: attributedActions.filter(
+      (action) => action.confidence === 'unmatched'
+    ),
+    retention: {
+      maxScansPerSubreddit: SCAN_HISTORY_LIMIT,
+      storedActionCount: attributedActions.length,
+    },
+  };
+}
+
 function createScanId(source: ActionSource): string {
   return `scan-${source}-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+}
+
+function createDemoScanDepthMetadata(
+  depth: MirrorScanDepth,
+  actionCount: number
+): MirrorScanDepthMetadata {
+  const config = MIRROR_SCAN_DEPTH_CONFIG[depth];
+
+  return {
+    depth,
+    requestedLimit: config.requestedLimit,
+    pageSize: config.pageSize,
+    fetchedActions: actionCount,
+    hitLimit: actionCount >= config.requestedLimit,
+    paginationStrategy: 'listing_all',
+    runtimeVerified: true,
+  };
 }
 
 function formatError(error: unknown): string {

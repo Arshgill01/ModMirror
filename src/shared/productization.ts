@@ -7,12 +7,11 @@ import type {
 } from './schema';
 
 export type ProductPageId =
-  | 'command-center'
+  | 'act'
   | 'scan'
-  | 'policies'
+  | 'agree'
   | 'review'
-  | 'case-packets'
-  | 'digest'
+  | 'prove'
   | 'settings';
 
 export type ProductDataMode = 'live' | 'demo' | 'unknown';
@@ -23,6 +22,7 @@ export type CommandCenterAction = {
   intent:
     | 'load_demo'
     | 'run_scan'
+    | 'apply_policy'
     | 'create_policy'
     | 'review_overrides'
     | 'review_policy'
@@ -123,8 +123,8 @@ export function buildCommandCenterSummary(input: {
     primaryAction: getPrimaryAction(actionInput),
     secondaryActions: [
       { label: 'Run Scan', page: 'scan', intent: 'run_scan' },
-      { label: 'Create Policy', page: 'policies', intent: 'create_policy' },
-      { label: 'Generate Digest', page: 'digest', intent: 'generate_digest' },
+      { label: 'Create Policy', page: 'agree', intent: 'create_policy' },
+      { label: 'Generate Digest', page: 'prove', intent: 'generate_digest' },
     ],
   };
 }
@@ -155,13 +155,13 @@ export function buildSetupSteps(input: {
       id: 'create-policy',
       title: 'Create the Rule 2 policy ladder',
       status: getStepStatus(hasPolicy, hasScan),
-      action: { label: 'Create Policy', page: 'policies', intent: 'create_policy' },
+      action: { label: 'Create Policy', page: 'agree', intent: 'create_policy' },
     },
     {
       id: 'apply-policy',
       title: 'Apply policy to a sample case',
       status: getStepStatus(input.hasAppliedPolicy, hasPolicy),
-      action: { label: 'Apply Sample', page: 'policies', intent: 'review_policy' },
+      action: { label: 'Apply Sample', page: 'act', intent: 'apply_policy' },
     },
     {
       id: 'review-results',
@@ -269,7 +269,7 @@ function getPrimaryAction(input: {
     return { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' };
   }
   if (input.activePolicyCount === 0) {
-    return { label: 'Create First Policy', page: 'policies', intent: 'create_policy' };
+    return { label: 'Create First Policy', page: 'agree', intent: 'create_policy' };
   }
   if (input.unresolvedOverrideCount > 0) {
     return {
@@ -284,7 +284,7 @@ function getPrimaryAction(input: {
   ) {
     return { label: 'Review Policy', page: 'review', intent: 'review_policy' };
   }
-  return { label: 'Generate Digest', page: 'digest', intent: 'generate_digest' };
+  return { label: 'Generate Digest', page: 'prove', intent: 'generate_digest' };
 }
 
 function getStepStatus(

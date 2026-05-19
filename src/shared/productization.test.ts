@@ -60,6 +60,15 @@ const scan: MirrorScan = {
       recommendation: 'Create a first-offense policy.',
     },
   ],
+  scanDepth: {
+    depth: 'standard',
+    requestedLimit: 60,
+    pageSize: 60,
+    fetchedActions: 60,
+    hitLimit: true,
+    paginationStrategy: 'listing_all',
+    runtimeVerified: true,
+  },
   smallSubredditStatus: {
     meetsThreshold: true,
     observedActions: 60,

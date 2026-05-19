@@ -6,6 +6,10 @@ import type {
   NormalizedRemovalReason,
   NormalizedRule,
 } from '../../shared/schema';
+import {
+  applyAttributionCorrection,
+  type AttributionCorrectionIndex,
+} from './attributionCalibration';
 
 const HIGH_CONFIDENCE_SCORE = 0.8;
 const MEDIUM_CONFIDENCE_SCORE = 0.55;
@@ -48,19 +52,21 @@ type RuleCandidate = {
 export function attributeActions(
   actions: NormalizedModAction[],
   rules: NormalizedRule[],
-  removalReasons: NormalizedRemovalReason[]
+  removalReasons: NormalizedRemovalReason[],
+  correctionIndex?: AttributionCorrectionIndex
 ): AttributedModAction[] {
   return actions.map((action) =>
-    attributeAction(action, rules, removalReasons)
+    attributeAction(action, rules, removalReasons, correctionIndex)
   );
 }
 
 export function attributeAction(
   action: NormalizedModAction,
   rules: NormalizedRule[],
-  removalReasons: NormalizedRemovalReason[]
+  removalReasons: NormalizedRemovalReason[],
+  correctionIndex?: AttributionCorrectionIndex
 ): AttributedModAction {
-  const result = inferAttribution(action, rules, removalReasons);
+  const result = inferAttribution(action, rules, removalReasons, correctionIndex);
   const attributed: AttributedModAction = {
     id: action.id,
     subreddit: action.subreddit,
@@ -69,6 +75,9 @@ export function attributeAction(
     createdAt: action.createdAt,
     confidence: result.confidence,
     evidence: result.evidence,
+    attributionKind:
+      result.attributionKind ??
+      (result.confidence === 'unmatched' ? 'unmatched' : 'inferred'),
   };
 
   if (action.normalizedAction) {
@@ -89,6 +98,9 @@ export function attributeAction(
   if (result.inferredRuleName) {
     attributed.inferredRuleName = result.inferredRuleName;
   }
+  if (result.correction) {
+    attributed.correction = result.correction;
+  }
 
   return attributed;
 }
@@ -96,7 +108,8 @@ export function attributeAction(
 export function inferAttribution(
   action: NormalizedModAction,
   rules: NormalizedRule[],
-  removalReasons: NormalizedRemovalReason[]
+  removalReasons: NormalizedRemovalReason[],
+  correctionIndex?: AttributionCorrectionIndex
 ): AttributionResult {
   if (action.directRuleKey) {
     const directResult: AttributionResult = {
@@ -104,6 +117,7 @@ export function inferAttribution(
       inferredRuleKey: action.directRuleKey,
       confidence: 'high',
       score: 1,
+      attributionKind: 'direct',
       evidence: ['ModMirror metadata includes an explicit rule reference.'],
     };
     if (action.directRuleName) {
@@ -121,24 +135,26 @@ export function inferAttribution(
   const best = candidates.sort(compareCandidates)[0];
 
   if (!best || best.score < LOW_CONFIDENCE_SCORE) {
-    return {
+    return applyAttributionCorrection(action, {
       actionId: action.id,
       confidence: 'unmatched',
       score: 0,
+      attributionKind: 'unmatched',
       evidence: ['No rule signal met the minimum attribution threshold.'],
-    };
+    }, correctionIndex);
   }
 
   const confidence = confidenceLabel(best.score);
 
-  return {
+  return applyAttributionCorrection(action, {
     actionId: action.id,
     inferredRuleKey: best.rule.ruleKey,
     inferredRuleName: best.rule.ruleName,
     confidence,
     score: roundScore(best.score),
+    attributionKind: 'inferred',
     evidence: best.evidence,
-  };
+  }, correctionIndex);
 }
 
 export function extractRuleNumbers(value: string): number[] {

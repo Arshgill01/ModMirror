@@ -108,7 +108,7 @@ export function normalizeModAction(
   if (action.moderatorName) {
     normalized.moderator = action.moderatorName;
   }
-  if (action.target?.id) {
+  if (action.target?.id && isContentThingId(action.target.id)) {
     normalized.targetThingId = action.target.id;
   }
   if (action.target?.author) {
@@ -119,6 +119,10 @@ export function normalizeModAction(
   }
 
   return normalized;
+}
+
+function isContentThingId(value: string): boolean {
+  return value.startsWith('t1_') || value.startsWith('t3_');
 }
 
 export function normalizeEnforcementAction(

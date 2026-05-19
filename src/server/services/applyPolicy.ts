@@ -1,11 +1,21 @@
-import { DEMO_SUBREDDIT_NAME } from '../../shared/constants';
+import {
+  APPLY_POLICY_SOURCE_VALUES,
+  DEMO_SUBREDDIT_NAME,
+  ENFORCEMENT_ACTION_VALUES,
+  MODERATION_EXECUTION_MODE_VALUES,
+  NATIVE_MOD_NOTE_MODE_VALUES,
+} from '../../shared/constants';
 import { recommendPolicyAction } from '../../shared/scoring';
 import type {
   ApplyPolicyConfirmInput,
   ApplyPolicyConfirmResult,
+  ContentSnapshot,
   ApplyPolicyPreview,
+  ApplyPolicyPreviewEvidence,
   ApplyPolicyPreviewInput,
+  ApplyPolicyTargetSnapshot,
   AttributedModAction,
+  ModerationExecutionResult,
   PolicyRecommendation,
 } from '../../shared/schema';
 import {
@@ -14,7 +24,22 @@ import {
   saveActionEvent,
   saveOverrideEvent,
 } from './audit';
+import {
+  executeModerationAction,
+  getRedditOperation,
+  type ModerationExecutionDependencies,
+} from './moderationExecution';
+import { captureContentSnapshotForApplyPolicy } from './contentSnapshots';
 import { capturePolicySnapshot, getPolicyByRule } from './policies';
+import { createActionReceiptInput, saveActionReceipt } from './receipts';
+import { getTargetType } from './targetContext';
+import { buildApplyPolicyResponsePreview } from '../../shared/responseTemplates';
+import {
+  attemptNativeModNote,
+  type NativeModNoteDependencies,
+  type NativeModNoteInput,
+} from './modNotes';
+import { getActiveIncidentMode } from './incidentMode';
 
 export async function previewApplyPolicy(
   input: ApplyPolicyPreviewInput
@@ -24,6 +49,7 @@ export async function previewApplyPolicy(
   const subreddit = input.subreddit ?? DEMO_SUBREDDIT_NAME;
   const policy = await getPolicyByRule(subreddit, input.ruleKey);
   const actionHistory = await loadActionHistory(subreddit);
+  const contentSnapshot = await captureContentSnapshotForApplyPolicy(input);
   const recommendationOptions: Parameters<typeof recommendPolicyAction>[0] = {
     ruleKey: input.ruleKey,
     actionHistory,
@@ -32,20 +58,44 @@ export async function previewApplyPolicy(
     recommendationOptions.policy = policy;
     recommendationOptions.ruleName = policy.ruleName;
   }
-  if (input.targetAuthor !== undefined) {
-    recommendationOptions.targetAuthor = input.targetAuthor;
+  const targetAuthor = input.targetAuthor ?? contentSnapshot.authorName;
+  if (targetAuthor !== undefined) {
+    recommendationOptions.targetAuthor = targetAuthor;
   }
   if (input.selectedAction !== undefined) {
     recommendationOptions.selectedAction = input.selectedAction;
   }
 
   const recommendation = recommendPolicyAction(recommendationOptions);
+  const policySnapshot = capturePolicySnapshot(policy);
+  const targetSnapshot = buildTargetSnapshot(input, contentSnapshot);
+  const responsePreview = buildApplyPolicyResponsePreview({
+    policy,
+    recommendation,
+    targetSnapshot,
+  });
   const preview: ApplyPolicyPreview = {
     recommendation,
+    targetSnapshot,
+    contentSnapshot,
+    evidence: buildPreviewEvidence({
+      policy,
+      recommendation,
+      actionHistory,
+      targetSnapshot,
+      contentSnapshot,
+    }),
+    confirmation: buildConfirmationPreview(recommendation),
   };
 
   if (policy !== undefined) {
     preview.policy = policy;
+  }
+  if (policySnapshot !== undefined) {
+    preview.policySnapshot = policySnapshot;
+  }
+  if (responsePreview !== undefined) {
+    preview.responsePreview = responsePreview;
   }
 
   return preview;
@@ -54,7 +104,11 @@ export async function previewApplyPolicy(
 export async function confirmApplyPolicy(options: {
   input: ApplyPolicyConfirmInput;
   modUsername?: string;
+  executionDependencies?: ModerationExecutionDependencies;
+  modNoteDependencies?: NativeModNoteDependencies;
 }): Promise<ApplyPolicyConfirmResult> {
+  validateConfirmInput(options.input);
+
   const preview = await previewApplyPolicy(options.input);
   const recommendation = preview.recommendation;
 
@@ -66,20 +120,33 @@ export async function confirmApplyPolicy(options: {
   }
 
   const subreddit = options.input.subreddit ?? DEMO_SUBREDDIT_NAME;
-  const policySnapshot = capturePolicySnapshot(preview.policy);
+  const policySnapshot = preview.policySnapshot;
+  const executionInput: Parameters<typeof executeModerationAction>[0] = {
+    selectedAction: options.input.selectedAction,
+    targetType: preview.targetSnapshot.targetType,
+    confirmed: options.input.confirmed,
+  };
+  if (options.input.targetThingId !== undefined) {
+    executionInput.targetThingId = options.input.targetThingId;
+  }
+  if (options.input.executionMode !== undefined) {
+    executionInput.executionMode = options.input.executionMode;
+  }
+  const execution = await executeModerationAction(
+    executionInput,
+    options.executionDependencies
+  );
   const actionInput = createLogOnlyActionInput(createActionOptions(
     subreddit,
     recommendation,
     options.input,
     options.modUsername,
-    policySnapshot
+    policySnapshot,
+    execution
   ));
   const actionEvent = await saveActionEvent(actionInput);
 
-  const result: ApplyPolicyConfirmResult = {
-    recommendation,
-    actionEvent,
-  };
+  let overrideEvent: ApplyPolicyConfirmResult['overrideEvent'];
 
   if (recommendation.deviatesFromPolicy && options.input.overrideReason) {
     const overrideInput: Parameters<typeof saveOverrideEvent>[0] = {
@@ -112,7 +179,60 @@ export async function confirmApplyPolicy(options: {
       overrideInput.policyVersionStatus = 'missing';
     }
 
-    result.overrideEvent = await saveOverrideEvent(overrideInput);
+    overrideEvent = await saveOverrideEvent(overrideInput);
+  }
+
+  const modNoteInput: NativeModNoteInput = {
+    confirmed: options.input.confirmed,
+    subreddit,
+    recommendation,
+  };
+  if (options.input.modNoteMode !== undefined) {
+    modNoteInput.mode = options.input.modNoteMode;
+  }
+  if (options.input.targetAuthor !== undefined) {
+    modNoteInput.targetAuthor = options.input.targetAuthor;
+  }
+  if (options.input.targetThingId !== undefined) {
+    modNoteInput.targetThingId = options.input.targetThingId;
+  }
+  if (preview.responsePreview !== undefined) {
+    modNoteInput.responsePreview = preview.responsePreview;
+  }
+  const nativeModNote = await attemptNativeModNote(
+    modNoteInput,
+    options.modNoteDependencies
+  );
+  const activeIncident = await getActiveIncidentMode(subreddit);
+
+  const receiptOptions: Parameters<typeof createActionReceiptInput>[0] = {
+    preview,
+    input: options.input,
+    actionEvent,
+    execution,
+    nativeModNote,
+  };
+  if (overrideEvent !== undefined) {
+    receiptOptions.overrideEvent = overrideEvent;
+  }
+  if (options.modUsername !== undefined) {
+    receiptOptions.modUsername = options.modUsername;
+  }
+  if (activeIncident !== undefined) {
+    receiptOptions.incidentId = activeIncident.id;
+  }
+  const receipt = await saveActionReceipt(
+    createActionReceiptInput(receiptOptions)
+  );
+
+  const result: ApplyPolicyConfirmResult = {
+    recommendation,
+    actionEvent,
+    execution,
+    receipt,
+  };
+  if (overrideEvent !== undefined) {
+    result.overrideEvent = overrideEvent;
   }
 
   return result;
@@ -123,7 +243,8 @@ function createActionOptions(
   recommendation: PolicyRecommendation,
   input: ApplyPolicyConfirmInput,
   modUsername?: string,
-  policySnapshot?: ReturnType<typeof capturePolicySnapshot>
+  policySnapshot?: ReturnType<typeof capturePolicySnapshot>,
+  execution?: ModerationExecutionResult
 ): Parameters<typeof createLogOnlyActionInput>[0] {
   const actionInput: Parameters<typeof createLogOnlyActionInput>[0] = {
     subreddit,
@@ -157,6 +278,9 @@ function createActionOptions(
     actionInput.policySnapshot = policySnapshot;
   } else {
     actionInput.policyVersionStatus = 'missing';
+  }
+  if (execution !== undefined) {
+    actionInput.execution = execution;
   }
 
   return actionInput;
@@ -201,4 +325,182 @@ function validatePreviewInput(input: ApplyPolicyPreviewInput): void {
   if (!input.ruleKey.trim()) {
     throw new Error('ruleKey is required');
   }
+  if (
+    input.selectedAction !== undefined &&
+    !ENFORCEMENT_ACTION_VALUES.includes(input.selectedAction)
+  ) {
+    throw new Error('selectedAction is invalid');
+  }
+  if (
+    input.source !== undefined &&
+    !APPLY_POLICY_SOURCE_VALUES.includes(input.source)
+  ) {
+    throw new Error('source is invalid');
+  }
+  if (input.targetThingId !== undefined) {
+    const targetType = getTargetType(input.targetThingId);
+    if (targetType === 'unknown') {
+      throw new Error('targetThingId must be a post t3_ or comment t1_ ID');
+    }
+    if (
+      input.targetType !== undefined &&
+      input.targetType !== 'unknown' &&
+      input.targetType !== targetType
+    ) {
+      throw new Error('targetType does not match targetThingId');
+    }
+  }
+}
+
+function validateConfirmInput(input: ApplyPolicyConfirmInput): void {
+  if (input.confirmed !== true) {
+    throw new Error('Explicit confirmation is required');
+  }
+  if (
+    input.executionMode !== undefined &&
+    !MODERATION_EXECUTION_MODE_VALUES.includes(input.executionMode)
+  ) {
+    throw new Error('executionMode is invalid');
+  }
+  if (
+    input.modNoteMode !== undefined &&
+    !NATIVE_MOD_NOTE_MODE_VALUES.includes(input.modNoteMode)
+  ) {
+    throw new Error('modNoteMode is invalid');
+  }
+}
+
+function buildTargetSnapshot(
+  input: ApplyPolicyPreviewInput,
+  contentSnapshot: ContentSnapshot
+): ApplyPolicyTargetSnapshot {
+  if (input.targetThingId === undefined || !input.targetThingId.trim()) {
+    return {
+      targetType: 'unknown',
+      source: 'not_provided',
+      warnings: contentSnapshot.warnings,
+      contentSnapshot,
+    };
+  }
+
+  const targetType =
+    input.targetType !== undefined && input.targetType !== 'unknown'
+      ? input.targetType
+      : getTargetType(input.targetThingId);
+  const snapshot: ApplyPolicyTargetSnapshot = {
+    targetThingId: input.targetThingId,
+    targetType,
+    source: 'provided',
+    warnings: [...contentSnapshot.warnings],
+    contentSnapshot,
+  };
+
+  const subreddit = input.subreddit ?? contentSnapshot.subreddit;
+  if (subreddit !== undefined) {
+    snapshot.subreddit = subreddit;
+  }
+  const authorName = input.targetAuthor ?? contentSnapshot.authorName;
+  if (authorName !== undefined) {
+    snapshot.authorName = authorName;
+  } else {
+    snapshot.warnings.push(
+      'Target author was not provided. Offense count defaults to the first offense.'
+    );
+  }
+  const title = input.targetTitle ?? contentSnapshot.titleExcerpt;
+  if (title !== undefined) {
+    snapshot.title = title;
+  }
+  const body = input.targetBody ?? contentSnapshot.bodyExcerpt;
+  if (body !== undefined) {
+    snapshot.body = body;
+  }
+  const permalink = input.targetPermalink ?? contentSnapshot.permalink;
+  if (permalink !== undefined) {
+    snapshot.permalink = permalink;
+  }
+
+  return snapshot;
+}
+
+function buildPreviewEvidence(options: {
+  policy: Awaited<ReturnType<typeof getPolicyByRule>>;
+  recommendation: PolicyRecommendation;
+  actionHistory: AttributedModAction[];
+  targetSnapshot: ApplyPolicyTargetSnapshot;
+  contentSnapshot: ContentSnapshot;
+}): ApplyPolicyPreviewEvidence[] {
+  const evidence: ApplyPolicyPreviewEvidence[] = [];
+
+  if (options.policy) {
+    evidence.push({
+      kind: 'policy',
+      label: 'Policy version',
+      detail: `Using ${options.policy.ruleName} version ${options.policy.activeVersionNumber ?? 1}.`,
+    });
+  } else {
+    evidence.push({
+      kind: 'fallback',
+      label: 'No policy',
+      detail:
+        'No active team policy exists for this rule. ModMirror recommends manual review.',
+    });
+  }
+
+  if (options.targetSnapshot.source === 'provided') {
+    evidence.push({
+      kind: 'target',
+      label: 'Content snapshot',
+      detail: `${options.targetSnapshot.targetType} ${options.targetSnapshot.targetThingId ?? ''} by ${
+        options.targetSnapshot.authorName ?? 'unknown author'
+      } (${options.contentSnapshot.fetchStatus})`,
+    });
+  } else {
+    evidence.push({
+      kind: 'target',
+      label: 'Target context missing',
+      detail:
+        'Preview was generated without a resolved Reddit post/comment target.',
+    });
+  }
+
+  evidence.push({
+    kind: 'history',
+    label: 'Offense count',
+    detail: `Offense ${options.recommendation.offenseCount} based on ${options.actionHistory.length} ModMirror-tracked prior actions. Historical Reddit mod-log matches are not counted here yet.`,
+  });
+
+  evidence.push({
+    kind: 'safety',
+    label: 'Execution mode',
+    detail:
+      'Confirming this preview records a log-only ModMirror action. It does not execute a Reddit moderation action in this wave.',
+  });
+
+  return evidence;
+}
+
+function buildConfirmationPreview(
+  recommendation: PolicyRecommendation
+): ApplyPolicyPreview['confirmation'] {
+  const redditOperation = getRedditOperation(
+    recommendation.selectedAction ?? recommendation.recommendedAction
+  );
+  const executionMode =
+    redditOperation === 'none' ? 'log_only' : 'unverified_disabled';
+
+  return {
+    executionMode,
+    willExecuteRedditAction: false,
+    actionLabel: recommendation.selectedAction ?? recommendation.recommendedAction,
+    requiresOverrideReason: recommendation.requiresOverrideReason,
+    message:
+      redditOperation === 'none'
+        ? 'Confirming will write a ModMirror log-only action and optional override record. No Reddit moderation action will be attempted.'
+        : 'This Reddit action is previewed but live execution is disabled until receipts and runtime proof are in place.',
+    caveats: [
+      'Live Reddit execution is disabled until the moderation execution and receipt waves add safety gates and runtime proof.',
+      'Offense count only includes ModMirror-tracked Apply Policy actions.',
+    ],
+  };
 }

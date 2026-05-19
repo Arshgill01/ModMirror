@@ -32,6 +32,23 @@ export const DEMO_POLICY: RulePolicy = {
   createdAt: '2026-05-16T00:00:00.000Z',
   updatedAt: '2026-05-16T00:00:00.000Z',
   createdBy: 'demo-lead-mod',
+  activeVersionId: 'demo-policy-low-effort-v2',
+  activeVersionNumber: 2,
+  lifecycleState: 'adopted',
+  adoptedBy: 'demo-lead-mod',
+  adoptedAt: '2026-05-16T10:30:00.000Z',
+  ratificationSettings: {
+    requiredApprovals: 1,
+    allowSingleModAdoption: true,
+  },
+  ratificationSummary: {
+    requiredApprovals: 1,
+    approvals: 1,
+    requestsForChanges: 0,
+    abstentions: 0,
+    latestReviewCount: 1,
+    canAdopt: true,
+  },
   defaultMessageMode: 'log_only',
   active: true,
   steps: [
@@ -42,6 +59,15 @@ export const DEMO_POLICY: RulePolicy = {
       requireOverrideReasonForDeviation: true,
       removalMessageTemplate:
         'Please add effort, context, and what you have already tried before reposting.',
+      responseTemplates: {
+        warning: {
+          kind: 'warning',
+          title: 'Low-effort question reminder',
+          body: 'Hi {{target_author}}, please add effort, context, and what you have already tried before reposting. This maps to {{rule_name}}.',
+          deliveryMode: 'log_only',
+          enabled: true,
+        },
+      },
     },
     {
       offenseCount: 2,
@@ -50,12 +76,29 @@ export const DEMO_POLICY: RulePolicy = {
       requireOverrideReasonForDeviation: true,
       noteTemplate:
         'Repeat low-effort question after a first-warning policy reminder.',
+      responseTemplates: {
+        mod_note_summary: {
+          kind: 'mod_note_summary',
+          body: 'Repeat {{rule_name}} case after a first-warning policy reminder.',
+          deliveryMode: 'log_only',
+          enabled: true,
+        },
+      },
     },
     {
       offenseCount: 3,
       windowDays: 30,
       recommendedAction: 'temporary_ban_suggested',
       requireOverrideReasonForDeviation: true,
+      responseTemplates: {
+        modmail_draft: {
+          kind: 'modmail_draft',
+          title: 'Escalation review',
+          body: '{{target_author}} has reached offense {{offense_count}} for {{rule_name}}. Review the case packet before confirming any ban outside ModMirror.',
+          deliveryMode: 'log_only',
+          enabled: true,
+        },
+      },
     },
   ],
 };

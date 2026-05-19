@@ -8,8 +8,13 @@ import {
   CONFIDENCE_VALUES,
   DEMO_SUBREDDIT_NAME,
   ENFORCEMENT_ACTION_VALUES,
+  EVIDENCE_BOARD_STATUS_VALUES,
+  INCIDENT_MODE_REASON_VALUES,
   MESSAGE_DELIVERY_MODE_VALUES,
+  NATIVE_MOD_NOTE_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
+  PRIVACY_RETENTION_CATEGORY_VALUES,
+  RESPONSE_TEMPLATE_KIND_VALUES,
 } from '../shared/constants';
 import {
   buildCommandCenterSummary,
@@ -20,26 +25,73 @@ import {
   type SetupStep,
 } from '../shared/productization';
 import { DEMO_POLICY } from '../shared/demoData';
+import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
+import { buildCasePacketDeliveryDraft } from '../shared/casePacketDelivery';
+import {
+  classifyClientError,
+  classifyClipboardFailure,
+  formatClientNotice,
+} from '../shared/clientResilience';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
+  ApplyPolicySource,
+  AiAdvisoryCapabilities,
   ApiResponse,
+  ActionReceipt,
+  AttributionCorrection,
+  AttributedModAction,
   CasePacket,
   Confidence,
+  CommunityHealthSummary,
+  ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
   DigestReport,
   DigestSettings,
   DriftCandidate,
   EnforcementAction,
+  EvidenceBoardCreateRequest,
+  EvidenceBoardListResponse,
+  EvidenceBoardStatus,
+  EvidenceBoardStatusUpdateRequest,
+  EvidenceBoardThread,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
   GenerateDigestResponse,
+  IncidentMode,
+  IncidentModeEndRequest,
+  IncidentModeReason,
+  IncidentModeReport,
+  IncidentModeStartRequest,
+  IncidentModeStateResponse,
+  LaunchContextResponse,
   MessageDeliveryMode,
   MirrorScan,
+  MirrorScanDepth,
+  MirrorScanRecord,
+  ModqueueTriageItem,
+  ModqueueTriageResponse,
+  NativeModNoteMode,
   OverrideReason,
+  PolicyImpactMeasurement,
   PolicyStep,
+  PolicyReplayResult,
+  PortableConfigImportResult,
+  PortableConfigPackage,
+  PortableConfigTemplateListResponse,
+  PrivacyDeletionResult,
+  PrivacyRetentionCategory,
+  PrivacyRetentionExport,
+  PrivacyRetentionSettings,
+  RedisSmokeResult,
+  ResponseTemplateKind,
+  RuntimeCapabilityMatrix,
+  RuntimeCapabilityMatrixEntry,
   RulePolicy,
+  TeamDeliveryChannel,
+  TeamDeliveryCapabilities,
+  TeamDeliveryConfirmResponse,
 } from '../shared/schema';
 import './styles.css';
 
@@ -56,6 +108,7 @@ type OverrideReviewStatus =
   | 'policy_needs_update'
   | 'needs_team_discussion'
   | 'no_action_needed';
+type RuntimeSmokeCheck = 'redis' | 'reddit';
 
 type Page = {
   id: ProductPageId;
@@ -67,8 +120,13 @@ type Page = {
 type ScanUiState = {
   loading: boolean;
   mode?: ScanMode;
-  error?: string;
+  depth?: MirrorScanDepth;
+  error?: string | undefined;
+  calibrationError?: string | undefined;
+  calibrationMessage?: string | undefined;
+  calibrationSavingActionId?: string | undefined;
   result?: MirrorScan;
+  record?: MirrorScanRecord | undefined;
   warnings: string[];
 };
 
@@ -78,6 +136,8 @@ type PolicyFormState = {
   ruleKey: string;
   ruleName: string;
   defaultMessageMode: MessageDeliveryMode;
+  requiredApprovals: number;
+  allowSingleModAdoption: boolean;
   steps: PolicyStep[];
 };
 
@@ -88,6 +148,12 @@ type PolicyUiState = {
   message: string | undefined;
   policies: RulePolicy[];
   form: PolicyFormState;
+};
+
+type PolicyReplayUiState = {
+  loadingPolicyId: string | undefined;
+  error: string | undefined;
+  result: PolicyReplayResult | undefined;
 };
 
 type ApplyUiState = {
@@ -104,15 +170,23 @@ type ApplyFormState = {
   ruleKey: string;
   targetThingId: string;
   targetAuthor: string;
+  targetTitle: string;
+  targetBody: string;
+  targetPermalink: string;
+  subreddit: string;
   selectedAction: EnforcementAction;
+  modNoteMode: NativeModNoteMode;
   overrideReason: OverrideReason | '';
   overrideNote: string;
 };
 
 type CasePacketUiState = {
   loading: boolean;
+  deliverySaving: boolean;
   error: string | undefined;
   message: string | undefined;
+  deliveryReceiptId: string | undefined;
+  deliveryStatus: string | undefined;
   packet: CasePacket | undefined;
 };
 
@@ -179,8 +253,17 @@ type GovernanceUiState = {
   error: string | undefined;
   message: string | undefined;
   health: PolicyHealthOverview | undefined;
+  analytics: ConsistencyAnalyticsSummary | undefined;
+  communityHealth: CommunityHealthSummary | undefined;
   overrides: ReviewableOverrideEvent[];
   versionsByPolicy: Record<string, PolicyVersionSummary[]>;
+  impactsByPolicy: Record<string, PolicyImpactMeasurement>;
+};
+
+type ReceiptLedgerUiState = {
+  loading: boolean;
+  error?: string;
+  receipts: ActionReceipt[];
 };
 
 type DigestUiState = {
@@ -193,11 +276,78 @@ type DigestUiState = {
   message: string | undefined;
 };
 
+type AiAdvisoryUiState = {
+  capabilities?: AiAdvisoryCapabilities;
+  error?: string;
+};
+
+type TeamDeliveryUiState = {
+  capabilities?: TeamDeliveryCapabilities;
+  error?: string;
+};
+
+type EvidenceBoardUiState = {
+  loading: boolean;
+  saving: boolean;
+  updatingBoardId: string | undefined;
+  error: string | undefined;
+  message: string | undefined;
+  boards: EvidenceBoardThread[];
+};
+
+type IncidentModeUiState = {
+  loading: boolean;
+  saving: boolean;
+  ending: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  active: IncidentMode | undefined;
+  incidents: IncidentMode[];
+  report: IncidentModeReport | undefined;
+};
+
+type ConfigPortabilityUiState = {
+  loading: boolean;
+  importing: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  exportedPackage: PortableConfigPackage | undefined;
+  importText: string;
+  importResult: PortableConfigImportResult | undefined;
+  templates: PortableConfigPackage[];
+};
+
+type PrivacyRetentionUiState = {
+  loading: boolean;
+  saving: boolean;
+  deleting: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  settings: PrivacyRetentionSettings | undefined;
+  inventory: PrivacyRetentionExport | undefined;
+  deletionResult: PrivacyDeletionResult | undefined;
+};
+
+type RuntimeCapabilityUiState = {
+  loading: boolean;
+  smokeRunning: RuntimeSmokeCheck | undefined;
+  error: string | undefined;
+  message: string | undefined;
+  matrix: RuntimeCapabilityMatrix | undefined;
+};
+
+type ModqueueTriageUiState = {
+  loading: boolean;
+  error: string | undefined;
+  response: ModqueueTriageResponse | undefined;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
 const WEB_VIEW_INLINE_MODE = 1;
 const WEB_VIEW_IMMERSIVE_MODE = 2;
+const API_TIMEOUT_MS = 12_000;
 
 type DevvitWebViewGlobal = {
   webViewMode?: number;
@@ -205,10 +355,10 @@ type DevvitWebViewGlobal = {
 
 const pages: Page[] = [
   {
-    id: 'command-center',
-    label: 'Command Center',
-    title: 'Command Center',
-    purpose: 'A one-screen view of drift, policy health, and the next moderation governance action.',
+    id: 'act',
+    label: 'Act',
+    title: 'Act',
+    purpose: 'Apply the agreed policy to a post or comment and record the receipt.',
   },
   {
     id: 'scan',
@@ -217,9 +367,9 @@ const pages: Page[] = [
     purpose: 'Compare recent moderation actions against rules and removal reasons with confidence labels.',
   },
   {
-    id: 'policies',
-    label: 'Policies',
-    title: 'Policies',
+    id: 'agree',
+    label: 'Agree',
+    title: 'Agree',
     purpose: 'Turn drift findings into explicit rule policy ladders that moderators can apply.',
   },
   {
@@ -229,16 +379,10 @@ const pages: Page[] = [
     purpose: 'Review policy health and resolve exceptions without individual blame.',
   },
   {
-    id: 'case-packets',
-    label: 'Case Packets',
-    title: 'Case Packets',
-    purpose: 'Generate appeal context rooted in policy versions, tracked actions, and deterministic comparable cases.',
-  },
-  {
-    id: 'digest',
-    label: 'Digest',
-    title: 'Digest',
-    purpose: 'Generate a manual Markdown governance digest for the mod team.',
+    id: 'prove',
+    label: 'Prove',
+    title: 'Prove',
+    purpose: 'Package receipts, comparable cases, digest notes, and before/after consistency evidence.',
   },
   {
     id: 'settings',
@@ -256,7 +400,7 @@ if (!app) {
 
 const appRoot = app;
 let dashboardOpen = getCurrentWebViewMode() === 'expanded';
-let activePage: ProductPageId = dashboardOpen ? getPageFromHash() : 'command-center';
+let activePage: ProductPageId = dashboardOpen ? getPageFromHash() : 'act';
 let themePreference: ThemePreference = loadThemePreference();
 let health: HealthResponse | undefined;
 let healthError: string | undefined;
@@ -272,6 +416,11 @@ let policyState: PolicyUiState = {
   policies: [],
   form: emptyPolicyForm(),
 };
+let policyReplayState: PolicyReplayUiState = {
+  loadingPolicyId: undefined,
+  error: undefined,
+  result: undefined,
+};
 let applyState: ApplyUiState = {
   loading: false,
   confirming: false,
@@ -283,8 +432,11 @@ let applyState: ApplyUiState = {
 };
 let casePacketState: CasePacketUiState = {
   loading: false,
+  deliverySaving: false,
   error: undefined,
   message: undefined,
+  deliveryReceiptId: undefined,
+  deliveryStatus: undefined,
   packet: undefined,
 };
 let governanceState: GovernanceUiState = {
@@ -293,8 +445,15 @@ let governanceState: GovernanceUiState = {
   error: undefined,
   message: undefined,
   health: undefined,
+  analytics: undefined,
+  communityHealth: undefined,
   overrides: [],
   versionsByPolicy: {},
+  impactsByPolicy: {},
+};
+let receiptLedgerState: ReceiptLedgerUiState = {
+  loading: false,
+  receipts: [],
 };
 let digestState: DigestUiState = {
   loading: false,
@@ -302,12 +461,110 @@ let digestState: DigestUiState = {
   history: [],
   message: undefined,
 };
+let aiAdvisoryState: AiAdvisoryUiState = {};
+let teamDeliveryState: TeamDeliveryUiState = {};
+let evidenceBoardState: EvidenceBoardUiState = {
+  loading: false,
+  saving: false,
+  updatingBoardId: undefined,
+  error: undefined,
+  message: undefined,
+  boards: [],
+};
+let incidentModeState: IncidentModeUiState = {
+  loading: false,
+  saving: false,
+  ending: false,
+  error: undefined,
+  message: undefined,
+  active: undefined,
+  incidents: [],
+  report: undefined,
+};
+let configPortabilityState: ConfigPortabilityUiState = {
+  loading: false,
+  importing: false,
+  error: undefined,
+  message: undefined,
+  exportedPackage: undefined,
+  importText: '',
+  importResult: undefined,
+  templates: [],
+};
+let privacyRetentionState: PrivacyRetentionUiState = {
+  loading: false,
+  saving: false,
+  deleting: false,
+  error: undefined,
+  message: undefined,
+  settings: undefined,
+  inventory: undefined,
+  deletionResult: undefined,
+};
+let runtimeCapabilityState: RuntimeCapabilityUiState = {
+  loading: false,
+  smokeRunning: undefined,
+  error: undefined,
+  message: undefined,
+  matrix: undefined,
+};
+let modqueueState: ModqueueTriageUiState = {
+  loading: false,
+  error: undefined,
+  response: undefined,
+};
 
 function getPageFromHash(): ProductPageId {
-  const candidate = window.location.hash.replace('#', '');
+  const candidate = canonicalPageId(getHashRoute().page);
   return pages.some((page) => page.id === candidate)
     ? (candidate as ProductPageId)
-    : 'command-center';
+    : 'act';
+}
+
+function canonicalPageId(page: string): string {
+  if (page === 'command-center') {
+    return 'act';
+  }
+  if (page === 'policies') {
+    return 'agree';
+  }
+  if (page === 'case-packets' || page === 'digest') {
+    return 'prove';
+  }
+  return page;
+}
+
+function getHashRoute() {
+  const raw = window.location.hash.replace('#', '');
+  const [page = '', query = ''] = raw.split('?');
+  return {
+    page,
+    params: new URLSearchParams(query),
+  };
+}
+
+function getApplyTargetParamsFromHash(): Partial<ApplyFormState> {
+  const params = getHashRoute().params;
+  const targetThingId = params.get('targetThingId')?.trim();
+  if (!targetThingId) {
+    return {};
+  }
+
+  const targetAuthor = params.get('targetAuthor')?.trim();
+  const targetTitle = params.get('targetTitle')?.trim();
+  const targetBody = params.get('targetBody')?.trim();
+  const targetPermalink = params.get('targetPermalink')?.trim();
+  const subreddit = params.get('subreddit')?.trim();
+  const ruleKey = params.get('ruleKey')?.trim();
+  return {
+    ruleKey: ruleKey || '',
+    targetThingId,
+    targetAuthor: targetAuthor || '',
+    targetTitle: targetTitle || '',
+    targetBody: targetBody || '',
+    targetPermalink: targetPermalink || '',
+    subreddit: subreddit || '',
+  };
 }
 
 function emptyPolicyForm(): PolicyFormState {
@@ -316,6 +573,8 @@ function emptyPolicyForm(): PolicyFormState {
     ruleKey: '',
     ruleName: '',
     defaultMessageMode: 'log_only',
+    requiredApprovals: 1,
+    allowSingleModAdoption: true,
     steps: [
       {
         offenseCount: 1,
@@ -340,11 +599,17 @@ function emptyPolicyForm(): PolicyFormState {
 }
 
 function emptyApplyForm(): ApplyFormState {
+  const targetParams = getApplyTargetParamsFromHash();
   return {
     ruleKey: '',
-    targetThingId: 't3_demo_policy_target',
-    targetAuthor: 'learner_1',
+    targetThingId: targetParams.targetThingId ?? 't3_demo_policy_target',
+    targetAuthor: targetParams.targetAuthor ?? 'learner_1',
+    targetTitle: targetParams.targetTitle ?? '',
+    targetBody: targetParams.targetBody ?? '',
+    targetPermalink: targetParams.targetPermalink ?? '',
+    subreddit: targetParams.subreddit ?? '',
     selectedAction: 'remove',
+    modNoteMode: 'log_only',
     overrideReason: '',
     overrideNote: '',
   };
@@ -359,11 +624,10 @@ function render() {
   const page =
     pages.find((item) => item.id === activePage) ??
     ({
-      id: 'command-center',
-      label: 'Command Center',
-      title: 'Command Center',
-      purpose:
-        'A one-screen view of drift, policy health, and the next moderation governance action.',
+      id: 'act',
+      label: 'Act',
+      title: 'Act',
+      purpose: 'Apply the agreed policy to a post or comment and record the receipt.',
     } satisfies Page);
   const summary = buildDashboardSummary();
   applyThemePreference();
@@ -398,6 +662,8 @@ function render() {
 
       <main class="ops-main page-${page.id}">
         ${renderDemoBanner(summary.dataMode)}
+        ${renderRuntimeResilienceBanner()}
+        ${renderIncidentBanner()}
         <header class="workspace-header">
           <div>
             <h2>${page.title}</h2>
@@ -483,26 +749,66 @@ function renderDemoBanner(dataMode: ProductDataMode) {
   `;
 }
 
+function renderRuntimeResilienceBanner() {
+  const notices: string[] = [];
+  if (isStandaloneStaticPreview()) {
+    notices.push(
+      'Static preview mode: live Reddit and Redis calls may fail. Demo data and log-only paths are labeled.'
+    );
+  } else if (getDevvitGlobal() === undefined) {
+    notices.push(
+      'Devvit WebView signal is unavailable. Use explicit confirmation paths and expect live API fallback messages.'
+    );
+  }
+  if (healthError !== undefined) {
+    notices.push(healthError);
+  }
+  if (notices.length === 0) {
+    return '';
+  }
+
+  return `
+    <aside class="runtime-banner" aria-label="Runtime resilience notice">
+      ${notices.map((notice) => `<p>${escapeHtml(notice)}</p>`).join('')}
+    </aside>
+  `;
+}
+
+function renderIncidentBanner() {
+  const active = incidentModeState.active;
+  if (active === undefined || active.status !== 'active') {
+    return '';
+  }
+
+  return `
+    <aside class="incident-banner" aria-label="Incident Mode active">
+      <div>
+        <strong>Incident Mode active</strong>
+        <span>${formatAction(active.reason)} until ${formatDate(active.expiresAt)}. Receipts are tagged ${escapeHtml(active.id)}.</span>
+      </div>
+      <button class="secondary-button compact-button" data-end-incident type="button" ${incidentModeState.ending ? 'disabled' : ''}>End incident</button>
+    </aside>
+  `;
+}
+
 function renderPage(pageId: ProductPageId) {
   switch (pageId) {
-    case 'command-center':
-      return renderCommandCenterPage();
+    case 'act':
+      return renderActPage();
     case 'scan':
       return renderScanPage();
-    case 'policies':
-      return renderPoliciesPage();
+    case 'agree':
+      return renderAgreePage();
     case 'review':
       return renderReviewPage();
-    case 'case-packets':
-      return renderCasePacketPage();
-    case 'digest':
-      return renderDigestPage();
+    case 'prove':
+      return renderProvePage();
     case 'settings':
       return renderSettingsPage();
   }
 }
 
-function renderCommandCenterPage() {
+function renderActPage() {
   const summary = buildDashboardSummary();
   const setupInput: Parameters<typeof buildSetupSteps>[0] = {
     policies: policyState.policies,
@@ -517,43 +823,102 @@ function renderCommandCenterPage() {
   const setupSteps = buildSetupSteps(setupInput);
 
   return `
-    <section class="command-board" aria-label="Command center summary">
-      <div class="command-primary">
-        <div class="score-block" style="--score: ${summary.consistencyScore}%">
-          <span class="score-label">Consistency score</span>
-          <strong>${summary.consistencyScore}<span>/100</span></strong>
-          <p>${escapeHtml(summary.topIssue)}</p>
-        </div>
-
-        <div class="next-action">
-          <h3>${escapeHtml(summary.primaryAction.label)}</h3>
-          <p>${getPrimaryActionCopy(summary.primaryAction.intent)}</p>
-          <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
-        </div>
+    <section class="act-layout" aria-label="Apply policy workflow">
+      <div class="act-primary">
+        ${renderApplyPolicyPanel()}
       </div>
 
-      <div class="command-secondary">
-        <dl class="signal-list">
-          ${renderCommandSignal('Data mode', formatDataMode(summary.dataMode))}
-          ${renderCommandSignal('Unresolved overrides', summary.unresolvedOverrideCount.toString())}
-          ${renderCommandSignal('Active policies', summary.activePolicyCount.toString())}
-          ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
-        </dl>
-        <div class="secondary-actions">
-          ${summary.secondaryActions
-            .map(
-              (action) =>
-                `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
-            )
-            .join('')}
-        </div>
-      </div>
+      <aside class="act-context">
+        ${renderModqueueTriagePanel(summary)}
+
+        ${renderSetupWizard(setupSteps)}
+        ${renderDemoScenario()}
+      </aside>
     </section>
 
-    <section class="workflow-board">
-      ${renderSetupWizard(setupSteps)}
-      ${renderDemoScenario()}
-    </section>
+    ${renderReceiptLedger()}
+  `;
+}
+
+function renderModqueueTriagePanel(summary: ReturnType<typeof buildDashboardSummary>) {
+  const response = modqueueState.response;
+  const capability = response?.capability;
+  const items = response?.items ?? [];
+
+  return `
+    <div class="document-panel modqueue-panel">
+      <div class="section-header">
+        <div>
+          <h3>Operational Queue</h3>
+          <p>Read-only triage from Reddit modqueue when runtime allows it.</p>
+        </div>
+        <button class="secondary-button compact-button" data-load-modqueue type="button" ${modqueueState.loading ? 'disabled' : ''}>Refresh</button>
+      </div>
+      <dl class="signal-list">
+        ${renderCommandSignal('Consistency', `${summary.consistencyScore}/100`)}
+        ${renderCommandSignal('Top issue', summary.topIssue)}
+        ${renderCommandSignal('Open overrides', summary.unresolvedOverrideCount.toString())}
+        ${renderCommandSignal('Last scan', formatDate(summary.lastScanLabel))}
+      </dl>
+      ${
+        capability
+          ? `<p class="inline-note">${escapeHtml(capability.label)}: ${escapeHtml(capability.detail)}</p>`
+          : '<p class="inline-note">Queue capability has not been loaded yet.</p>'
+      }
+      ${modqueueState.error ? `<p class="inline-error">${escapeHtml(modqueueState.error)}</p>` : ''}
+      ${
+        modqueueState.loading
+          ? renderLoadingState('Loading modqueue', 'Reading Reddit modqueue items without taking action.')
+          : items.length > 0
+            ? `<ol class="modqueue-list">${items.map(renderModqueueTriageItem).join('')}</ol>`
+            : renderModqueueEmptyState(response, summary)
+      }
+    </div>
+  `;
+}
+
+function renderModqueueEmptyState(
+  response: ModqueueTriageResponse | undefined,
+  summary: ReturnType<typeof buildDashboardSummary>
+) {
+  if (response?.capability.state === 'failed_runtime') {
+    return `<p class="inline-note">${escapeHtml(response.warnings[0] ?? 'Modqueue read failed. Use post/comment Apply Policy menus until runtime proof is complete.')}</p>`;
+  }
+  if (response?.capability.state === 'unsupported') {
+    return `<p class="inline-note">${escapeHtml(response.capability.nextAction)}</p>`;
+  }
+  if (response) {
+    return '<p class="inline-note">No modqueue items returned. Use post/comment menus or enter a target thing ID directly.</p>';
+  }
+  return `
+    <button class="secondary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+    <p class="inline-note">${escapeHtml(getPrimaryActionCopy(summary.primaryAction.intent))}</p>
+  `;
+}
+
+function renderModqueueTriageItem(item: ModqueueTriageItem) {
+  const policyLabel =
+    item.policyHint.ruleName ?? formatAction(item.policyHint.status);
+  const title = item.title ?? item.bodyExcerpt ?? item.targetThingId;
+  return `
+    <li class="modqueue-item">
+      <div class="modqueue-item-main">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(item.targetThingId)}${item.authorName ? ` by ${escapeHtml(item.authorName)}` : ''}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Reports</dt><dd>${item.reportCount}</dd></div>
+        <div><dt>Risk</dt><dd>${formatAction(item.riskState)}</dd></div>
+        <div><dt>Policy</dt><dd>${escapeHtml(policyLabel)}</dd></div>
+        <div><dt>History</dt><dd>${item.historySummary.modmirrorActionsForAuthor}</dd></div>
+      </dl>
+      ${
+        item.reportReasons.length > 0
+          ? `<p class="inline-note">Reports: ${escapeHtml(item.reportReasons.slice(0, 3).join(', '))}</p>`
+          : '<p class="inline-note">No report reason text was available from the queue item.</p>'
+      }
+      <button class="secondary-button compact-button" data-apply-triage="${escapeAttribute(item.id)}" type="button">Apply Policy</button>
+    </li>
   `;
 }
 
@@ -624,7 +989,9 @@ function renderScanPage() {
         </div>
         <div class="button-row">
           <button class="secondary-button" data-run-scan="demo" ${scanState.loading ? 'disabled' : ''} type="button">Use Demo Data</button>
-          <button class="primary-button" data-run-scan="live" ${scanState.loading ? 'disabled' : ''} type="button">Run Live Scan</button>
+          <button class="secondary-button" data-run-scan="live" data-scan-depth="quick" ${scanState.loading ? 'disabled' : ''} type="button">Quick Live Scan</button>
+          <button class="primary-button" data-run-scan="live" data-scan-depth="standard" ${scanState.loading ? 'disabled' : ''} type="button">Standard Live Scan</button>
+          <button class="secondary-button" data-run-scan="live" data-scan-depth="deep" ${scanState.loading ? 'disabled' : ''} type="button">Deep Live Scan</button>
         </div>
       </div>
     </section>
@@ -666,6 +1033,7 @@ function renderScanBody() {
 
   return `
     ${renderScanSummary(scanState.result)}
+    ${renderAttributionCalibrationPanel()}
     ${renderDriftCandidates(scanState.result.driftCandidates)}
   `;
 }
@@ -674,6 +1042,7 @@ function renderScanSummary(scan: MirrorScan) {
   return `
     <section class="metric-grid" aria-label="Scan summary">
       ${renderMetricCard('Source', formatDataMode(scan.source as ProductDataMode))}
+      ${renderMetricCard('Depth', formatScanDepth(scan.scanDepth.depth))}
       ${renderMetricCard('Actions scanned', scan.totalActionsScanned.toString())}
       ${renderMetricCard('Attributed', scan.attributedCount.toString())}
       ${renderMetricCard('Unmatched', scan.unmatchedCount.toString())}
@@ -682,7 +1051,7 @@ function renderScanSummary(scan: MirrorScan) {
       <div class="section-header">
         <div>
           <h3>Confidence Breakdown</h3>
-          <p>Historical rule labels remain inferred and confidence-scored.</p>
+          <p>Historical rule labels remain inferred and confidence-scored. Scan requested ${scan.scanDepth.requestedLimit} actions with page size ${scan.scanDepth.pageSize}.</p>
         </div>
         <span class="status-badge status-neutral">${escapeHtml(scan.smallSubredditStatus.message)}</span>
       </div>
@@ -695,12 +1064,88 @@ function renderScanSummary(scan: MirrorScan) {
   `;
 }
 
+function renderAttributionCalibrationPanel() {
+  const record = scanState.record;
+  if (record === undefined) {
+    return `
+      <section class="section-panel">
+        <div class="section-header">
+          <div>
+            <h3>Attribution Calibration</h3>
+            <p>Run through Devvit runtime to load saved scan actions and correct inferred rule matches.</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  const calibratable = record.attributedActions
+    .filter((action) => action.attributionKind !== 'direct')
+    .slice(0, 8);
+
+  return `
+    <section class="section-panel calibration-panel" aria-label="Attribution calibration">
+      <div class="section-header">
+        <div>
+          <h3>Attribution Calibration</h3>
+          <p>Corrections are stored separately and applied to future scans with correction evidence.</p>
+          ${scanState.calibrationError ? `<p class="inline-error">${escapeHtml(scanState.calibrationError)}</p>` : ''}
+          ${scanState.calibrationMessage ? `<p class="inline-success">${escapeHtml(scanState.calibrationMessage)}</p>` : ''}
+        </div>
+      </div>
+      ${
+        calibratable.length > 0
+          ? `<ol class="calibration-list">${calibratable.map(renderCalibrationItem).join('')}</ol>`
+          : '<p class="inline-note">No inferred or unmatched actions were stored for this scan.</p>'
+      }
+    </section>
+  `;
+}
+
+function renderCalibrationItem(action: AttributedModAction) {
+  const correction = action.correction;
+  const currentRule = action.inferredRuleName ?? action.inferredRuleKey ?? 'Unmatched';
+  const correctedRuleName = correction?.correctedRuleName ?? action.inferredRuleName ?? '';
+  const correctedRuleKey = correction?.correctedRuleKey ?? action.inferredRuleKey ?? '';
+
+  return `
+    <li class="calibration-item">
+      <div class="calibration-item-main">
+        <strong>${escapeHtml(currentRule)}</strong>
+        <span>${escapeHtml(action.id)} · ${escapeHtml(action.rawActionType)} · ${escapeHtml(action.confidence)}</span>
+      </div>
+      <p class="inline-note">${escapeHtml(action.evidence[0] ?? 'No attribution evidence recorded.')}</p>
+      <form class="calibration-form" data-calibration-form>
+        <input type="hidden" name="actionId" value="${escapeAttribute(action.id)}">
+        <input type="hidden" name="targetThingId" value="${escapeAttribute(action.targetThingId ?? '')}">
+        <input type="hidden" name="sourceScanId" value="${escapeAttribute(scanState.record?.id ?? '')}">
+        <input type="hidden" name="originalRuleKey" value="${escapeAttribute(action.inferredRuleKey ?? '')}">
+        <input type="hidden" name="originalRuleName" value="${escapeAttribute(action.inferredRuleName ?? '')}">
+        <input type="hidden" name="originalConfidence" value="${escapeAttribute(action.confidence)}">
+        <label>
+          Corrected rule key
+          <input name="correctedRuleKey" value="${escapeAttribute(correctedRuleKey)}" required>
+        </label>
+        <label>
+          Corrected rule name
+          <input name="correctedRuleName" value="${escapeAttribute(correctedRuleName)}">
+        </label>
+        <label>
+          Note
+          <input name="note" value="${escapeAttribute(correction?.note ?? '')}" placeholder="Optional team context">
+        </label>
+        <button class="secondary-button compact-button" type="submit" ${scanState.calibrationSavingActionId === action.id ? 'disabled' : ''}>Save correction</button>
+      </form>
+    </li>
+  `;
+}
+
 function renderDriftCandidates(candidates: DriftCandidate[]) {
   if (candidates.length === 0) {
     return renderEmptyState(
       'No drift candidates yet',
       'Create a policy now or keep scanning as more moderation history accumulates.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
@@ -734,13 +1179,13 @@ function renderDriftCandidate(candidate: DriftCandidate, index?: number) {
   `;
 }
 
-function renderPoliciesPage() {
+function renderAgreePage() {
   return `
     <section class="section-panel">
       <div class="section-header">
         <div>
-          <h3>Policy Agreement Flow</h3>
-          <p>Policies are versioned and use local rule keys because Devvit rule IDs are not stable in current typings.</p>
+          <h3>Decision Records</h3>
+          <p>Draft, review, and adoption state stays separate from the action flow.</p>
           ${renderPolicyMessage()}
         </div>
         <div class="button-row">
@@ -751,10 +1196,11 @@ function renderPoliciesPage() {
     </section>
     ${renderPolicyFallback()}
     ${renderPolicyList()}
+    ${renderPolicyReplayPanel()}
     ${renderDriftPolicyPanel()}
     <section class="policy-workbench">
       ${renderPolicyForm()}
-      ${renderApplyPolicyPanel()}
+      ${renderPolicyVersionSummary()}
     </section>
   `;
 }
@@ -778,7 +1224,7 @@ function renderPolicyFallback() {
     'Create your first policy from a drift candidate or load the ExampleLearning demo scenario.',
     [
       { label: 'Load Demo Scenario', page: 'scan', intent: 'load_demo' },
-      { label: 'Create Policy', page: 'policies', intent: 'create_policy' },
+      { label: 'Create Policy', page: 'agree', intent: 'create_policy' },
     ]
   );
 }
@@ -798,7 +1244,62 @@ function renderPolicyList() {
   `;
 }
 
+function renderPolicyReplayPanel() {
+  if (!policyReplayState.result && !policyReplayState.error) {
+    return '';
+  }
+  const result = policyReplayState.result;
+  return `
+    <section class="section-panel replay-panel" aria-label="Policy replay sandbox">
+      <div class="section-header">
+        <div>
+          <h3>Replay Sandbox</h3>
+          <p>Read-only simulation against stored scan history or labeled synthetic actions.</p>
+          ${policyReplayState.error ? `<p class="inline-error">${escapeHtml(policyReplayState.error)}</p>` : ''}
+        </div>
+      </div>
+      ${
+        result
+          ? `
+            <dl class="compact-metrics">
+              <div><dt>Policy</dt><dd>${escapeHtml(result.ruleName)}</dd></div>
+              <div><dt>Source</dt><dd>${formatAction(result.source)}</dd></div>
+              <div><dt>Evaluated</dt><dd>${result.totalActionsEvaluated}</dd></div>
+              <div><dt>Would change</dt><dd>${result.changedRecommendationCount}</dd></div>
+              <div><dt>Skipped</dt><dd>${result.skippedActionCount}</dd></div>
+            </dl>
+            <ol class="replay-list">
+              ${result.items.slice(0, 6).map(renderReplayItem).join('')}
+            </ol>
+            ${result.warnings.map((warning) => `<p class="inline-note">${escapeHtml(warning)}</p>`).join('')}
+          `
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderReplayItem(item: PolicyReplayResult['items'][number]) {
+  return `
+    <li class="ledger-item">
+      <div>
+        <strong>${escapeHtml(item.actionId)}</strong>
+        <span>${formatDate(item.createdAt)} - offense ${item.offenseCount}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Historical</dt><dd>${formatAction(item.historicalAction)}</dd></div>
+        <div><dt>Replay</dt><dd>${formatAction(item.recommendedAction)}</dd></div>
+        <div><dt>Changed</dt><dd>${item.wouldChangeOutcome ? 'Yes' : 'No'}</dd></div>
+        <div><dt>Confidence</dt><dd>${formatAction(item.confidence)}</dd></div>
+      </dl>
+    </li>
+  `;
+}
+
 function renderPolicyCard(policy: RulePolicy) {
+  const lifecycle = getPolicyLifecycle(policy);
+  const reviews = policy.reviewRecords ?? [];
+  const ratification = getPolicyRatificationSummary(policy);
   return `
     <article class="action-card">
       <div class="card-header">
@@ -806,20 +1307,62 @@ function renderPolicyCard(policy: RulePolicy) {
           <h3>${escapeHtml(policy.ruleName)}</h3>
           <p>${escapeHtml(policy.ruleKey)}</p>
         </div>
-        <span class="status-badge ${policy.active ? 'status-good' : 'status-neutral'}">${policy.active ? 'Active' : 'Inactive'}</span>
+        <span class="status-badge ${policy.active ? 'status-good' : 'status-neutral'}">${escapeHtml(formatAction(lifecycle))}</span>
       </div>
       <dl class="compact-metrics">
         <div><dt>Steps</dt><dd>${policy.steps.length}</dd></div>
         <div><dt>Delivery</dt><dd>${formatAction(policy.defaultMessageMode)}</dd></div>
-        <div><dt>Version</dt><dd>${policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Version</dt><dd>${policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 1}</dd></div>
+        <div><dt>Votes</dt><dd>${ratification.approvals}/${ratification.requiredApprovals}</dd></div>
+        <div><dt>Reviews</dt><dd>${reviews.length}</dd></div>
         <div><dt>Updated</dt><dd>${formatDate(policy.updatedAt)}</dd></div>
       </dl>
+      ${
+        policy.proposalNote
+          ? `<p class="inline-note">Proposal note: ${escapeHtml(policy.proposalNote)}</p>`
+          : ''
+      }
+      ${
+        ratification.adoptionBlockedReason && lifecycle !== 'adopted'
+          ? `<p class="inline-note">${escapeHtml(ratification.adoptionBlockedReason)}</p>`
+          : ''
+      }
       <div class="button-row">
-        <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">Edit policy</button>
+        <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">${policy.active ? 'Draft revision' : 'Edit draft'}</button>
+        ${renderPolicyLifecycleButtons(policy)}
+        <button class="secondary-button" data-replay-policy="${escapeAttribute(policy.id)}" ${policyReplayState.loadingPolicyId === policy.id ? 'disabled' : ''} type="button">Replay</button>
         <button class="secondary-button" data-action-intent="review_policy" type="button">Review health</button>
       </div>
     </article>
   `;
+}
+
+function renderPolicyLifecycleButtons(policy: RulePolicy) {
+  const lifecycle = getPolicyLifecycle(policy);
+  const ratification = getPolicyRatificationSummary(policy);
+  const policyId = escapeAttribute(policy.id);
+  const quickAdoptionAllowed =
+    policy.ratificationSettings?.allowSingleModAdoption ?? true;
+  if (lifecycle === 'draft') {
+    return `<button class="secondary-button" data-propose-policy="${policyId}" type="button">Propose</button>`;
+  }
+  if (lifecycle === 'proposed' || lifecycle === 'under_review') {
+    return `
+      <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="approve" type="button">Approve</button>
+      <button class="secondary-button" data-review-policy="${policyId}" data-review-decision="request_changes" type="button">Request changes</button>
+      ${
+        ratification.canAdopt
+          ? `<button class="primary-button" data-adopt-policy="${policyId}" type="button">Adopt reviewed</button>`
+          : ''
+      }
+      ${
+        quickAdoptionAllowed
+          ? `<button class="secondary-button" data-adopt-policy="${policyId}" data-quick-adoption="true" type="button">Quick adopt</button>`
+          : ''
+      }
+    `;
+  }
+  return '';
 }
 
 function renderDriftPolicyPanel() {
@@ -849,7 +1392,7 @@ function renderPolicyForm() {
       <div class="section-header">
         <div>
           <h3>${form.mode === 'edit' ? 'Edit Policy' : 'Policy Editor'}</h3>
-          <p>Use log-only delivery until public comment behavior is playtest-verified.</p>
+          <p>Saving creates a draft. Adopted versions are the only policies used by Apply Policy.</p>
         </div>
         <button class="secondary-button" data-reset-policy-form type="button">Reset</button>
       </div>
@@ -868,15 +1411,23 @@ function renderPolicyForm() {
           <select name="defaultMessageMode">
             ${MESSAGE_DELIVERY_MODE_VALUES.map(
               (mode) =>
-                `<option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>`
+              `<option value="${mode}" ${mode === form.defaultMessageMode ? 'selected' : ''}>${formatAction(mode)}</option>`
             ).join('')}
           </select>
+        </label>
+        <label>
+          Approval threshold
+          <input name="requiredApprovals" type="number" min="1" max="5" value="${form.requiredApprovals}">
+        </label>
+        <label class="checkbox-label">
+          <input name="allowSingleModAdoption" type="checkbox" ${form.allowSingleModAdoption ? 'checked' : ''}>
+          Allow recorded quick adoption
         </label>
         <div class="step-grid">
           ${form.steps.map(renderStepEditor).join('')}
         </div>
         <button class="primary-button" type="submit" ${policyState.saving ? 'disabled' : ''}>
-          ${form.mode === 'edit' ? 'Save policy' : 'Create policy'}
+          ${form.mode === 'edit' ? 'Save draft' : 'Create draft'}
         </button>
       </form>
     </section>
@@ -905,8 +1456,41 @@ function renderStepEditor(step: PolicyStep, index: number) {
         <input name="requireOverride-${index}" type="checkbox" ${step.requireOverrideReasonForDeviation ? 'checked' : ''}>
         Require override reason on deviation
       </label>
+      <div class="template-editor-grid" aria-label="Response templates">
+        ${RESPONSE_TEMPLATE_KIND_VALUES.map((kind) =>
+          renderResponseTemplateEditor(step, index, kind)
+        ).join('')}
+      </div>
     </fieldset>
   `;
+}
+
+function renderResponseTemplateEditor(
+  step: PolicyStep,
+  index: number,
+  kind: ResponseTemplateKind
+) {
+  const template = step.responseTemplates?.[kind];
+  const body = template?.body ?? getLegacyTemplateBody(step, kind) ?? '';
+  return `
+    <label>
+      ${formatTemplateKind(kind)}
+      <textarea name="template-${kind}-${index}" rows="3" placeholder="${escapeAttribute(getTemplatePlaceholder(kind))}">${escapeHtml(body)}</textarea>
+    </label>
+  `;
+}
+
+function getLegacyTemplateBody(
+  step: PolicyStep,
+  kind: ResponseTemplateKind
+): string | undefined {
+  if (kind === 'removal_explanation') {
+    return step.removalMessageTemplate;
+  }
+  if (kind === 'mod_note_summary') {
+    return step.noteTemplate;
+  }
+  return undefined;
 }
 
 function renderApplyPolicyPanel() {
@@ -920,9 +1504,130 @@ function renderApplyPolicyPanel() {
         </div>
         <button class="secondary-button" data-load-policies type="button">Refresh policies</button>
       </div>
+      ${renderApplyTargetContext()}
       ${renderApplyForm()}
       ${renderApplyPreview()}
     </section>
+  `;
+}
+
+function renderApplyTargetContext() {
+  const form = applyState.form;
+  if (!form.targetThingId || form.targetThingId === 't3_demo_policy_target') {
+    return '';
+  }
+
+  const details = [
+    renderCommandSignal('Target', form.targetThingId),
+    renderCommandSignal('Author', form.targetAuthor || 'Unavailable'),
+    renderCommandSignal('Subreddit', form.subreddit || 'Current context'),
+  ];
+  if (form.targetTitle) {
+    details.push(renderCommandSignal('Title', form.targetTitle));
+  }
+  if (form.targetBody) {
+    details.push(renderCommandSignal('Body', formatTargetBodyExcerpt(form.targetBody)));
+  }
+
+  return `
+    <div class="target-context-strip" aria-label="Selected Reddit target">
+      <div>
+        <strong>Selected Reddit target</strong>
+        <span>Captured from the post/comment menu; no moderation action has been taken.</span>
+      </div>
+      <dl class="compact-metrics">
+        ${details.join('')}
+      </dl>
+      ${
+        form.targetPermalink
+          ? `<a href="${escapeAttribute(form.targetPermalink)}" target="_blank" rel="noreferrer">Open source item</a>`
+          : ''
+      }
+    </div>
+  `;
+}
+
+function formatTargetBodyExcerpt(body: string) {
+  const collapsed = body.trim().replace(/\s+/g, ' ');
+  if (collapsed.length <= 140) {
+    return collapsed;
+  }
+  return `${collapsed.slice(0, 137)}...`;
+}
+
+function renderReceiptLedger() {
+  const receipts = [
+    ...(applyState.result ? [applyState.result.receipt] : []),
+    ...receiptLedgerState.receipts.filter(
+      (receipt) => receipt.id !== applyState.result?.receipt.id
+    ),
+  ].slice(0, 8);
+
+  return `
+    <section class="section-panel receipt-ledger" aria-label="Action receipt ledger">
+      <div class="section-header">
+        <div>
+          <h3>Receipt Ledger</h3>
+          <p>Every confirmed action creates a receipt, including skipped and log-only paths.</p>
+          ${receiptLedgerState.error ? `<p class="inline-error">${escapeHtml(receiptLedgerState.error)}</p>` : ''}
+        </div>
+        <button class="secondary-button" data-load-receipts type="button">Refresh receipts</button>
+      </div>
+      ${
+        receiptLedgerState.loading
+          ? renderLoadingState('Loading receipts', 'Reading recent Apply Policy receipts.')
+          : receipts.length > 0
+            ? `<ol class="ledger-list">${receipts.map(renderReceiptLedgerItem).join('')}</ol>`
+            : renderEmptyState(
+                'No receipts yet',
+                'Confirm an Apply Policy action to create a receipt for later review.',
+                [{ label: 'Apply Sample', page: 'act', intent: 'review_policy' }]
+              )
+      }
+    </section>
+  `;
+}
+
+function renderReceiptLedgerItem(receipt: ActionReceipt) {
+  const policy = receipt.policySnapshot;
+  return `
+    <li class="ledger-item">
+      <div>
+        <strong>${escapeHtml(receipt.id)}</strong>
+        <span>${formatDate(receipt.createdAt)} - ${escapeHtml(receipt.targetThingId ?? receipt.targetSnapshot.targetType)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Rule</dt><dd>${escapeHtml(policy?.ruleName ?? receipt.recommendation.ruleName ?? 'Unavailable')}</dd></div>
+        <div><dt>Recommended</dt><dd>${formatAction(receipt.recommendation.recommendedAction)}</dd></div>
+        <div><dt>Selected</dt><dd>${formatAction(receipt.selectedAction)}</dd></div>
+        <div><dt>Execution</dt><dd>${formatAction(receipt.executionResult)}</dd></div>
+        <div><dt>Mode</dt><dd>${formatAction(receipt.executionMode)}</dd></div>
+        <div><dt>Capability</dt><dd>${formatAction(receipt.capabilityState)}</dd></div>
+      </dl>
+      ${
+        receipt.overrideReason
+          ? `<p class="inline-note">Override: ${formatAction(receipt.overrideReason)}${receipt.overrideNote ? ` - ${escapeHtml(receipt.overrideNote)}` : ''}</p>`
+          : ''
+      }
+      ${
+        receipt.responsePreview
+          ? `<p class="inline-note">${receipt.responsePreview.templates.length} response template draft${receipt.responsePreview.templates.length === 1 ? '' : 's'} captured; delivery remained gated.</p>`
+          : ''
+      }
+      ${
+        receipt.nativeModNote
+          ? `<p class="inline-note">Native Mod Note: ${formatAction(receipt.nativeModNote.status)} (${formatAction(receipt.nativeModNote.capabilityState)}).</p>`
+          : ''
+      }
+      ${
+        receipt.incidentId
+          ? `<p class="inline-note">Incident: ${escapeHtml(receipt.incidentId)}. Tagged for post-incident review.</p>`
+          : ''
+      }
+      <div class="button-row">
+        <button class="secondary-button" data-create-evidence-board-receipt="${escapeAttribute(receipt.id)}" type="button" ${evidenceBoardState.saving ? 'disabled' : ''}>Open evidence board</button>
+      </div>
+    </li>
   `;
 }
 
@@ -941,11 +1646,11 @@ function renderApplyForm() {
     return renderEmptyState(
       'No policy available',
       'Create a policy before applying it to a sample case.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
-  const activePolicies = policyState.policies.filter((policy) => policy.active);
+  const activePolicies = policyState.policies.filter(isPolicyAvailableForApply);
   const form = getApplyFormState(activePolicies);
 
   return `
@@ -969,12 +1674,25 @@ function renderApplyForm() {
         Target author
         <input name="targetAuthor" value="${escapeAttribute(form.targetAuthor)}" required>
       </label>
+      <input type="hidden" name="targetTitle" value="${escapeAttribute(form.targetTitle)}">
+      <input type="hidden" name="targetBody" value="${escapeAttribute(form.targetBody)}">
+      <input type="hidden" name="targetPermalink" value="${escapeAttribute(form.targetPermalink)}">
+      <input type="hidden" name="subreddit" value="${escapeAttribute(form.subreddit)}">
       <label>
         Selected action
         <select name="selectedAction">
           ${ENFORCEMENT_ACTION_VALUES.map(
             (action) =>
               `<option value="${action}" ${action === form.selectedAction ? 'selected' : ''}>${formatAction(action)}</option>`
+          ).join('')}
+        </select>
+      </label>
+      <label>
+        Native Mod Note
+        <select name="modNoteMode">
+          ${NATIVE_MOD_NOTE_MODE_VALUES.map(
+            (mode) =>
+              `<option value="${mode}" ${mode === form.modNoteMode ? 'selected' : ''}>${formatAction(mode)}</option>`
           ).join('')}
         </select>
       </label>
@@ -1039,13 +1757,125 @@ function renderApplyPreview() {
         <div><dt>Recommended</dt><dd>${formatAction(recommendation.recommendedAction)}</dd></div>
         <div><dt>Delivery</dt><dd>${formatAction(recommendation.messageDeliveryMode)}</dd></div>
       </dl>
+      ${renderApplyPreviewEvidence()}
+      ${renderApplyResponsePreview()}
       ${
         applyState.result
-          ? `<p class="inline-success">Policy action logged${applyState.result.overrideEvent ? ' with override reason' : ''}.</p>
+          ? `<p class="inline-success">Receipt ${escapeHtml(applyState.result.receipt.id)} recorded${applyState.result.overrideEvent ? ' with override reason' : ''}. ${escapeHtml(formatExecutionResult(applyState.result))}</p>
+             ${renderNativeModNoteResult(applyState.result.receipt.nativeModNote)}
              <button class="secondary-button" data-case-from-action="${escapeAttribute(applyState.result.actionEvent.id)}" type="button">Generate case packet</button>`
           : ''
       }
     </article>
+  `;
+}
+
+function renderNativeModNoteResult(
+  nativeModNote: ActionReceipt['nativeModNote']
+) {
+  if (!nativeModNote) {
+    return '';
+  }
+  const statusClass =
+    nativeModNote.status === 'sent'
+      ? 'inline-success'
+      : nativeModNote.status === 'failed'
+        ? 'inline-error'
+        : 'inline-note';
+  const idCopy = nativeModNote.noteId ? ` ID ${nativeModNote.noteId}.` : '';
+  const message =
+    nativeModNote.status === 'sent'
+      ? `Native Mod Note created.${idCopy}`
+      : nativeModNote.errorMessage ?? 'Native Mod Note was not attempted.';
+  return `<p class="${statusClass}">${escapeHtml(message)}</p>`;
+}
+
+function renderApplyResponsePreview() {
+  const responsePreview = applyState.preview?.responsePreview;
+  if (!responsePreview) {
+    return '';
+  }
+
+  return `
+    <section class="response-preview" aria-label="Response template preview">
+      <div class="section-header compact-header">
+        <div>
+          <h4>Response Templates</h4>
+          <p>Drafts are rendered for copy/review only; Apply Policy will not send them.</p>
+        </div>
+        <span class="status-badge status-neutral">Delivery gated</span>
+      </div>
+      ${
+        responsePreview.templates.length > 0
+          ? `<div class="template-preview-list">${responsePreview.templates
+              .map(
+                (template) => `
+                  <article class="template-preview-item">
+                    <div>
+                      <strong>${escapeHtml(template.title)}</strong>
+                      <span>${formatTemplateKind(template.kind)} - ${formatAction(template.deliveryMode)} - ${escapeHtml(template.source.replaceAll('_', ' '))}</span>
+                    </div>
+                    <pre>${escapeHtml(template.body)}</pre>
+                    ${
+                      template.missingVariables.length > 0
+                        ? `<p class="inline-error">Missing variables: ${escapeHtml(template.missingVariables.join(', '))}</p>`
+                        : ''
+                    }
+                  </article>
+                `
+              )
+              .join('')}</div>`
+          : renderEmptyState(
+              'No templates for this step',
+              'Add response templates in the policy editor before using manual delivery copy.',
+              []
+            )
+      }
+      ${responsePreview.warnings.map((warning) => `<p class="inline-note">${escapeHtml(warning)}</p>`).join('')}
+    </section>
+  `;
+}
+
+function formatExecutionResult(result: ApplyPolicyConfirmResult): string {
+  const execution = result.execution;
+  if (execution.executionResult === 'success') {
+    return `Reddit ${formatExecutionOperation(execution.redditOperation)} succeeded.`;
+  }
+  if (execution.executionResult === 'failure') {
+    return execution.errorMessage
+      ? `Reddit action failed: ${execution.errorMessage}`
+      : 'Reddit action failed.';
+  }
+  if (execution.capabilityState === 'not_applicable') {
+    return 'No Reddit action was applicable.';
+  }
+  return execution.errorMessage ?? 'Reddit execution was skipped.';
+}
+
+function formatExecutionOperation(operation: string): string {
+  return operation.replaceAll('_', ' ');
+}
+
+function renderApplyPreviewEvidence() {
+  const preview = applyState.preview;
+  if (!preview) {
+    return '';
+  }
+
+  return `
+    <div class="evidence-list">
+      ${preview.evidence
+        .map(
+          (item) => `
+            <div class="evidence-item">
+              <span>${escapeHtml(item.label)}</span>
+              <p>${escapeHtml(item.detail)}</p>
+            </div>
+          `
+        )
+        .join('')}
+    </div>
+    <p class="inline-note">${escapeHtml(preview.confirmation.message)}</p>
   `;
 }
 
@@ -1062,9 +1892,44 @@ function renderReviewPage() {
       </div>
     </section>
     ${renderGovernanceOverview()}
+    ${renderCommunityHealthLens()}
+    ${renderConsistencyAnalytics()}
     ${renderPolicyHealthCards()}
     ${renderOverrideInbox()}
     ${renderPolicyVersionSummary()}
+  `;
+}
+
+function renderConsistencyAnalytics() {
+  const analytics = governanceState.analytics;
+  if (!analytics) {
+    return '';
+  }
+
+  const trend = analytics.ruleTrends[0];
+  const impact = analytics.policyImpacts[0];
+
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Consistency Over Time</h3>
+          <p>${escapeHtml(analytics.caveats[0] ?? 'Receipts and persisted scans are used before making trend claims.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(analytics.dataQuality))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Scans</dt><dd>${analytics.scanCount}</dd></div>
+        <div><dt>Receipts</dt><dd>${analytics.receiptCount}</dd></div>
+        <div><dt>Top trend</dt><dd>${escapeHtml(trend ? formatAction(trend.status) : 'No signal')}</dd></div>
+        <div><dt>Policy impact</dt><dd>${escapeHtml(impact ? formatAction(impact.status) : 'No signal')}</dd></div>
+      </dl>
+      ${
+        trend
+          ? `<p class="recommendation">${escapeHtml(trend.ruleName)}: ${trend.points.length} scan point${trend.points.length === 1 ? '' : 's'}; latest distribution ${escapeHtml(formatDistribution(trend.latestDistribution))}.</p>`
+          : '<p class="inline-note">No repeated drift candidates are available yet.</p>'
+      }
+    </section>
   `;
 }
 
@@ -1087,7 +1952,7 @@ function renderGovernanceOverview() {
     return renderEmptyState(
       'No review data yet',
       'Create policies and log Apply Policy actions. Review cards will appear as exceptions accumulate.',
-      [{ label: 'Create Policy', page: 'policies', intent: 'create_policy' }]
+      [{ label: 'Create Policy', page: 'agree', intent: 'create_policy' }]
     );
   }
 
@@ -1101,13 +1966,48 @@ function renderGovernanceOverview() {
   `;
 }
 
+function renderCommunityHealthLens() {
+  const health = governanceState.communityHealth;
+  if (!health) {
+    return '';
+  }
+  const topRule = health.ruleSignals[0];
+  return `
+    <section class="section-panel community-health-panel">
+      <div class="section-header">
+        <div>
+          <h3>Community Health</h3>
+          <p>${escapeHtml(health.caveats[0] ?? 'Aggregate stored data only; no per-mod rankings are shown.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(health.status))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Data</dt><dd>${formatAction(health.dataQuality)}</dd></div>
+        <div><dt>Actions</dt><dd>${health.actionCount}</dd></div>
+        <div><dt>Unresolved</dt><dd>${health.unresolvedOverrideCount}</dd></div>
+        <div><dt>Churn</dt><dd>${health.policyChurnCount}</dd></div>
+        <div><dt>Drift</dt><dd>${formatAction(health.driftStability)}</dd></div>
+        <div><dt>Case-ready</dt><dd>${health.casePacketVolume.eligibleReceiptCount}</dd></div>
+      </dl>
+      ${
+        topRule
+          ? `<p class="recommendation">${escapeHtml(topRule.ruleName ?? topRule.ruleKey)}: ${formatPercent(topRule.consistencyRate)} consistency across ${topRule.actionCount} tracked action${topRule.actionCount === 1 ? '' : 's'}.</p>`
+          : '<p class="inline-note">No rule-level community health signal yet.</p>'
+      }
+      <dl class="status-list">
+        ${health.privacyGuardrails.map((guardrail) => `<div><dt>Guardrail</dt><dd>${escapeHtml(guardrail)}</dd></div>`).join('')}
+      </dl>
+    </section>
+  `;
+}
+
 function renderPolicyHealthCards() {
   const summaries = governanceState.health?.summaries ?? [];
   if (summaries.length === 0) {
     return renderEmptyState(
       'Policy health has no signal yet',
       'Run the policy workflow to create enough tracked actions for health scoring.',
-      [{ label: 'Apply Sample', page: 'policies', intent: 'review_policy' }]
+      [{ label: 'Apply Sample', page: 'act', intent: 'apply_policy' }]
     );
   }
   return `
@@ -1155,7 +2055,7 @@ function renderOverrideInbox() {
     return renderEmptyState(
       'Override inbox is clear',
       'No unresolved exceptions are waiting for team review.',
-      [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+      [{ label: 'Generate Digest', page: 'prove', intent: 'generate_digest' }]
     );
   }
 
@@ -1232,6 +2132,7 @@ function renderPolicyVersionSummary() {
 
 function renderPolicyVersionCard(policy: RulePolicy) {
   const versions = governanceState.versionsByPolicy[policy.id] ?? [];
+  const impact = governanceState.impactsByPolicy[policy.id];
   return `
     <article class="version-card">
       <div class="card-header">
@@ -1256,7 +2157,129 @@ function renderPolicyVersionCard(policy: RulePolicy) {
               .join('')}</ol>`
           : '<p>No version records returned yet.</p>'
       }
+      ${impact ? renderPolicyImpactDetail(impact) : ''}
     </article>
+  `;
+}
+
+function renderPolicyImpactDetail(impact: PolicyImpactMeasurement) {
+  return `
+    <div class="impact-detail">
+      <div class="card-header">
+        <div>
+          <h4>Impact</h4>
+          <p>${escapeHtml(impact.caveats[0] ?? 'Before/after impact uses stored receipts and scans.')}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatAction(impact.status))}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Source</dt><dd>${formatAction(impact.source)}</dd></div>
+        <div><dt>Before</dt><dd>${formatPercent(impact.before.consistencyRate)}</dd></div>
+        <div><dt>After</dt><dd>${formatPercent(impact.after.consistencyRate)}</dd></div>
+        <div><dt>Before receipts</dt><dd>${impact.before.receiptCount}</dd></div>
+        <div><dt>After receipts</dt><dd>${impact.after.receiptCount}</dd></div>
+      </dl>
+    </div>
+  `;
+}
+
+function renderProvePage() {
+  return `
+    ${renderConsistencyAnalytics()}
+    <section class="prove-layout">
+      <div>
+        ${renderCasePacketPage()}
+        ${renderEvidenceBoardPage()}
+      </div>
+      <div>${renderDigestPage()}</div>
+    </section>
+  `;
+}
+
+function renderEvidenceBoardPage() {
+  return `
+    <section class="section-panel evidence-board-panel">
+      <div class="section-header">
+        <div>
+          <h3>Evidence Board</h3>
+          <p>Moderator review threads that collect receipts, case packets, overrides, comparables, and policy changes.</p>
+          ${renderEvidenceBoardMessage()}
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-load-evidence-boards type="button">Refresh boards</button>
+          ${
+            casePacketState.packet
+              ? `<button class="secondary-button" data-create-evidence-board-case type="button" ${evidenceBoardState.saving ? 'disabled' : ''}>Open from packet</button>`
+              : ''
+          }
+        </div>
+      </div>
+      ${
+        evidenceBoardState.loading
+          ? renderLoadingState('Loading evidence boards', 'Reading review threads and attached evidence summaries.')
+          : evidenceBoardState.boards.length > 0
+            ? `<ol class="evidence-thread-list">${evidenceBoardState.boards.map(renderEvidenceBoardThread).join('')}</ol>`
+            : renderEmptyState(
+                'No evidence board yet',
+                'Create one from a receipt or the current Case Packet when a moderation decision needs team review.',
+                [{ label: 'Review receipts', page: 'act', intent: 'review_policy' }]
+              )
+      }
+    </section>
+  `;
+}
+
+function renderEvidenceBoardMessage() {
+  if (evidenceBoardState.error) {
+    return `<p class="inline-error">${escapeHtml(evidenceBoardState.error)}</p>`;
+  }
+  if (evidenceBoardState.message) {
+    return `<p class="inline-success">${escapeHtml(evidenceBoardState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderEvidenceBoardThread(board: EvidenceBoardThread) {
+  return `
+    <li class="evidence-thread">
+      <div class="evidence-thread-main">
+        <div>
+          <strong>${escapeHtml(board.title)}</strong>
+          <span>${formatDate(board.updatedAt)} - ${board.evidence.length} evidence item${board.evidence.length === 1 ? '' : 's'}</span>
+        </div>
+        <span class="status-badge status-neutral">${formatAction(board.status)}</span>
+      </div>
+      <ul class="evidence-item-list">
+        ${board.evidence
+          .slice(0, 5)
+          .map(
+            (item) => `
+              <li>
+                <span>${formatAction(item.source)}</span>
+                <strong>${escapeHtml(item.label)}</strong>
+                <p>${escapeHtml(item.summary)}</p>
+              </li>
+            `
+          )
+          .join('')}
+      </ul>
+      <form class="evidence-status-form" data-evidence-board-status-form="${escapeAttribute(board.id)}">
+        <label>
+          Status
+          <select name="status">
+            ${EVIDENCE_BOARD_STATUS_VALUES.map(
+              (status) =>
+                `<option value="${status}" ${status === board.status ? 'selected' : ''}>${formatAction(status)}</option>`
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Note
+          <input name="note" placeholder="Optional review note">
+        </label>
+        <button class="secondary-button" type="submit" ${evidenceBoardState.updatingBoardId === board.id ? 'disabled' : ''}>Update</button>
+      </form>
+    </li>
   `;
 }
 
@@ -1273,8 +2296,8 @@ function renderCasePacketPage() {
       </div>
       <form class="policy-form action-id-form" data-case-action-form>
         <label>
-          Tracked action ID
-          <input name="actionId" placeholder="Paste an Apply Policy action ID">
+          Tracked action or receipt ID
+          <input name="actionId" placeholder="Paste an Apply Policy action or receipt ID">
         </label>
         <div class="button-row">
           <button class="secondary-button" type="submit">Generate from action</button>
@@ -1313,6 +2336,14 @@ function renderCasePacketDetail() {
       [{ label: 'Review Policy Context', page: 'review', intent: 'review_policy' }]
     );
   }
+  const manualDeliveryLabel = casePacketState.deliverySaving
+    ? 'Saving receipt'
+    : 'Save manual receipt';
+  const modDiscussionLabel = casePacketState.deliverySaving
+    ? 'Saving draft'
+    : 'Save mod discussion draft';
+  const modDiscussionCapability =
+    teamDeliveryState.capabilities?.modDiscussion;
 
   return `
     <section class="case-header">
@@ -1323,6 +2354,7 @@ function renderCasePacketDetail() {
       <span class="status-badge status-neutral">${formatAction(packet.appealPosture)}</span>
     </section>
     <section class="packet-summary-strip" aria-label="Case packet summary">
+      <span>${formatAction(packet.packetType)}</span>
       <strong>${formatAction(packet.consistencyStatus)}</strong>
       <span>posture ${formatAction(packet.appealPosture)}</span>
       <span>policy v${packet.policyContext.policyVersionNumber?.toString() ?? 'unavailable'}</span>
@@ -1339,9 +2371,19 @@ function renderCasePacketDetail() {
         <div>
           <h3>Markdown Export</h3>
           <p>Use this in review notes or an internal mod-team thread.</p>
+          ${
+            casePacketState.deliveryReceiptId
+              ? `<p class="inline-success">Delivery receipt ${escapeHtml(casePacketState.deliveryReceiptId)} recorded as ${formatAction(casePacketState.deliveryStatus ?? 'unknown')}.</p>`
+              : ''
+          }
         </div>
-        <button class="secondary-button" data-copy-case-markdown type="button">Copy Markdown</button>
+        <div class="button-row">
+          <button class="secondary-button" data-copy-case-markdown type="button">Copy Markdown</button>
+          <button class="secondary-button" data-save-case-delivery="manual_markdown" type="button" ${casePacketState.deliverySaving ? 'disabled' : ''}>${manualDeliveryLabel}</button>
+          <button class="secondary-button" data-save-case-delivery="mod_discussion" type="button" ${casePacketState.deliverySaving ? 'disabled' : ''}>${modDiscussionLabel}</button>
+        </div>
       </div>
+      <p class="helper-text">Manual copy is the supported path. Mod Discussion delivery is ${escapeHtml(modDiscussionCapability?.state ?? 'unverified')} and stores a draft receipt unless runtime delivery is explicitly proven and enabled.</p>
       <textarea class="markdown-export" readonly>${escapeHtml(packet.markdown)}</textarea>
     </section>
   `;
@@ -1354,10 +2396,13 @@ function renderCasePacketAction(packet: CasePacket) {
       <h3>Action Summary</h3>
       <dl class="status-list">
         <div><dt>Action ID</dt><dd>${escapeHtml(action?.actionId ?? 'Unavailable')}</dd></div>
+        <div><dt>Receipt ID</dt><dd>${escapeHtml(action?.receiptId ?? 'Unavailable')}</dd></div>
         <div><dt>Created</dt><dd>${escapeHtml(action?.createdAt ? formatDate(action.createdAt) : 'Unavailable')}</dd></div>
         <div><dt>Rule</dt><dd>${escapeHtml(action?.ruleName ?? action?.ruleKey ?? 'Unavailable')}</dd></div>
         <div><dt>Recommended</dt><dd>${formatAction(action?.recommendedAction ?? 'unavailable')}</dd></div>
         <div><dt>Selected</dt><dd>${formatAction(action?.selectedAction ?? 'unavailable')}</dd></div>
+        <div><dt>Execution</dt><dd>${formatAction(action?.execution?.executionResult ?? 'unavailable')}</dd></div>
+        <div><dt>Evidence</dt><dd>${formatAction(action?.evidenceSource ?? 'unavailable')}</dd></div>
         <div><dt>Target author</dt><dd>${escapeHtml(action?.targetAuthor ?? 'Not captured')}</dd></div>
       </dl>
     </article>
@@ -1429,6 +2474,10 @@ function renderCasePacketLists(packet: CasePacket) {
         }
       </div>
       <div class="case-list-block">
+        <strong>Evidence labels</strong>
+        <ul>${packet.evidence.map((item) => `<li>${escapeHtml(item.label)}: ${formatAction(item.source)} - ${escapeHtml(item.detail)}</li>`).join('')}</ul>
+      </div>
+      <div class="case-list-block">
         <strong>Caveats</strong>
         <ul>${packet.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join('')}</ul>
       </div>
@@ -1463,7 +2512,7 @@ function renderDigestPage() {
       ${report ? renderDigestReport(report, rulesNeedingAttention, stableRules) : renderEmptyState(
         'No digest generated yet',
         'Generate a manual digest after loading demo data or running a scan.',
-        [{ label: 'Generate Digest', page: 'digest', intent: 'generate_digest' }]
+        [{ label: 'Generate Digest', page: 'prove', intent: 'generate_digest' }]
       )}
       ${renderDigestHistory()}
     </section>
@@ -1605,12 +2654,20 @@ function renderDigestHistory() {
 
 function renderSettingsPage() {
   const summary = buildDashboardSummary();
+  const redisCapability = getRuntimeCapabilityEntry('redis-smoke');
+  const redditCapability = getRuntimeCapabilityEntry('reddit-api-smoke');
   return `
+    <section class="settings-stack">
+      ${renderRuntimeCapabilitySettings()}
+      ${renderIncidentSettings()}
+      ${renderConfigPortabilitySettings()}
+      ${renderPrivacyRetentionSettings()}
+    </section>
     <section class="settings-grid">
       ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
       ${renderSettingsCard('Data mode', formatDataMode(summary.dataMode), summary.dataMode === 'demo' ? 'Demo data is labeled and separate from live subreddit data.' : 'Live scans depend on Reddit API availability.')}
-      ${renderSettingsCard('Redis status', health?.redis.smokeStatus ?? 'not checked', health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.')}
-      ${renderSettingsCard('Reddit source status', health?.environment.playtestStatus ?? 'not runtime verified', 'Rules, removal reasons, and mod log reads are type/build-verified; broader runtime smoke is still documented in RESEARCH.md.')}
+      ${renderSettingsCard('Redis status', getSettingsCapabilityValue(redisCapability, health?.redis.smokeStatus ?? 'not checked'), getSettingsCapabilityDetail(redisCapability, health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.'))}
+      ${renderSettingsCard('Reddit source status', getSettingsCapabilityValue(redditCapability, health?.environment.playtestStatus ?? 'not runtime verified'), getSettingsCapabilityDetail(redditCapability, 'Rules, removal reasons, and mod log reads are type/build-verified; run the safe smoke check to promote this state.'))}
       ${renderSettingsCard('Last scan', formatDate(summary.lastScanLabel), `${scanState.result?.totalActionsScanned ?? 0} actions scanned in current dashboard state.`)}
       ${renderSettingsCard('Policies', summary.activePolicyCount.toString(), `${policyState.policies.length} policies loaded in this session.`)}
       ${renderSettingsCard('Overrides', summary.unresolvedOverrideCount.toString(), 'Unresolved override count is aggregate-first.')}
@@ -1618,8 +2675,553 @@ function renderSettingsPage() {
       ${renderSettingsCard('Digest history', digestState.history.length.toString(), digestState.settings?.lastGeneratedAt ? `Last generated ${formatDate(digestState.settings.lastGeneratedAt)}.` : 'No saved digest history in this subreddit yet.')}
       ${renderSettingsCard('Digest mod discussion', digestState.capabilities?.modDiscussion.state ?? 'unverified', digestState.capabilities?.modDiscussion.detail ?? 'Capability status loads from the digest runtime endpoint.')}
       ${renderSettingsCard('Digest scheduler', digestState.capabilities?.scheduler.state ?? 'unverified', digestState.capabilities?.scheduler.detail ?? 'Weekly scheduling remains opt-in and disabled until runtime-verified.')}
+      ${renderSettingsCard('AI advisory', aiAdvisoryState.capabilities?.overall.label ?? 'AI advisory disabled', aiAdvisoryState.capabilities?.overall.detail ?? aiAdvisoryState.error ?? 'Advisory drafts are disabled unless a provider is explicitly configured and runtime-verified.')}
+      ${renderSettingsCard('AI enforcement use', aiAdvisoryState.capabilities?.enforcementUse.state ?? 'disabled', aiAdvisoryState.capabilities?.enforcementUse.detail ?? 'AI output cannot decide or execute moderation actions.')}
+      ${renderSettingsCard('Team delivery', teamDeliveryState.capabilities?.modDiscussion.state ?? 'unverified', teamDeliveryState.capabilities?.modDiscussion.detail ?? teamDeliveryState.error ?? 'Mod discussion delivery remains preview-first until runtime-verified.')}
+      ${renderSettingsCard('Team scheduler', teamDeliveryState.capabilities?.scheduler.state ?? 'unavailable', teamDeliveryState.capabilities?.scheduler.detail ?? 'Scheduled delivery is unavailable until a scheduler task is registered and runtime-verified.')}
+      ${renderSettingsCard('Privacy retention', privacyRetentionState.settings ? `${privacyRetentionState.settings.scanHistoryDays} day scans` : 'not loaded', privacyRetentionState.settings ? 'Policy history is protected and operational data can be dry-run before deletion.' : privacyRetentionState.error ?? 'Retention settings have not loaded yet.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
+  `;
+}
+
+function getRuntimeCapabilityEntry(id: RuntimeCapabilityMatrixEntry['id']) {
+  return runtimeCapabilityState.matrix?.entries.find((entry) => entry.id === id);
+}
+
+function getSettingsCapabilityValue(
+  entry: RuntimeCapabilityMatrixEntry | undefined,
+  fallback: string
+) {
+  return entry ? formatRuntimeCapabilityState(entry.state) : fallback;
+}
+
+function getSettingsCapabilityDetail(
+  entry: RuntimeCapabilityMatrixEntry | undefined,
+  fallback: string
+) {
+  if (entry?.lastHealthEvent) {
+    return `Last ${entry.lastHealthEvent.status}: ${entry.lastHealthEvent.message}`;
+  }
+  return entry?.summary ?? fallback;
+}
+
+function renderRuntimeCapabilitySettings() {
+  const matrix = runtimeCapabilityState.matrix;
+  const status = runtimeCapabilityState.loading
+    ? 'loading'
+    : matrix
+      ? `${matrix.summary.verifiedRuntime} runtime`
+      : 'not loaded';
+  const detail =
+    runtimeCapabilityState.error ??
+    (matrix
+      ? `${matrix.summary.typeOnly} type-only, ${matrix.summary.demoOnly} demo-only, ${matrix.summary.failedRuntime} failed.`
+      : 'Capability truth has not loaded yet.');
+  const entries = matrix?.entries ?? [];
+
+  return `
+    <section class="document-panel runtime-capability-panel" aria-label="Runtime capability matrix">
+      <div class="section-header">
+        <div>
+          <h3>Runtime Capability Matrix</h3>
+          <p>${escapeHtml(detail)}</p>
+        </div>
+        <span class="status-pill">${escapeHtml(status)}</span>
+      </div>
+      <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
+        <div>
+          <strong>Safe smoke checks</strong>
+          <p>Run authenticated WebView diagnostics for Redis and read-only Reddit API access. These checks do not approve, remove, message, or ban.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
+        </div>
+      </div>
+      ${renderRuntimeSmokeMessage()}
+      <div class="runtime-capability-grid">
+        ${entries.map(renderRuntimeCapabilityEntry).join('')}
+      </div>
+      ${
+        matrix?.warnings.length
+          ? `<ul class="inline-list">${matrix.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>`
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderRuntimeSmokeMessage() {
+  if (runtimeCapabilityState.smokeRunning) {
+    return `<p class="inline-note">Running ${formatRuntimeSmokeCheck(runtimeCapabilityState.smokeRunning)} smoke check...</p>`;
+  }
+  if (runtimeCapabilityState.error) {
+    return `<p class="inline-error">${escapeHtml(runtimeCapabilityState.error)}</p>`;
+  }
+  if (runtimeCapabilityState.message) {
+    return `<p class="inline-success">${escapeHtml(runtimeCapabilityState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderRuntimeCapabilityEntry(entry: RuntimeCapabilityMatrixEntry) {
+  const health = entry.lastHealthEvent
+    ? `Last ${entry.lastHealthEvent.status}: ${entry.lastHealthEvent.message}`
+    : entry.nextAction;
+  return `
+    <article class="runtime-capability-row capability-${escapeAttribute(entry.state)}">
+      <div>
+        <strong>${escapeHtml(entry.label)}</strong>
+        <span>${escapeHtml(formatRuntimeCapabilityState(entry.state))}</span>
+      </div>
+      <p>${escapeHtml(entry.summary)}</p>
+      <small>${escapeHtml(health)}</small>
+    </article>
+  `;
+}
+
+function formatRuntimeCapabilityState(
+  state: RuntimeCapabilityMatrixEntry['state']
+) {
+  return state.replaceAll('_', ' ');
+}
+
+function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
+  return check === 'redis' ? 'Redis' : 'Reddit read-only';
+}
+
+function renderConfigPortabilitySettings() {
+  return `
+    <section class="document-panel config-portability" aria-label="Configuration portability">
+      <div class="section-header">
+        <div>
+          <h3>Configuration Portability</h3>
+          <p>Export policy ladders, response templates, and non-sensitive settings. Receipts, scans, overrides, content snapshots, and evidence boards are excluded.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-load-config-templates type="button" ${configPortabilityState.loading ? 'disabled' : ''}>Templates</button>
+          <button class="primary-button compact-button" data-export-config type="button" ${configPortabilityState.loading ? 'disabled' : ''}>Export</button>
+        </div>
+      </div>
+      ${renderConfigPortabilityMessage()}
+      <div class="config-grid">
+        <div class="config-column">
+          <h4>Export package</h4>
+          ${
+            configPortabilityState.exportedPackage
+              ? `<textarea class="markdown-export config-json" readonly>${escapeHtml(JSON.stringify(configPortabilityState.exportedPackage, null, 2))}</textarea>`
+              : renderEmptyState(
+                  'No export loaded',
+                  'Generate a package to review the exact portable JSON before sharing it with another community.',
+                  []
+                )
+          }
+        </div>
+        <div class="config-column">
+          <h4>Import package</h4>
+          <form class="policy-form config-import-form" data-config-import-form>
+            <label>
+              Portable JSON
+              <textarea name="configJson" rows="12" placeholder="{ &quot;schemaVersion&quot;: &quot;modmirror.config.v1&quot;, ... }">${escapeHtml(configPortabilityState.importText)}</textarea>
+            </label>
+            <div class="button-row">
+              <button class="secondary-button" name="mode" value="dry-run" type="submit" ${configPortabilityState.importing ? 'disabled' : ''}>Dry run</button>
+              <button class="primary-button" name="mode" value="import" type="submit" ${configPortabilityState.importing ? 'disabled' : ''}>Import drafts</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      ${renderConfigImportResult()}
+      ${renderConfigTemplates()}
+    </section>
+  `;
+}
+
+function renderConfigPortabilityMessage() {
+  if (configPortabilityState.error) {
+    return `<p class="inline-error">${escapeHtml(configPortabilityState.error)}</p>`;
+  }
+  if (configPortabilityState.message) {
+    return `<p class="inline-success">${escapeHtml(configPortabilityState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderConfigImportResult() {
+  const result = configPortabilityState.importResult;
+  if (result === undefined) {
+    return '';
+  }
+  return `
+    <div class="config-result">
+      <h4>${result.dryRun ? 'Dry-run result' : 'Import result'}</h4>
+      <dl class="compact-metrics">
+        <div><dt>Accepted</dt><dd>${result.accepted ? 'yes' : 'no'}</dd></div>
+        <div><dt>Policies</dt><dd>${result.importedPolicyCount}</dd></div>
+        <div><dt>Skipped</dt><dd>${result.skippedPolicyCount}</dd></div>
+        <div><dt>Settings</dt><dd>${result.updatedSettings ? (result.dryRun ? 'would update' : 'updated') : 'unchanged'}</dd></div>
+      </dl>
+      <ol class="incident-list compact">
+        ${result.policies
+          .map(
+            (policy) => `
+              <li>
+                <strong>${escapeHtml(policy.ruleName)} - ${formatAction(policy.status)}</strong>
+                <span>${escapeHtml(policy.message)}</span>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+      <ul class="plain-note-list">
+        ${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderConfigTemplates() {
+  if (configPortabilityState.templates.length === 0) {
+    return '';
+  }
+  return `
+    <div class="config-result">
+      <h4>Starter templates</h4>
+      <ol class="incident-list compact">
+        ${configPortabilityState.templates
+          .map(
+            (template) => `
+              <li>
+                <strong>${escapeHtml(template.packageId)}</strong>
+                <span>${template.policies.length} policy starter${template.policies.length === 1 ? '' : 's'} - ${formatAction(template.source)}</span>
+                <button class="secondary-button compact-button" data-load-config-template="${escapeAttribute(template.packageId)}" type="button">Load JSON</button>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+    </div>
+  `;
+}
+
+function renderPrivacyRetentionSettings() {
+  const settings = getPrivacyRetentionFormSettings();
+  return `
+    <section class="document-panel privacy-retention" aria-label="Privacy retention controls">
+      <div class="section-header">
+        <div>
+          <h3>Privacy Retention</h3>
+          <p>Set deletion windows for operational records. Policy versions remain protected by default.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-load-privacy-retention type="button" ${privacyRetentionState.loading ? 'disabled' : ''}>Reload</button>
+          <button class="secondary-button compact-button" data-export-privacy-inventory type="button" ${privacyRetentionState.loading ? 'disabled' : ''}>Export inventory</button>
+        </div>
+      </div>
+      ${renderPrivacyRetentionMessage()}
+      <form class="policy-form retention-form" data-privacy-retention-form>
+        <div class="retention-grid">
+          ${renderRetentionNumberField('scanHistoryDays', 'Scan history', settings.scanHistoryDays)}
+          ${renderRetentionNumberField('actionReceiptDays', 'Action receipts', settings.actionReceiptDays)}
+          ${renderRetentionNumberField('evidenceBoardDays', 'Evidence boards', settings.evidenceBoardDays)}
+          ${renderRetentionNumberField('teamDeliveryReceiptDays', 'Team delivery receipts', settings.teamDeliveryReceiptDays)}
+          ${renderRetentionNumberField('casePacketDays', 'Case packets', settings.casePacketDays)}
+          ${renderRetentionNumberField('aiAdvisoryLogDays', 'AI advisory logs', settings.aiAdvisoryLogDays)}
+        </div>
+        <div class="retention-protected-row">
+          <strong>Policy history</strong>
+          <span>Protected. Policy versions and review history are not part of manual deletion controls.</span>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" type="submit" ${privacyRetentionState.saving ? 'disabled' : ''}>Save retention</button>
+        </div>
+      </form>
+      <form class="retention-delete-form" data-privacy-delete-form>
+        <fieldset>
+          <legend>Deletion controls</legend>
+          <div class="category-checks">
+            ${PRIVACY_RETENTION_CATEGORY_VALUES.map(
+              (category) => `
+                <label>
+                  <input type="checkbox" name="category" value="${category}">
+                  ${formatPrivacyCategory(category)}
+                </label>
+              `
+            ).join('')}
+          </div>
+        </fieldset>
+        <div class="button-row">
+          <button class="secondary-button" name="mode" value="dry-run" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Dry run selected</button>
+          <button class="secondary-button" name="mode" value="expired" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Delete expired</button>
+          <button class="danger-button" name="mode" value="delete" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Delete selected</button>
+        </div>
+      </form>
+      ${renderPrivacyRetentionInventory()}
+      ${renderPrivacyDeletionResult()}
+    </section>
+  `;
+}
+
+function renderRetentionNumberField(
+  name: keyof Pick<
+    PrivacyRetentionSettings,
+    | 'scanHistoryDays'
+    | 'actionReceiptDays'
+    | 'evidenceBoardDays'
+    | 'teamDeliveryReceiptDays'
+    | 'casePacketDays'
+    | 'aiAdvisoryLogDays'
+  >,
+  label: string,
+  value: number
+) {
+  return `
+    <label>
+      ${label}
+      <input type="number" name="${name}" min="1" max="3650" step="1" value="${value}">
+    </label>
+  `;
+}
+
+function renderPrivacyRetentionMessage() {
+  if (privacyRetentionState.error) {
+    return `<p class="inline-error">${escapeHtml(privacyRetentionState.error)}</p>`;
+  }
+  if (privacyRetentionState.message) {
+    return `<p class="inline-success">${escapeHtml(privacyRetentionState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderPrivacyRetentionInventory() {
+  const inventory = privacyRetentionState.inventory;
+  if (inventory === undefined) {
+    return '';
+  }
+  return `
+    <div class="retention-result">
+      <h4>Inventory export</h4>
+      <dl class="compact-metrics">
+        <div><dt>Subreddit</dt><dd>r/${escapeHtml(inventory.subreddit)}</dd></div>
+        <div><dt>Exported</dt><dd>${formatDate(inventory.exportedAt)}</dd></div>
+        <div><dt>Categories</dt><dd>${inventory.categories.length}</dd></div>
+      </dl>
+      ${renderPrivacyReports(inventory.categories)}
+      <ul class="plain-note-list">
+        ${inventory.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderPrivacyDeletionResult() {
+  const result = privacyRetentionState.deletionResult;
+  if (result === undefined) {
+    return '';
+  }
+  return `
+    <div class="retention-result">
+      <h4>${result.dryRun ? 'Dry-run deletion' : 'Deletion receipt'}</h4>
+      <dl class="compact-metrics">
+        <div><dt>Subreddit</dt><dd>r/${escapeHtml(result.subreddit)}</dd></div>
+        <div><dt>Mode</dt><dd>${result.dryRun ? 'dry run' : 'deleted'}</dd></div>
+        <div><dt>Recorded</dt><dd>${formatDate(result.deletedAt)}</dd></div>
+      </dl>
+      ${renderPrivacyReports(result.categories)}
+      <ul class="plain-note-list">
+        ${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderPrivacyReports(
+  reports: PrivacyRetentionExport['categories']
+) {
+  return `
+    <ol class="incident-list compact">
+      ${reports
+        .map(
+          (report) => `
+            <li>
+              <strong>${formatPrivacyCategory(report.category)}</strong>
+              <span>${report.protected ? 'Protected' : `${report.retainedCount} retained / ${report.deletedCount} selected`} - ${escapeHtml(report.detail)}</span>
+            </li>
+          `
+        )
+        .join('')}
+    </ol>
+  `;
+}
+
+function renderIncidentSettings() {
+  const active = incidentModeState.active;
+  const hasActive = active !== undefined && active.status === 'active';
+  return `
+    <section class="document-panel incident-settings" aria-label="Incident Mode">
+      <div class="section-header">
+        <div>
+          <h3>Incident Mode</h3>
+          <p>Explicit temporary mode for raids, spam floods, brigading, or crisis handling. It changes review context and receipt tags, not automatic enforcement.</p>
+        </div>
+        <button class="secondary-button compact-button" data-load-incidents type="button" ${incidentModeState.loading ? 'disabled' : ''}>Refresh</button>
+      </div>
+      ${renderIncidentModeMessage()}
+      ${
+        incidentModeState.loading
+          ? renderLoadingState('Loading Incident Mode', 'Reading active incident status and recent incident reports.')
+          : hasActive
+            ? renderActiveIncident(active)
+            : renderStartIncidentForm()
+      }
+      ${renderLastIncidentReport()}
+      ${renderRecentIncidents()}
+    </section>
+  `;
+}
+
+function renderIncidentModeMessage() {
+  if (incidentModeState.error) {
+    return `<p class="inline-error">${escapeHtml(incidentModeState.error)}</p>`;
+  }
+  if (incidentModeState.message) {
+    return `<p class="inline-success">${escapeHtml(incidentModeState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderActiveIncident(active: IncidentMode) {
+  return `
+    <div class="incident-active">
+      <dl class="compact-metrics">
+        <div><dt>Status</dt><dd>${formatAction(active.status)}</dd></div>
+        <div><dt>Reason</dt><dd>${formatAction(active.reason)}</dd></div>
+        <div><dt>Started</dt><dd>${formatDate(active.startedAt)}</dd></div>
+        <div><dt>Expires</dt><dd>${formatDate(active.expiresAt)}</dd></div>
+      </dl>
+      ${active.description ? `<p class="inline-note">${escapeHtml(active.description)}</p>` : ''}
+      <div class="incident-guidance-grid">
+        <div>
+          <h4>Policy preset suggestions</h4>
+          <ol class="incident-list">
+            ${active.presetSuggestions
+              .map(
+                (suggestion) => `
+                  <li>
+                    <strong>${escapeHtml(suggestion.label)}</strong>
+                    <span>${formatAction(suggestion.recommendedAction)}. ${escapeHtml(suggestion.detail)}</span>
+                    <em>${escapeHtml(suggestion.safetyNote)}</em>
+                  </li>
+                `
+              )
+              .join('')}
+          </ol>
+        </div>
+        <div>
+          <h4>Triage groups</h4>
+          <ol class="incident-list">
+            ${active.triageGroups
+              .map(
+                (group) => `
+                  <li>
+                    <strong>${escapeHtml(group.label)}</strong>
+                    <span>${escapeHtml(group.detail)}</span>
+                    <em>${escapeHtml(group.suggestedQueueFilter)}</em>
+                  </li>
+                `
+              )
+              .join('')}
+          </ol>
+        </div>
+      </div>
+      <form class="policy-form incident-form" data-incident-end-form>
+        <label>
+          Post-incident note
+          <textarea name="reviewNote" rows="3" placeholder="What changed, what still needs review, or why the incident can end."></textarea>
+        </label>
+        <div class="button-row">
+          <button class="secondary-button" type="submit" ${incidentModeState.ending ? 'disabled' : ''}>End Incident Mode</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function renderStartIncidentForm() {
+  return `
+    <form class="policy-form incident-form" data-incident-start-form>
+      <div class="incident-form-grid">
+        <label>
+          Reason
+          <select name="reason">
+            ${INCIDENT_MODE_REASON_VALUES.map(
+              (reason) => `<option value="${reason}">${formatAction(reason)}</option>`
+            ).join('')}
+          </select>
+        </label>
+        <label>
+          Duration minutes
+          <input name="durationMinutes" type="number" min="15" max="1440" step="15" value="120" />
+        </label>
+      </div>
+      <label>
+        Description
+        <textarea name="description" rows="3" placeholder="What moderators should know before acting during this incident."></textarea>
+      </label>
+      <div class="button-row">
+        <button class="primary-button" type="submit" ${incidentModeState.saving ? 'disabled' : ''}>Start Incident Mode</button>
+      </div>
+      <p class="inline-note">No auto-remove, auto-ban, or silent action is enabled. Apply Policy still requires confirmation.</p>
+    </form>
+  `;
+}
+
+function renderLastIncidentReport() {
+  const report = incidentModeState.report;
+  if (report === undefined) {
+    return '';
+  }
+  return `
+    <div class="incident-report">
+      <h4>Last post-incident report</h4>
+      <dl class="compact-metrics">
+        <div><dt>Receipts</dt><dd>${report.receiptCount}</dd></div>
+        <div><dt>Overrides</dt><dd>${report.overrideCount}</dd></div>
+        ${Object.entries(report.executionResults)
+          .map(
+            ([status, count]) =>
+              `<div><dt>${formatAction(status)}</dt><dd>${count}</dd></div>`
+          )
+          .join('')}
+      </dl>
+      <ul class="plain-note-list">
+        ${report.caveats.map((caveat) => `<li>${escapeHtml(caveat)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderRecentIncidents() {
+  if (incidentModeState.incidents.length === 0) {
+    return '';
+  }
+  return `
+    <div class="incident-report">
+      <h4>Recent incidents</h4>
+      <ol class="incident-list compact">
+        ${incidentModeState.incidents
+          .map(
+            (incident) => `
+              <li>
+                <strong>${formatAction(incident.reason)} - ${formatAction(incident.status)}</strong>
+                <span>${formatDate(incident.startedAt)} to ${formatDate(incident.endedAt ?? incident.expiresAt)}</span>
+              </li>
+            `
+          )
+          .join('')}
+      </ol>
+    </div>
   `;
 }
 
@@ -1660,6 +3262,18 @@ function renderDistributionItem(action: EnforcementAction, count: number) {
   `;
 }
 
+function formatDistribution(
+  distribution: Partial<Record<EnforcementAction, number>>
+): string {
+  const entries = Object.entries(distribution);
+  if (entries.length === 0) {
+    return 'no current distribution';
+  }
+  return entries
+    .map(([action, count]) => `${formatAction(action)} ${count}`)
+    .join(', ');
+}
+
 function renderEmptyState(
   title: string,
   body: string,
@@ -1691,6 +3305,7 @@ function renderLoadingState(title: string, body: string) {
       <div>
         <h3>${escapeHtml(title)}</h3>
         <p>${escapeHtml(body)}</p>
+        <p class="helper-text">Requests time out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds with a labeled retry or fallback message.</p>
       </div>
     </section>
   `;
@@ -1701,11 +3316,19 @@ function bindAllActions() {
   bindAppearanceActions();
   bindActionIntents();
   bindScanActions();
+  bindCalibrationActions();
+  bindModqueueActions();
   bindPolicyActions();
   bindApplyPolicyActions();
   bindCasePacketActions();
+  bindEvidenceBoardActions();
+  bindIncidentModeActions();
+  bindConfigPortabilityActions();
+  bindPrivacyRetentionActions();
+  bindRuntimeCapabilityActions();
   bindGovernanceActions();
   bindDigestActions();
+  bindReceiptActions();
   document
     .querySelectorAll<HTMLButtonElement>('[data-load-health]')
     .forEach((button) => {
@@ -1769,9 +3392,15 @@ function handleActionIntent(intent: string | undefined) {
     render();
     return;
   }
+  if (intent === 'apply_policy') {
+    activePage = 'act';
+    window.location.hash = '#act';
+    render();
+    return;
+  }
   if (intent === 'create_policy') {
-    activePage = 'policies';
-    window.location.hash = '#policies';
+    activePage = 'agree';
+    window.location.hash = '#agree';
     render();
     return;
   }
@@ -1788,10 +3417,20 @@ function handleActionIntent(intent: string | undefined) {
     return;
   }
   if (intent === 'generate_digest') {
-    activePage = 'digest';
-    window.location.hash = '#digest';
+    activePage = 'prove';
+    window.location.hash = '#prove';
     void generateDigest();
   }
+}
+
+function bindReceiptActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-receipts]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadReceipts();
+      });
+    });
 }
 
 function bindScanActions() {
@@ -1800,7 +3439,8 @@ function bindScanActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         const mode = button.dataset.runScan === 'demo' ? 'demo' : 'live';
-        void runScan(mode);
+        const depth = parseScanDepth(button.dataset.scanDepth);
+        void runScan(mode, depth);
       });
     });
 }
@@ -1824,8 +3464,8 @@ function bindPolicyActions() {
           error: undefined,
           message: undefined,
         };
-        activePage = 'policies';
-        window.location.hash = '#policies';
+        activePage = 'agree';
+        window.location.hash = '#agree';
         render();
       });
     });
@@ -1842,9 +3482,51 @@ function bindPolicyActions() {
           error: undefined,
           message: undefined,
         };
-        activePage = 'policies';
-        window.location.hash = '#policies';
+        activePage = 'agree';
+        window.location.hash = '#agree';
         render();
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-propose-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.proposePolicy;
+      if (policyId) {
+        void transitionPolicyLifecycle(policyId, 'propose');
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-review-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.reviewPolicy;
+      const decision = button.dataset.reviewDecision;
+      if (policyId && (decision === 'approve' || decision === 'request_changes')) {
+        void transitionPolicyLifecycle(policyId, 'review', decision);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-adopt-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.adoptPolicy;
+      if (policyId) {
+        void transitionPolicyLifecycle(
+          policyId,
+          'adopt',
+          undefined,
+          button.dataset.quickAdoption === 'true'
+        );
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-replay-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.replayPolicy;
+      if (policyId) {
+        void runPolicyReplayFromUi(policyId);
       }
     });
   });
@@ -1868,6 +3550,39 @@ function bindPolicyActions() {
       void savePolicyForm(new FormData(event.currentTarget as HTMLFormElement));
     }
   );
+}
+
+function bindCalibrationActions() {
+  document
+    .querySelectorAll<HTMLFormElement>('[data-calibration-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void saveAttributionCorrection(
+          new FormData(event.currentTarget as HTMLFormElement)
+        );
+      });
+    });
+}
+
+function bindModqueueActions() {
+  document.querySelectorAll<HTMLButtonElement>('[data-load-modqueue]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void loadModqueueTriage();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-apply-triage]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const itemId = button.dataset.applyTriage;
+      const item = modqueueState.response?.items.find(
+        (candidate) => candidate.id === itemId
+      );
+      if (item) {
+        applyTriageItem(item);
+      }
+    });
+  });
 }
 
 function bindApplyPolicyActions() {
@@ -1921,6 +3636,197 @@ function bindCasePacketActions() {
       void copyCasePacketMarkdown();
     });
   });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-save-case-delivery]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const channel = button.dataset.saveCaseDelivery;
+      if (channel === 'manual_markdown' || channel === 'mod_discussion') {
+        void saveCasePacketDeliveryReceipt(channel);
+      }
+    });
+  });
+}
+
+function bindEvidenceBoardActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-evidence-boards]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadEvidenceBoards();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-create-evidence-board-case]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void createEvidenceBoardFromCasePacket();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-create-evidence-board-receipt]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const receiptId = button.dataset.createEvidenceBoardReceipt;
+        if (receiptId) {
+          void createEvidenceBoardFromReceipt(receiptId);
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-evidence-board-status-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const boardId = form.dataset.evidenceBoardStatusForm;
+        const formData = new FormData(form);
+        const status = String(formData.get('status') ?? '');
+        const note = String(formData.get('note') ?? '').trim();
+        if (boardId && isEvidenceBoardStatus(status)) {
+          void updateEvidenceBoardStatusFromForm(boardId, status, note);
+        }
+      });
+    });
+}
+
+function bindIncidentModeActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-incidents]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadIncidentMode();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-end-incident]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void endIncidentMode('');
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-incident-start-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void startIncidentMode(new FormData(form));
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-incident-end-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const note = String(new FormData(form).get('reviewNote') ?? '').trim();
+        void endIncidentMode(note);
+      });
+    });
+}
+
+function bindConfigPortabilityActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-export-config]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void exportPortableConfig();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-config-templates]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadPortableConfigTemplates();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-config-template]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const packageId = button.dataset.loadConfigTemplate;
+        const template = configPortabilityState.templates.find(
+          (item) => item.packageId === packageId
+        );
+        if (template !== undefined) {
+          configPortabilityState = {
+            ...configPortabilityState,
+            importText: JSON.stringify(template, null, 2),
+            message: 'Starter template loaded into the import box.',
+            error: undefined,
+          };
+          render();
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-config-import-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const submitter = event.submitter as HTMLButtonElement | null;
+        const formData = new FormData(form);
+        const configJson = String(formData.get('configJson') ?? '').trim();
+        const dryRun = submitter?.value !== 'import';
+        void importPortableConfig(configJson, dryRun);
+      });
+    });
+}
+
+function bindPrivacyRetentionActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-privacy-retention]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadPrivacyRetentionSettings();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-export-privacy-inventory]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void exportPrivacyInventory();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-privacy-retention-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void savePrivacyRetentionSettings(new FormData(form));
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-privacy-delete-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const submitter = event.submitter as HTMLButtonElement | null;
+        void deletePrivacyDataFromForm(new FormData(form), submitter?.value);
+      });
+    });
+}
+
+function bindRuntimeCapabilityActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-runtime-smoke]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const check = button.dataset.runtimeSmoke;
+        if (check === 'redis' || check === 'reddit') {
+          void runRuntimeSmokeCheck(check);
+        }
+      });
+    });
 }
 
 function bindGovernanceActions() {
@@ -1985,8 +3891,10 @@ function bindDigestActions() {
 function openDashboard(event?: MouseEvent) {
   requestExpandedModeFallback(event);
   dashboardOpen = true;
-  activePage = 'command-center';
-  window.location.hash = '#command-center';
+  activePage = getPageFromHash();
+  if (window.location.hash.length <= 1) {
+    window.location.hash = '#act';
+  }
   render();
 }
 
@@ -2033,10 +3941,11 @@ function getDevvitGlobal(): DevvitWebViewGlobal | undefined {
   return candidate && typeof candidate === 'object' ? candidate : undefined;
 }
 
-async function runScan(mode: ScanMode) {
+async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
   scanState = {
     loading: true,
     mode,
+    depth,
     warnings: [],
   };
   dashboardOpen = true;
@@ -2048,12 +3957,15 @@ async function runScan(mode: ScanMode) {
     const payload = await fetchApi<MirrorScan>(API_ROUTES.scan, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode }),
+      body: JSON.stringify({ mode, depth }),
     });
+    const record = await loadScanRecord(payload).catch(() => undefined);
     scanState = {
       loading: false,
       mode,
+      depth,
       result: payload,
+      record,
       warnings: payload.warnings,
     };
   } catch (error) {
@@ -2062,7 +3974,9 @@ async function runScan(mode: ScanMode) {
       scanState = {
         loading: false,
         mode,
+        depth,
         result: payload,
+        record: undefined,
         warnings: payload.warnings,
       };
       render();
@@ -2072,12 +3986,158 @@ async function runScan(mode: ScanMode) {
     scanState = {
       loading: false,
       mode,
+      depth,
       error: normalizeClientError(error, 'Scan could not reach the ModMirror API.'),
       warnings: [],
     };
   }
 
   render();
+}
+
+async function loadScanRecord(scan: MirrorScan): Promise<MirrorScanRecord> {
+  return fetchApi<MirrorScanRecord>(
+    `${API_ROUTES.scans}/${encodeURIComponent(scan.id)}?subreddit=${encodeURIComponent(scan.subreddit)}`
+  );
+}
+
+async function saveAttributionCorrection(formData: FormData) {
+  const actionId = String(formData.get('actionId') ?? '').trim();
+  if (!actionId || scanState.result === undefined) {
+    return;
+  }
+
+  scanState = {
+    ...scanState,
+    calibrationSavingActionId: actionId,
+    calibrationError: undefined,
+    calibrationMessage: undefined,
+  };
+  render();
+
+  const body = formDataToAttributionCorrection(formData);
+  try {
+    const correction = await fetchApi<AttributionCorrection>(
+      API_ROUTES.attributionCorrections,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    scanState = {
+      ...scanState,
+      calibrationSavingActionId: undefined,
+      calibrationMessage: `Correction saved for ${correction.actionId}. Future scans will use it.`,
+      record: applyCorrectionToScanRecord(scanState.record, correction),
+    };
+  } catch (error) {
+    scanState = {
+      ...scanState,
+      calibrationSavingActionId: undefined,
+      calibrationError: normalizeClientError(
+        error,
+        'Attribution correction could not be saved.'
+      ),
+    };
+  }
+
+  render();
+}
+
+function applyCorrectionToScanRecord(
+  record: MirrorScanRecord | undefined,
+  correction: AttributionCorrection
+): MirrorScanRecord | undefined {
+  if (record === undefined) {
+    return undefined;
+  }
+  return {
+    ...record,
+    attributedActions: record.attributedActions.map((action) =>
+      action.id === correction.actionId
+        ? applyCorrectionToAction(action, correction)
+        : action
+    ),
+  };
+}
+
+function applyCorrectionToAction(
+  action: AttributedModAction,
+  correction: AttributionCorrection
+): AttributedModAction {
+  const correctionSnapshot: AttributedModAction['correction'] = {
+    correctionId: correction.id,
+    correctedRuleKey: correction.correctedRuleKey,
+    correctedBy: correction.correctedBy,
+    correctedAt: correction.correctedAt,
+    originalConfidence: correction.originalConfidence,
+  };
+  const corrected: AttributedModAction = {
+    ...action,
+    inferredRuleKey: correction.correctedRuleKey,
+    confidence: 'high',
+    attributionKind: 'corrected',
+    correction: correctionSnapshot,
+    evidence: [
+      `Moderator correction applied by ${correction.correctedBy}.`,
+      ...action.evidence,
+    ],
+  };
+  if (correction.correctedRuleName !== undefined) {
+    corrected.inferredRuleName = correction.correctedRuleName;
+    correctionSnapshot.correctedRuleName = correction.correctedRuleName;
+  } else {
+    delete corrected.inferredRuleName;
+  }
+  if (correction.originalRuleKey !== undefined) {
+    correctionSnapshot.originalRuleKey = correction.originalRuleKey;
+  }
+  if (correction.originalRuleName !== undefined) {
+    correctionSnapshot.originalRuleName = correction.originalRuleName;
+  }
+  if (correction.note !== undefined) {
+    correctionSnapshot.note = correction.note;
+  }
+  return corrected;
+}
+
+function formDataToAttributionCorrection(formData: FormData) {
+  const body: Record<string, string> = {
+    subreddit: scanState.result?.subreddit ?? '',
+    actionId: String(formData.get('actionId') ?? ''),
+    correctedRuleKey: String(formData.get('correctedRuleKey') ?? ''),
+    originalConfidence: String(formData.get('originalConfidence') ?? 'unmatched'),
+  };
+  copyFormString(body, 'targetThingId', formData);
+  copyFormString(body, 'sourceScanId', formData);
+  copyFormString(body, 'originalRuleKey', formData);
+  copyFormString(body, 'originalRuleName', formData);
+  copyFormString(body, 'correctedRuleName', formData);
+  copyFormString(body, 'note', formData);
+  return body;
+}
+
+function copyFormString(
+  body: Record<string, string>,
+  fieldName: string,
+  formData: FormData
+) {
+  const value = String(formData.get(fieldName) ?? '').trim();
+  if (value) {
+    body[fieldName] = value;
+  }
+}
+
+function parseScanDepth(value: string | undefined): MirrorScanDepth {
+  if (value === 'quick' || value === 'deep') {
+    return value;
+  }
+  return 'standard';
+}
+
+function formatScanDepth(depth: MirrorScanDepth): string {
+  return `${depth.charAt(0).toUpperCase()}${depth.slice(1)}`;
 }
 
 function createClientPreviewDemoScan(): MirrorScan {
@@ -2127,6 +4187,15 @@ function createClientPreviewDemoScan(): MirrorScan {
           'Keep monitoring; this rule can serve as the comparison baseline.',
       },
     ],
+    scanDepth: {
+      depth: 'standard',
+      requestedLimit: 60,
+      pageSize: 60,
+      fetchedActions: 60,
+      hitLimit: true,
+      paginationStrategy: 'listing_all',
+      runtimeVerified: true,
+    },
     smallSubredditStatus: {
       meetsThreshold: true,
       observedActions: 60,
@@ -2144,6 +4213,26 @@ function canUseClientDemoFallback() {
   return (
     scanState.result?.source === 'demo' ||
     policyState.policies.some((policy) => policy.subreddit === DEMO_SUBREDDIT_NAME)
+  );
+}
+
+function isStandaloneStaticPreview() {
+  return window.parent === window && getDevvitGlobal() === undefined;
+}
+
+function getPrivacyRetentionFormSettings(): PrivacyRetentionSettings {
+  return (
+    privacyRetentionState.settings ?? {
+      subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+      updatedAt: '1970-01-01T00:00:00.000Z',
+      scanHistoryDays: 90,
+      actionReceiptDays: 180,
+      evidenceBoardDays: 365,
+      teamDeliveryReceiptDays: 180,
+      casePacketDays: 180,
+      aiAdvisoryLogDays: 30,
+      protectPolicyHistory: true,
+    }
   );
 }
 
@@ -2169,6 +4258,26 @@ function withWorkspaceSubreddit(url: string) {
   }
   const joiner = url.includes('?') ? '&' : '?';
   return `${url}${joiner}subreddit=${encodeURIComponent(subreddit)}`;
+}
+
+function readRetentionDays(formData: FormData, key: string) {
+  const value = Number(formData.get(key) ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isPrivacyRetentionCategory(
+  value: string
+): value is PrivacyRetentionCategory {
+  return PRIVACY_RETENTION_CATEGORY_VALUES.includes(
+    value as PrivacyRetentionCategory
+  );
+}
+
+function formatPrivacyCategory(category: string) {
+  if (category === 'policy_history') {
+    return 'Policy history';
+  }
+  return formatAction(category);
 }
 
 function createClientDigestCapabilities(): DigestCapabilities {
@@ -2306,9 +4415,90 @@ function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
     ruleName: candidate?.ruleName ?? DEMO_POLICY.ruleName,
     activeVersionId: 'demo-policy-low-effort-v2',
     activeVersionNumber: 2,
+    lifecycleState: 'adopted',
+    adoptedBy: 'demo-lead-mod',
+    adoptedAt: '2026-05-16T10:30:00.000Z',
+    ratificationSettings: {
+      requiredApprovals: 1,
+      allowSingleModAdoption: true,
+    },
+    ratificationSummary: {
+      requiredApprovals: 1,
+      approvals: 1,
+      requestsForChanges: 0,
+      abstentions: 0,
+      latestReviewCount: 1,
+      canAdopt: true,
+    },
     createdAt: DEMO_POLICY.createdAt,
     updatedAt: now,
   };
+}
+
+function buildClientDemoReplay(policy: RulePolicy): PolicyReplayResult {
+  const now = new Date().toISOString();
+  const replay: PolicyReplayResult = {
+    id: `demo-replay-${Date.now()}`,
+    subreddit: policy.subreddit,
+    policyId: policy.id,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    source: 'synthetic',
+    generatedAt: now,
+    totalActionsEvaluated: 3,
+    matchedPolicyCount: 1,
+    changedRecommendationCount: 2,
+    skippedActionCount: 0,
+    items: [
+      {
+        actionId: 'demo-replay-1',
+        targetAuthor: 'learner_a',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        recommendedAction: 'warn',
+        offenseCount: 1,
+        wouldChangeOutcome: true,
+        evidence: ['Demo synthetic first offense.'],
+      },
+      {
+        actionId: 'demo-replay-2',
+        targetAuthor: 'learner_a',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        recommendedAction: 'remove',
+        offenseCount: 2,
+        wouldChangeOutcome: false,
+        evidence: ['Demo synthetic repeat offense.'],
+      },
+      {
+        actionId: 'demo-replay-3',
+        targetAuthor: 'learner_b',
+        createdAt: now,
+        confidence: 'medium',
+        historicalAction: 'temporary_ban_suggested',
+        recommendedAction: 'warn',
+        offenseCount: 1,
+        wouldChangeOutcome: true,
+        evidence: ['Demo synthetic stricter first offense.'],
+      },
+    ],
+    warnings: [
+      'Demo replay uses synthetic actions, not live Reddit history.',
+      'Replay is read-only and does not create receipts or Reddit moderation calls.',
+    ],
+  };
+  const versionId = policy.activeVersionId ?? policy.proposedVersionId;
+  const versionNumber =
+    policy.activeVersionNumber ?? policy.proposedVersionNumber;
+  if (versionId !== undefined) {
+    replay.policyVersionId = versionId;
+  }
+  if (versionNumber !== undefined) {
+    replay.policyVersionNumber = versionNumber;
+  }
+  return replay;
 }
 
 function createClientDemoHealth(
@@ -2343,6 +4533,170 @@ function createClientDemoHealth(
           'One temporary-ban suggestion deviates from the first-offense warning policy.',
       },
     ],
+  };
+}
+
+function createClientDemoAnalytics(): ConsistencyAnalyticsSummary {
+  const now = new Date().toISOString();
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: now,
+    scanCount: 2,
+    receiptCount: 12,
+    dataQuality: 'limited',
+    caveats: ['Demo analytics are seeded for preview and are not live proof.'],
+    ruleTrends: [
+      {
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        status: 'improving',
+        latestDistribution: {
+          warn: 9,
+          remove: 5,
+        },
+        points: [
+          {
+            scanId: 'demo-scan-before',
+            createdAt: '2026-05-15T00:00:00.000Z',
+            source: 'demo',
+            depth: 'standard',
+            totalActions: 24,
+            distinctActions: 3,
+            confidence: 'high',
+            actionDistribution: {
+              warn: 7,
+              remove: 10,
+              temporary_ban_suggested: 7,
+            },
+          },
+          {
+            scanId: 'demo-scan-after',
+            createdAt: now,
+            source: 'demo',
+            depth: 'standard',
+            totalActions: 18,
+            distinctActions: 2,
+            confidence: 'high',
+            actionDistribution: {
+              warn: 9,
+              remove: 5,
+            },
+          },
+        ],
+        caveats: ['Demo scans are useful for preview, not live policy proof.'],
+      },
+    ],
+    policyImpacts: [
+      {
+        policyId: DEMO_POLICY.id,
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        policyVersionId: 'demo-policy-low-effort-v2',
+        adoptedAt: '2026-05-16T00:00:00.000Z',
+        status: 'new_policy_tracking',
+        before: {
+          receiptCount: 3,
+          adherenceRate: 1 / 3,
+          overrideRate: 2 / 3,
+          unresolvedOverrideCount: 0,
+        },
+        after: {
+          receiptCount: 9,
+          adherenceRate: 7 / 9,
+          overrideRate: 2 / 9,
+          unresolvedOverrideCount: 1,
+        },
+        caveats: [
+          'Receipts cover ModMirror Apply Policy usage, not every moderator action.',
+        ],
+      },
+    ],
+  };
+}
+
+function createClientDemoCommunityHealth(): CommunityHealthSummary {
+  const now = new Date().toISOString();
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: now,
+    dataQuality: 'small_sample',
+    status: 'needs_review',
+    scanCount: 2,
+    receiptCount: 12,
+    actionCount: 12,
+    overrideCount: 3,
+    unresolvedOverrideCount: 1,
+    policyChurnCount: 4,
+    driftStability: 'improving',
+    casePacketVolume: {
+      eligibleReceiptCount: 12,
+      persistedPacketCount: 0,
+      source: 'not_persisted',
+      note: 'Demo case packets are generated on demand.',
+    },
+    ruleSignals: [
+      {
+        ruleKey: DEMO_POLICY.ruleKey,
+        ruleName: DEMO_POLICY.ruleName,
+        actionCount: 12,
+        consistentActionCount: 8,
+        overrideCount: 3,
+        unresolvedOverrideCount: 1,
+        repeatAuthorCount: 2,
+        consistencyRate: 8 / 12,
+        overrideRate: 3 / 12,
+        status: 'needs_review',
+        notes: ['One unresolved Rule 2 override needs team review.'],
+      },
+    ],
+    privacyGuardrails: [
+      'No per-moderator leaderboard fields are emitted.',
+      'Repeat-offense signals are aggregated by rule and do not expose usernames.',
+      'Demo health is labeled and not live subreddit proof.',
+    ],
+    caveats: ['Demo community health is seeded for preview and is not live proof.'],
+  };
+}
+
+function createClientDemoImpacts(): Record<string, PolicyImpactMeasurement> {
+  const now = new Date().toISOString();
+  return {
+    [DEMO_POLICY.id]: {
+      policyId: DEMO_POLICY.id,
+      ruleKey: DEMO_POLICY.ruleKey,
+      ruleName: DEMO_POLICY.ruleName,
+      generatedAt: now,
+      dataQuality: 'limited',
+      status: 'new_policy_tracking',
+      adoptedAt: '2026-05-16T10:30:00.000Z',
+      policyVersionId: 'demo-policy-low-effort-v2',
+      policyVersionNumber: 2,
+      before: {
+        receiptCount: 3,
+        scanCount: 1,
+        consistencyRate: 1 / 3,
+        overrideRate: 2 / 3,
+        driftCandidateCount: 1,
+      },
+      after: {
+        receiptCount: 9,
+        scanCount: 1,
+        consistencyRate: 7 / 9,
+        overrideRate: 2 / 9,
+        driftCandidateCount: 1,
+      },
+      timeline: [
+        {
+          id: 'demo-policy-low-effort-v2',
+          occurredAt: '2026-05-16T10:30:00.000Z',
+          label: 'Policy adopted',
+          detail: 'Demo policy version 2 became the comparison point.',
+          source: 'policy_version',
+        },
+      ],
+      caveats: ['Demo impact is seeded for preview and is not live subreddit proof.'],
+      source: 'demo',
+    },
   };
 }
 
@@ -2443,24 +4797,115 @@ function createClientDemoApplyPreview(
   const recommendedAction = policy.steps[0]?.recommendedAction ?? 'warn';
   const deviatesFromPolicy = payload.selectedAction !== recommendedAction;
 
-  return {
-    policy,
-    recommendation: {
-      ruleKey: policy.ruleKey,
-      ruleName: policy.ruleName,
-      policyId: policy.id,
-      offenseCount: 1,
-      recommendedAction,
-      messageDeliveryMode: policy.defaultMessageMode,
-      requiresOverrideReason: true,
-      selectedAction: payload.selectedAction,
-      deviatesFromPolicy,
-      fallbackReason: 'policy_found',
-      message: deviatesFromPolicy
-        ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
-        : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
+  const contentSnapshot = {
+    schemaVersion: 1 as const,
+    targetThingId: payload.targetThingId,
+    targetType: payload.targetThingId.startsWith('t1_')
+      ? ('comment' as const)
+      : ('post' as const),
+    subreddit: DEMO_SUBREDDIT_NAME,
+    authorName: payload.targetAuthor,
+    titleExcerpt: payload.targetTitle || 'Demo policy target',
+    bodyExcerpt: payload.targetBody || 'Seeded client fallback content.',
+    fetchedAt: new Date().toISOString(),
+    fetchStatus: 'captured' as const,
+    source: 'demo' as const,
+    warnings: ['Demo fallback preview uses seeded client data only.'],
+    privacy: {
+      retentionCategory: 'moderation_evidence' as const,
+      authorStored: Boolean(payload.targetAuthor),
+      titleExcerptStored: true,
+      bodyExcerptStored: true,
+      permalinkStored: Boolean(payload.targetPermalink),
+      redactionNotes: ['Demo fallback stores excerpts only.'],
     },
   };
+  const targetSnapshot: ApplyPolicyPreview['targetSnapshot'] = {
+    targetThingId: payload.targetThingId,
+    targetType: payload.targetThingId.startsWith('t1_') ? 'comment' : 'post',
+    subreddit: DEMO_SUBREDDIT_NAME,
+    authorName: payload.targetAuthor,
+    title: contentSnapshot.titleExcerpt,
+    body: contentSnapshot.bodyExcerpt,
+    ...(payload.targetPermalink ? { permalink: payload.targetPermalink } : {}),
+    source: 'provided',
+    warnings: ['Demo fallback preview uses seeded client data only.'],
+    contentSnapshot,
+  };
+  const recommendation: ApplyPolicyPreview['recommendation'] = {
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    policyId: policy.id,
+    offenseCount: 1,
+    recommendedAction,
+    messageDeliveryMode: policy.defaultMessageMode,
+    requiresOverrideReason: true,
+    selectedAction: payload.selectedAction,
+    deviatesFromPolicy,
+    fallbackReason: 'policy_found',
+    message: deviatesFromPolicy
+      ? `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense. Continue only with an override reason.`
+      : `Team policy recommends ${formatAction(recommendedAction)} for this first Rule 2 offense.`,
+  };
+  const preview: ApplyPolicyPreview = {
+    policy,
+    policySnapshot: {
+      policyId: policy.id,
+      policyVersionId: policy.activeVersionId ?? `${policy.id}-v1`,
+      policyVersionNumber: policy.activeVersionNumber ?? 1,
+      policyVersionStatus: 'active',
+      ruleKey: policy.ruleKey,
+      ruleName: policy.ruleName,
+      steps: policy.steps,
+      defaultMessageMode: policy.defaultMessageMode,
+      capturedAt: new Date().toISOString(),
+    },
+    targetSnapshot,
+    contentSnapshot,
+    evidence: [
+      {
+        kind: 'policy',
+        label: 'Policy version',
+        detail: `Using ${policy.ruleName} version ${policy.activeVersionNumber ?? 1}.`,
+      },
+      {
+        kind: 'target',
+        label: 'Target context',
+        detail: `${payload.targetThingId} by ${payload.targetAuthor}`,
+      },
+      {
+        kind: 'history',
+        label: 'Offense count',
+        detail: 'Offense 1 from demo seed data.',
+      },
+      {
+        kind: 'safety',
+        label: 'Execution mode',
+        detail:
+          'Confirming this demo preview records a log-only ModMirror action.',
+      },
+    ],
+    confirmation: {
+      executionMode: 'log_only',
+      willExecuteRedditAction: false,
+      actionLabel: payload.selectedAction,
+      requiresOverrideReason: deviatesFromPolicy,
+      message:
+        'Demo fallback confirmation records a log-only ModMirror action. No Reddit moderation action is attempted.',
+      caveats: ['Demo fallback uses client seed data, not live Reddit state.'],
+    },
+    recommendation,
+  };
+  const responsePreview = buildApplyPolicyResponsePreview({
+    policy,
+    recommendation,
+    targetSnapshot,
+  });
+  if (responsePreview !== undefined) {
+    preview.responsePreview = responsePreview;
+  }
+
+  return preview;
 }
 
 function createClientDemoApplyResult(
@@ -2469,6 +4914,18 @@ function createClientDemoApplyResult(
   const preview = createClientDemoApplyPreview(payload);
   const policy = preview.policy ?? createClientDemoPolicy();
   const now = new Date().toISOString();
+  const execution = {
+    executionMode: 'log_only' as const,
+    executionAttempted: false,
+    executionResult: 'skipped' as const,
+    redditOperation: 'none' as const,
+    selectedAction: payload.selectedAction,
+    targetThingId: payload.targetThingId,
+    targetType: preview.targetSnapshot.targetType,
+    capabilityState: 'not_applicable' as const,
+    startedAt: now,
+    completedAt: now,
+  };
   const actionEvent = {
     id: `demo-action-${Date.now()}`,
     subreddit: DEMO_SUBREDDIT_NAME,
@@ -2485,13 +4942,67 @@ function createClientDemoApplyResult(
     selectedAction: payload.selectedAction,
     deliveryMode: 'log_only' as const,
     source: 'simulator' as const,
+    execution,
     createdAt: now,
   };
 
   const result: ApplyPolicyConfirmResult = {
     recommendation: preview.recommendation,
     actionEvent,
+    execution,
+    receipt: {
+      id: `demo-receipt-${Date.now()}`,
+      actionEventId: actionEvent.id,
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetThingId: payload.targetThingId,
+      targetType: preview.targetSnapshot.targetType,
+      targetSnapshot: preview.targetSnapshot,
+      modUsername: 'demo_mod_2',
+      source: 'simulator',
+      recommendation: preview.recommendation,
+      selectedAction: payload.selectedAction,
+      deviatesFromPolicy: preview.recommendation.deviatesFromPolicy,
+      executionMode: execution.executionMode,
+      executionAttempted: execution.executionAttempted,
+      executionResult: execution.executionResult,
+      redditOperation: execution.redditOperation,
+      capabilityState: execution.capabilityState,
+      createdAt: now,
+    },
   };
+  if (preview.contentSnapshot !== undefined) {
+    result.receipt.contentSnapshot = preview.contentSnapshot;
+  }
+  if (preview.policySnapshot !== undefined) {
+    result.receipt.policySnapshot = preview.policySnapshot;
+  }
+  if (preview.responsePreview !== undefined) {
+    result.receipt.responsePreview = preview.responsePreview;
+    result.receipt.nativeModNote = {
+      mode: payload.modNoteMode,
+      status: 'skipped',
+      deliveryAttempted: false,
+      capabilityState:
+        payload.modNoteMode === 'native' ? 'unverified_disabled' : 'disabled',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetAuthor: payload.targetAuthor,
+      targetThingId: payload.targetThingId,
+      noteBody:
+        preview.responsePreview.templates.find(
+          (template) => template.kind === 'mod_note_summary'
+        )?.body ?? 'Demo Mod Note draft stored on the receipt only.',
+      errorCode:
+        payload.modNoteMode === 'native'
+          ? 'unverified_disabled'
+          : 'log_only_mode',
+      errorMessage:
+        payload.modNoteMode === 'native'
+          ? 'Native Mod Notes are disabled in demo fallback.'
+          : 'Generated Mod Note was stored on the ModMirror receipt only.',
+      startedAt: now,
+      completedAt: now,
+    };
+  }
 
   if (preview.recommendation.deviatesFromPolicy) {
     result.overrideEvent = {
@@ -2515,6 +5026,11 @@ function createClientDemoApplyResult(
       updatedAt: now,
       createdAt: now,
     };
+    result.receipt.overrideEventId = result.overrideEvent.id;
+    result.receipt.overrideReason = result.overrideEvent.overrideReason;
+    if (result.overrideEvent.overrideNote !== undefined) {
+      result.receipt.overrideNote = result.overrideEvent.overrideNote;
+    }
   }
 
   return result;
@@ -2542,13 +5058,16 @@ function createClientDemoCasePacket(): CasePacket {
     generatedAt,
     generatedBy: 'local-preview',
     subreddit: DEMO_SUBREDDIT_NAME,
+    packetType: 'appeal_context',
     subject: {
       type: 'demo',
+      receiptId: 'demo-receipt-r2-appeal',
       targetThingId: 't3_demo_case_r2_appeal',
       ruleKey: DEMO_POLICY.ruleKey,
     },
     action: {
       actionId: 'demo-case-r2-appeal',
+      receiptId: 'demo-receipt-r2-appeal',
       createdAt: '2026-05-16T19:15:00.000Z',
       moderator: 'demo_mod_2',
       targetThingId: 't3_demo_case_r2_appeal',
@@ -2559,6 +5078,7 @@ function createClientDemoCasePacket(): CasePacket {
       selectedAction: 'temporary_ban_suggested',
       deliveryMode: 'log_only',
       source: 'demo',
+      evidenceSource: 'demo_seed',
     },
     policyContext: {
       policyId: DEMO_POLICY.id,
@@ -2604,6 +5124,7 @@ function createClientDemoCasePacket(): CasePacket {
         targetType: 'post',
         matchReasons: ['same rule', 'first offense', 'same policy version'],
         anonymizedTargetAuthor: 'learner_*',
+        evidenceSource: 'demo_seed',
       },
       {
         actionId: 'demo-case-r2-comparable-strict',
@@ -2618,6 +5139,19 @@ function createClientDemoCasePacket(): CasePacket {
         targetType: 'post',
         matchReasons: ['same rule', 'first offense', 'stricter outcome'],
         anonymizedTargetAuthor: 'learner_*',
+        evidenceSource: 'demo_seed',
+      },
+    ],
+    evidence: [
+      {
+        label: 'Action receipt',
+        source: 'demo_seed',
+        detail: 'Demo receipt records a log-only moderation decision.',
+      },
+      {
+        label: 'Comparable cases',
+        source: 'demo_seed',
+        detail: 'Demo comparables show followed and stricter Rule 2 outcomes.',
       },
     ],
     appealPosture: 'review_recommended',
@@ -2644,6 +5178,170 @@ async function loadHealth() {
   }
 
   render();
+}
+
+async function loadLaunchContext() {
+  const hashParams = getApplyTargetParamsFromHash();
+  if (hashParams.targetThingId !== undefined) {
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        ...hashParams,
+      },
+    };
+    render();
+    return;
+  }
+
+  try {
+    const payload = await fetchApi<LaunchContextResponse>(API_ROUTES.launchContext);
+    const target = payload.target;
+    if (target === undefined) {
+      return;
+    }
+
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        targetThingId: target.targetThingId,
+        targetAuthor: target.authorName ?? applyState.form.targetAuthor,
+        targetTitle: target.title ?? '',
+        targetBody: target.body ?? '',
+        targetPermalink: target.permalink ?? '',
+        subreddit: target.subreddit ?? applyState.form.subreddit,
+      },
+    };
+    render();
+  } catch (error) {
+    applyState = {
+      ...applyState,
+      error: normalizeClientError(
+        error,
+        'Target context could not be loaded from this launch post.'
+      ),
+    };
+    render();
+  }
+}
+
+async function loadRuntimeCapabilities() {
+  runtimeCapabilityState = {
+    ...runtimeCapabilityState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const matrix = await fetchApi<RuntimeCapabilityMatrix>(
+      withWorkspaceSubreddit(API_ROUTES.runtimeCapabilities)
+    );
+    runtimeCapabilityState = {
+      loading: false,
+      smokeRunning: runtimeCapabilityState.smokeRunning,
+      error: undefined,
+      message: runtimeCapabilityState.message,
+      matrix,
+    };
+  } catch (error) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Runtime capability matrix is unavailable.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
+  runtimeCapabilityState = {
+    ...runtimeCapabilityState,
+    smokeRunning: check,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const route =
+      check === 'redis' ? API_ROUTES.redisSmoke : API_ROUTES.redditSmoke;
+    const result = await fetchRawJson<unknown>(withWorkspaceSubreddit(route), {
+      method: 'POST',
+    });
+    const matrix = await fetchApi<RuntimeCapabilityMatrix>(
+      withWorkspaceSubreddit(API_ROUTES.runtimeCapabilities)
+    );
+    runtimeCapabilityState = {
+      loading: false,
+      smokeRunning: undefined,
+      error: undefined,
+      message: summarizeRuntimeSmokeResult(check, result),
+      matrix,
+    };
+  } catch (error) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      loading: false,
+      smokeRunning: undefined,
+      error: normalizeClientError(error, `${formatRuntimeSmokeCheck(check)} smoke check failed.`),
+      message: undefined,
+    };
+  }
+
+  render();
+}
+
+async function fetchRawJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetchWithTimeout(url, init);
+  const payload = (await response.json().catch(() => undefined)) as
+    | ApiResponse<unknown>
+    | T
+    | undefined;
+
+  if (!response.ok) {
+    if (isApiFailure(payload)) {
+      throw new Error(payload.error.message);
+    }
+    throw new Error(`API request returned ${response.status} for ${url}.`);
+  }
+
+  if (payload === undefined) {
+    throw new Error(`API response was not JSON for ${url}.`);
+  }
+
+  return payload as T;
+}
+
+function isApiFailure(payload: unknown): payload is Extract<ApiResponse<never>, { ok: false }> {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'ok' in payload &&
+    (payload as { ok: unknown }).ok === false &&
+    'error' in payload
+  );
+}
+
+function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) {
+  if (check === 'redis') {
+    const redisResult = result as Partial<RedisSmokeResult>;
+    return redisResult.ok
+      ? 'Redis smoke passed: write/read matched inside Devvit playtest.'
+      : 'Redis smoke completed but did not report a matched readBack value.';
+  }
+
+  const resultRecord = result as {
+    rules?: unknown[];
+    removalReasons?: unknown[];
+    modActions?: unknown[];
+  };
+  return `Reddit read smoke passed: ${resultRecord.rules?.length ?? 0} rule(s), ${resultRecord.removalReasons?.length ?? 0} removal reason(s), ${resultRecord.modActions?.length ?? 0} mod log action(s).`;
 }
 
 async function loadPolicies() {
@@ -2680,7 +5378,8 @@ async function loadGovernance(ruleKey?: string) {
   render();
 
   try {
-    const [healthOverview, policies, overrides] = await Promise.all([
+    const [healthOverview, policies, overrides, analytics, communityHealth] =
+      await Promise.all([
       fetchApi<PolicyHealthOverview>(
         withWorkspaceSubreddit(API_ROUTES.policyHealth)
       ),
@@ -2692,8 +5391,15 @@ async function loadGovernance(ruleKey?: string) {
             )
           : withWorkspaceSubreddit(`${API_ROUTES.overrides}?status=unresolved`)
       ),
+      fetchApi<ConsistencyAnalyticsSummary>(
+        withWorkspaceSubreddit(API_ROUTES.consistencyAnalytics)
+      ),
+      fetchApi<CommunityHealthSummary>(
+        withWorkspaceSubreddit(API_ROUTES.communityHealth)
+      ),
     ]);
     const versionsByPolicy = await loadPolicyVersions(policies);
+    const impactsByPolicy = await loadPolicyImpacts(policies);
     policyState = {
       ...policyState,
       policies,
@@ -2702,8 +5408,11 @@ async function loadGovernance(ruleKey?: string) {
       ...governanceState,
       loading: false,
       health: healthOverview,
+      analytics,
+      communityHealth,
       overrides,
       versionsByPolicy,
+      impactsByPolicy,
     };
   } catch (error) {
     if (canUseClientDemoFallback()) {
@@ -2712,10 +5421,13 @@ async function loadGovernance(ruleKey?: string) {
         ...governanceState,
         loading: false,
         health: createClientDemoHealth(),
+        analytics: createClientDemoAnalytics(),
+        communityHealth: createClientDemoCommunityHealth(),
         overrides: ruleKey
           ? demoOverrides.filter((event) => event.ruleKey === ruleKey)
           : demoOverrides,
         versionsByPolicy: createClientDemoVersions(),
+        impactsByPolicy: createClientDemoImpacts(),
         error: undefined,
       };
       render();
@@ -2729,6 +5441,70 @@ async function loadGovernance(ruleKey?: string) {
         error,
         'Review data is unavailable in this preview.'
       ),
+    };
+  }
+
+  render();
+}
+
+async function loadModqueueTriage() {
+  modqueueState = {
+    ...modqueueState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    modqueueState = {
+      loading: false,
+      error: undefined,
+      response: await fetchApi<ModqueueTriageResponse>(
+        withWorkspaceSubreddit(`${API_ROUTES.modqueueTriage}?limit=10&type=all`)
+      ),
+    };
+  } catch (error) {
+    modqueueState = {
+      ...modqueueState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Modqueue triage is unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function loadReceipts() {
+  receiptLedgerState = {
+    ...receiptLedgerState,
+    loading: true,
+  };
+  render();
+
+  try {
+    receiptLedgerState = {
+      loading: false,
+      receipts: await fetchApi<ActionReceipt[]>(
+        withWorkspaceSubreddit(API_ROUTES.receipts)
+      ),
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback() || isStandaloneStaticPreview()) {
+      receiptLedgerState = {
+        loading: false,
+        receipts: receiptLedgerState.receipts,
+      };
+      render();
+      return;
+    }
+
+    receiptLedgerState = {
+      loading: false,
+      receipts: receiptLedgerState.receipts,
+      error: normalizeClientError(error, 'Receipt ledger is unavailable.'),
     };
   }
 
@@ -2756,6 +5532,722 @@ async function loadDigestHistory() {
   }
 }
 
+async function loadAiAdvisoryCapabilities() {
+  try {
+    aiAdvisoryState = {
+      capabilities: await fetchApi<AiAdvisoryCapabilities>(
+        API_ROUTES.aiAdvisoryCapabilities
+      ),
+    };
+  } catch (error) {
+    aiAdvisoryState = {
+      error: normalizeClientError(
+        error,
+        'AI advisory capability status is unavailable.'
+      ),
+    };
+  }
+  render();
+}
+
+async function loadTeamDeliveryCapabilities() {
+  try {
+    teamDeliveryState = {
+      capabilities: await fetchApi<TeamDeliveryCapabilities>(
+        API_ROUTES.teamDeliveryCapabilities
+      ),
+    };
+  } catch (error) {
+    teamDeliveryState = {
+      error: normalizeClientError(
+        error,
+        'Team delivery capability status is unavailable.'
+      ),
+    };
+  }
+  render();
+}
+
+async function loadEvidenceBoards() {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<EvidenceBoardListResponse>(
+      withWorkspaceSubreddit(API_ROUTES.evidenceBoards)
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      loading: false,
+      boards: response.boards,
+      error: undefined,
+    };
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Evidence boards are unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function createEvidenceBoardFromReceipt(receiptId: string) {
+  const receipt = receiptLedgerState.receipts.find((item) => item.id === receiptId);
+  const subject: EvidenceBoardCreateRequest['subject'] = {
+    receiptId,
+  };
+  if (receipt?.targetThingId !== undefined) {
+    subject.targetThingId = receipt.targetThingId;
+  }
+  if (receipt?.recommendation.ruleKey !== undefined) {
+    subject.ruleKey = receipt.recommendation.ruleKey;
+  }
+  if (receipt?.policySnapshot?.policyId !== undefined) {
+    subject.policyId = receipt.policySnapshot.policyId;
+  }
+  if (receipt?.policySnapshot?.policyVersionId !== undefined) {
+    subject.policyVersionId = receipt.policySnapshot.policyVersionId;
+  }
+  await createEvidenceBoard({
+    title: `Review receipt ${receiptId}`,
+    subject,
+    sourceRefs: [
+      {
+        source: 'receipt',
+        id: receiptId,
+      },
+    ],
+    note: 'Opened from the action receipt ledger.',
+  });
+}
+
+async function createEvidenceBoardFromCasePacket() {
+  const packet = casePacketState.packet;
+  if (!packet) {
+    return;
+  }
+
+  const sourceRefs: EvidenceBoardCreateRequest['sourceRefs'] = [];
+  if (packet.action?.receiptId !== undefined) {
+    sourceRefs.push({
+      source: 'receipt',
+      id: packet.action.receiptId,
+    });
+  }
+  const subject: EvidenceBoardCreateRequest['subject'] = {
+    casePacketId: packet.id,
+  };
+  if (packet.action?.receiptId !== undefined) {
+    subject.receiptId = packet.action.receiptId;
+  }
+  if (packet.action?.targetThingId !== undefined) {
+    subject.targetThingId = packet.action.targetThingId;
+  }
+  if (packet.policyContext.ruleKey !== undefined) {
+    subject.ruleKey = packet.policyContext.ruleKey;
+  }
+  if (packet.policyContext.policyId !== undefined) {
+    subject.policyId = packet.policyContext.policyId;
+  }
+  if (packet.policyContext.policyVersionId !== undefined) {
+    subject.policyVersionId = packet.policyContext.policyVersionId;
+  }
+
+  await createEvidenceBoard({
+    title: `Review case packet ${packet.id}`,
+    subject,
+    sourceRefs,
+    casePacket: packet,
+    note: 'Opened from a Case Packet in the Prove workspace.',
+  });
+}
+
+async function createEvidenceBoard(request: EvidenceBoardCreateRequest) {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body: EvidenceBoardCreateRequest = {
+      ...request,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const board = await fetchApi<EvidenceBoardThread>(
+      API_ROUTES.evidenceBoards,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      saving: false,
+      boards: [
+        board,
+        ...evidenceBoardState.boards.filter((item) => item.id !== board.id),
+      ],
+      message: 'Evidence board opened.',
+      error: undefined,
+    };
+    activePage = 'prove';
+    window.location.hash = '#prove';
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      saving: false,
+      error: normalizeClientError(error, 'Evidence board could not be opened.'),
+    };
+  }
+
+  render();
+}
+
+async function updateEvidenceBoardStatusFromForm(
+  boardId: string,
+  status: EvidenceBoardStatus,
+  note: string
+) {
+  evidenceBoardState = {
+    ...evidenceBoardState,
+    updatingBoardId: boardId,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body: EvidenceBoardStatusUpdateRequest & { subreddit?: string } = {
+      status,
+    };
+    if (note) {
+      body.note = note;
+    }
+    if (subreddit) {
+      body.subreddit = subreddit;
+    }
+    const updated = await fetchApi<EvidenceBoardThread>(
+      `${API_ROUTES.evidenceBoards}/${encodeURIComponent(boardId)}/status`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      updatingBoardId: undefined,
+      boards: evidenceBoardState.boards.map((board) =>
+        board.id === updated.id ? updated : board
+      ),
+      message: 'Evidence board status updated.',
+      error: undefined,
+    };
+  } catch (error) {
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      updatingBoardId: undefined,
+      error: normalizeClientError(
+        error,
+        'Evidence board status could not be updated.'
+      ),
+    };
+  }
+
+  render();
+}
+
+function isEvidenceBoardStatus(value: string): value is EvidenceBoardStatus {
+  return EVIDENCE_BOARD_STATUS_VALUES.includes(value as EvidenceBoardStatus);
+}
+
+async function loadIncidentMode() {
+  incidentModeState = {
+    ...incidentModeState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<IncidentModeStateResponse>(
+      withWorkspaceSubreddit(API_ROUTES.incidents)
+    );
+    incidentModeState = {
+      ...incidentModeState,
+      loading: false,
+      active: response.active,
+      incidents: response.incidents,
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Incident Mode status is unavailable in this preview.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function startIncidentMode(formData: FormData) {
+  const reason = String(formData.get('reason') ?? '');
+  if (!isIncidentModeReason(reason)) {
+    incidentModeState = {
+      ...incidentModeState,
+      error: 'Choose an incident reason before starting Incident Mode.',
+    };
+    render();
+    return;
+  }
+
+  const durationMinutes = Number(formData.get('durationMinutes') ?? 120);
+  const description = String(formData.get('description') ?? '').trim();
+  const subreddit = getWorkspaceSubreddit();
+  const body: IncidentModeStartRequest = {
+    reason,
+    durationMinutes: Number.isFinite(durationMinutes) ? durationMinutes : 120,
+  };
+  if (description) {
+    body.description = description;
+  }
+  if (subreddit) {
+    body.subreddit = subreddit;
+  }
+
+  incidentModeState = {
+    ...incidentModeState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+    report: undefined,
+  };
+  render();
+
+  try {
+    const incident = await fetchApi<IncidentMode>(API_ROUTES.incidentStart, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    incidentModeState = {
+      ...incidentModeState,
+      saving: false,
+      active: incident,
+      incidents: [
+        incident,
+        ...incidentModeState.incidents.filter((item) => item.id !== incident.id),
+      ],
+      message: 'Incident Mode started. Apply Policy confirmations will tag receipts.',
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      saving: false,
+      error: normalizeClientError(error, 'Incident Mode could not be started.'),
+    };
+  }
+
+  render();
+}
+
+async function endIncidentMode(reviewNote: string) {
+  const active = incidentModeState.active;
+  if (active === undefined) {
+    return;
+  }
+
+  const body: IncidentModeEndRequest = {};
+  const subreddit = getWorkspaceSubreddit();
+  if (reviewNote) {
+    body.reviewNote = reviewNote;
+  }
+  if (subreddit) {
+    body.subreddit = subreddit;
+  }
+
+  incidentModeState = {
+    ...incidentModeState,
+    ending: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const report = await fetchApi<IncidentModeReport>(
+      `${API_ROUTES.incidents}/${encodeURIComponent(active.id)}/end`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    incidentModeState = {
+      ...incidentModeState,
+      ending: false,
+      active: undefined,
+      report,
+      incidents: [
+        report.incident,
+        ...incidentModeState.incidents.filter(
+          (item) => item.id !== report.incident.id
+        ),
+      ],
+      message: 'Incident Mode ended and a review summary is ready.',
+      error: undefined,
+    };
+  } catch (error) {
+    incidentModeState = {
+      ...incidentModeState,
+      ending: false,
+      error: normalizeClientError(error, 'Incident Mode could not be ended.'),
+    };
+  }
+
+  render();
+}
+
+function isIncidentModeReason(value: string): value is IncidentModeReason {
+  return INCIDENT_MODE_REASON_VALUES.includes(value as IncidentModeReason);
+}
+
+async function exportPortableConfig() {
+  configPortabilityState = {
+    ...configPortabilityState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const portablePackage = await fetchApi<PortableConfigPackage>(
+      withWorkspaceSubreddit(API_ROUTES.configExport)
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      exportedPackage: portablePackage,
+      message: 'Portable config package generated without private history.',
+      error: undefined,
+    };
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      error: normalizeClientError(error, 'Portable config export failed.'),
+    };
+  }
+
+  render();
+}
+
+async function loadPortableConfigTemplates() {
+  configPortabilityState = {
+    ...configPortabilityState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const response = await fetchApi<PortableConfigTemplateListResponse>(
+      API_ROUTES.configTemplates
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      templates: response.templates,
+      message: 'Starter templates loaded. Review JSON before importing.',
+      error: undefined,
+    };
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      loading: false,
+      error: normalizeClientError(error, 'Portable config templates failed to load.'),
+    };
+  }
+
+  render();
+}
+
+async function importPortableConfig(configJson: string, dryRun: boolean) {
+  if (!configJson) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importText: configJson,
+      error: 'Paste portable config JSON before importing.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  let parsedPackage: unknown;
+  try {
+    parsedPackage = JSON.parse(configJson);
+  } catch {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importText: configJson,
+      error: 'Portable config JSON is invalid.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  configPortabilityState = {
+    ...configPortabilityState,
+    importing: true,
+    importText: configJson,
+    error: undefined,
+    message: undefined,
+    importResult: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      package: parsedPackage,
+      dryRun,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const result = await fetchApi<PortableConfigImportResult>(
+      API_ROUTES.configImport,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    configPortabilityState = {
+      ...configPortabilityState,
+      importing: false,
+      importResult: result,
+      message: dryRun
+        ? 'Dry run completed. No policies or settings were written.'
+        : 'Portable config imported as drafts and proposed updates.',
+      error: undefined,
+    };
+    if (!dryRun) {
+      void loadPolicies();
+      void loadDigestHistory();
+    }
+  } catch (error) {
+    configPortabilityState = {
+      ...configPortabilityState,
+      importing: false,
+      error: normalizeClientError(error, 'Portable config import failed safely.'),
+    };
+  }
+
+  render();
+}
+
+async function loadPrivacyRetentionSettings() {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const settings = await fetchApi<PrivacyRetentionSettings>(
+      withWorkspaceSubreddit(API_ROUTES.privacyRetention)
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      settings,
+      message: undefined,
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Privacy retention settings are unavailable.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function savePrivacyRetentionSettings(formData: FormData) {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      scanHistoryDays: readRetentionDays(formData, 'scanHistoryDays'),
+      actionReceiptDays: readRetentionDays(formData, 'actionReceiptDays'),
+      evidenceBoardDays: readRetentionDays(formData, 'evidenceBoardDays'),
+      teamDeliveryReceiptDays: readRetentionDays(
+        formData,
+        'teamDeliveryReceiptDays'
+      ),
+      casePacketDays: readRetentionDays(formData, 'casePacketDays'),
+      aiAdvisoryLogDays: readRetentionDays(formData, 'aiAdvisoryLogDays'),
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const settings = await fetchApi<PrivacyRetentionSettings>(
+      API_ROUTES.privacyRetention,
+      {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      saving: false,
+      settings,
+      message: 'Retention settings saved. Policy history remains protected.',
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      saving: false,
+      error: normalizeClientError(error, 'Retention settings could not be saved.'),
+    };
+  }
+
+  render();
+}
+
+async function exportPrivacyInventory() {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const inventory = await fetchApi<PrivacyRetentionExport>(
+      withWorkspaceSubreddit(API_ROUTES.privacyExport)
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      inventory,
+      message: 'Privacy inventory loaded. It reports counts, not private payloads.',
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      error: normalizeClientError(error, 'Privacy inventory export failed.'),
+    };
+  }
+
+  render();
+}
+
+async function deletePrivacyDataFromForm(
+  formData: FormData,
+  mode: string | undefined
+) {
+  const categories = formData
+    .getAll('category')
+    .map((value) => String(value))
+    .filter(isPrivacyRetentionCategory);
+  if (mode !== 'expired' && categories.length === 0) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      error: 'Select at least one data category before running deletion controls.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    deleting: true,
+    error: undefined,
+    message: undefined,
+    deletionResult: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      categories:
+        mode === 'expired' ? [...PRIVACY_RETENTION_CATEGORY_VALUES] : categories,
+      dryRun: mode !== 'delete' && mode !== 'expired',
+      expiredOnly: mode === 'expired',
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const deletionResult = await fetchApi<PrivacyDeletionResult>(
+      API_ROUTES.privacyDelete,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      deleting: false,
+      deletionResult,
+      message: deletionResult.dryRun
+        ? 'Dry run completed. No data was deleted.'
+        : 'Selected privacy data was deleted. Policy history remains protected.',
+      error: undefined,
+    };
+    if (!deletionResult.dryRun) {
+      void exportPrivacyInventory();
+    }
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      deleting: false,
+      error: normalizeClientError(error, 'Privacy deletion failed safely.'),
+    };
+  }
+
+  render();
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -2775,6 +6267,36 @@ async function loadPolicyVersions(
   );
 
   return Object.fromEntries(entries);
+}
+
+async function loadPolicyImpacts(
+  policies: RulePolicy[]
+): Promise<Record<string, PolicyImpactMeasurement>> {
+  const entries = await Promise.all(
+    policies.map(async (policy) => {
+      try {
+        return [
+          policy.id,
+          await fetchApi<PolicyImpactMeasurement>(
+            withWorkspaceSubreddit(
+              API_ROUTES.policyImpact.replace(
+                ':id',
+                encodeURIComponent(policy.id)
+              )
+            )
+          ),
+        ] as const;
+      } catch {
+        return [policy.id, undefined] as const;
+      }
+    })
+  );
+
+  return Object.fromEntries(
+    entries.filter((entry): entry is readonly [string, PolicyImpactMeasurement] =>
+      entry[1] !== undefined
+    )
+  );
 }
 
 async function reviewOverride(
@@ -2831,12 +6353,64 @@ async function reviewOverride(
 }
 
 async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init);
-  const payload = (await response.json()) as ApiResponse<T>;
+  const response = await fetchWithTimeout(url, init);
+  let payload: ApiResponse<T>;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch (error) {
+    throw new Error(`API response was not JSON for ${url}: ${String(error)}`);
+  }
   if (!payload.ok) {
-    throw new Error(payload.error.message);
+    throw new Error(`API error: ${payload.error.message}`);
+  }
+  if (!response.ok) {
+    throw new Error(`API request returned ${response.status} for ${url}.`);
   }
   return payload.data;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init?: RequestInit
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`Request to ${url} timed out after ${API_TIMEOUT_MS}ms.`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function writeClipboardText(text: string, subject: string): Promise<void> {
+  if (!hasClipboardApi()) {
+    throw new Error(`${subject} clipboard API unavailable.`);
+  }
+  await navigator.clipboard.writeText(text);
+}
+
+function hasClipboardApi(): boolean {
+  return typeof navigator.clipboard?.writeText === 'function';
+}
+
+function formatClipboardError(error: unknown, subject: string): string {
+  return formatClientNotice(
+    classifyClipboardFailure({
+      hasClipboardApi: hasClipboardApi(),
+      error,
+      subject,
+    })
+  );
 }
 
 async function generateCasePacket(
@@ -2845,12 +6419,15 @@ async function generateCasePacket(
   casePacketState = {
     ...casePacketState,
     loading: true,
+    deliverySaving: false,
     error: undefined,
     message: undefined,
+    deliveryReceiptId: undefined,
+    deliveryStatus: undefined,
   };
   dashboardOpen = true;
-  activePage = 'case-packets';
-  window.location.hash = '#case-packets';
+  activePage = 'prove';
+  window.location.hash = '#prove';
   render();
 
   try {
@@ -2873,16 +6450,22 @@ async function generateCasePacket(
     );
     casePacketState = {
       loading: false,
+      deliverySaving: false,
       error: undefined,
       message: 'Case packet generated.',
+      deliveryReceiptId: undefined,
+      deliveryStatus: undefined,
       packet: data.packet,
     };
   } catch (error) {
     if (subject.type === 'demo' && canUseClientDemoFallback()) {
       casePacketState = {
         loading: false,
+        deliverySaving: false,
         error: undefined,
         message: 'Demo case packet generated.',
+        deliveryReceiptId: undefined,
+        deliveryStatus: undefined,
         packet: createClientDemoCasePacket(),
       };
       render();
@@ -2892,6 +6475,7 @@ async function generateCasePacket(
     casePacketState = {
       ...casePacketState,
       loading: false,
+      deliverySaving: false,
       error: normalizeClientError(
         error,
         'Case Packet generation is unavailable in this preview.'
@@ -2909,17 +6493,73 @@ async function copyCasePacketMarkdown() {
   }
 
   try {
-    await navigator.clipboard.writeText(markdown);
+    await writeClipboardText(markdown, 'Case Packet Markdown');
     casePacketState = {
       ...casePacketState,
       message: 'Markdown copied to clipboard.',
       error: undefined,
     };
-  } catch {
+  } catch (error) {
     casePacketState = {
       ...casePacketState,
-      message: 'Markdown is ready in the export textarea.',
+      message: undefined,
+      error: formatClipboardError(error, 'Case Packet Markdown'),
+    };
+  }
+
+  render();
+}
+
+async function saveCasePacketDeliveryReceipt(channel: TeamDeliveryChannel) {
+  const packet = casePacketState.packet;
+  if (!packet) {
+    return;
+  }
+
+  casePacketState = {
+    ...casePacketState,
+    deliverySaving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const draft = buildCasePacketDeliveryDraft(packet, channel);
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      ...draft,
+      confirmed: true,
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const response = await fetchApi<TeamDeliveryConfirmResponse>(
+      API_ROUTES.teamDeliveryConfirm,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+
+    casePacketState = {
+      ...casePacketState,
+      deliverySaving: false,
+      deliveryReceiptId: response.receipt.id,
+      deliveryStatus: response.receipt.status,
+      message:
+        response.receipt.status === 'manual_ready'
+          ? 'Manual delivery receipt saved. Copy the Markdown into your review thread.'
+          : 'Mod Discussion draft receipt saved. No Reddit message was sent.',
       error: undefined,
+    };
+  } catch (error) {
+    casePacketState = {
+      ...casePacketState,
+      deliverySaving: false,
+      error: normalizeClientError(
+        error,
+        'Case packet delivery receipt could not be saved.'
+      ),
     };
   }
 
@@ -2947,11 +6587,11 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
       ...policyState,
       saving: false,
       policies: upsertPolicy(policyState.policies, payload.data),
-      message: `Policy created for ${payload.data.ruleName}.`,
+      message: `Draft created for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
-    activePage = 'policies';
-    window.location.hash = '#policies';
+    activePage = 'agree';
+    window.location.hash = '#agree';
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const policy = createClientDemoPolicy(candidate);
@@ -2959,11 +6599,11 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
         ...policyState,
         saving: false,
         policies: upsertPolicy(policyState.policies, policy),
-        message: `Demo policy created for ${policy.ruleName}.`,
+        message: `Demo draft created for ${policy.ruleName}.`,
         form: policyToForm(policy),
       };
-      activePage = 'policies';
-      window.location.hash = '#policies';
+      activePage = 'agree';
+      window.location.hash = '#agree';
       render();
       return;
     }
@@ -3004,7 +6644,7 @@ async function savePolicyForm(formData: FormData) {
       ...policyState,
       saving: false,
       policies: upsertPolicy(policyState.policies, payload.data),
-      message: `Policy saved for ${payload.data.ruleName}.`,
+      message: `Draft saved for ${payload.data.ruleName}.`,
       form: policyToForm(payload.data),
     };
   } catch (error) {
@@ -3016,6 +6656,240 @@ async function savePolicyForm(formData: FormData) {
   }
 
   render();
+}
+
+async function transitionPolicyLifecycle(
+  policyId: string,
+  action: 'propose' | 'review' | 'adopt',
+  decision?: 'approve' | 'request_changes',
+  quickAdoption = false
+) {
+  policyState = { ...policyState, saving: true, error: undefined };
+  render();
+
+  try {
+    const suffix =
+      action === 'propose'
+        ? 'propose'
+        : action === 'review'
+          ? 'reviews'
+          : 'adopt';
+    const body =
+      action === 'review'
+        ? {
+            decision,
+            note:
+              decision === 'approve'
+                ? 'Approved for adoption.'
+                : 'Changes requested before adoption.',
+          }
+        : action === 'adopt'
+          ? {
+              quickAdoption,
+              note: quickAdoption
+                ? 'Single-mod quick adoption recorded.'
+                : 'Ratified policy version adopted.',
+            }
+          : { note: 'Draft proposed for team review.' };
+    const policy = await fetchPolicyLifecycle(policyId, suffix, body);
+    policyState = {
+      ...policyState,
+      saving: false,
+      policies: upsertPolicy(policyState.policies, policy),
+      message:
+        action === 'adopt'
+          ? `Adopted ${policy.ruleName}.`
+          : `Updated ${policy.ruleName}.`,
+      form: policyToForm(policy),
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = policyState.policies.find((item) => item.id === policyId);
+      if (policy) {
+        const updated = applyClientDemoLifecycle(policy, action, decision);
+        policyState = {
+          ...policyState,
+          saving: false,
+          policies: upsertPolicy(policyState.policies, updated),
+          message:
+            action === 'adopt'
+              ? `Demo policy adopted for ${updated.ruleName}.`
+              : `Demo policy updated for ${updated.ruleName}.`,
+          form: policyToForm(updated),
+        };
+        render();
+        return;
+      }
+    }
+    policyState = {
+      ...policyState,
+      saving: false,
+      error: normalizeClientError(error, 'Policy lifecycle update failed.'),
+    };
+  }
+
+  render();
+}
+
+async function runPolicyReplayFromUi(policyId: string) {
+  policyReplayState = {
+    loadingPolicyId: policyId,
+    error: undefined,
+    result: policyReplayState.result,
+  };
+  render();
+
+  try {
+    const scanId = scanState.record?.id;
+    if (!scanId) {
+      throw new Error('Run a scan first so replay has stored actions to use.');
+    }
+    const replay = await fetchPolicyReplay(policyId, { scanId });
+    policyReplayState = {
+      loadingPolicyId: undefined,
+      result: replay,
+      error: undefined,
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = policyState.policies.find((item) => item.id === policyId);
+      if (policy) {
+        policyReplayState = {
+          loadingPolicyId: undefined,
+          result: buildClientDemoReplay(policy),
+          error: undefined,
+        };
+        render();
+        return;
+      }
+    }
+    policyReplayState = {
+      loadingPolicyId: undefined,
+      error: normalizeClientError(error, 'Policy replay failed.'),
+      result: undefined,
+    };
+  }
+
+  render();
+}
+
+async function fetchPolicyReplay(
+  policyId: string,
+  body: Record<string, unknown>
+): Promise<PolicyReplayResult> {
+  return fetchApi<PolicyReplayResult>(
+    withWorkspaceSubreddit(
+      API_ROUTES.policyReplay.replace(':id', encodeURIComponent(policyId))
+    ),
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+}
+
+async function fetchPolicyLifecycle(
+  policyId: string,
+  suffix: string,
+  body: Record<string, unknown>
+): Promise<RulePolicy> {
+  return fetchApi<RulePolicy>(
+    withWorkspaceSubreddit(`${API_ROUTES.policies}/${policyId}/${suffix}`),
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+}
+
+function applyClientDemoLifecycle(
+  policy: RulePolicy,
+  action: 'propose' | 'review' | 'adopt',
+  decision?: 'approve' | 'request_changes'
+): RulePolicy {
+  const now = new Date().toISOString();
+  if (action === 'adopt') {
+    return {
+      ...policy,
+      active: true,
+      lifecycleState: 'adopted',
+      activeVersionId: policy.proposedVersionId ?? policy.activeVersionId ?? 'demo-policy-low-effort-v2',
+      activeVersionNumber:
+        policy.proposedVersionNumber ?? policy.activeVersionNumber ?? 2,
+      adoptedBy: 'demo-lead-mod',
+      adoptedAt: now,
+      ratificationSummary: {
+        requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+        approvals: Math.max(
+          1,
+          policy.ratificationSummary?.approvals ?? 0
+        ),
+        requestsForChanges: 0,
+        abstentions: policy.ratificationSummary?.abstentions ?? 0,
+        latestReviewCount:
+          policy.ratificationSummary?.latestReviewCount ?? 1,
+        canAdopt: true,
+      },
+      updatedAt: now,
+    };
+  }
+  if (action === 'review') {
+    return {
+      ...policy,
+      lifecycleState: decision === 'request_changes' ? 'draft' : 'under_review',
+      reviewRecords: [
+        ...(policy.reviewRecords ?? []),
+        {
+          id: `demo-policy-review-${now}`,
+          reviewer: 'demo-reviewer',
+          decision: decision ?? 'abstain',
+          createdAt: now,
+        },
+      ],
+      ratificationSummary:
+        decision === 'approve'
+          ? {
+              requiredApprovals:
+                policy.ratificationSettings?.requiredApprovals ?? 1,
+              approvals: 1,
+              requestsForChanges: 0,
+              abstentions: 0,
+              latestReviewCount: 1,
+              canAdopt: true,
+            }
+          : {
+              requiredApprovals:
+                policy.ratificationSettings?.requiredApprovals ?? 1,
+              approvals: 0,
+              requestsForChanges: 1,
+              abstentions: 0,
+              latestReviewCount: 1,
+              canAdopt: false,
+              adoptionBlockedReason:
+                'At least one reviewer requested changes on this version.',
+            },
+      updatedAt: now,
+    };
+  }
+  return {
+    ...policy,
+    lifecycleState: 'proposed',
+    proposedBy: 'demo-lead-mod',
+    proposedAt: now,
+    proposalNote: 'Draft proposed for team review.',
+    ratificationSummary: {
+      requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+      approvals: 0,
+      requestsForChanges: 0,
+      abstentions: 0,
+      latestReviewCount: 0,
+      canAdopt: false,
+      adoptionBlockedReason: `Requires ${policy.ratificationSettings?.requiredApprovals ?? 1} approval vote(s) before adoption.`,
+    },
+    updatedAt: now,
+  };
 }
 
 async function previewApplyPolicy(formData: FormData) {
@@ -3086,23 +6960,28 @@ async function confirmApplyPolicy(formData: FormData) {
         body: JSON.stringify(payload),
       }
     );
+    const preview = applyState.preview ?? createClientDemoApplyPreview(payload);
     applyState = {
       ...applyState,
       confirming: false,
       preview: {
+        ...preview,
         recommendation: result.recommendation,
       },
       result,
-      message: 'Policy action recorded in log-only mode.',
+      message: 'Policy action recorded with receipt.',
     };
     await loadGovernance();
+    await loadReceipts();
   } catch (error) {
     if (canUseClientDemoFallback()) {
       const result = createClientDemoApplyResult(payload);
+      const preview = createClientDemoApplyPreview(payload);
       applyState = {
         ...applyState,
         confirming: false,
         preview: {
+          ...preview,
           recommendation: result.recommendation,
         },
         result,
@@ -3116,6 +6995,10 @@ async function confirmApplyPolicy(formData: FormData) {
         overrides: createClientDemoOverrides(result.overrideEvent),
         versionsByPolicy: createClientDemoVersions(),
       };
+      receiptLedgerState = {
+        loading: false,
+        receipts: [result.receipt, ...receiptLedgerState.receipts],
+      };
       render();
       return;
     }
@@ -3127,6 +7010,28 @@ async function confirmApplyPolicy(formData: FormData) {
     };
     render();
   }
+}
+
+function applyTriageItem(item: ModqueueTriageItem) {
+  applyState = {
+    ...applyState,
+    error: undefined,
+    message: `Loaded ${item.targetThingId} from the operational queue.`,
+    form: {
+      ...applyState.form,
+      ruleKey: item.policyHint.ruleKey ?? applyState.form.ruleKey,
+      targetThingId: item.targetThingId,
+      targetAuthor: item.authorName ?? '',
+      targetTitle: item.title ?? '',
+      targetBody: item.bodyExcerpt ?? '',
+      targetPermalink: item.permalink ?? '',
+      subreddit: item.subreddit,
+      selectedAction: applyState.form.selectedAction,
+    },
+  };
+  activePage = 'act';
+  window.location.hash = item.applyPolicyHash;
+  render();
 }
 
 async function generateDigest() {
@@ -3198,10 +7103,18 @@ async function copyDigestMarkdown() {
     return;
   }
   try {
-    await navigator.clipboard.writeText(markdown);
-    digestState = { ...digestState, message: 'Digest copied to clipboard.' };
-  } catch {
-    digestState = { ...digestState, message: 'Digest is ready in the textarea.' };
+    await writeClipboardText(markdown, 'Digest Markdown');
+    digestState = {
+      ...digestState,
+      message: 'Digest copied to clipboard.',
+      error: undefined,
+    };
+  } catch (error) {
+    digestState = {
+      ...digestState,
+      message: undefined,
+      error: formatClipboardError(error, 'Digest Markdown'),
+    };
   }
   render();
 }
@@ -3213,8 +7126,13 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     ruleKey: string;
     targetThingId: string;
     targetAuthor: string;
+    targetTitle?: string;
+    targetBody?: string;
+    targetPermalink?: string;
     selectedAction: EnforcementAction;
-    source: 'simulator';
+    modNoteMode: NativeModNoteMode;
+    source: ApplyPolicySource;
+    confirmed?: boolean;
     overrideReason?: OverrideReason;
     overrideNote?: string;
   } = {
@@ -3224,16 +7142,35 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,
-    source: 'simulator',
+    modNoteMode: parseNativeModNoteMode(
+      String(formData.get('modNoteMode') ?? 'log_only')
+    ),
+    source: getApplyPolicySource(String(formData.get('targetThingId') ?? '')),
   };
+  const targetTitle = String(formData.get('targetTitle') ?? '').trim();
+  const targetBody = String(formData.get('targetBody') ?? '').trim();
+  const targetPermalink = String(formData.get('targetPermalink') ?? '').trim();
+  const formSubreddit = String(formData.get('subreddit') ?? '').trim();
+  if (targetTitle) {
+    payload.targetTitle = targetTitle;
+  }
+  if (targetBody) {
+    payload.targetBody = targetBody;
+  }
+  if (targetPermalink) {
+    payload.targetPermalink = targetPermalink;
+  }
   const selectedPolicy = policyState.policies.find(
     (policy) => policy.ruleKey === ruleKey
   );
   if (selectedPolicy !== undefined) {
     payload.subreddit = selectedPolicy.subreddit;
+  } else if (formSubreddit) {
+    payload.subreddit = formSubreddit;
   }
 
   if (includeOverride) {
+    payload.confirmed = true;
     const overrideReason = String(formData.get('overrideReason') ?? '');
     const overrideNote = String(formData.get('overrideNote') ?? '').trim();
     if (overrideReason) {
@@ -3247,6 +7184,22 @@ function applyFormDataToPayload(formData: FormData, includeOverride: boolean) {
   return payload;
 }
 
+function getApplyPolicySource(targetThingId: string): ApplyPolicySource {
+  if (!targetThingId || targetThingId === 't3_demo_policy_target') {
+    return 'simulator';
+  }
+  if (targetThingId.startsWith('t1_') || targetThingId.startsWith('t3_')) {
+    return 'live';
+  }
+  return 'simulator';
+}
+
+function parseNativeModNoteMode(value: string): NativeModNoteMode {
+  return NATIVE_MOD_NOTE_MODE_VALUES.includes(value as NativeModNoteMode)
+    ? (value as NativeModNoteMode)
+    : 'log_only';
+}
+
 function applyFormDataToState(formData: FormData): ApplyFormState {
   const overrideReason = String(formData.get('overrideReason') ?? '');
 
@@ -3254,24 +7207,61 @@ function applyFormDataToState(formData: FormData): ApplyFormState {
     ruleKey: String(formData.get('ruleKey') ?? ''),
     targetThingId: String(formData.get('targetThingId') ?? ''),
     targetAuthor: String(formData.get('targetAuthor') ?? ''),
+    targetTitle: String(formData.get('targetTitle') ?? ''),
+    targetBody: String(formData.get('targetBody') ?? ''),
+    targetPermalink: String(formData.get('targetPermalink') ?? ''),
+    subreddit: String(formData.get('subreddit') ?? ''),
     selectedAction: String(
       formData.get('selectedAction') ?? 'manual_review'
     ) as EnforcementAction,
+    modNoteMode: parseNativeModNoteMode(
+      String(formData.get('modNoteMode') ?? 'log_only')
+    ),
     overrideReason: overrideReason ? (overrideReason as OverrideReason) : '',
     overrideNote: String(formData.get('overrideNote') ?? ''),
   };
 }
 
 function formDataToPolicy(formData: FormData) {
-  const steps = policyState.form.steps.map((step, index) => ({
-    offenseCount: step.offenseCount,
-    windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
-    recommendedAction: String(
-      formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
-    ) as EnforcementAction,
-    requireOverrideReasonForDeviation:
-      formData.get(`requireOverride-${index}`) === 'on',
-  }));
+  const steps = policyState.form.steps.map((step, index) => {
+    const responseTemplates = Object.fromEntries(
+      RESPONSE_TEMPLATE_KIND_VALUES.map((kind) => {
+        const body = String(formData.get(`template-${kind}-${index}`) ?? '').trim();
+        return [
+          kind,
+          body
+            ? {
+                kind,
+                body,
+                deliveryMode: 'log_only' as const,
+                enabled: true,
+              }
+            : undefined,
+        ];
+      }).filter(([, template]) => template !== undefined)
+    ) as PolicyStep['responseTemplates'];
+    const nextStep: PolicyStep = {
+      offenseCount: step.offenseCount,
+      windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
+      recommendedAction: String(
+        formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
+      ) as EnforcementAction,
+      requireOverrideReasonForDeviation:
+        formData.get(`requireOverride-${index}`) === 'on',
+    };
+    if (responseTemplates !== undefined && Object.keys(responseTemplates).length > 0) {
+      nextStep.responseTemplates = responseTemplates;
+    }
+    const removalTemplate = responseTemplates?.removal_explanation?.body;
+    if (removalTemplate !== undefined) {
+      nextStep.removalMessageTemplate = removalTemplate;
+    }
+    const noteTemplate = responseTemplates?.mod_note_summary?.body;
+    if (noteTemplate !== undefined) {
+      nextStep.noteTemplate = noteTemplate;
+    }
+    return nextStep;
+  });
 
   const policy = {
     ruleKey: String(formData.get('ruleKey') ?? '').trim(),
@@ -3280,7 +7270,15 @@ function formDataToPolicy(formData: FormData) {
       formData.get('defaultMessageMode') ?? 'log_only'
     ) as MessageDeliveryMode,
     steps,
-    active: true,
+    active: false,
+    ratificationSettings: {
+      requiredApprovals: Math.max(
+        1,
+        Number(formData.get('requiredApprovals') ?? 1)
+      ),
+      allowSingleModAdoption:
+        formData.get('allowSingleModAdoption') === 'on',
+    },
   };
   const subreddit = getWorkspaceSubreddit();
   if (subreddit) {
@@ -3297,6 +7295,9 @@ function policyToForm(policy: RulePolicy): PolicyFormState {
     ruleKey: policy.ruleKey,
     ruleName: policy.ruleName,
     defaultMessageMode: policy.defaultMessageMode,
+    requiredApprovals: policy.ratificationSettings?.requiredApprovals ?? 1,
+    allowSingleModAdoption:
+      policy.ratificationSettings?.allowSingleModAdoption ?? true,
     steps: policy.steps.map((step) => ({ ...step })),
   };
 }
@@ -3309,6 +7310,54 @@ function upsertPolicy(policies: RulePolicy[], policy: RulePolicy) {
   );
   return [...others, policy].sort((left, right) =>
     left.ruleName.localeCompare(right.ruleName)
+  );
+}
+
+function getPolicyLifecycle(policy: RulePolicy) {
+  return policy.lifecycleState ?? (policy.active ? 'adopted' : 'draft');
+}
+
+function getPolicyRatificationSummary(policy: RulePolicy) {
+  const reviewsByReviewer = new Map(
+    (policy.reviewRecords ?? []).map((record) => [
+      record.reviewer.toLowerCase(),
+      record,
+    ])
+  );
+  const latestReviews = [...reviewsByReviewer.values()];
+  const requiredApprovals =
+    policy.ratificationSummary?.requiredApprovals ??
+    policy.ratificationSettings?.requiredApprovals ??
+    1;
+  const approvals =
+    policy.ratificationSummary?.approvals ??
+    latestReviews.filter((record) => record.decision === 'approve').length;
+  const requestsForChanges =
+    policy.ratificationSummary?.requestsForChanges ??
+    latestReviews.filter((record) => record.decision === 'request_changes')
+      .length;
+  const canAdopt =
+    policy.ratificationSummary?.canAdopt ??
+    (requestsForChanges === 0 && approvals >= requiredApprovals);
+
+  return {
+    requiredApprovals,
+    approvals,
+    requestsForChanges,
+    canAdopt,
+    adoptionBlockedReason:
+      policy.ratificationSummary?.adoptionBlockedReason ??
+      (canAdopt
+        ? undefined
+        : `Requires ${requiredApprovals} approval vote(s) before adoption.`),
+  };
+}
+
+function isPolicyAvailableForApply(policy: RulePolicy) {
+  return (
+    policy.active &&
+    policy.activeVersionId !== undefined &&
+    policy.archived !== true
   );
 }
 
@@ -3379,6 +7428,29 @@ function formatAction(action: string) {
   return escapeHtml(action.replaceAll('_', ' '));
 }
 
+function formatTemplateKind(kind: ResponseTemplateKind) {
+  return kind
+    .split('_')
+    .map((part) => capitalize(part))
+    .join(' ');
+}
+
+function getTemplatePlaceholder(kind: ResponseTemplateKind) {
+  if (kind === 'warning') {
+    return 'Hi {{target_author}}, please review {{rule_name}} before posting again.';
+  }
+  if (kind === 'removal_explanation') {
+    return 'Removed under {{rule_name}}. Add context before reposting.';
+  }
+  if (kind === 'mod_note_summary') {
+    return '{{rule_name}} offense {{offense_count}}. Recommended: {{recommended_action}}.';
+  }
+  if (kind === 'modmail_draft') {
+    return '{{target_author}} reached offense {{offense_count}} for {{rule_name}}.';
+  }
+  return 'Private note for {{target_author}} about {{rule_name}}.';
+}
+
 function formatHealthStatus(status: PolicyHealthStatus) {
   return status.replaceAll('_', ' ');
 }
@@ -3432,19 +7504,21 @@ function escapeAttribute(value: string) {
 }
 
 function normalizeClientError(error: unknown, fallback: string) {
-  const message = error instanceof Error ? error.message : '';
-  if (
-    message.includes('Unexpected token') ||
-    message.includes('<!DOCTYPE') ||
-    message.includes('returned 404')
-  ) {
-    return `${fallback} Run the app through Devvit playtest for live API data.`;
-  }
-  return message || fallback;
+  return formatClientNotice(classifyClientError(error, fallback));
 }
 
 window.addEventListener('hashchange', () => {
   activePage = getPageFromHash();
+  const targetParams = getApplyTargetParamsFromHash();
+  if (targetParams.targetThingId !== undefined) {
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        ...targetParams,
+      },
+    };
+  }
   if (window.location.hash.length > 1) {
     dashboardOpen = true;
   }
@@ -3452,10 +7526,20 @@ window.addEventListener('hashchange', () => {
 });
 
 render();
+void loadLaunchContext();
 void loadHealth();
+void loadRuntimeCapabilities();
 void loadPolicies();
 void loadGovernance();
+void loadModqueueTriage();
+void loadReceipts();
 void loadDigestHistory();
+void loadAiAdvisoryCapabilities();
+void loadTeamDeliveryCapabilities();
+void loadEvidenceBoards();
+void loadIncidentMode();
+void loadPortableConfigTemplates();
+void loadPrivacyRetentionSettings();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

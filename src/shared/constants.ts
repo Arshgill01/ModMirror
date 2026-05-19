@@ -1,10 +1,17 @@
 import type {
   ActionSource,
+  AiAdvisoryEvidenceSource,
+  AiAdvisoryKind,
+  ActionReceiptSource,
+  ApplyPolicySource,
   AppealPosture,
   CasePacketActionFamily,
   CasePacketConsistencyStatus,
+  CasePacketType,
   CasePacketOffenseBucket,
   Confidence,
+  ContentSnapshotFetchStatus,
+  ContentSnapshotSource,
   DigestDeliveryMode,
   DigestDeliveryState,
   DigestOverallStatus,
@@ -12,10 +19,30 @@ import type {
   DigestScheduleCadence,
   DigestSource,
   EnforcementAction,
+  EvidenceBoardEvidenceSource,
+  EvidenceBoardStatus,
+  IncidentModeReason,
+  IncidentModeStatus,
   MessageDeliveryMode,
+  MirrorScanDepth,
+  ModqueueContentType,
+  ModqueueTriageCapabilityState,
+  ModqueueTriagePolicyMatchStatus,
+  ModqueueTriageRiskState,
+  NativeModNoteMode,
+  ModerationExecutionCapabilityState,
+  ModerationExecutionMode,
+  ModerationExecutionStatus,
   OverrideReason,
   OverrideReviewStatus,
   PolicyHealthStatus,
+  PortableConfigSchemaVersion,
+  PortableConfigSource,
+  PrivacyRetentionCategory,
+  ResponseTemplateKind,
+  RedditModerationOperation,
+  TeamDeliveryChannel,
+  TeamDeliverySubjectType,
 } from './schema';
 
 export const APP_NAME = 'ModMirror';
@@ -46,6 +73,20 @@ export const MESSAGE_DELIVERY_MODE_VALUES = [
   'modmail',
   'log_only',
 ] as const satisfies readonly MessageDeliveryMode[];
+
+export const RESPONSE_TEMPLATE_KIND_VALUES = [
+  'warning',
+  'removal_explanation',
+  'mod_note_summary',
+  'modmail_draft',
+  'private_message',
+] as const satisfies readonly ResponseTemplateKind[];
+
+export const NATIVE_MOD_NOTE_MODE_VALUES = [
+  'none',
+  'log_only',
+  'native',
+] as const satisfies readonly NativeModNoteMode[];
 
 export const OVERRIDE_REASON_VALUES = [
   'severe_context',
@@ -82,6 +123,12 @@ export const CASE_PACKET_CONSISTENCY_STATUS_VALUES = [
   'insufficient_data',
 ] as const satisfies readonly CasePacketConsistencyStatus[];
 
+export const CASE_PACKET_TYPE_VALUES = [
+  'appeal_context',
+  'internal_review',
+  'policy_dispute',
+] as const satisfies readonly CasePacketType[];
+
 export const CASE_PACKET_ACTION_FAMILY_VALUES = [
   'approve',
   'remove',
@@ -101,6 +148,58 @@ export const CASE_PACKET_OFFENSE_BUCKET_VALUES = [
   'unknown',
 ] as const satisfies readonly CasePacketOffenseBucket[];
 
+export const EVIDENCE_BOARD_STATUS_VALUES = [
+  'open',
+  'needs_policy_change',
+  'accepted_exception',
+  'resolved',
+  'archived',
+] as const satisfies readonly EvidenceBoardStatus[];
+
+export const EVIDENCE_BOARD_EVIDENCE_SOURCE_VALUES = [
+  'receipt',
+  'content_snapshot',
+  'override',
+  'comparable_case',
+  'case_packet',
+  'policy_change',
+  'manual_note',
+] as const satisfies readonly EvidenceBoardEvidenceSource[];
+
+export const INCIDENT_MODE_REASON_VALUES = [
+  'raid',
+  'spam_flood',
+  'brigading',
+  'crisis',
+  'other',
+] as const satisfies readonly IncidentModeReason[];
+
+export const INCIDENT_MODE_STATUS_VALUES = [
+  'active',
+  'ended',
+  'expired',
+] as const satisfies readonly IncidentModeStatus[];
+
+export const PORTABLE_CONFIG_SCHEMA_VERSION_VALUES = [
+  'modmirror.config.v1',
+  'modmirror.config.v0',
+] as const satisfies readonly PortableConfigSchemaVersion[];
+
+export const PORTABLE_CONFIG_SOURCE_VALUES = [
+  'live_config',
+  'starter_template',
+  'demo_test_config',
+] as const satisfies readonly PortableConfigSource[];
+
+export const PRIVACY_RETENTION_CATEGORY_VALUES = [
+  'scan_history',
+  'action_receipts',
+  'evidence_boards',
+  'team_delivery_receipts',
+  'case_packets',
+  'ai_advisory_logs',
+] as const satisfies readonly PrivacyRetentionCategory[];
+
 export const APPEAL_POSTURE_VALUES = [
   'policy_consistent',
   'justified_override',
@@ -115,6 +214,68 @@ export const ACTION_SOURCE_VALUES = [
   'demo',
   'modmirror',
 ] as const satisfies readonly ActionSource[];
+
+export const APPLY_POLICY_SOURCE_VALUES = [
+  'live',
+  'demo',
+  'simulator',
+] as const satisfies readonly ApplyPolicySource[];
+
+export const ACTION_RECEIPT_SOURCE_VALUES = [
+  'menu',
+  'dashboard',
+  'demo',
+  'simulator',
+] as const satisfies readonly ActionReceiptSource[];
+
+export const CONTENT_SNAPSHOT_FETCH_STATUS_VALUES = [
+  'captured',
+  'degraded',
+  'not_provided',
+] as const satisfies readonly ContentSnapshotFetchStatus[];
+
+export const CONTENT_SNAPSHOT_SOURCE_VALUES = [
+  'menu',
+  'dashboard',
+  'api',
+  'provided',
+  'receipt',
+  'demo',
+] as const satisfies readonly ContentSnapshotSource[];
+
+export const MIRROR_SCAN_DEPTH_VALUES = [
+  'quick',
+  'standard',
+  'deep',
+] as const satisfies readonly MirrorScanDepth[];
+
+export const MODERATION_EXECUTION_MODE_VALUES = [
+  'live',
+  'log_only',
+  'dry_run',
+  'unverified_disabled',
+] as const satisfies readonly ModerationExecutionMode[];
+
+export const MODERATION_EXECUTION_STATUS_VALUES = [
+  'success',
+  'failure',
+  'skipped',
+] as const satisfies readonly ModerationExecutionStatus[];
+
+export const REDDIT_MODERATION_OPERATION_VALUES = [
+  'remove',
+  'approve',
+  'ignore_reports',
+  'none',
+] as const satisfies readonly RedditModerationOperation[];
+
+export const MODERATION_EXECUTION_CAPABILITY_STATE_VALUES = [
+  'enabled',
+  'disabled',
+  'unverified_disabled',
+  'receipt_required',
+  'not_applicable',
+] as const satisfies readonly ModerationExecutionCapabilityState[];
 
 export const DIGEST_SOURCE_VALUES = [
   'manual',
@@ -154,9 +315,86 @@ export const DIGEST_SCHEDULE_CADENCE_VALUES = [
   'weekly',
 ] as const satisfies readonly DigestScheduleCadence[];
 
+export const AI_ADVISORY_KIND_VALUES = [
+  'drift_explanation',
+  'policy_draft_suggestion',
+  'case_packet_summary',
+  'digest_summary',
+] as const satisfies readonly AiAdvisoryKind[];
+
+export const AI_ADVISORY_EVIDENCE_SOURCE_VALUES = [
+  'scan',
+  'receipt',
+  'case_packet',
+  'digest',
+  'policy',
+  'analytics',
+  'override',
+  'action',
+] as const satisfies readonly AiAdvisoryEvidenceSource[];
+
+export const TEAM_DELIVERY_CHANNEL_VALUES = [
+  'manual_markdown',
+  'mod_discussion',
+  'scheduler',
+] as const satisfies readonly TeamDeliveryChannel[];
+
+export const TEAM_DELIVERY_SUBJECT_TYPE_VALUES = [
+  'digest',
+  'policy_proposal',
+  'case_packet',
+] as const satisfies readonly TeamDeliverySubjectType[];
+
+export const MODQUEUE_CONTENT_TYPE_VALUES = [
+  'all',
+  'post',
+  'comment',
+] as const satisfies readonly ModqueueContentType[];
+
+export const MODQUEUE_TRIAGE_CAPABILITY_STATE_VALUES = [
+  'type_only',
+  'runtime_verified',
+  'failed_runtime',
+  'unsupported',
+  'disabled',
+] as const satisfies readonly ModqueueTriageCapabilityState[];
+
+export const MODQUEUE_TRIAGE_RISK_STATE_VALUES = [
+  'needs_review',
+  'reported',
+  'high_report_volume',
+  'already_actioned',
+] as const satisfies readonly ModqueueTriageRiskState[];
+
+export const MODQUEUE_TRIAGE_POLICY_MATCH_STATUS_VALUES = [
+  'matched',
+  'possible_match',
+  'no_policy',
+  'unmatched',
+] as const satisfies readonly ModqueueTriagePolicyMatchStatus[];
+
 export const DEFAULT_POLICY_WINDOW_DAYS = 30;
+export const DEFAULT_POLICY_REQUIRED_APPROVALS = 1;
 export const DEFAULT_DIGEST_PERIOD_DAYS = 7;
 export const DIGEST_HISTORY_LIMIT = 10;
+export const SCAN_HISTORY_LIMIT = 10;
+export const MIRROR_SCAN_DEPTH_CONFIG = {
+  quick: {
+    requestedLimit: 25,
+    pageSize: 25,
+  },
+  standard: {
+    requestedLimit: 60,
+    pageSize: 60,
+  },
+  deep: {
+    requestedLimit: 250,
+    pageSize: 100,
+  },
+} as const satisfies Record<
+  MirrorScanDepth,
+  { requestedLimit: number; pageSize: number }
+>;
 export const MINIMUM_ACTIONS_FOR_DRIFT_DISPLAY = 8;
 export const MINIMUM_RULE_ACTIONS_FOR_DRIFT_DISPLAY = 3;
 export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
@@ -164,17 +402,43 @@ export const DEMO_SUBREDDIT_NAME = 'ExampleLearning';
 export const API_ROUTES = {
   health: '/api/health',
   scan: '/api/scan',
+  scans: '/api/scans',
+  consistencyAnalytics: '/api/analytics/consistency',
+  communityHealth: '/api/community-health',
+  modqueueTriage: '/api/modqueue/triage',
+  attributionCorrections: '/api/attribution/corrections',
   policies: '/api/policies',
   policyFromDrift: '/api/policies/from-drift',
+  policyReplay: '/api/policies/:id/replay',
+  policyImpact: '/api/policies/:id/impact',
   actions: '/api/actions',
+  receipts: '/api/receipts',
   overrides: '/api/overrides',
   overrideSummary: '/api/overrides/summary',
   policyHealth: '/api/policy-health',
   casePacket: '/api/case-packet',
+  evidenceBoards: '/api/evidence-boards',
+  incidents: '/api/incidents',
+  incidentStart: '/api/incidents/start',
+  configExport: '/api/config/export',
+  configImport: '/api/config/import',
+  configTemplates: '/api/config/templates',
+  privacyRetention: '/api/privacy/retention',
+  privacyExport: '/api/privacy/export',
+  privacyDelete: '/api/privacy/delete',
   digestGenerate: '/api/digest/generate',
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',
   digestSettings: '/api/digest/settings',
+  aiAdvisoryCapabilities: '/api/ai/capabilities',
+  aiAdvisoryGenerate: '/api/ai/advisory',
+  teamDeliveryCapabilities: '/api/delivery/capabilities',
+  teamDeliveryPreview: '/api/delivery/preview',
+  teamDeliveryConfirm: '/api/delivery/confirm',
+  launchContext: '/api/launch-context',
+  runtimeVerification: '/api/runtime-verification',
+  runtimeCapabilities: '/api/runtime-capabilities',
+  runtimeCapabilityEvents: '/api/runtime-capabilities/events',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',
@@ -182,10 +446,9 @@ export const API_ROUTES = {
 } as const;
 
 export const INTERNAL_ROUTES = {
-  menuSmokeComment: '/internal/menu/smoke-comment',
-  menuSmokePost: '/internal/menu/smoke-post',
-  formSmokeTargetSubmit: '/internal/form/smoke-target-submit',
-  formSmokeChainedSubmit: '/internal/form/smoke-chained-submit',
+  menuApplyPolicyComment: '/internal/menu/apply-policy-comment',
+  menuApplyPolicyPost: '/internal/menu/apply-policy-post',
+  formApplyPolicyTargetSubmit: '/internal/form/apply-policy-target-submit',
   triggerOnAppInstall: '/internal/triggers/on-app-install',
 } as const;
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   ActionEvent,
+  ActionReceipt,
   OverrideEvent,
   PolicySnapshot,
   RulePolicy,
@@ -90,6 +91,69 @@ const currentPolicy: RulePolicy = {
   active: true,
 };
 
+const receipt: ActionReceipt = {
+  id: 'receipt-current',
+  actionEventId: action.id,
+  subreddit: action.subreddit,
+  targetThingId: 't3_current',
+  targetType: 'post',
+  targetSnapshot: {
+    targetThingId: action.targetThingId ?? 't3_current',
+    targetType: 'post',
+    authorName: 'learner_1',
+    title: 'Low-effort question',
+    source: 'provided',
+    warnings: [],
+  },
+  contentSnapshot: {
+    schemaVersion: 1,
+    targetThingId: action.targetThingId ?? 't3_current',
+    targetType: 'post',
+    subreddit: 'ExampleLearning',
+    authorName: 'learner_1',
+    titleExcerpt: 'Low-effort question',
+    bodyExcerpt: 'How do I learn everything fast?',
+    fetchedAt: '2026-05-16T12:00:00.000Z',
+    fetchStatus: 'captured',
+    source: 'receipt',
+    warnings: [],
+    privacy: {
+      retentionCategory: 'moderation_evidence',
+      authorStored: true,
+      titleExcerptStored: true,
+      bodyExcerptStored: true,
+      permalinkStored: false,
+      redactionNotes: ['Test snapshot stores excerpts only.'],
+    },
+  },
+  modUsername: 'mod_a',
+  source: 'dashboard',
+  policySnapshot,
+  recommendation: {
+    ruleKey: action.ruleKey,
+    ruleName: policySnapshot.ruleName,
+    policyId: policySnapshot.policyId,
+    offenseCount: 1,
+    recommendedAction: action.recommendedAction,
+    messageDeliveryMode: action.deliveryMode,
+    requiresOverrideReason: true,
+    selectedAction: action.selectedAction,
+    deviatesFromPolicy: true,
+    fallbackReason: 'policy_found',
+    message: 'Team policy recommends warn.',
+  },
+  selectedAction: action.selectedAction,
+  deviatesFromPolicy: true,
+  overrideEventId: override.id,
+  overrideReason: override.overrideReason,
+  executionMode: 'log_only',
+  executionAttempted: false,
+  executionResult: 'skipped',
+  redditOperation: 'none',
+  capabilityState: 'not_applicable',
+  createdAt: action.createdAt,
+};
+
 describe('case packet engine', () => {
   it('maps consistency status by policy recommendation severity', () => {
     expect(getConsistencyStatus({ ...action, selectedAction: 'warn' })).toBe(
@@ -170,6 +234,46 @@ describe('case packet engine', () => {
     expect(packet.userHistory).toHaveLength(1);
     expect(packet.comparableCases).toHaveLength(1);
     expect(packet.markdown).toContain('## Suggested Appeal Posture');
+  });
+
+  it('prefers receipt evidence when a receipt is available', () => {
+    const packet = buildCasePacket({
+      request: {
+        subject: { type: 'action', actionId: action.id },
+        packetType: 'internal_review',
+      },
+      subreddit: 'ExampleLearning',
+      generatedBy: 'mod_a',
+      action,
+      receipt,
+      dataSet: {
+        actions: [action],
+        receipts: [receipt],
+        overrides: [override],
+        currentPolicy,
+        demoMode: false,
+      },
+    });
+
+    expect(packet.packetType).toBe('internal_review');
+    expect(packet.action?.receiptId).toBe(receipt.id);
+    expect(packet.action?.contentSnapshot?.fetchStatus).toBe('captured');
+    expect(packet.action?.evidenceSource).toBe('verified_receipt');
+    expect(packet.action?.execution?.executionResult).toBe('skipped');
+    expect(packet.evidence).toContainEqual(
+      expect.objectContaining({
+        label: 'Action receipt',
+        source: 'verified_receipt',
+      })
+    );
+    expect(packet.evidence).toContainEqual(
+      expect.objectContaining({
+        label: 'Content snapshot',
+        source: 'verified_receipt',
+      })
+    );
+    expect(packet.markdown).toContain('Content snapshot: captured');
+    expect(packet.markdown).toContain('Receipt ID: receipt-current');
   });
 
   it('flags policy changed since action when active version differs', () => {

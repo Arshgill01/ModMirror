@@ -18,18 +18,18 @@
   "menu": {
     "items": [
       {
-        "label": "ModMirror smoke test",
-        "description": "Open a minimal Wave 0 research form for this comment.",
+        "label": "Apply ModMirror Policy",
+        "description": "Open ModMirror policy guidance for this comment.",
         "location": "comment",
         "forUserType": "moderator",
-        "endpoint": "/internal/menu/smoke-comment"
+        "endpoint": "/internal/menu/apply-policy-comment"
       },
       {
-        "label": "ModMirror smoke test",
-        "description": "Open a minimal Wave 0 research form for this post.",
+        "label": "Apply ModMirror Policy",
+        "description": "Open ModMirror policy guidance for this post.",
         "location": "post",
         "forUserType": "moderator",
-        "endpoint": "/internal/menu/smoke-post"
+        "endpoint": "/internal/menu/apply-policy-post"
       },
       {
         "label": "Open ModMirror dashboard",
@@ -41,8 +41,7 @@
     ]
   },
   "forms": {
-    "smokeTarget": "/internal/form/smoke-target-submit",
-    "smokeChained": "/internal/form/smoke-chained-submit",
+    "applyPolicyTarget": "/internal/form/apply-policy-target-submit",
     "dashboardLaunch": "/internal/form/dashboard-launch-submit"
   },
   "triggers": {

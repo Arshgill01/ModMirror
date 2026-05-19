@@ -2,16 +2,19 @@ import { randomUUID } from 'node:crypto';
 import { DEMO_SUBREDDIT_NAME } from '../../shared/constants';
 import type {
   ActionEvent,
+  ActionReceipt,
   AppealPosture,
   CasePacket,
   CasePacketAction,
   CasePacketConsistencyStatus,
+  CasePacketEvidenceItem,
   CasePacketOverrideContext,
   CasePacketPolicyContext,
   CasePacketUserHistoryItem,
   EnforcementAction,
   GenerateCasePacketRequest,
   GenerateCasePacketResponse,
+  ModerationExecutionResult,
   OverrideEvent,
   PolicySnapshot,
   RulePolicy,
@@ -19,6 +22,7 @@ import type {
 import { listRecentActionEvents, listRecentAuditEvents } from './audit';
 import { findComparableCases } from './comparableCases';
 import { getPolicyByRule } from './policies';
+import { listActionReceipts } from './receipts';
 
 const DEFAULT_CASE_PACKET_WINDOW_DAYS = 30;
 const DEFAULT_CASE_PACKET_MAX_CASES = 5;
@@ -32,6 +36,7 @@ type GenerateCasePacketOptions = {
 
 type CasePacketDataSet = {
   actions: ActionEvent[];
+  receipts?: ActionReceipt[];
   overrides: OverrideEvent[];
   currentPolicy: RulePolicy | undefined;
   demoMode: boolean;
@@ -45,7 +50,11 @@ export async function generateCasePacket(
     request.subject.type === 'demo'
       ? getDemoCasePacketData()
       : await loadStoredCasePacketData(options.subreddit);
-  const currentAction = resolveSubjectAction(request, dataSet.actions);
+  const currentReceipt = resolveSubjectReceipt(request, dataSet.receipts ?? []);
+  const currentAction =
+    currentReceipt === undefined
+      ? resolveSubjectAction(request, dataSet.actions)
+      : receiptToActionEvent(currentReceipt);
   if (!dataSet.demoMode && currentAction !== undefined) {
     dataSet.currentPolicy = await getPolicyByRule(
       options.subreddit,
@@ -58,6 +67,7 @@ export async function generateCasePacket(
     subreddit: dataSet.demoMode ? DEMO_SUBREDDIT_NAME : options.subreddit,
     generatedBy: options.generatedBy,
     action: currentAction,
+    receipt: currentReceipt,
     dataSet,
   });
 
@@ -69,6 +79,7 @@ export function buildCasePacket(options: {
   subreddit: string;
   generatedBy: string | undefined;
   action: ActionEvent | undefined;
+  receipt?: ActionReceipt | undefined;
   dataSet: CasePacketDataSet;
 }): CasePacket {
   const generatedAt = new Date().toISOString();
@@ -76,16 +87,25 @@ export function buildCasePacket(options: {
   const override = action
     ? findOverrideForAction(action, options.dataSet.overrides)
     : undefined;
-  const policyContext = buildPolicyContext(action, options.dataSet.currentPolicy);
+  const policyContext = buildPolicyContext(
+    action,
+    options.dataSet.currentPolicy,
+    options.receipt
+  );
   const consistencyStatus = getConsistencyStatus(action);
+  const comparableActions = mergeActionsAndReceiptActions(
+    options.dataSet.actions,
+    options.dataSet.receipts ?? [],
+    action?.id
+  );
   const userHistory = action
-    ? buildUserHistory(action, options.dataSet.actions)
+    ? buildUserHistory(action, comparableActions)
     : [];
   const comparableOptions: Parameters<typeof findComparableCases>[0] | undefined =
     action
       ? {
           currentAction: action,
-          actions: options.dataSet.actions,
+          actions: comparableActions,
         }
       : undefined;
   if (
@@ -101,10 +121,21 @@ export function buildCasePacket(options: {
     comparableOptions.maxCases = options.request.maxComparableCases;
   }
   const comparableCases = comparableOptions
-    ? findComparableCases(comparableOptions)
+    ? findComparableCases(comparableOptions).map((item) =>
+        addComparableEvidence(item, options.dataSet.receipts ?? [])
+      )
     : [];
+  const evidence = buildEvidence({
+    action,
+    receipt: options.receipt,
+    policyContext,
+    override,
+    comparableCasesCount: comparableCases.length,
+    demoMode: options.dataSet.demoMode,
+  });
   const caveats = buildCaveats({
     action,
+    receipt: options.receipt,
     override,
     policyContext,
     userHistory,
@@ -122,11 +153,13 @@ export function buildCasePacket(options: {
     id: `case-packet-${randomUUID()}`,
     generatedAt,
     subreddit: options.subreddit,
+    packetType: options.request.packetType ?? 'appeal_context',
     subject: options.request.subject,
     policyContext,
     consistencyStatus,
     userHistory,
     comparableCases,
+    evidence,
     appealPosture,
     caveats,
   };
@@ -135,7 +168,10 @@ export function buildCasePacket(options: {
     packetBase.generatedBy = options.generatedBy;
   }
   if (action !== undefined) {
-    packetBase.action = toCasePacketAction(action);
+    packetBase.action =
+      options.receipt === undefined
+        ? toCasePacketAction(action)
+        : toCasePacketActionFromReceipt(options.receipt, action);
   }
   const overrideContext = toOverrideContext(override);
   if (overrideContext !== undefined) {
@@ -234,12 +270,16 @@ export function renderCasePacketMarkdown(packet: CasePacket): string {
     action
       ? [
           `- Action ID: ${action.actionId ?? 'Unavailable'}`,
+          `- Receipt ID: ${action.receiptId ?? 'Unavailable'}`,
           `- Created: ${action.createdAt ?? 'Unavailable'}`,
           `- Rule: ${action.ruleName ?? action.ruleKey ?? 'Unavailable'}`,
           `- Recommended action: ${formatValue(action.recommendedAction)}`,
           `- Selected action: ${formatValue(action.selectedAction)}`,
+          `- Execution result: ${formatValue(action.execution?.executionResult)}`,
           `- Target: ${action.targetThingId ?? 'Not captured'}`,
           `- Target author: ${action.targetAuthor ?? 'Not captured'}`,
+          `- Content snapshot: ${formatValue(action.contentSnapshot?.fetchStatus)}`,
+          `- Evidence source: ${formatValue(action.evidenceSource)}`,
         ].join('\n')
       : '- Action data was not found in ModMirror history.',
     '',
@@ -284,6 +324,16 @@ export function renderCasePacketMarkdown(packet: CasePacket): string {
           .join('\n')
       : '- No deterministic comparable cases were found in the configured window.',
     '',
+    '## Evidence Labels',
+    packet.evidence.length > 0
+      ? packet.evidence
+          .map(
+            (item) =>
+              `- ${item.label}: ${formatValue(item.source)} - ${item.detail}`
+          )
+          .join('\n')
+      : '- No structured evidence labels were available.',
+    '',
     '## Suggested Appeal Posture',
     `- ${formatValue(packet.appealPosture)}`,
     '',
@@ -295,11 +345,15 @@ export function renderCasePacketMarkdown(packet: CasePacket): string {
 async function loadStoredCasePacketData(
   subreddit: string
 ): Promise<CasePacketDataSet> {
-  const actions = await listRecentActionEvents(subreddit, 500);
-  const overrides = await listRecentAuditEvents(subreddit, 500);
+  const [actions, overrides, receipts] = await Promise.all([
+    listRecentActionEvents(subreddit, 500),
+    listRecentAuditEvents(subreddit, 500),
+    listActionReceipts(subreddit, 500),
+  ]);
 
   return {
     actions,
+    receipts,
     overrides,
     currentPolicy: undefined,
     demoMode: false,
@@ -311,6 +365,7 @@ function normalizeRequest(
 ): GenerateCasePacketRequest {
   return {
     subject: request.subject,
+    packetType: request.packetType ?? 'appeal_context',
     timeWindowDays:
       request.timeWindowDays === undefined || request.timeWindowDays < 1
         ? DEFAULT_CASE_PACKET_WINDOW_DAYS
@@ -320,6 +375,48 @@ function normalizeRequest(
         ? DEFAULT_CASE_PACKET_MAX_CASES
         : request.maxComparableCases,
   };
+}
+
+function resolveSubjectReceipt(
+  request: GenerateCasePacketRequest,
+  receipts: ActionReceipt[]
+): ActionReceipt | undefined {
+  const id = request.subject.receiptId ?? request.subject.actionId;
+  if (id !== undefined) {
+    return receipts.find(
+      (receipt) => receipt.id === id || receipt.actionEventId === id
+    );
+  }
+  if (request.subject.targetThingId !== undefined) {
+    return receipts.find(
+      (receipt) => receipt.targetThingId === request.subject.targetThingId
+    );
+  }
+  if (request.subject.type === 'user_rule') {
+    return receipts.find((receipt) => {
+      if (
+        request.subject.username !== undefined &&
+        receipt.targetSnapshot.authorName?.toLowerCase() !==
+          request.subject.username.toLowerCase()
+      ) {
+        return false;
+      }
+      if (
+        request.subject.ruleKey !== undefined &&
+        receipt.recommendation.ruleKey !== request.subject.ruleKey
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }
+  if (request.subject.type === 'demo') {
+    return (
+      receipts.find((receipt) => receipt.id === 'demo-receipt-r2-appeal') ??
+      receipts[0]
+    );
+  }
+  return undefined;
 }
 
 function resolveSubjectAction(
@@ -358,13 +455,14 @@ function resolveSubjectAction(
 
 function buildPolicyContext(
   action: ActionEvent | undefined,
-  currentPolicy: RulePolicy | undefined
+  currentPolicy: RulePolicy | undefined,
+  receipt?: ActionReceipt
 ): CasePacketPolicyContext {
   if (!action) {
     return {};
   }
 
-  const snapshot = action.policySnapshot;
+  const snapshot = receipt?.policySnapshot ?? action.policySnapshot;
   const context: CasePacketPolicyContext = {
     ruleKey: action.ruleKey,
     activeAtActionTime: action.policyVersionStatus !== 'missing',
@@ -498,6 +596,8 @@ function toCasePacketAction(action: ActionEvent): CasePacketAction {
     selectedAction: action.selectedAction,
     deliveryMode: action.deliveryMode,
     source: action.source,
+    evidenceSource:
+      action.source === 'demo' ? 'demo_seed' : 'verified_modmirror_action',
   };
   if (action.modUsername !== undefined) {
     packetAction.moderator = action.modUsername;
@@ -512,6 +612,125 @@ function toCasePacketAction(action: ActionEvent): CasePacketAction {
     packetAction.ruleName = action.ruleName;
   }
   return packetAction;
+}
+
+function toCasePacketActionFromReceipt(
+  receipt: ActionReceipt,
+  action: ActionEvent
+): CasePacketAction {
+  const execution: ModerationExecutionResult = {
+    executionMode: receipt.executionMode,
+    executionAttempted: receipt.executionAttempted,
+    executionResult: receipt.executionResult,
+    redditOperation: receipt.redditOperation,
+    selectedAction: receipt.selectedAction,
+    targetType: receipt.targetType,
+    capabilityState: receipt.capabilityState,
+    startedAt: receipt.createdAt,
+    completedAt: receipt.createdAt,
+  };
+  if (receipt.errorCode !== undefined) {
+    execution.errorCode = receipt.errorCode;
+  }
+  if (receipt.errorMessage !== undefined) {
+    execution.errorMessage = receipt.errorMessage;
+  }
+  const packetAction: CasePacketAction = {
+    ...toCasePacketAction(action),
+    receiptId: receipt.id,
+    targetSnapshot: receipt.targetSnapshot,
+    execution,
+    evidenceSource:
+      receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
+  };
+  if (receipt.targetThingId !== undefined) {
+    packetAction.targetThingId = receipt.targetThingId;
+  }
+  if (receipt.targetSnapshot.authorName !== undefined) {
+    packetAction.targetAuthor = receipt.targetSnapshot.authorName;
+  }
+  if (receipt.contentSnapshot !== undefined) {
+    packetAction.contentSnapshot = receipt.contentSnapshot;
+  }
+  return packetAction;
+}
+
+function receiptToActionEvent(receipt: ActionReceipt): ActionEvent {
+  const action: ActionEvent = {
+    id: receipt.actionEventId,
+    subreddit: receipt.subreddit,
+    modUsername: receipt.modUsername,
+    ruleKey: receipt.recommendation.ruleKey,
+    recommendedAction: receipt.recommendation.recommendedAction,
+    selectedAction: receipt.selectedAction,
+    deliveryMode: receipt.recommendation.messageDeliveryMode,
+    source: receipt.source === 'demo' ? 'demo' : 'simulator',
+    createdAt: receipt.createdAt,
+  };
+  if (receipt.targetThingId !== undefined) {
+    action.targetThingId = receipt.targetThingId;
+  }
+  const targetAuthor =
+    receipt.contentSnapshot?.authorName ?? receipt.targetSnapshot.authorName;
+  if (targetAuthor !== undefined) {
+    action.targetAuthor = targetAuthor;
+  }
+  if (receipt.recommendation.ruleName !== undefined) {
+    action.ruleName = receipt.recommendation.ruleName;
+  }
+  if (receipt.policySnapshot?.policyId !== undefined) {
+    action.policyId = receipt.policySnapshot.policyId;
+  } else if (receipt.recommendation.policyId !== undefined) {
+    action.policyId = receipt.recommendation.policyId;
+  }
+  if (receipt.policySnapshot?.policyVersionId !== undefined) {
+    action.policyVersionId = receipt.policySnapshot.policyVersionId;
+  }
+  if (receipt.policySnapshot?.policyVersionNumber !== undefined) {
+    action.policyVersionNumber = receipt.policySnapshot.policyVersionNumber;
+  }
+  if (receipt.policySnapshot?.policyVersionStatus !== undefined) {
+    action.policyVersionStatus = receipt.policySnapshot.policyVersionStatus;
+  }
+  if (receipt.policySnapshot !== undefined) {
+    action.policySnapshot = receipt.policySnapshot;
+  }
+  return action;
+}
+
+function mergeActionsAndReceiptActions(
+  actions: ActionEvent[],
+  receipts: ActionReceipt[],
+  currentActionId: string | undefined
+): ActionEvent[] {
+  const byId = new Map(actions.map((action) => [action.id, action]));
+  for (const receipt of receipts) {
+    if (receipt.actionEventId === currentActionId) {
+      continue;
+    }
+    byId.set(receipt.actionEventId, receiptToActionEvent(receipt));
+  }
+  return [...byId.values()];
+}
+
+function addComparableEvidence(
+  item: ReturnType<typeof findComparableCases>[number],
+  receipts: ActionReceipt[]
+): ReturnType<typeof findComparableCases>[number] {
+  const receipt = receipts.find(
+    (candidate) => candidate.actionEventId === item.actionId
+  );
+  if (receipt === undefined) {
+    return {
+      ...item,
+      evidenceSource: 'inferred_history',
+    };
+  }
+  return {
+    ...item,
+    receiptId: receipt.id,
+    evidenceSource: receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
+  };
 }
 
 function toOverrideContext(
@@ -540,6 +759,7 @@ function toOverrideContext(
 
 function buildCaveats(options: {
   action: ActionEvent | undefined;
+  receipt?: ActionReceipt | undefined;
   override: OverrideEvent | undefined;
   policyContext: CasePacketPolicyContext;
   userHistory: CasePacketUserHistoryItem[];
@@ -556,6 +776,9 @@ function buildCaveats(options: {
   }
   if (!options.action) {
     caveats.push('The requested action was not found in tracked ModMirror history.');
+  }
+  if (options.action && options.receipt === undefined) {
+    caveats.push('This packet falls back to action-event history because no immutable receipt was found.');
   }
   if (!options.policyContext.policyVersionId) {
     caveats.push('No policy version was recorded for this action.');
@@ -574,6 +797,85 @@ function buildCaveats(options: {
   }
 
   return caveats;
+}
+
+function buildEvidence(options: {
+  action: ActionEvent | undefined;
+  receipt?: ActionReceipt | undefined;
+  policyContext: CasePacketPolicyContext;
+  override: OverrideEvent | undefined;
+  comparableCasesCount: number;
+  demoMode: boolean;
+}): CasePacketEvidenceItem[] {
+  const evidence: CasePacketEvidenceItem[] = [];
+  if (options.receipt !== undefined) {
+    evidence.push({
+      label: 'Action receipt',
+      source: options.receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
+      detail: `Receipt ${options.receipt.id} records execution result ${options.receipt.executionResult}.`,
+    });
+    if (options.receipt.contentSnapshot !== undefined) {
+      evidence.push({
+        label: 'Content snapshot',
+        source:
+          options.receipt.source === 'demo' ? 'demo_seed' : 'verified_receipt',
+        detail: `Snapshot captured ${options.receipt.contentSnapshot.targetType} ${options.receipt.contentSnapshot.targetThingId ?? 'target unavailable'} with status ${options.receipt.contentSnapshot.fetchStatus}.`,
+      });
+    }
+  } else if (options.action !== undefined) {
+    evidence.push({
+      label: 'Action event',
+      source:
+        options.action.source === 'demo'
+          ? 'demo_seed'
+          : 'verified_modmirror_action',
+      detail: `Action ${options.action.id} was found in ModMirror action history.`,
+    });
+  } else {
+    evidence.push({
+      label: 'Action evidence',
+      source: 'missing',
+      detail: 'No matching action or receipt was found.',
+    });
+  }
+  evidence.push({
+    label: 'Policy version',
+    source: options.policyContext.policySnapshot
+      ? 'verified_modmirror_action'
+      : 'missing',
+    detail: options.policyContext.policyVersionId
+      ? `Policy version ${options.policyContext.policyVersionNumber ?? 'unknown'} was recorded at action time.`
+      : 'No policy version was recorded at action time.',
+  });
+  evidence.push({
+    label: 'Override context',
+    source:
+      options.override === undefined
+        ? 'missing'
+        : options.demoMode
+          ? 'demo_seed'
+          : 'verified_modmirror_action',
+    detail:
+      options.override === undefined
+        ? 'No matching override record was found.'
+        : `Override ${options.override.id} has review status ${options.override.reviewStatus}.`,
+  });
+  evidence.push({
+    label: 'Comparable cases',
+    source: options.comparableCasesCount > 0 ? 'inferred_history' : 'missing',
+    detail:
+      options.comparableCasesCount > 0
+        ? `${options.comparableCasesCount} deterministic comparable case(s) matched by rule/action family/history.`
+        : 'No comparable cases matched the configured window.',
+  });
+  if (options.demoMode) {
+    evidence.push({
+      label: 'Demo mode',
+      source: 'demo_seed',
+      detail: 'This packet is generated from deterministic demo seed data.',
+    });
+  }
+  return evidence;
 }
 
 function getActionSeverityRank(action: EnforcementAction): number {
@@ -663,9 +965,76 @@ function getDemoCasePacketData(): CasePacketDataSet {
       createdAt: '2026-05-16T12:00:30.000Z',
     },
   ];
+  const receipts: ActionReceipt[] = [
+    {
+      id: 'demo-receipt-r2-appeal',
+      actionEventId: 'demo-case-r2-appeal',
+      subreddit: DEMO_SUBREDDIT_NAME,
+      targetThingId: 't3_demo_case_r2_appeal',
+      targetType: 'post',
+      targetSnapshot: {
+        targetThingId: 't3_demo_case_r2_appeal',
+        targetType: 'post',
+        authorName: 'learner_1',
+        title: 'How do I learn everything fast?',
+        source: 'provided',
+        warnings: [],
+      },
+      contentSnapshot: {
+        schemaVersion: 1,
+        targetThingId: 't3_demo_case_r2_appeal',
+        targetType: 'post',
+        subreddit: DEMO_SUBREDDIT_NAME,
+        authorName: 'learner_1',
+        titleExcerpt: 'How do I learn everything fast?',
+        bodyExcerpt: 'I need the shortcut for the whole subject by tomorrow.',
+        fetchedAt: '2026-05-16T12:00:00.000Z',
+        fetchStatus: 'captured',
+        source: 'demo',
+        warnings: [],
+        privacy: {
+          retentionCategory: 'moderation_evidence',
+          authorStored: true,
+          titleExcerptStored: true,
+          bodyExcerptStored: true,
+          permalinkStored: false,
+          redactionNotes: [
+            'Demo snapshot contains seeded content, not live Reddit content.',
+          ],
+        },
+      },
+      modUsername: 'demo_mod_2',
+      source: 'demo',
+      policySnapshot,
+      recommendation: {
+        ruleKey: policySnapshot.ruleKey,
+        ruleName: policySnapshot.ruleName,
+        policyId: policySnapshot.policyId,
+        offenseCount: 2,
+        recommendedAction: 'remove',
+        messageDeliveryMode: 'log_only',
+        requiresOverrideReason: true,
+        selectedAction: 'temporary_ban_suggested',
+        deviatesFromPolicy: true,
+        fallbackReason: 'policy_found',
+        message: 'Team policy recommends remove.',
+      },
+      selectedAction: 'temporary_ban_suggested',
+      deviatesFromPolicy: true,
+      overrideEventId: 'demo-override-r2-appeal',
+      overrideReason: 'repeat_pattern_not_captured',
+      executionMode: 'log_only',
+      executionAttempted: false,
+      executionResult: 'skipped',
+      redditOperation: 'none',
+      capabilityState: 'not_applicable',
+      createdAt: '2026-05-16T12:00:00.000Z',
+    },
+  ];
 
   return {
     actions,
+    receipts,
     overrides,
     currentPolicy: {
       id: policySnapshot.policyId,

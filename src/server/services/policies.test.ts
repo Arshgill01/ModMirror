@@ -49,33 +49,15 @@ const baseStep: PolicyStep = {
   requireOverrideReasonForDeviation: true,
 };
 
-describe('policy version history', () => {
+describe('policy version lifecycle', () => {
   beforeEach(() => {
     redisState.strings.clear();
     redisState.hashes.clear();
     redisState.sortedSets.clear();
   });
 
-  it('creates an initial immutable version for a new policy', async () => {
-    const { createPolicy, listPolicyVersions } = await import('./policies');
-    const policy = await createPolicy({
-      subreddit: 'ExampleLearning',
-      createdBy: 'leadmod',
-      ruleKey: 'rule-2-low-effort-questions-2',
-      ruleName: 'Rule 2: Low-effort questions',
-      steps: [baseStep],
-    });
-
-    const versions = await listPolicyVersions(policy.subreddit, policy.id);
-
-    expect(policy.activeVersionNumber).toBe(1);
-    expect(policy.activeVersionId).toBe(versions[0]?.id);
-    expect(versions).toHaveLength(1);
-    expect(versions[0]?.steps[0]?.recommendedAction).toBe('warn');
-  });
-
-  it('creates a new version on edit and preserves the old version', async () => {
-    const { createPolicy, listPolicyVersions, updatePolicy } = await import(
+  it('creates an initial draft version for a new policy', async () => {
+    const { createPolicy, getPolicyByRule, listPolicyVersions } = await import(
       './policies'
     );
     const policy = await createPolicy({
@@ -85,6 +67,54 @@ describe('policy version history', () => {
       ruleName: 'Rule 2: Low-effort questions',
       steps: [baseStep],
     });
+
+    const versions = await listPolicyVersions(policy.subreddit, policy.id);
+    const activePolicy = await getPolicyByRule(policy.subreddit, policy.ruleKey);
+
+    expect(policy.lifecycleState).toBe('draft');
+    expect(policy.activeVersionNumber).toBeUndefined();
+    expect(policy.proposedVersionNumber).toBe(1);
+    expect(activePolicy).toBeUndefined();
+    expect(versions).toHaveLength(1);
+    expect(versions[0]?.lifecycleState).toBe('draft');
+    expect(versions[0]?.steps[0]?.recommendedAction).toBe('warn');
+  });
+
+  it('reviews and adopts a policy, then drafts a later revision', async () => {
+    const {
+      addPolicyReview,
+      adoptPolicyVersion,
+      createPolicy,
+      getPolicyByRule,
+      listPolicyVersions,
+      proposePolicyVersion,
+      updatePolicy,
+    } = await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+    });
+
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+    });
+    const reviewed = await addPolicyReview(policy.subreddit, policy.id, {
+      reviewer: 'secondmod',
+      decision: 'approve',
+      note: 'Matches team expectation.',
+    });
+    const adopted = await adoptPolicyVersion(policy.subreddit, policy.id, {
+      adoptedBy: 'leadmod',
+      quickAdoption: false,
+    });
+    const activePolicy = await getPolicyByRule(policy.subreddit, policy.ruleKey);
+
+    expect(reviewed?.lifecycleState).toBe('under_review');
+    expect(adopted?.lifecycleState).toBe('adopted');
+    expect(activePolicy?.activeVersionNumber).toBe(1);
 
     const updated = await updatePolicy(policy.subreddit, policy.id, {
       steps: [
@@ -99,7 +129,9 @@ describe('policy version history', () => {
     });
     const versions = await listPolicyVersions(policy.subreddit, policy.id);
 
-    expect(updated?.activeVersionNumber).toBe(2);
+    expect(updated?.lifecycleState).toBe('draft');
+    expect(updated?.activeVersionNumber).toBe(1);
+    expect(updated?.proposedVersionNumber).toBe(2);
     expect(versions).toHaveLength(2);
     expect(versions[0]?.steps[0]?.recommendedAction).toBe('warn');
     expect(versions[1]?.steps[0]?.recommendedAction).toBe('remove');
@@ -139,6 +171,105 @@ describe('policy version history', () => {
     expect(versions[0]?.changeReason).toBe('legacy_policy_fallback');
   });
 
+  it('rejects invalid lifecycle transitions', async () => {
+    const { addPolicyReview, adoptPolicyVersion, createPolicy } = await import(
+      './policies'
+    );
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+    });
+
+    await expect(
+      adoptPolicyVersion(policy.subreddit, policy.id, {
+        adoptedBy: 'leadmod',
+      })
+    ).rejects.toThrow(/Only proposed or reviewed policy versions/);
+    await expect(
+      addPolicyReview(policy.subreddit, policy.id, {
+        reviewer: 'secondmod',
+        decision: 'approve',
+      })
+    ).rejects.toThrow(/Only proposed policy versions/);
+  });
+
+  it('requires configured approval thresholds before reviewed adoption', async () => {
+    const {
+      addPolicyReview,
+      adoptPolicyVersion,
+      createPolicy,
+      proposePolicyVersion,
+    } = await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+      ratificationSettings: {
+        requiredApprovals: 2,
+        allowSingleModAdoption: false,
+      },
+    });
+
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+      note: 'Escalation needs team ratification.',
+    });
+    await addPolicyReview(policy.subreddit, policy.id, {
+      reviewer: 'secondmod',
+      decision: 'approve',
+    });
+
+    await expect(
+      adoptPolicyVersion(policy.subreddit, policy.id, {
+        adoptedBy: 'leadmod',
+      })
+    ).rejects.toThrow(/Requires 2 approval/);
+
+    const reviewed = await addPolicyReview(policy.subreddit, policy.id, {
+      reviewer: 'thirdmod',
+      decision: 'approve',
+    });
+    const adopted = await adoptPolicyVersion(policy.subreddit, policy.id, {
+      adoptedBy: 'leadmod',
+    });
+
+    expect(reviewed?.ratificationSummary?.approvals).toBe(2);
+    expect(adopted?.lifecycleState).toBe('adopted');
+    expect(adopted?.proposalNote).toBe('Escalation needs team ratification.');
+  });
+
+  it('blocks quick adoption when the policy disables it', async () => {
+    const { adoptPolicyVersion, createPolicy, proposePolicyVersion } =
+      await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+      ratificationSettings: {
+        requiredApprovals: 1,
+        allowSingleModAdoption: false,
+      },
+    });
+
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+    });
+
+    await expect(
+      adoptPolicyVersion(policy.subreddit, policy.id, {
+        adoptedBy: 'leadmod',
+        quickAdoption: true,
+      })
+    ).rejects.toThrow(/Single-mod quick adoption is disabled/);
+  });
+
   it('finds a policy from the policy index if the direct rule key is missing', async () => {
     const { getPolicyByRule } = await import('./policies');
     const indexedPolicy: RulePolicy = {
@@ -169,7 +300,8 @@ describe('policy version history', () => {
   });
 
   it('captures action snapshots from the active policy version', async () => {
-    const { capturePolicySnapshot, createPolicy } = await import('./policies');
+    const { adoptPolicyVersion, capturePolicySnapshot, createPolicy, proposePolicyVersion } =
+      await import('./policies');
     const policy = await createPolicy({
       subreddit: 'ExampleLearning',
       createdBy: 'leadmod',
@@ -177,11 +309,18 @@ describe('policy version history', () => {
       ruleName: 'Rule 2: Low-effort questions',
       steps: [baseStep],
     });
+    await proposePolicyVersion(policy.subreddit, policy.id, {
+      proposedBy: 'leadmod',
+    });
+    const adopted = await adoptPolicyVersion(policy.subreddit, policy.id, {
+      adoptedBy: 'leadmod',
+      quickAdoption: true,
+    });
 
-    const snapshot = capturePolicySnapshot(policy);
+    const snapshot = capturePolicySnapshot(adopted);
 
     expect(snapshot?.policyVersionStatus).toBe('active');
-    expect(snapshot?.policyVersionId).toBe(policy.activeVersionId);
+    expect(snapshot?.policyVersionId).toBe(adopted?.activeVersionId);
     expect(snapshot?.steps[0]?.recommendedAction).toBe('warn');
   });
 });
