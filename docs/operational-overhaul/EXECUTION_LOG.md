@@ -1166,3 +1166,25 @@ Validation:
 Runtime proof status: local diagnostic implemented and validated. Devvit
 playtest for `/api/smoke/redis-storage` was not run in this pass, so practical
 Redis storage limits remain open.
+
+### 2026-05-20 - Post-W34 Redis Storage-Envelope Runtime Pass
+
+Ran the safe Redis storage-envelope diagnostic in Devvit playtest after PR #40
+merged to `master`:
+
+- Preflight passed: `npx devvit whoami` reported `u/BrightyBrainiac`.
+- Merged-master validation passed with
+  `npm run type-check && npm run lint && npm run build && npm test`.
+- `npm run dev` reached Playtest ready for `r/modmirror_dev` on
+  `v0.0.1.137`.
+- The Reddit desktop WebView Settings `Run Redis storage` control returned:
+  `Redis storage smoke passed: scan 10/10, actions 500/500, overrides
+  500/500, cleanup 0.`
+- The runtime capability matrix changed from `4 runtime` to `5 runtime` and
+  showed `1 type-only`, `1 demo-only`, and `0 failed`.
+- No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
+  jobs, external AI calls, or retention deletion were run.
+
+Runtime proof status: current bounded Redis storage envelope is verified for
+the local caps. Raising scan metadata/action/override storage caps remains a
+separate future proof item.

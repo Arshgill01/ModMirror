@@ -135,9 +135,10 @@ cross-community analytics or new runtime claims. A post-PR35 follow-up added
 ran it and recorded a failed empty observed-order result; after the diagnostic
 switched to the documented variadic `zAdd` call, Devvit playtest `v0.0.1.136`
 reported `Redis sorted-set smoke passed: observed newest, middle, oldest.`
-The local `/api/smoke/redis-storage` diagnostic is now available for bounded
-scan/action/override storage-envelope proof. Practical Redis storage limits
-remain open until that safe diagnostic passes in Devvit playtest.
+Devvit playtest `v0.0.1.137` then ran `/api/smoke/redis-storage` and reported
+`Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500,
+cleanup 0.` Practical Redis storage is runtime verified for the current
+bounded scan/action/override envelope; raising those caps remains open.
 
 ## W00 Definition Of Done
 
