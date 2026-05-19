@@ -2,6 +2,8 @@
 
 Created: 2026-05-18
 
+Updated: 2026-05-20
+
 Branch: `overhaul/w00-truth-and-control`
 
 Base commit: `74dcd70 docs: mark Wave 9 10 pushed`
@@ -38,6 +40,10 @@ work begins.
 
 Latest relevant commits on `master`:
 
+- `b876767 docs: record retention cleanup runtime pass`
+- `1bb93b3 feat: add retention cleanup smoke diagnostic`
+- `d4a0d5c Merge pull request #41 from Arshgill01/post34/redis-storage-runtime-pass`
+- `610fb4d docs: record redis storage runtime pass`
 - `74dcd70 docs: mark Wave 9 10 pushed`
 - `ea90080 docs: mark Wave 9 10 merged`
 - `9b9c88c merge: Wave 9 10 launch readiness`
@@ -180,6 +186,17 @@ Verified locally or in runtime notes:
   proof remains open. Protected `/api/access/diagnostics` is locally verified
   for current-user permission string capture, and the Devvit WebView Settings
   diagnostic returned current moderator permission `all`.
+- Redis sorted-set ordering is runtime verified through `/api/smoke/redis-zset`
+  on Devvit playtest `v0.0.1.136`.
+- The current bounded Redis storage envelope is runtime verified through
+  `/api/smoke/redis-storage` on Devvit playtest `v0.0.1.137`: scan metadata
+  `10/10`, action rows `500/500`, override rows `500/500`, and smoke-key
+  cleanup `0`.
+- Synthetic expired-record retention cleanup is runtime verified through
+  `/api/smoke/retention-cleanup` on Devvit playtest `v0.0.1.138`: scans
+  `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`, detail keys `0`, and
+  index refs `0`. This does not prove destructive deletion against real
+  operational records.
 
 Still unverified or disabled:
 
@@ -192,8 +209,10 @@ Still unverified or disabled:
   product gates conservative until roles beyond the current `all` account are
   verified.
 - Reddit mobile app behavior.
-- Redis smoke endpoints in playtest remain separately tracked as not broadly
-  proven despite digest history working in runtime QA.
+- Redis behavior beyond the current sorted-set and `10/500/500` storage
+  envelope remains unproven.
+- Actual retention deletion against real operational records remains unverified
+  and requires a separate controlled destructive cleanup test.
 
 ## Current Implementation Gaps From Code
 
