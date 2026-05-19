@@ -1338,3 +1338,19 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. The active goal remains
 incomplete because several runtime/platform proof gates are still open.
+
+### 2026-05-20 - Modqueue Runtime Test Plan
+
+- Added `docs/operational-overhaul/MODQUEUE_RUNTIME_TEST_PLAN.md` as the
+  required plan before claiming live Reddit modqueue item reads.
+- The plan keeps the route read-only, prefers existing safe queue content, and
+  requires explicit approval before creating or reporting throwaway content.
+- Updated `TODO.md`, `RESEARCH.md`, `RUNTIME_VERIFICATION_MATRIX.md`, and
+  `CAPABILITY_MATRIX.md` so the W17 gap is planned but still open.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. Live modqueue item reads
+remain unverified.

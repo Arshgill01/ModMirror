@@ -256,6 +256,7 @@ the repo root are intentionally left untouched.
 - [x] Link triage items into Apply Policy target fields.
 - [x] Add targeted service tests for capability, normalization, adapter failure,
       and missing subreddit context.
+- [x] Add a safe runtime test plan for live modqueue item proof.
 - [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
       content. Post-W34 playtests refreshed the panel on `v0.0.1.94` and
       `v0.0.1.123`, but still returned the type-supported/no-items fallback

@@ -1487,6 +1487,9 @@ Decision:
 - Runtime verification requires safe queue content that returns
   `source: reddit_modqueue` or an exact Devvit permission/runtime failure from
   the Reddit adapter path.
+- `docs/operational-overhaul/MODQUEUE_RUNTIME_TEST_PLAN.md` defines the safe
+  proof plan for this gap, including the no-go boundary around creating or
+  reporting throwaway content without explicit user approval.
 
 ## Post-W34 Review Health And Impact Runtime Proof
 
