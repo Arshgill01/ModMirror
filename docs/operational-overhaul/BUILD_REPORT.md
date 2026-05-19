@@ -152,6 +152,16 @@ Latest post-W34 validation after the synthetic multi-community fixture:
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
+Latest post-W34 validation after the Redis sorted-set diagnostic:
+
+- `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 3 files and 12 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 212 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -182,6 +192,9 @@ Latest post-W34 validation after the synthetic multi-community fixture:
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
 - Native mobile, Mod Discussion delivery, scheduler, native Mod Notes, and
   external AI are unverified/disabled.
+- Redis sorted-set ordering now has a safe local diagnostic endpoint, but
+  `/api/smoke/redis-zset` has not been run in Devvit runtime and practical
+  Redis storage limits remain unverified.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.
 

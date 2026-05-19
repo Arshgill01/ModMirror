@@ -245,6 +245,26 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       nextAction: 'Run the Redis smoke route in playtest and verify readBack.',
     },
     {
+      id: 'redis-zset-ordering',
+      domain: 'redis',
+      label: 'Redis sorted-set ordering',
+      state: 'type_only',
+      evidenceKind: 'type',
+      summary:
+        'Sorted-set APIs compile and are locally tested; Devvit Redis ordering still needs smoke-route proof.',
+      evidence: [
+        'POST /api/smoke/redis-zset writes deterministic members, reads reverse-rank order, and deletes the smoke key.',
+        'Local tests exercise zAdd/zRange behavior with a mocked Redis client.',
+      ],
+      diagnosticRoute: '/api/smoke/redis-zset',
+      proofCommand: 'curl -X POST <playtest-origin>/api/smoke/redis-zset',
+      destructive: false,
+      safeToTest: true,
+      canUpdateFromHealthEvents: true,
+      nextAction:
+        'Run the Redis sorted-set smoke route in playtest and verify observedOrder matches expectedOrder.',
+    },
+    {
       id: 'menu-entrypoints',
       domain: 'menus',
       label: 'Menu entrypoints',

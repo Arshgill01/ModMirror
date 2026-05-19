@@ -1,6 +1,10 @@
 import { Hono, type MiddlewareHandler } from 'hono';
 import { context, reddit } from '@devvit/web/server';
-import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
+import {
+  runRedditSmoke,
+  runRedisSmoke,
+  runRedisSortedSetSmoke,
+} from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import {
   AI_ADVISORY_EVIDENCE_SOURCE_VALUES,
@@ -418,6 +422,40 @@ api.post('/smoke/redis', async (c) => {
       diagnosticRoute: '/api/smoke/redis',
       errorCode: 'redis_smoke_failed',
       errorMessage: error instanceof Error ? error.message : 'Unknown Redis smoke failure.',
+    });
+    throw error;
+  }
+});
+
+api.post('/smoke/redis-zset', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  try {
+    const result = await runRedisSortedSetSmoke();
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-zset-ordering',
+      status: result.ok ? 'passed' : 'failed',
+      source: 'smoke_route',
+      message: result.ok
+        ? 'Redis sorted-set reverse-rank order matched.'
+        : 'Redis sorted-set reverse-rank order did not match.',
+      diagnosticRoute: '/api/smoke/redis-zset',
+      ...(result.ok ? {} : { errorCode: 'redis_zset_order_mismatch' }),
+    });
+    return c.json(result);
+  } catch (error) {
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-zset-ordering',
+      status: 'failed',
+      source: 'smoke_route',
+      message: 'Redis sorted-set smoke route threw before returning a result.',
+      diagnosticRoute: '/api/smoke/redis-zset',
+      errorCode: 'redis_zset_smoke_failed',
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : 'Unknown Redis sorted-set smoke failure.',
     });
     throw error;
   }

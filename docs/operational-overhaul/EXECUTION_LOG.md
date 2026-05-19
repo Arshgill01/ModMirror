@@ -1049,3 +1049,28 @@ Validation:
 - `git diff --check` - passed.
 
 Runtime playtest was not run. This was an audit refresh only.
+
+### 2026-05-20 - Post-W34 Redis Sorted-Set Diagnostic
+
+Added a safe local diagnostic for the remaining Redis sorted-set ordering proof:
+
+- Added `runRedisSortedSetSmoke`, which writes three deterministic sorted-set
+  members, reads reverse-rank order, and deletes the smoke key.
+- Added `POST /api/smoke/redis-zset`, a `redis-zset-ordering` runtime
+  capability entry, and a Settings button to run the diagnostic later from the
+  authenticated WebView.
+- Updated operational docs to keep the Devvit runtime sorted-set/storage proof
+  open until the new route is actually run in playtest.
+
+Validation:
+
+- `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 3 files and 12 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 212 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run. The new route is a proof surface for a future
+Devvit runtime check, not runtime evidence by itself.

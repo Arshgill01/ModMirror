@@ -2086,3 +2086,10 @@ export interface RedisSmokeResult {
   readBack?: string;
   ok: boolean;
 }
+
+export interface RedisSortedSetSmokeResult {
+  key: string;
+  expectedOrder: string[];
+  observedOrder: string[];
+  ok: boolean;
+}

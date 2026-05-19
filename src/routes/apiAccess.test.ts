@@ -16,6 +16,7 @@ const devvitState = vi.hoisted(() => ({
       }
     | undefined,
   strings: new Map<string, string>(),
+  sortedSets: new Map<string, Array<{ member: string; score: number }>>(),
 }));
 
 vi.mock('@devvit/web/server', () => ({
@@ -32,9 +33,31 @@ vi.mock('@devvit/web/server', () => ({
     del: vi.fn((...keys: string[]) => {
       for (const key of keys) {
         devvitState.strings.delete(key);
+        devvitState.sortedSets.delete(key);
       }
       return Promise.resolve();
     }),
+    zAdd: vi.fn((key: string, value: { member: string; score: number }) => {
+      const rows = devvitState.sortedSets.get(key) ?? [];
+      rows.push(value);
+      devvitState.sortedSets.set(key, rows);
+      return Promise.resolve(1);
+    }),
+    zRange: vi.fn(
+      (
+        key: string,
+        start: number,
+        end: number,
+        options?: { reverse?: boolean }
+      ) => {
+        const rows = [...(devvitState.sortedSets.get(key) ?? [])].sort(
+          (left, right) =>
+            options?.reverse ? right.score - left.score : left.score - right.score
+        );
+        const normalizedEnd = end < 0 ? rows.length : end + 1;
+        return Promise.resolve(rows.slice(start, normalizedEnd));
+      }
+    ),
   },
 }));
 
@@ -44,6 +67,7 @@ describe('api moderator access guard', () => {
     devvitState.context.username = undefined;
     devvitState.currentUser = undefined;
     devvitState.strings.clear();
+    devvitState.sortedSets.clear();
     vi.clearAllMocks();
   });
 
@@ -217,6 +241,59 @@ describe('api moderator access guard', () => {
       lastHealthEvent: {
         source: 'manual_qa',
         message: 'Post menu target capture observed in desktop playtest.',
+      },
+    });
+  });
+
+  it('records Redis sorted-set smoke results as runtime health events', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => ['all']);
+    devvitState.context.username = 'mod_a';
+    devvitState.currentUser = {
+      username: 'mod_a',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/smoke/redis-zset', {
+      method: 'POST',
+    });
+    const payload = (await response.json()) as {
+      ok: boolean;
+      expectedOrder: string[];
+      observedOrder: string[];
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      ok: true,
+      expectedOrder: ['newest', 'middle', 'oldest'],
+      observedOrder: ['newest', 'middle', 'oldest'],
+    });
+
+    const matrixResponse = await api.request(
+      '/runtime-capabilities?subreddit=modmirror_dev'
+    );
+    const matrixPayload = (await matrixResponse.json()) as {
+      ok: true;
+      data: {
+        entries: Array<{
+          id: string;
+          state: string;
+          lastHealthEvent?: { source: string; message: string };
+        }>;
+      };
+    };
+    const zsetEntry = matrixPayload.data.entries.find(
+      (entry) => entry.id === 'redis-zset-ordering'
+    );
+
+    expect(matrixResponse.status).toBe(200);
+    expect(zsetEntry).toMatchObject({
+      state: 'verified_runtime',
+      lastHealthEvent: {
+        source: 'smoke_route',
+        message: 'Redis sorted-set reverse-rank order matched.',
       },
     });
   });
