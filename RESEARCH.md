@@ -89,7 +89,7 @@ Updated by: Codex
 | Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
 | Runtime verified | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit playtest `v0.0.1.122` verified `/api/health` context as `modmirror_dev` / `BrightyBrainiac`, `/api/policies` default and explicit-current reads scoped to `modmirror_dev`, the labeled `ExampleLearning` demo exception remained allowed, cross-subreddit query routes returned `403 subreddit_isolation_failed`, live-only modqueue cross-subreddit rejected with the live-context message, and a cross-subreddit policy-create POST was rejected before any write. |
 | Runtime fallback observed | W17 modqueue triage route is reachable from the WebView but has not proven live Reddit modqueue reads. | Post-W34 Devvit playtests refreshed the Act-page Operational Queue panel on `v0.0.1.94` and `v0.0.1.123`; `v0.0.1.123` showed the authenticated expanded dashboard for `modmirror_dev`, entered the read-only loading state, then returned the labeled no-items/type-supported fallback. Keep W17 runtime verification open until safe queue content returns `source: reddit_modqueue` or an exact permission/runtime failure is captured. |
-| Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
+| Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines the approval, throwaway-target, receipt, Reddit-visible-state, and cleanup proof gate before remove/approve/ignore-reports can be marked runtime-verified. |
 
 ## Known Platform Constraints
 
@@ -427,7 +427,12 @@ Conclusion:
 
 Conclusion:
 
-- Enforcement actions have SDK support. MVP should still require human confirmation and use the least destructive defaults.
+- Enforcement actions have SDK support. MVP should still require human
+  confirmation and use the least destructive defaults.
+- `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines
+  the required proof plan before live remove/approve/ignore-reports execution
+  can be marked runtime-verified. It requires explicit approval, throwaway
+  targets, receipt evidence, Reddit-visible state checks, and cleanup notes.
 
 ### Private message / modmail
 
@@ -613,6 +618,9 @@ Runtime status:
 - Not playtest-verified in W03.
 - Do not claim remove/approve/ignore-reports behavior beyond installed typings
   and mocked local tests until safe playtest proof is recorded.
+- `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` is the
+  required gate before attempting any live remove, approve, or ignore-reports
+  proof.
 
 ## Operational Overhaul W04 Findings
 

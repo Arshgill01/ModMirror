@@ -548,6 +548,13 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - override audit dashboard.
 - Devpost final copy.
 
+## Operational Overhaul Moderation Execution Follow-up
+
+- [x] Add a controlled destructive Reddit moderation execution test plan before
+      any live remove/approve/ignore-reports proof.
+- [ ] Runtime-verify remove, approve, and ignore-reports only on approved
+      throwaway content with receipt evidence and explicit cleanup notes.
+
 ## Operational Overhaul W10 Follow-up
 
 - [x] Add disabled-by-default AI advisory contracts and capability endpoint.

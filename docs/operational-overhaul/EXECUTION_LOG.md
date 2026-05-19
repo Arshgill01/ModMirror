@@ -1495,3 +1495,23 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. No native Mod Note was
 added, read, or deleted.
+
+### 2026-05-20 - Reddit Moderation Execution Test Plan
+
+- Added `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md`
+  as the required destructive proof gate before live remove, approve, or
+  ignore-reports execution can be marked runtime-verified.
+- The plan requires explicit approval, controlled throwaway targets, one
+  approved operation per target, receipt evidence, Reddit-visible state checks,
+  cleanup notes, and confirmation that live execution flags are not left
+  enabled.
+- Updated `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`,
+  `RUNTIME_VERIFICATION_MATRIX.md`, `RUNTIME_PROOF_BACKLOG.md`, and
+  `COMPLETION_AUDIT.md` to point at the plan while keeping runtime proof open.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. No Reddit moderation
+action was executed.

@@ -42,6 +42,7 @@ Concrete success criteria:
 | Post/comment ModMirror entrypoints | Post-W34 runtime proof in `RESEARCH.md` and `docs/expansion-waves/post-w34-runtime-smoke.md` records post and comment menu target proofs. | Satisfied for desktop Reddit WebView |
 | Target context capture | Post-W34 proofs record target ID/type/author/subreddit/title or body in the Act target strip. | Satisfied for desktop Reddit WebView |
 | Safe moderation execution gates | `docs/operational-overhaul/BUILD_REPORT.md` and `CURRENT_REPO_TRUTH.md` record W03 gated execution with live actions disabled by default. | Satisfied as gated implementation; live action proof remains open |
+| Reddit moderation execution proof plan | `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines the approval, throwaway-target, receipt, Reddit-visible-state, cleanup, and default-disablement gates before remove/approve/ignore-reports can be marked runtime-verified. | Satisfied as plan only; runtime proof open |
 | Action receipts | W04 reports and post-W34 receipt proof record log-only receipt persistence in Devvit Redis. | Satisfied for log-only path |
 | Full scan persistence and history | W05/W06/W07 reports and post-W34 live scan/replay/correction proof record persisted scan-derived flows; deep pagination remains unverified. | Partially satisfied |
 | Policy agreement lifecycle | W08 reports and post-W34 policy ratification proof record proposal/review/threshold blocking. Distinct multi-moderator proof remains open. | Partially satisfied |
