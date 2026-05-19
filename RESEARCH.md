@@ -78,6 +78,7 @@ Updated by: Codex
 | Runtime verified | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Post-W34 Devvit playtest verified start persistence, active banner, receipt tagging, and post-incident reporting in the Reddit-hosted WebView. |
 | Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
 | Verified locally | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit context behavior remains runtime-unverified. |
+| Runtime fallback observed | W17 modqueue triage route is reachable from the WebView but has not proven live Reddit modqueue reads. | Post-W34 Devvit playtest refreshed the Act-page Operational Queue panel on `v0.0.1.94`; it returned the labeled `type-supported` fallback and no queue items, not a verified Reddit modqueue adapter result. Keep W17 runtime verification open until safe queue content returns `source: reddit_modqueue` or an exact permission/runtime failure is captured. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -1393,3 +1394,36 @@ Decision:
   as runtime-verified for this desktop Reddit Devvit WebView playtest path.
 - Response templates remain preview-only. No comment, private message, modmail,
   Mod Discussion, or native Mod Note was sent during this proof.
+
+## Post-W34 Modqueue Runtime Fallback Observation
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/modqueueTriage.test.ts` passed before
+  documenting this observation.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Computer Use refreshed the Act-page Operational Queue panel in the
+  Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+
+Observed behavior:
+
+- The Operational Queue panel remained reachable and non-destructive.
+- Refresh briefly entered the loading state:
+  `Reading Reddit modqueue items without taking action.`
+- The final panel still reported
+  `Modqueue triage type-supported: Devvit typings expose read-only modqueue APIs, but ModMirror has not runtime-verified this endpoint in playtest.`
+- The panel returned no queue items and told the moderator to use post/comment
+  menus or enter a target thing ID directly.
+
+Decision:
+
+- W17 remains open. This proof validates the safe fallback path, not live
+  Reddit modqueue read capability.
+- Runtime verification requires safe queue content that returns
+  `source: reddit_modqueue` or an exact Devvit permission/runtime failure from
+  the Reddit adapter path.

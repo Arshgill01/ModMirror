@@ -364,6 +364,22 @@ Verified in Reddit Devvit WebView:
 - Both receipts kept Reddit delivery disabled or log-only, with native Mod Note
   `skipped (disabled)`.
 
+## Modqueue Runtime Fallback Observation
+
+Validated on Devvit playtest `v0.0.1.94` in the Reddit-hosted Devvit WebView.
+
+Screenshot:
+
+- `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+
+Observed in Reddit Devvit WebView:
+
+- Refreshing the Act-page Operational Queue entered the loading state and then
+  returned the labeled type-supported fallback.
+- The panel did not return `source: reddit_modqueue` queue items.
+- W17 remains open because this proves safe fallback behavior, not live Reddit
+  modqueue read capability.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -411,3 +427,7 @@ Verified in Reddit Devvit WebView:
 - Computer Use Zen Response Preview and Receipt Ledger inspection for the
   `v0.0.1.94` proof.
 - `screencapture -x output/runtime-proof/post34-v94-response-preview-receipt.png`
+- `npm test -- src/server/services/modqueueTriage.test.ts`
+- Computer Use Zen Operational Queue refresh for the `v0.0.1.94` fallback
+  observation.
+- `screencapture -x output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`

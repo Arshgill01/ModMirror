@@ -290,6 +290,18 @@ Post-W34 Response Preview runtime proof:
 - No comment, private message, modmail, Mod Discussion, or native Mod Note was
   sent during this proof.
 
+Post-W34 modqueue runtime fallback observation:
+
+- Devvit CLI playtest reported `v0.0.1.94`.
+- Computer Use refreshed the Act-page Operational Queue panel in the
+  Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+- The panel stayed reachable and non-destructive, but returned the labeled
+  `type-supported` fallback rather than live `reddit_modqueue` queue items.
+- W17 remains open because this did not prove Reddit modqueue adapter runtime
+  behavior.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
@@ -397,6 +409,12 @@ Post-W34 Response Preview runtime validation passed:
 - Computer Use Zen Response Preview and Receipt Ledger inspection on Reddit
   Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v94-response-preview-receipt.png`
+
+Post-W34 modqueue fallback validation passed, with W17 still open:
+
+- `npm test -- src/server/services/modqueueTriage.test.ts`
+- Computer Use Zen Operational Queue refresh on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
 
 ## Next Engineering Risks
 

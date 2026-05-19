@@ -16,8 +16,9 @@ response template preview receipt persistence, and manual/skipped Case Packet
 delivery receipt persistence are now runtime-verified on desktop Reddit
 playtest. Live
 Reddit moderation execution, actual retention deletion, Mod Discussion
-delivery, scheduler, native Mod Notes, external AI, non-mod access, and native
-Reddit mobile app behavior remain unverified or disabled.
+delivery, scheduler, native Mod Notes, live modqueue reads, external AI,
+non-mod access, and native Reddit mobile app behavior remain unverified or
+disabled.
 
 ## Expansion Wave 29 Checklist
 
@@ -192,7 +193,8 @@ Reddit mobile app behavior remain unverified or disabled.
 - [x] Add targeted service tests for capability, normalization, adapter failure,
       and missing subreddit context.
 - [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
-      content.
+      content. Post-W34 playtest refreshed the panel but still returned the
+      type-supported fallback instead of a verified Reddit modqueue read.
 
 ## Expansion Wave 16 Checklist
 
