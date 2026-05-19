@@ -50,9 +50,9 @@ Concrete success criteria:
 | Team delivery spike | W11 reports and post-W34 proof record manual/skipped delivery receipts; PR #32 locally guards scheduler confirmations as skipped so they cannot route through the Mod Discussion adapter. Real Mod Discussion send and scheduler jobs remain disabled. | Partially satisfied |
 | Operational IA | W12/W13 and post-W34 UI proof record Act / Scan / Agree / Review / Prove / Settings in Reddit-hosted WebView. | Satisfied for desktop WebView |
 | Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. The Settings manual runtime event recorder is route-tested and statically verified as a bookkeeping surface for safe capability observations. | Satisfied |
-| Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. | Satisfied for Devvit Web request context |
+| Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. PR #35 adds local synthetic coverage for the isolation-first contract by including foreign-subreddit actions that are excluded from replay and scan summaries. | Satisfied for Devvit Web request context plus local synthetic regression coverage |
 | Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
-| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest scheduler delivery guard follow-up passed the same broad gates with 46 files and 208 tests. | Satisfied |
+| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest synthetic multi-community fixture follow-up passed the same broad gates with 46 files and 209 tests. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
 ## Not Complete Enough To Mark The Larger Goal Done
@@ -89,6 +89,9 @@ fully complete because these requirements remain incomplete or weakly verified:
   A follow-up Devvit playtest `v0.0.1.123` reached the same-subreddit
   Operational Queue refresh path but still returned the type-supported/no-items
   fallback.
+- Cross-community analytics or benchmarking are out of scope. PR #35 added
+  local synthetic coverage for the W29 isolation-first contract only; it does
+  not prove new runtime multi-community behavior.
 - Policy ratification has not been proven with multiple distinct moderators.
 - The post-W34 UI sweep now has accessibility-tree proof for the embedded
   launch card plus Act, Scan, Review, and Prove in Reddit host Mobile and

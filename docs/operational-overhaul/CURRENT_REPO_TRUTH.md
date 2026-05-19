@@ -41,6 +41,10 @@ It currently supports:
 - W07 consistency analytics from persisted scans and Apply Policy receipts,
   including drift trend direction, receipt-backed policy impact windows, and
   insufficient-data caveats.
+- W32 synthetic evaluation includes deterministic replay/analytics regression
+  fixtures. Post-W34 local coverage adds `multi_community_isolation`, which
+  includes foreign-subreddit synthetic actions while keeping replay and scan
+  summaries scoped to the dataset subreddit.
 - W08 policy agreement lifecycle with draft, proposed, under-review, adopted,
   superseded, and archived states; review records; explicit adoption APIs; and
   client controls for propose/review/quick-adopt.
@@ -116,6 +120,10 @@ It does not yet support:
   persisted `MirrorScanRecord` values and W04 receipts. It treats receipts as
   stronger signals than inferred mod-log history, but it only claims impact
   when scan/receipt counts meet local thresholds.
+- W32 `src/server/services/syntheticEval.ts` builds deterministic synthetic
+  evaluation fixtures and a golden manifest. The post-W34
+  `multi_community_isolation` fixture checks that foreign-subreddit actions do
+  not enter replay or scan summaries for the local synthetic community.
 - W08 `src/server/services/policies.ts` stores policy lifecycle metadata on
   policy records and versions. Draft/proposed versions can be reviewed and
   adopted, while Apply Policy only uses policies with an adopted active version.

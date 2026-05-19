@@ -1029,3 +1029,23 @@ Validation:
 
 Runtime playtest was not run. The harness does not call Reddit APIs, Redis,
 Devvit runtime, mod notes, modmail, scheduler, or external AI.
+
+### 2026-05-20 - Post-W34 Synthetic Audit Refresh
+
+Refreshed operational control artifacts after PR #35:
+
+- Updated `COMPLETION_AUDIT.md` so the prompt-to-artifact checklist includes
+  the synthetic multi-community isolation fixture and the latest broad
+  validation count of 46 files and 209 tests.
+- Updated `CURRENT_REPO_TRUTH.md` with the current synthetic evaluation truth:
+  foreign-subreddit actions exist only inside a local fixture and remain
+  excluded from replay and scan summaries.
+- Updated `WAVE_STATUS.md` so the post-W34 status summary includes the
+  synthetic fixture while preserving the boundary that cross-community
+  analytics and new runtime behavior were not added.
+
+Validation:
+
+- `git diff --check` - passed.
+
+Runtime playtest was not run. This was an audit refresh only.
