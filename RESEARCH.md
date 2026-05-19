@@ -905,3 +905,43 @@ Decision:
 - W13 does not upgrade post/comment Apply Policy, Redis persistence, receipts,
   destructive moderation execution, delivery, scheduler, native Mod Notes, AI,
   non-mod access, or native mobile status.
+
+## Post-W34 Runtime Smoke Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Existing `ModMirror policy dashboard` custom post opened the Devvit WebView.
+- Settings safe smoke controls were executed inside the authenticated WebView.
+
+Verified:
+
+- Playtest `v0.0.1.73` executed `POST /api/smoke/redis` from the WebView and
+  returned the UI success message:
+  `Redis smoke passed: write/read matched inside Devvit playtest.`
+- Playtest `v0.0.1.73` executed `POST /api/smoke/reddit` from the WebView and
+  returned the UI success message:
+  `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).`
+- The runtime capability matrix promoted Redis and Reddit read-only access to
+  `verified runtime`.
+- Playtest `v0.0.1.74` confirmed the Settings summary cards now also show
+  Redis and Reddit source status as `verified runtime`.
+
+Not verified:
+
+- Post/comment Apply Policy menu entries and target context capture.
+- Log-only Apply Policy receipt creation in Devvit Redis.
+- Any destructive moderation operation.
+- Native Mod Notes, modmail/mod discussion, scheduler, external AI, native
+  mobile, or non-mod access blocking.
+
+Decision:
+
+- Redis read/write and Reddit read-only source access may now be described as
+  runtime-verified for this test subreddit and playtest path.
+- This proof does not authorize destructive moderation execution or delivery
+  features.

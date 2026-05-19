@@ -83,6 +83,7 @@ import type {
   PrivacyRetentionCategory,
   PrivacyRetentionExport,
   PrivacyRetentionSettings,
+  RedisSmokeResult,
   ResponseTemplateKind,
   RuntimeCapabilityMatrix,
   RuntimeCapabilityMatrixEntry,
@@ -106,6 +107,7 @@ type OverrideReviewStatus =
   | 'policy_needs_update'
   | 'needs_team_discussion'
   | 'no_action_needed';
+type RuntimeSmokeCheck = 'redis' | 'reddit';
 
 type Page = {
   id: ProductPageId;
@@ -327,7 +329,9 @@ type PrivacyRetentionUiState = {
 
 type RuntimeCapabilityUiState = {
   loading: boolean;
+  smokeRunning: RuntimeSmokeCheck | undefined;
   error: string | undefined;
+  message: string | undefined;
   matrix: RuntimeCapabilityMatrix | undefined;
 };
 
@@ -498,7 +502,9 @@ let privacyRetentionState: PrivacyRetentionUiState = {
 };
 let runtimeCapabilityState: RuntimeCapabilityUiState = {
   loading: false,
+  smokeRunning: undefined,
   error: undefined,
+  message: undefined,
   matrix: undefined,
 };
 let modqueueState: ModqueueTriageUiState = {
@@ -2596,6 +2602,8 @@ function renderDigestHistory() {
 
 function renderSettingsPage() {
   const summary = buildDashboardSummary();
+  const redisCapability = getRuntimeCapabilityEntry('redis-smoke');
+  const redditCapability = getRuntimeCapabilityEntry('reddit-api-smoke');
   return `
     <section class="settings-stack">
       ${renderRuntimeCapabilitySettings()}
@@ -2606,8 +2614,8 @@ function renderSettingsPage() {
     <section class="settings-grid">
       ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
       ${renderSettingsCard('Data mode', formatDataMode(summary.dataMode), summary.dataMode === 'demo' ? 'Demo data is labeled and separate from live subreddit data.' : 'Live scans depend on Reddit API availability.')}
-      ${renderSettingsCard('Redis status', health?.redis.smokeStatus ?? 'not checked', health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.')}
-      ${renderSettingsCard('Reddit source status', health?.environment.playtestStatus ?? 'not runtime verified', 'Rules, removal reasons, and mod log reads are type/build-verified; broader runtime smoke is still documented in RESEARCH.md.')}
+      ${renderSettingsCard('Redis status', getSettingsCapabilityValue(redisCapability, health?.redis.smokeStatus ?? 'not checked'), getSettingsCapabilityDetail(redisCapability, health?.redis.detail ?? healthError ?? 'Health endpoint not loaded yet.'))}
+      ${renderSettingsCard('Reddit source status', getSettingsCapabilityValue(redditCapability, health?.environment.playtestStatus ?? 'not runtime verified'), getSettingsCapabilityDetail(redditCapability, 'Rules, removal reasons, and mod log reads are type/build-verified; run the safe smoke check to promote this state.'))}
       ${renderSettingsCard('Last scan', formatDate(summary.lastScanLabel), `${scanState.result?.totalActionsScanned ?? 0} actions scanned in current dashboard state.`)}
       ${renderSettingsCard('Policies', summary.activePolicyCount.toString(), `${policyState.policies.length} policies loaded in this session.`)}
       ${renderSettingsCard('Overrides', summary.unresolvedOverrideCount.toString(), 'Unresolved override count is aggregate-first.')}
@@ -2623,6 +2631,27 @@ function renderSettingsPage() {
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;
+}
+
+function getRuntimeCapabilityEntry(id: RuntimeCapabilityMatrixEntry['id']) {
+  return runtimeCapabilityState.matrix?.entries.find((entry) => entry.id === id);
+}
+
+function getSettingsCapabilityValue(
+  entry: RuntimeCapabilityMatrixEntry | undefined,
+  fallback: string
+) {
+  return entry ? formatRuntimeCapabilityState(entry.state) : fallback;
+}
+
+function getSettingsCapabilityDetail(
+  entry: RuntimeCapabilityMatrixEntry | undefined,
+  fallback: string
+) {
+  if (entry?.lastHealthEvent) {
+    return `Last ${entry.lastHealthEvent.status}: ${entry.lastHealthEvent.message}`;
+  }
+  return entry?.summary ?? fallback;
 }
 
 function renderRuntimeCapabilitySettings() {
@@ -2648,6 +2677,17 @@ function renderRuntimeCapabilitySettings() {
         </div>
         <span class="status-pill">${escapeHtml(status)}</span>
       </div>
+      <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
+        <div>
+          <strong>Safe smoke checks</strong>
+          <p>Run authenticated WebView diagnostics for Redis and read-only Reddit API access. These checks do not approve, remove, message, or ban.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
+        </div>
+      </div>
+      ${renderRuntimeSmokeMessage()}
       <div class="runtime-capability-grid">
         ${entries.map(renderRuntimeCapabilityEntry).join('')}
       </div>
@@ -2658,6 +2698,19 @@ function renderRuntimeCapabilitySettings() {
       }
     </section>
   `;
+}
+
+function renderRuntimeSmokeMessage() {
+  if (runtimeCapabilityState.smokeRunning) {
+    return `<p class="inline-note">Running ${formatRuntimeSmokeCheck(runtimeCapabilityState.smokeRunning)} smoke check...</p>`;
+  }
+  if (runtimeCapabilityState.error) {
+    return `<p class="inline-error">${escapeHtml(runtimeCapabilityState.error)}</p>`;
+  }
+  if (runtimeCapabilityState.message) {
+    return `<p class="inline-success">${escapeHtml(runtimeCapabilityState.message)}</p>`;
+  }
+  return '';
 }
 
 function renderRuntimeCapabilityEntry(entry: RuntimeCapabilityMatrixEntry) {
@@ -2680,6 +2733,10 @@ function formatRuntimeCapabilityState(
   state: RuntimeCapabilityMatrixEntry['state']
 ) {
   return state.replaceAll('_', ' ');
+}
+
+function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
+  return check === 'redis' ? 'Redis' : 'Reddit read-only';
 }
 
 function renderConfigPortabilitySettings() {
@@ -3216,6 +3273,7 @@ function bindAllActions() {
   bindIncidentModeActions();
   bindConfigPortabilityActions();
   bindPrivacyRetentionActions();
+  bindRuntimeCapabilityActions();
   bindGovernanceActions();
   bindDigestActions();
   bindReceiptActions();
@@ -3702,6 +3760,19 @@ function bindPrivacyRetentionActions() {
         event.preventDefault();
         const submitter = event.submitter as HTMLButtonElement | null;
         void deletePrivacyDataFromForm(new FormData(form), submitter?.value);
+      });
+    });
+}
+
+function bindRuntimeCapabilityActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-runtime-smoke]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const check = button.dataset.runtimeSmoke;
+        if (check === 'redis' || check === 'reddit') {
+          void runRuntimeSmokeCheck(check);
+        }
       });
     });
 }
@@ -5071,7 +5142,9 @@ async function loadRuntimeCapabilities() {
     );
     runtimeCapabilityState = {
       loading: false,
+      smokeRunning: runtimeCapabilityState.smokeRunning,
       error: undefined,
+      message: runtimeCapabilityState.message,
       matrix,
     };
   } catch (error) {
@@ -5086,6 +5159,91 @@ async function loadRuntimeCapabilities() {
   }
 
   render();
+}
+
+async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
+  runtimeCapabilityState = {
+    ...runtimeCapabilityState,
+    smokeRunning: check,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const route =
+      check === 'redis' ? API_ROUTES.redisSmoke : API_ROUTES.redditSmoke;
+    const result = await fetchRawJson<unknown>(withWorkspaceSubreddit(route), {
+      method: 'POST',
+    });
+    const matrix = await fetchApi<RuntimeCapabilityMatrix>(
+      withWorkspaceSubreddit(API_ROUTES.runtimeCapabilities)
+    );
+    runtimeCapabilityState = {
+      loading: false,
+      smokeRunning: undefined,
+      error: undefined,
+      message: summarizeRuntimeSmokeResult(check, result),
+      matrix,
+    };
+  } catch (error) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      loading: false,
+      smokeRunning: undefined,
+      error: normalizeClientError(error, `${formatRuntimeSmokeCheck(check)} smoke check failed.`),
+      message: undefined,
+    };
+  }
+
+  render();
+}
+
+async function fetchRawJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetchWithTimeout(url, init);
+  const payload = (await response.json().catch(() => undefined)) as
+    | ApiResponse<unknown>
+    | T
+    | undefined;
+
+  if (!response.ok) {
+    if (isApiFailure(payload)) {
+      throw new Error(payload.error.message);
+    }
+    throw new Error(`API request returned ${response.status} for ${url}.`);
+  }
+
+  if (payload === undefined) {
+    throw new Error(`API response was not JSON for ${url}.`);
+  }
+
+  return payload as T;
+}
+
+function isApiFailure(payload: unknown): payload is Extract<ApiResponse<never>, { ok: false }> {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'ok' in payload &&
+    (payload as { ok: unknown }).ok === false &&
+    'error' in payload
+  );
+}
+
+function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) {
+  if (check === 'redis') {
+    const redisResult = result as Partial<RedisSmokeResult>;
+    return redisResult.ok
+      ? 'Redis smoke passed: write/read matched inside Devvit playtest.'
+      : 'Redis smoke completed but did not report a matched readBack value.';
+  }
+
+  const resultRecord = result as {
+    rules?: unknown[];
+    removalReasons?: unknown[];
+    modActions?: unknown[];
+  };
+  return `Reddit read smoke passed: ${resultRecord.rules?.length ?? 0} rule(s), ${resultRecord.removalReasons?.length ?? 0} removal reason(s), ${resultRecord.modActions?.length ?? 0} mod log action(s).`;
 }
 
 async function loadPolicies() {

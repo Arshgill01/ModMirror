@@ -1520,6 +1520,21 @@ dd {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.runtime-smoke-controls {
+  align-items: center;
+  border: 1px solid var(--mm-line);
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 12px;
+}
+
+.runtime-smoke-controls p {
+  margin: 4px 0 0;
+}
+
 .runtime-capability-row {
   border: 1px solid var(--mm-line);
   border-radius: 8px;
@@ -1966,6 +1981,11 @@ dd {
   .retention-protected-row,
   .category-checks {
     grid-template-columns: 1fr;
+  }
+
+  .runtime-smoke-controls {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .workspace-tools,

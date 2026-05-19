@@ -485,9 +485,9 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       WebView.
 - [ ] Verify post Apply Policy menu entry on an ordinary safe post detail page.
 - [ ] Verify comment Apply Policy menu entry on an ordinary safe comment.
-- [ ] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
+- [x] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
       result.
-- [ ] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only
+- [x] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only
       context.
 - [ ] Verify log-only Apply Policy creates a receipt in Devvit Redis.
 - [ ] Verify native Reddit mobile app layout and interaction behavior.
@@ -547,10 +547,13 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       response shapes.
 - [x] Prevent health events from enabling destructive live moderation
       operations.
-- [ ] Runtime-run `/api/smoke/redis` and `/api/smoke/reddit` in Devvit
+- [x] Runtime-run `/api/smoke/redis` and `/api/smoke/reddit` in Devvit
       playtest so the matrix can promote safe capabilities with real proof.
-- [ ] Add operator UI for recording manual playtest events if W34 keeps this
-      API as part of the integrated product surface.
+- [x] Add operator UI for running safe Redis and Reddit read-only smoke checks
+      from inside the authenticated WebView.
+- [ ] Add operator UI for recording manual playtest events if future runtime
+      proof needs moderator-observed states that are not reachable by smoke
+      routes.
 
 ## Expansion Wave 34 Follow-up
 
@@ -558,7 +561,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add expansion architecture notes.
 - [x] Add the expansion build report.
 - [ ] Push/review the W16-W34 branches if PR workflow is used.
-- [ ] Run Devvit playtest proof for the W33 runtime capability matrix on a safe
+- [x] Run Devvit playtest proof for the W33 runtime capability matrix on a safe
       subreddit before promoting Redis/Reddit smoke beyond local/static proof.
 - [ ] Decide whether `expansion/w34-integration` should be merged into
       `integration/operational-overhaul` or a new long-lived expansion

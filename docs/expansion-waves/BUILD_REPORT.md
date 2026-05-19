@@ -79,11 +79,23 @@ W33 static browser proof:
 - Settings runtime capability matrix rendered at 390px with an intercepted
   capability response and no horizontal overflow.
 
+Post-W34 runtime smoke proof:
+
+- Branch `post34/runtime-smoke-controls` added authenticated Settings controls
+  for the existing safe smoke routes.
+- Devvit playtest `v0.0.1.73` executed Redis smoke from inside the WebView and
+  reported: `Redis smoke passed: write/read matched inside Devvit playtest.`
+- Devvit playtest `v0.0.1.73` executed Reddit read-only smoke from inside the
+  WebView and reported: `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).`
+- Devvit playtest `v0.0.1.74` confirmed the Settings matrix and summary cards
+  show Redis and Reddit source status as `verified runtime`.
+- This proof covers safe Redis read/write and Reddit read-only source access
+  only. It does not cover destructive moderation execution.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menu runtime proof is still open.
 - Target context capture from real post/comment menu requests is still open.
-- `/api/smoke/redis` and `/api/smoke/reddit` need Devvit runtime proof.
 - Log-only receipt creation needs Devvit Redis proof.
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
@@ -102,6 +114,14 @@ Full W34 validation passed:
 - `git diff --check`
 - `npm test`
 - `npm run build`
+
+Post-W34 runtime-smoke validation passed:
+
+- `npm install`
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- `npm run dev`
 
 ## Next Engineering Risks
 
