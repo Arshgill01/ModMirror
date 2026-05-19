@@ -111,6 +111,37 @@ describe('team delivery service', () => {
     expect(response.receipt.errorMessage).toContain('not runtime-verified');
   });
 
+  it('does not route scheduler confirmations through the mod discussion adapter', async () => {
+    const { confirmTeamDelivery } = await import('./teamDelivery');
+    const adapter = {
+      sendModDiscussion: vi.fn().mockResolvedValue({
+        conversationId: 'modmail-conversation-1',
+      }),
+    };
+
+    const response = await confirmTeamDelivery({
+      subreddit: 'ExampleLearning',
+      requestedBy: 'leadmod',
+      liveDeliveryEnabled: true,
+      runtimeVerified: true,
+      adapter,
+      request: {
+        confirmed: true,
+        channel: 'scheduler',
+        subjectType: 'digest',
+        subjectId: 'digest-1',
+        title: 'Weekly ModMirror digest',
+        markdown: '# Digest\n\nRule 2 needs review.',
+      },
+    });
+
+    expect(response.preview.deliveryWillBeAttempted).toBe(false);
+    expect(response.receipt.status).toBe('skipped');
+    expect(response.receipt.deliveryAttempted).toBe(false);
+    expect(response.receipt.errorMessage).toContain('no registered runtime task');
+    expect(adapter.sendModDiscussion).not.toHaveBeenCalled();
+  });
+
   it('can send through an injected adapter only when explicitly enabled and verified', async () => {
     const { confirmTeamDelivery } = await import('./teamDelivery');
     const adapter = {

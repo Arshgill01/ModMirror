@@ -131,6 +131,16 @@ Latest post-W34 validation after the policy message-delivery guard:
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
+Latest post-W34 validation after the team delivery scheduler guard:
+
+- `npm test -- src/server/services/teamDelivery.test.ts` - passed, 1 file and
+  6 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 208 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment

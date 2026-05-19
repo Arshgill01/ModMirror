@@ -120,6 +120,17 @@ export async function confirmTeamDelivery(
     return { preview, receipt };
   }
 
+  if (preview.channel === 'scheduler') {
+    const receipt = await saveTeamDeliveryReceipt({
+      ...receiptBase,
+      status: 'skipped',
+      deliveryAttempted: false,
+      errorMessage:
+        'Delivery skipped because scheduler delivery has no registered runtime task.',
+    });
+    return { preview, receipt };
+  }
+
   if (!liveDeliveryEnabled || !runtimeVerified || options.adapter === undefined) {
     const receipt = await saveTeamDeliveryReceipt({
       ...receiptBase,
