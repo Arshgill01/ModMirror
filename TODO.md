@@ -626,7 +626,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add operator UI for running safe Redis and Reddit read-only smoke checks
       from inside the authenticated WebView.
 - [x] Runtime-verify post-menu Apply Policy target capture in Devvit playtest.
-- [ ] Add operator UI for recording manual playtest events if future runtime
+- [x] Add operator UI for recording manual playtest events if future runtime
       proof needs moderator-observed states that are not reachable by smoke
       routes.
 

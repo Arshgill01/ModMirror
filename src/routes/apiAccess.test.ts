@@ -156,4 +156,68 @@ describe('api moderator access guard', () => {
     expect(payload.data.moderatorVisibilityLevel).toBe('aggregate_only');
     expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
   });
+
+  it('records protected manual runtime capability events', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => ['all']);
+    devvitState.context.username = 'mod_a';
+    devvitState.currentUser = {
+      username: 'mod_a',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/runtime-capabilities/events', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        subreddit: 'modmirror_dev',
+        capabilityId: 'menu-entrypoints',
+        status: 'passed',
+        source: 'manual_qa',
+        message: 'Post menu target capture observed in desktop playtest.',
+      }),
+    });
+    const eventPayload = (await response.json()) as {
+      ok: true;
+      data: {
+        capabilityId: string;
+        status: string;
+        source: string;
+      };
+    };
+
+    expect(response.status).toBe(201);
+    expect(eventPayload.data).toMatchObject({
+      capabilityId: 'menu-entrypoints',
+      status: 'passed',
+      source: 'manual_qa',
+    });
+
+    const matrixResponse = await api.request(
+      '/runtime-capabilities?subreddit=modmirror_dev'
+    );
+    const matrixPayload = (await matrixResponse.json()) as {
+      ok: true;
+      data: {
+        entries: Array<{
+          id: string;
+          state: string;
+          lastHealthEvent?: { source: string; message: string };
+        }>;
+      };
+    };
+    const menuEntry = matrixPayload.data.entries.find(
+      (entry) => entry.id === 'menu-entrypoints'
+    );
+
+    expect(matrixResponse.status).toBe(200);
+    expect(menuEntry).toMatchObject({
+      state: 'verified_runtime',
+      lastHealthEvent: {
+        source: 'manual_qa',
+        message: 'Post menu target capture observed in desktop playtest.',
+      },
+    });
+  });
 });

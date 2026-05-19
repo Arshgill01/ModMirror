@@ -123,6 +123,8 @@ It does not yet support:
   expanded WebView on playtest `v0.0.1.71`; native mobile remains unverified.
 - W13 added `GET /api/runtime-verification` and a matrix service so runtime,
   local, static, type-only, disabled, and unverified claims are explicit.
+  Settings can now record protected manual `playtest` / `manual_qa` runtime
+  events for moderator-observed proof that is not covered by smoke routes.
 - W01 target context is runtime-verified for post/comment menu visibility,
   form behavior, dashboard navigation, and target fetch in the desktop Reddit
   WebView path. Server-side protected API moderator access checks are locally

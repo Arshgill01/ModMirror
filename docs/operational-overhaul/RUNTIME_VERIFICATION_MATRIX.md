@@ -112,6 +112,8 @@ Runtime observations:
 Safe/non-destructive routes:
 
 - `GET /api/runtime-verification`
+- `GET /api/runtime-capabilities`
+- `POST /api/runtime-capabilities/events`
 - `POST /api/smoke/redis`
 - `POST /api/smoke/reddit`
 - `GET /api/health`
@@ -120,6 +122,9 @@ Safe/non-destructive routes:
 - `GET /api/scans`
 - `GET /api/delivery/capabilities`
 - `GET /api/ai/capabilities`
+
+Settings includes a protected manual runtime-event form for `playtest` and
+`manual_qa` observations that are not covered by smoke routes.
 
 Destructive routes/actions remain disabled by default. Do not enable real
 remove/approve/ignore-reports execution without explicit moderator confirmation,
