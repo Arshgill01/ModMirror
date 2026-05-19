@@ -493,6 +493,30 @@ Post-W34 UI uniformity pass:
   new pixel-level screenshot proof because the Computer Use bitmap capture was
   blank in that session.
 
+Post-W34 Wave 29 subreddit-isolation runtime proof:
+
+- `npm run dev` reached Devvit playtest ready for `r/modmirror_dev` on
+  `v0.0.1.122`.
+- A direct unauthenticated WebView API request returned `401` with
+  `missing authorization header`, confirming runtime probes needed the Devvit
+  WebView JWT.
+- With `Authorization: Bearer <redacted Devvit JWT>`, `GET /api/health`
+  returned version `0.0.1.122`, subreddit `modmirror_dev`, and user
+  `BrightyBrainiac`.
+- `GET /api/policies` and `GET /api/policies?subreddit=modmirror_dev` returned
+  only `modmirror_dev` policies.
+- `GET /api/policies?subreddit=ExampleLearning` remained allowed as the
+  labeled demo exception.
+- `GET /api/policies?subreddit=OtherCommunity`,
+  `GET /api/runtime-capabilities?subreddit=OtherCommunity`, and
+  `GET /api/modqueue/triage?subreddit=OtherCommunity&limit=1` returned
+  `403 subreddit_isolation_failed`.
+- `POST /api/policies` with body `subreddit: OtherCommunity` returned
+  `400 policy_validation_failed` with the cross-subreddit isolation message,
+  proving body-based policy creation is rejected before a write.
+- No public Reddit writes, live scan/demo load actions, moderation actions,
+  native Mod Notes, or Mod Discussion operations were performed.
+
 ## Next Engineering Risks
 
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:

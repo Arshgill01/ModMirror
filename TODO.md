@@ -4,8 +4,7 @@
 
 Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
 and the latest UI sweep playtest uploaded as `v0.0.1.121`. The current branch
-is a focused runtime-proof documentation pass for the remaining Devvit host UI
-sweep.
+is a focused runtime-proof documentation pass for Wave 29 subreddit isolation.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -17,10 +16,12 @@ response template preview receipt persistence, community health aggregate
 review, policy impact summaries, policy ratification propose/review/blocking,
 attribution correction persistence, stored-scan replay, and manual/skipped Case
 Packet delivery receipt persistence are now runtime-verified on desktop Reddit
-playtest. Live Reddit moderation execution, actual retention deletion, Mod
-Discussion delivery, scheduler, native Mod Notes, live modqueue reads, external
-AI, non-mod access, reviewed adoption with multiple distinct moderators, and
-native Reddit mobile app behavior remain unverified or disabled.
+playtest. Wave 29 context-derived subreddit isolation is now runtime-verified
+on Devvit playtest `v0.0.1.122`. Live Reddit moderation execution, actual
+retention deletion, Mod Discussion delivery, scheduler, native Mod Notes, live
+modqueue reads, external AI, non-mod access, reviewed adoption with multiple
+distinct moderators, and native Reddit mobile app behavior remain unverified or
+disabled.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -56,7 +57,7 @@ the repo root are intentionally left untouched.
 - [x] Confirm starter template reuse remains non-sensitive through W28 portable
       config tests.
 - [x] Add key/subreddit isolation tests.
-- [ ] Runtime-verify context-derived subreddit behavior in Devvit Web playtest.
+- [x] Runtime-verify context-derived subreddit behavior in Devvit Web playtest.
 
 ## Expansion Wave 28 Checklist
 
