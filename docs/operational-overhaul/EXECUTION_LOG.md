@@ -1202,6 +1202,25 @@ separate future proof item.
   `npm test -- src/server/services/privacyRetention.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
   and `npm run type-check`.
 
-Runtime proof status: local/static only. The synthetic smoke route still needs
-Devvit playtest proof, and actual deletion against real operational records
-remains a separate controlled-test item.
+Initial proof status before playtest: local/static only. Actual deletion
+against real operational records remained a separate controlled-test item.
+
+### 2026-05-20 - Synthetic Retention Cleanup Runtime Pass
+
+Ran the safe synthetic retention cleanup diagnostic in Devvit playtest:
+
+- Preflight passed: `npx devvit whoami` reported `u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for `r/modmirror_dev` on
+  `v0.0.1.138`.
+- The Reddit desktop WebView Settings `Run retention cleanup` control returned:
+  `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1,
+  delivery 1/1, detail keys 0, index refs 0.`
+- The runtime capability matrix changed from `5 runtime` to `6 runtime` and
+  showed `1 type-only`, `1 demo-only`, and `0 failed`.
+- No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
+  jobs, external AI calls, or real operational-record retention deletion were
+  run.
+
+Runtime proof status: synthetic expired-record cleanup is verified for the
+bounded diagnostic path. Actual deletion against real operational records
+remains a separate controlled destructive cleanup test.

@@ -7,7 +7,7 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.137`.
+playtest observed while continuing runtime proof work is `v0.0.1.138`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -23,9 +23,10 @@ playtest. Wave 29 context-derived subreddit isolation is now runtime-verified
 on Devvit playtest `v0.0.1.122`. A follow-up W17 attempt on Devvit playtest
 `v0.0.1.123` reached the same-subreddit Operational Queue refresh path but
 still returned the labeled type-supported/no-items fallback, so live modqueue
-item reads remain open. Live Reddit moderation execution, actual
-retention deletion, Mod Discussion delivery, scheduler, native Mod Notes, live
-modqueue reads, external AI, non-mod runtime account proof, reviewed adoption
+item reads remain open. Live Reddit moderation execution, actual retention
+deletion against real operational records, Mod Discussion delivery, scheduler,
+native Mod Notes, live modqueue reads, external AI, non-mod runtime account
+proof, reviewed adoption
 with multiple distinct moderators, and native Reddit mobile app behavior remain
 unverified or disabled. Server-side protected API moderator access checks are
 now locally verified, and the guarded build reached Devvit playtest ready on
@@ -37,8 +38,10 @@ conservative full-access-only visibility gate now keeps future per-mod surfaces
 aggregate-only unless that runtime-probed `all` permission is present. The next
 runtime-proof wave should target one of those remaining gaps with the same
 safety constraints used by the post-W34 probes. A synthetic retention cleanup
-smoke route is now locally tested and wired into Settings, but it still needs
-Devvit playtest proof before actual cleanup is considered runtime-verified.
+smoke route is now locally tested and runtime-verified through Settings on
+Devvit playtest `v0.0.1.138`; actual cleanup against real operational records
+still needs a separate controlled destructive cleanup test before being claimed
+runtime-verified.
 Settings now includes a manual runtime capability event recorder for safe proof
 bookkeeping; those manual
 events do not replace runtime proof for destructive or platform-dependent
@@ -46,7 +49,9 @@ capabilities. The expanded Redis sorted-set diagnostic passed on Devvit
 playtest `v0.0.1.136`. The Redis storage-envelope diagnostic passed on Devvit
 playtest `v0.0.1.137` for the current bounded storage caps: 10 scan metadata
 rows, 500 action rows, 500 override rows, one scan-like record, and smoke-key
-cleanup.
+cleanup. The synthetic retention cleanup diagnostic passed on Devvit playtest
+`v0.0.1.138`: scans `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`,
+detail keys `0`, and index refs `0`.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -607,7 +612,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add a safe synthetic retention cleanup smoke route that creates old
       synthetic Redis records, deletes only those records through retention
       cleanup, and verifies detail keys plus index references are gone.
-- [ ] Runtime-verify the synthetic retention cleanup smoke route in Devvit
+- [x] Runtime-verify the synthetic retention cleanup smoke route in Devvit
       playtest.
 - [ ] Runtime-verify actual expired-data cleanup only after a controlled
       destructive cleanup test is planned.

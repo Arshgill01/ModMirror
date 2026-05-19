@@ -480,6 +480,17 @@ Wave 1 data layer notes:
 - `src/server/services/audit.ts` stores override/audit events in the `modmirror:{subreddit}:overrides` sorted set with `createdAt` as the score.
 - `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`. Devvit playtest `v0.0.1.131` ran `/api/smoke/redis-zset` and returned an empty observed order. After the route switched to the documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` The diagnostic writes deterministic sorted-set members, reads reverse-rank order, records add/cardinality/score details, deletes the smoke key, and records a `redis-zset-ordering` health event when run.
 - `/api/smoke/redis-storage` is implemented as a bounded storage-envelope diagnostic. It writes one scan-like string record, 10 scan metadata sorted-set rows, 500 action-event sorted-set rows, and 500 override-event sorted-set rows under `smoke:redis-storage:*` keys, reads cardinalities and scan-record bytes, deletes all smoke keys, and verifies `redis.exists(...keys) === 0`. Devvit playtest `v0.0.1.137` returned `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` The Settings runtime matrix moved to `5 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`.
+- `/api/smoke/retention-cleanup` is implemented as a bounded synthetic cleanup
+  diagnostic. It creates old synthetic scan, action receipt, evidence board,
+  and team-delivery receipt records under normal retention-managed keys,
+  deletes only those synthetic records through retention cleanup, and verifies
+  detail keys plus sorted-set index references are gone. Devvit playtest
+  `v0.0.1.138` returned `Retention cleanup smoke passed: scans 1/1, receipts
+  1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.` The Settings
+  runtime matrix moved to `6 runtime`, `1 type-only`, `1 demo-only`, and
+  `0 failed`. This verifies synthetic expired-record cleanup only; deletion
+  against real operational records remains unverified until a separate
+  controlled destructive cleanup test is run.
 
 ## Permission / Visibility Findings
 
@@ -857,15 +868,17 @@ Runtime status:
   type-verified.
 - Post-W34 Devvit playtest verified Settings save, privacy inventory counts,
   and selected-category dry-run deletion controls in the Reddit-hosted WebView.
-- A bounded synthetic cleanup smoke route is locally tested and type-verified:
+- A bounded synthetic cleanup smoke route is locally tested, type-verified, and
+  runtime-verified on Devvit playtest `v0.0.1.138`:
   `POST /api/smoke/retention-cleanup` creates old synthetic scan, receipt,
   evidence board, and team-delivery receipt records, deletes only those records
   through retention cleanup, and verifies detail keys plus sorted-set index
-  references are gone.
-- The synthetic cleanup route still needs Devvit playtest proof. Deleting real
-  operational Redis records remains unverified; no destructive Devvit deletion
-  was run. Runtime proof is still required before claiming live operational
-  cleanup or scheduled cleanup behavior.
+  references are gone. The Reddit-hosted WebView result was `Retention cleanup
+  smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys
+  0, index refs 0.`
+- Deleting real operational Redis records remains unverified; no destructive
+  Devvit deletion was run. Runtime proof is still required before claiming live
+  operational cleanup or scheduled cleanup behavior.
 
 ## Wave 31 Mobile And Runtime Resilience
 
@@ -1290,8 +1303,8 @@ Decision:
 - W30 retention settings, privacy inventory, and dry-run deletion controls may
   now be described as runtime-verified for this desktop Reddit Devvit WebView
   playtest path.
-- A synthetic expired-data cleanup diagnostic is locally available at
-  `/api/smoke/retention-cleanup`, but it is not yet playtest-verified.
+- A synthetic expired-data cleanup diagnostic is runtime-verified on Devvit
+  playtest `v0.0.1.138` through `/api/smoke/retention-cleanup`.
 - Actual expired-data cleanup/deletion against real operational records remains
   unverified and should require a separate controlled destructive cleanup test.
 

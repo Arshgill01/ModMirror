@@ -114,8 +114,9 @@ runtime-verified on Devvit Web playtest `v0.0.1.122`. Native Reddit mobile
 behavior, real Reddit moderation execution, native Mod Notes, Mod Discussion
 delivery, scheduler behavior, actual retention deletion against real
 operational records, non-mod access runtime proof, and external AI remain
-unverified or disabled. A synthetic retention cleanup smoke route is locally
-tested and still needs Devvit playtest proof. Server-side
+unverified or disabled. A synthetic retention cleanup smoke route is
+runtime-verified on Devvit playtest `v0.0.1.138` for bounded synthetic records
+only. Server-side
 protected API moderator access checks are locally verified and reached Devvit
 playtest ready on `v0.0.1.126`, and protected current-user permission
 diagnostics are locally verified. A Devvit WebView Settings diagnostic on
@@ -140,7 +141,12 @@ reported `Redis sorted-set smoke passed: observed newest, middle, oldest.`
 Devvit playtest `v0.0.1.137` then ran `/api/smoke/redis-storage` and reported
 `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500,
 cleanup 0.` Practical Redis storage is runtime verified for the current
-bounded scan/action/override envelope; raising those caps remains open.
+bounded scan/action/override envelope; raising those caps remains open. Devvit
+playtest `v0.0.1.138` ran Settings `Run retention cleanup` and reported
+`Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery
+1/1, detail keys 0, index refs 0.` Synthetic expired-record cleanup is runtime
+verified for that diagnostic path; real operational-record deletion remains a
+separate controlled destructive cleanup test.
 
 ## W00 Definition Of Done
 

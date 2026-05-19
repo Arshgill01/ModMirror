@@ -227,10 +227,17 @@ Latest Redis storage-envelope runtime follow-up:
   500/500, cleanup 0.` The runtime capability matrix showed `5 runtime`,
   `1 type-only`, `1 demo-only`, and `0 failed`.
 - Local follow-up added `/api/smoke/retention-cleanup` and Settings `Run
-  retention cleanup` for synthetic expired-record cleanup; Devvit runtime proof
-  is still pending.
+  retention cleanup` for synthetic expired-record cleanup.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.138`.
+- Reddit desktop WebView Settings `Run retention cleanup` - passed:
+  `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1,
+  delivery 1/1, detail keys 0, index refs 0.` The runtime capability matrix
+  showed `6 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`.
 - No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
-  jobs, external AI calls, or retention deletion were run.
+  jobs, external AI calls, or real operational-record retention deletion were
+  run.
 
 ## Known Gaps
 

@@ -84,13 +84,18 @@ fully complete because these requirements remain incomplete or weakly verified:
   uploaded build can use external AI.
 - Actual retention deletion against real operational records is not
   runtime-proven; only dry-run controls are. A synthetic cleanup smoke route is
-  locally tested and still needs Devvit playtest proof.
+  runtime-verified on Devvit playtest `v0.0.1.138`, but it only proves bounded
+  synthetic expired-record cleanup.
 - Redis sorted-set ordering is now runtime verified through
   `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, after the earlier
   `v0.0.1.131` empty observed-order failure. The current bounded Redis storage
   envelope is runtime verified through `/api/smoke/redis-storage` on Devvit
   playtest `v0.0.1.137`: scan `10/10`, actions `500/500`, overrides
   `500/500`, cleanup `0`. Raising caps remains unproven.
+- Synthetic retention cleanup is runtime verified through
+  `/api/smoke/retention-cleanup` on Devvit playtest `v0.0.1.138`: scans
+  `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`, detail keys `0`, and
+  index refs `0`. Real operational-record deletion remains unproven.
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
   rejected, not that same-subreddit queue reads return live Reddit items.

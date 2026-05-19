@@ -40,6 +40,11 @@ It currently supports:
   `/api/smoke/redis-storage` and verified the current bounded storage envelope:
   scan metadata `10/10`, action rows `500/500`, override rows `500/500`, and
   cleanup `0`.
+- A safe synthetic retention cleanup diagnostic is runtime verified. Devvit
+  playtest `v0.0.1.138` ran `/api/smoke/retention-cleanup` through Settings
+  and reported scans `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`,
+  detail keys `0`, and index refs `0`. This does not prove deletion against
+  real operational records.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
@@ -152,7 +157,7 @@ It does not yet support:
   retention deletion: it writes old synthetic scan, action receipt, Evidence
   Board, and team-delivery receipt records, deletes only those records through
   retention cleanup, and verifies detail keys plus index references are gone.
-  It is locally tested and still needs Devvit playtest proof.
+  It is locally tested and runtime-verified on Devvit playtest `v0.0.1.138`.
 - W12 reframed the client IA around Act, Scan, Agree, Review, Prove, and
   Settings. Apply Policy and the receipt ledger now live in Act; policy
   lifecycle records live in Agree; case packets, digest, and before-after
