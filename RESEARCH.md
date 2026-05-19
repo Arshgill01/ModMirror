@@ -801,6 +801,39 @@ Runtime status:
 - Devvit Web/Redis route proof is still required before treating boards as
   runtime-proven records.
 
+## Wave 30 Privacy Retention Controls
+
+Date: 2026-05-19
+
+Evidence source:
+
+- Existing local services persist scan metadata/detail records, action
+  receipts, Evidence Boards, and team delivery receipts under namespaced Redis
+  keys.
+- Shared expansion privacy guidance requires data minimization,
+  moderator-visible retention/export/delete controls, and protected policy
+  history.
+
+Decision:
+
+- W30 adds retention settings for scan history, action receipts, Evidence
+  Boards, team delivery receipts, Case Packets, and AI advisory logs.
+- Policy history remains protected by default and is reported as protected in
+  inventory/deletion results.
+- Case Packets and AI advisory logs are included in settings and reports but
+  currently have no persisted first-class records to delete.
+- Privacy export is an inventory/count report, not a private payload export.
+- Manual deletion supports dry-run by default, selected categories, and expired
+  cleanup based on retention windows.
+
+Runtime status:
+
+- Privacy retention service, API contracts, and Settings UI are locally
+  type-verified.
+- Redis deletion behavior is tested with mocked dependencies only.
+- No Devvit playtest was run in W30. Runtime proof is still required before
+  claiming live Redis cleanup or scheduled cleanup behavior.
+
 ## Operational Overhaul W13 Runtime Findings
 
 Date: 2026-05-18

@@ -13,6 +13,7 @@ import {
   MIRROR_SCAN_DEPTH_VALUES,
   MODQUEUE_CONTENT_TYPE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
+  PRIVACY_RETENTION_CATEGORY_VALUES,
   TEAM_DELIVERY_CHANNEL_VALUES,
   TEAM_DELIVERY_SUBJECT_TYPE_VALUES,
 } from '../shared/constants';
@@ -76,6 +77,12 @@ import type {
   PortableConfigImportResult,
   PortableConfigPackage,
   PortableConfigTemplateListResponse,
+  PrivacyDeletionRequest,
+  PrivacyDeletionResult,
+  PrivacyRetentionCategory,
+  PrivacyRetentionExport,
+  PrivacyRetentionSettings,
+  PrivacyRetentionUpdateRequest,
   PolicyReviewInput,
   PolicyUpdateInput,
   RulePolicy,
@@ -166,6 +173,12 @@ import {
   getPortableConfigTemplates,
   importPortableConfig,
 } from '../server/services/configPortability';
+import {
+  deletePrivacyData,
+  exportPrivacyRetentionInventory,
+  getPrivacyRetentionSettings,
+  updatePrivacyRetentionSettings,
+} from '../server/services/privacyRetention';
 import {
   isSubredditIsolationError,
   resolveLiveSubredditScope,
@@ -1194,6 +1207,59 @@ api.post('/config/import', async (c) => {
   }
 });
 
+api.get('/privacy/retention', async (c) => {
+  const response: ApiResponse<PrivacyRetentionSettings> = {
+    ok: true,
+    data: await getPrivacyRetentionSettings(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.put('/privacy/retention', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PrivacyRetentionUpdateRequest>;
+
+  try {
+    const response: ApiResponse<PrivacyRetentionSettings> = {
+      ok: true,
+      data: await updatePrivacyRetentionSettings({
+        subreddit: getRequestedBodySubreddit(body),
+        updatedBy: context.username ?? 'unknown',
+        request: normalizePrivacyRetentionUpdateRequest(body),
+      }),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(privacyRetentionError(error), 400);
+  }
+});
+
+api.get('/privacy/export', async (c) => {
+  const response: ApiResponse<PrivacyRetentionExport> = {
+    ok: true,
+    data: await exportPrivacyRetentionInventory({
+      subreddit: getRequestedSubreddit(c),
+    }),
+  };
+  return c.json(response);
+});
+
+api.post('/privacy/delete', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<PrivacyDeletionRequest>;
+
+  try {
+    const response: ApiResponse<PrivacyDeletionResult> = {
+      ok: true,
+      data: await deletePrivacyData({
+        subreddit: getRequestedBodySubreddit(body),
+        request: normalizePrivacyDeletionRequest(body),
+      }),
+    };
+    return c.json(response);
+  } catch (error) {
+    return c.json(privacyDeletionError(error), 400);
+  }
+});
+
 api.post('/digest/generate', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<GenerateDigestRequest>;
 
@@ -1764,6 +1830,84 @@ function configPortabilityError(
         error instanceof Error
           ? error.message
           : 'Portable configuration request failed',
+    },
+  };
+}
+
+function normalizePrivacyRetentionUpdateRequest(
+  body: Partial<PrivacyRetentionUpdateRequest>
+): PrivacyRetentionUpdateRequest {
+  const request: PrivacyRetentionUpdateRequest = {};
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  for (const field of [
+    'scanHistoryDays',
+    'actionReceiptDays',
+    'evidenceBoardDays',
+    'teamDeliveryReceiptDays',
+    'aiAdvisoryLogDays',
+    'casePacketDays',
+  ] as const) {
+    if (body[field] !== undefined) {
+      request[field] = Number(body[field]);
+    }
+  }
+  return request;
+}
+
+function normalizePrivacyDeletionRequest(
+  body: Partial<PrivacyDeletionRequest>
+): PrivacyDeletionRequest {
+  const request: PrivacyDeletionRequest = {};
+  if (body.subreddit !== undefined) {
+    request.subreddit = body.subreddit;
+  }
+  if (body.dryRun !== undefined) {
+    request.dryRun = body.dryRun === true;
+  }
+  if (body.expiredOnly !== undefined) {
+    request.expiredOnly = body.expiredOnly === true;
+  }
+  if (Array.isArray(body.categories)) {
+    request.categories = body.categories.map((category) => {
+      if (
+        !PRIVACY_RETENTION_CATEGORY_VALUES.includes(
+          category as PrivacyRetentionCategory
+        )
+      ) {
+        throw new Error(`Unsupported privacy deletion category: ${category}`);
+      }
+      return category as PrivacyRetentionCategory;
+    });
+  }
+  return request;
+}
+
+function privacyRetentionError(
+  error: unknown
+): ApiResponse<PrivacyRetentionSettings> {
+  return {
+    ok: false,
+    error: {
+      code: 'privacy_retention_failed',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Privacy retention request failed',
+    },
+  };
+}
+
+function privacyDeletionError(
+  error: unknown
+): ApiResponse<PrivacyDeletionResult> {
+  return {
+    ok: false,
+    error: {
+      code: 'privacy_deletion_failed',
+      message:
+        error instanceof Error ? error.message : 'Privacy deletion request failed',
     },
   };
 }

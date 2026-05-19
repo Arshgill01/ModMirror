@@ -360,6 +360,7 @@ dd {
 
 .primary-button,
 .secondary-button,
+.danger-button,
 .text-button {
   border-radius: 4px;
   min-height: 36px;
@@ -367,7 +368,8 @@ dd {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   border: 1px solid transparent;
   font-size: 14px;
   font-weight: 720;
@@ -390,6 +392,16 @@ dd {
 
 .secondary-button:hover {
   border-color: #727d87;
+}
+
+.danger-button {
+  background: var(--mm-paper);
+  border-color: var(--mm-danger);
+  color: var(--mm-danger);
+}
+
+.danger-button:hover {
+  background: rgb(184 54 43 / 8%);
 }
 
 .text-button {
@@ -1492,21 +1504,25 @@ dd {
 .incident-form,
 .incident-report,
 .config-result,
-.config-column {
+.config-column,
+.retention-result,
+.retention-delete-form {
   display: grid;
   gap: 12px;
 }
 
 .incident-form-grid,
 .incident-guidance-grid,
-.config-grid {
+.config-grid,
+.retention-grid {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .incident-settings h4,
-.config-portability h4 {
+.config-portability h4,
+.privacy-retention h4 {
   color: var(--mm-ink);
   font-size: 14px;
   font-weight: 740;
@@ -1517,12 +1533,61 @@ dd {
   min-height: 300px;
 }
 
-.config-portability {
+.config-portability,
+.privacy-retention {
   background: var(--mm-paper);
   border: 1px solid var(--mm-line);
   display: grid;
   gap: 16px;
   padding: 18px;
+}
+
+.retention-protected-row {
+  align-items: start;
+  border-block: 1px solid var(--mm-line);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(140px, 0.3fr) minmax(0, 1fr);
+  padding: 12px 0;
+}
+
+.retention-protected-row strong {
+  color: var(--mm-ink);
+  font-size: 14px;
+}
+
+.retention-protected-row span {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.retention-delete-form fieldset {
+  border: 1px solid var(--mm-line);
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+}
+
+.retention-delete-form legend {
+  color: var(--mm-ink);
+  font-size: 13px;
+  font-weight: 740;
+  padding: 0 6px;
+}
+
+.category-checks {
+  display: grid;
+  gap: 8px 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.category-checks label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  line-height: 1.3;
 }
 
 .incident-list {
@@ -1821,7 +1886,10 @@ dd {
   .incident-banner,
   .incident-form-grid,
   .incident-guidance-grid,
-  .config-grid {
+  .config-grid,
+  .retention-grid,
+  .retention-protected-row,
+  .category-checks {
     grid-template-columns: 1fr;
   }
 
@@ -1844,7 +1912,8 @@ dd {
   .button-row > button,
   .workspace-tools > button,
   .primary-button,
-  .secondary-button {
+  .secondary-button,
+  .danger-button {
     flex: 1 1 140px;
   }
 

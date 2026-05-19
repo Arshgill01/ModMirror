@@ -491,3 +491,19 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       context.
 - [ ] Verify log-only Apply Policy creates a receipt in Devvit Redis.
 - [ ] Verify native Reddit mobile app layout and interaction behavior.
+
+## Expansion Wave 30 Follow-up
+
+- [x] Add privacy retention settings for scan history, action receipts,
+      evidence boards, team delivery receipts, case packets, and AI advisory
+      logs.
+- [x] Keep policy history protected by default and outside deletion controls.
+- [x] Add inventory export and manual deletion APIs with dry-run support.
+- [x] Add Settings UI for retention windows, privacy inventory, and deletion
+      controls.
+- [x] Add service tests for defaults, setting updates, inventory export,
+      dry-run behavior, and expired cleanup.
+- [ ] Runtime-verify retention settings and deletion controls against Devvit
+      Redis on a safe test subreddit before claiming live cleanup proof.
+- [ ] Add a scheduled cleanup task only after scheduler behavior is
+      runtime-verified in this app shape.

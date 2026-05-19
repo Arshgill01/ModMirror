@@ -58,6 +58,8 @@ export const redisKeys = {
   incident: (subreddit: string, incidentId: string) =>
     mmKey(subreddit, `incident:${incidentId}`),
   incidentActive: (subreddit: string) => mmKey(subreddit, 'incident:active'),
+  privacyRetentionSettings: (subreddit: string) =>
+    mmKey(subreddit, 'privacy:retention-settings'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 
@@ -79,6 +81,12 @@ export async function readJson<T>(key: string): Promise<T | undefined> {
 
 export async function writeJson(key: string, value: unknown): Promise<void> {
   await redis.set(key, serializeJson(value));
+}
+
+export async function deleteKeys(...keys: string[]): Promise<void> {
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
 }
 
 export async function runRedisDataSmoke(

@@ -13,6 +13,7 @@ import {
   MESSAGE_DELIVERY_MODE_VALUES,
   NATIVE_MOD_NOTE_MODE_VALUES,
   OVERRIDE_REASON_VALUES,
+  PRIVACY_RETENTION_CATEGORY_VALUES,
   RESPONSE_TEMPLATE_KIND_VALUES,
 } from '../shared/constants';
 import {
@@ -73,6 +74,10 @@ import type {
   PortableConfigImportResult,
   PortableConfigPackage,
   PortableConfigTemplateListResponse,
+  PrivacyDeletionResult,
+  PrivacyRetentionCategory,
+  PrivacyRetentionExport,
+  PrivacyRetentionSettings,
   ResponseTemplateKind,
   RulePolicy,
   TeamDeliveryChannel,
@@ -302,6 +307,17 @@ type ConfigPortabilityUiState = {
   templates: PortableConfigPackage[];
 };
 
+type PrivacyRetentionUiState = {
+  loading: boolean;
+  saving: boolean;
+  deleting: boolean;
+  error: string | undefined;
+  message: string | undefined;
+  settings: PrivacyRetentionSettings | undefined;
+  inventory: PrivacyRetentionExport | undefined;
+  deletionResult: PrivacyDeletionResult | undefined;
+};
+
 type ModqueueTriageUiState = {
   loading: boolean;
   error: string | undefined;
@@ -455,6 +471,16 @@ let configPortabilityState: ConfigPortabilityUiState = {
   importText: '',
   importResult: undefined,
   templates: [],
+};
+let privacyRetentionState: PrivacyRetentionUiState = {
+  loading: false,
+  saving: false,
+  deleting: false,
+  error: undefined,
+  message: undefined,
+  settings: undefined,
+  inventory: undefined,
+  deletionResult: undefined,
 };
 let modqueueState: ModqueueTriageUiState = {
   loading: false,
@@ -2529,6 +2555,7 @@ function renderSettingsPage() {
     <section class="settings-stack">
       ${renderIncidentSettings()}
       ${renderConfigPortabilitySettings()}
+      ${renderPrivacyRetentionSettings()}
     </section>
     <section class="settings-grid">
       ${renderSettingsCard('Appearance', capitalize(themePreference), themePreference === 'system' ? 'Following the WebView system color-scheme signal. Use the header control to force light or dark mode.' : `Forced ${themePreference} mode for this browser session.`)}
@@ -2546,6 +2573,7 @@ function renderSettingsPage() {
       ${renderSettingsCard('AI enforcement use', aiAdvisoryState.capabilities?.enforcementUse.state ?? 'disabled', aiAdvisoryState.capabilities?.enforcementUse.detail ?? 'AI output cannot decide or execute moderation actions.')}
       ${renderSettingsCard('Team delivery', teamDeliveryState.capabilities?.modDiscussion.state ?? 'unverified', teamDeliveryState.capabilities?.modDiscussion.detail ?? teamDeliveryState.error ?? 'Mod discussion delivery remains preview-first until runtime-verified.')}
       ${renderSettingsCard('Team scheduler', teamDeliveryState.capabilities?.scheduler.state ?? 'unavailable', teamDeliveryState.capabilities?.scheduler.detail ?? 'Scheduled delivery is unavailable until a scheduler task is registered and runtime-verified.')}
+      ${renderSettingsCard('Privacy retention', privacyRetentionState.settings ? `${privacyRetentionState.settings.scanHistoryDays} day scans` : 'not loaded', privacyRetentionState.settings ? 'Policy history is protected and operational data can be dry-run before deletion.' : privacyRetentionState.error ?? 'Retention settings have not loaded yet.')}
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;
@@ -2662,6 +2690,156 @@ function renderConfigTemplates() {
           .join('')}
       </ol>
     </div>
+  `;
+}
+
+function renderPrivacyRetentionSettings() {
+  const settings = getPrivacyRetentionFormSettings();
+  return `
+    <section class="document-panel privacy-retention" aria-label="Privacy retention controls">
+      <div class="section-header">
+        <div>
+          <h3>Privacy Retention</h3>
+          <p>Set deletion windows for operational records. Policy versions remain protected by default.</p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button compact-button" data-load-privacy-retention type="button" ${privacyRetentionState.loading ? 'disabled' : ''}>Reload</button>
+          <button class="secondary-button compact-button" data-export-privacy-inventory type="button" ${privacyRetentionState.loading ? 'disabled' : ''}>Export inventory</button>
+        </div>
+      </div>
+      ${renderPrivacyRetentionMessage()}
+      <form class="policy-form retention-form" data-privacy-retention-form>
+        <div class="retention-grid">
+          ${renderRetentionNumberField('scanHistoryDays', 'Scan history', settings.scanHistoryDays)}
+          ${renderRetentionNumberField('actionReceiptDays', 'Action receipts', settings.actionReceiptDays)}
+          ${renderRetentionNumberField('evidenceBoardDays', 'Evidence boards', settings.evidenceBoardDays)}
+          ${renderRetentionNumberField('teamDeliveryReceiptDays', 'Team delivery receipts', settings.teamDeliveryReceiptDays)}
+          ${renderRetentionNumberField('casePacketDays', 'Case packets', settings.casePacketDays)}
+          ${renderRetentionNumberField('aiAdvisoryLogDays', 'AI advisory logs', settings.aiAdvisoryLogDays)}
+        </div>
+        <div class="retention-protected-row">
+          <strong>Policy history</strong>
+          <span>Protected. Policy versions and review history are not part of manual deletion controls.</span>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" type="submit" ${privacyRetentionState.saving ? 'disabled' : ''}>Save retention</button>
+        </div>
+      </form>
+      <form class="retention-delete-form" data-privacy-delete-form>
+        <fieldset>
+          <legend>Deletion controls</legend>
+          <div class="category-checks">
+            ${PRIVACY_RETENTION_CATEGORY_VALUES.map(
+              (category) => `
+                <label>
+                  <input type="checkbox" name="category" value="${category}">
+                  ${formatPrivacyCategory(category)}
+                </label>
+              `
+            ).join('')}
+          </div>
+        </fieldset>
+        <div class="button-row">
+          <button class="secondary-button" name="mode" value="dry-run" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Dry run selected</button>
+          <button class="secondary-button" name="mode" value="expired" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Delete expired</button>
+          <button class="danger-button" name="mode" value="delete" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Delete selected</button>
+        </div>
+      </form>
+      ${renderPrivacyRetentionInventory()}
+      ${renderPrivacyDeletionResult()}
+    </section>
+  `;
+}
+
+function renderRetentionNumberField(
+  name: keyof Pick<
+    PrivacyRetentionSettings,
+    | 'scanHistoryDays'
+    | 'actionReceiptDays'
+    | 'evidenceBoardDays'
+    | 'teamDeliveryReceiptDays'
+    | 'casePacketDays'
+    | 'aiAdvisoryLogDays'
+  >,
+  label: string,
+  value: number
+) {
+  return `
+    <label>
+      ${label}
+      <input type="number" name="${name}" min="1" max="3650" step="1" value="${value}">
+    </label>
+  `;
+}
+
+function renderPrivacyRetentionMessage() {
+  if (privacyRetentionState.error) {
+    return `<p class="inline-error">${escapeHtml(privacyRetentionState.error)}</p>`;
+  }
+  if (privacyRetentionState.message) {
+    return `<p class="inline-success">${escapeHtml(privacyRetentionState.message)}</p>`;
+  }
+  return '';
+}
+
+function renderPrivacyRetentionInventory() {
+  const inventory = privacyRetentionState.inventory;
+  if (inventory === undefined) {
+    return '';
+  }
+  return `
+    <div class="retention-result">
+      <h4>Inventory export</h4>
+      <dl class="compact-metrics">
+        <div><dt>Subreddit</dt><dd>r/${escapeHtml(inventory.subreddit)}</dd></div>
+        <div><dt>Exported</dt><dd>${formatDate(inventory.exportedAt)}</dd></div>
+        <div><dt>Categories</dt><dd>${inventory.categories.length}</dd></div>
+      </dl>
+      ${renderPrivacyReports(inventory.categories)}
+      <ul class="plain-note-list">
+        ${inventory.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderPrivacyDeletionResult() {
+  const result = privacyRetentionState.deletionResult;
+  if (result === undefined) {
+    return '';
+  }
+  return `
+    <div class="retention-result">
+      <h4>${result.dryRun ? 'Dry-run deletion' : 'Deletion receipt'}</h4>
+      <dl class="compact-metrics">
+        <div><dt>Subreddit</dt><dd>r/${escapeHtml(result.subreddit)}</dd></div>
+        <div><dt>Mode</dt><dd>${result.dryRun ? 'dry run' : 'deleted'}</dd></div>
+        <div><dt>Recorded</dt><dd>${formatDate(result.deletedAt)}</dd></div>
+      </dl>
+      ${renderPrivacyReports(result.categories)}
+      <ul class="plain-note-list">
+        ${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderPrivacyReports(
+  reports: PrivacyRetentionExport['categories']
+) {
+  return `
+    <ol class="incident-list compact">
+      ${reports
+        .map(
+          (report) => `
+            <li>
+              <strong>${formatPrivacyCategory(report.category)}</strong>
+              <span>${report.protected ? 'Protected' : `${report.retainedCount} retained / ${report.deletedCount} selected`} - ${escapeHtml(report.detail)}</span>
+            </li>
+          `
+        )
+        .join('')}
+    </ol>
   `;
 }
 
@@ -2933,6 +3111,7 @@ function bindAllActions() {
   bindEvidenceBoardActions();
   bindIncidentModeActions();
   bindConfigPortabilityActions();
+  bindPrivacyRetentionActions();
   bindGovernanceActions();
   bindDigestActions();
   bindReceiptActions();
@@ -3386,6 +3565,43 @@ function bindConfigPortabilityActions() {
     });
 }
 
+function bindPrivacyRetentionActions() {
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-load-privacy-retention]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void loadPrivacyRetentionSettings();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-export-privacy-inventory]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        void exportPrivacyInventory();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-privacy-retention-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void savePrivacyRetentionSettings(new FormData(form));
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLFormElement>('[data-privacy-delete-form]')
+    .forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const submitter = event.submitter as HTMLButtonElement | null;
+        void deletePrivacyDataFromForm(new FormData(form), submitter?.value);
+      });
+    });
+}
+
 function bindGovernanceActions() {
   document.querySelectorAll<HTMLButtonElement>('[data-load-governance]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -3777,6 +3993,22 @@ function isStandaloneStaticPreview() {
   return window.parent === window && getDevvitGlobal() === undefined;
 }
 
+function getPrivacyRetentionFormSettings(): PrivacyRetentionSettings {
+  return (
+    privacyRetentionState.settings ?? {
+      subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+      updatedAt: '1970-01-01T00:00:00.000Z',
+      scanHistoryDays: 90,
+      actionReceiptDays: 180,
+      evidenceBoardDays: 365,
+      teamDeliveryReceiptDays: 180,
+      casePacketDays: 180,
+      aiAdvisoryLogDays: 30,
+      protectPolicyHistory: true,
+    }
+  );
+}
+
 function getWorkspaceSubreddit() {
   if (scanState.result?.source === 'demo') {
     return scanState.result.subreddit;
@@ -3799,6 +4031,26 @@ function withWorkspaceSubreddit(url: string) {
   }
   const joiner = url.includes('?') ? '&' : '?';
   return `${url}${joiner}subreddit=${encodeURIComponent(subreddit)}`;
+}
+
+function readRetentionDays(formData: FormData, key: string) {
+  const value = Number(formData.get(key) ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isPrivacyRetentionCategory(
+  value: string
+): value is PrivacyRetentionCategory {
+  return PRIVACY_RETENTION_CATEGORY_VALUES.includes(
+    value as PrivacyRetentionCategory
+  );
+}
+
+function formatPrivacyCategory(category: string) {
+  if (category === 'policy_history') {
+    return 'Policy history';
+  }
+  return formatAction(category);
 }
 
 function createClientDigestCapabilities(): DigestCapabilities {
@@ -5425,6 +5677,186 @@ async function importPortableConfig(configJson: string, dryRun: boolean) {
   render();
 }
 
+async function loadPrivacyRetentionSettings() {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const settings = await fetchApi<PrivacyRetentionSettings>(
+      withWorkspaceSubreddit(API_ROUTES.privacyRetention)
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      settings,
+      message: undefined,
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Privacy retention settings are unavailable.'
+      ),
+    };
+  }
+
+  render();
+}
+
+async function savePrivacyRetentionSettings(formData: FormData) {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      scanHistoryDays: readRetentionDays(formData, 'scanHistoryDays'),
+      actionReceiptDays: readRetentionDays(formData, 'actionReceiptDays'),
+      evidenceBoardDays: readRetentionDays(formData, 'evidenceBoardDays'),
+      teamDeliveryReceiptDays: readRetentionDays(
+        formData,
+        'teamDeliveryReceiptDays'
+      ),
+      casePacketDays: readRetentionDays(formData, 'casePacketDays'),
+      aiAdvisoryLogDays: readRetentionDays(formData, 'aiAdvisoryLogDays'),
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const settings = await fetchApi<PrivacyRetentionSettings>(
+      API_ROUTES.privacyRetention,
+      {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      saving: false,
+      settings,
+      message: 'Retention settings saved. Policy history remains protected.',
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      saving: false,
+      error: normalizeClientError(error, 'Retention settings could not be saved.'),
+    };
+  }
+
+  render();
+}
+
+async function exportPrivacyInventory() {
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    loading: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
+  try {
+    const inventory = await fetchApi<PrivacyRetentionExport>(
+      withWorkspaceSubreddit(API_ROUTES.privacyExport)
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      inventory,
+      message: 'Privacy inventory loaded. It reports counts, not private payloads.',
+      error: undefined,
+    };
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      loading: false,
+      error: normalizeClientError(error, 'Privacy inventory export failed.'),
+    };
+  }
+
+  render();
+}
+
+async function deletePrivacyDataFromForm(
+  formData: FormData,
+  mode: string | undefined
+) {
+  const categories = formData
+    .getAll('category')
+    .map((value) => String(value))
+    .filter(isPrivacyRetentionCategory);
+  if (mode !== 'expired' && categories.length === 0) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      error: 'Select at least one data category before running deletion controls.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  privacyRetentionState = {
+    ...privacyRetentionState,
+    deleting: true,
+    error: undefined,
+    message: undefined,
+    deletionResult: undefined,
+  };
+  render();
+
+  try {
+    const subreddit = getWorkspaceSubreddit();
+    const body = {
+      categories:
+        mode === 'expired' ? [...PRIVACY_RETENTION_CATEGORY_VALUES] : categories,
+      dryRun: mode !== 'delete' && mode !== 'expired',
+      expiredOnly: mode === 'expired',
+      ...(subreddit ? { subreddit } : {}),
+    };
+    const deletionResult = await fetchApi<PrivacyDeletionResult>(
+      API_ROUTES.privacyDelete,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      deleting: false,
+      deletionResult,
+      message: deletionResult.dryRun
+        ? 'Dry run completed. No data was deleted.'
+        : 'Selected privacy data was deleted. Policy history remains protected.',
+      error: undefined,
+    };
+    if (!deletionResult.dryRun) {
+      void exportPrivacyInventory();
+    }
+  } catch (error) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      deleting: false,
+      error: normalizeClientError(error, 'Privacy deletion failed safely.'),
+    };
+  }
+
+  render();
+}
+
 async function loadPolicyVersions(
   policies: RulePolicy[]
 ): Promise<Record<string, PolicyVersionSummary[]>> {
@@ -6672,6 +7104,7 @@ void loadTeamDeliveryCapabilities();
 void loadEvidenceBoards();
 void loadIncidentMode();
 void loadPortableConfigTemplates();
+void loadPrivacyRetentionSettings();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {

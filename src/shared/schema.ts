@@ -1693,6 +1693,68 @@ export interface PortableConfigImportResult {
   warnings: string[];
 }
 
+export type PrivacyRetentionCategory =
+  | 'scan_history'
+  | 'action_receipts'
+  | 'evidence_boards'
+  | 'team_delivery_receipts'
+  | 'case_packets'
+  | 'ai_advisory_logs';
+
+export interface PrivacyRetentionSettings {
+  subreddit: string;
+  updatedAt: string;
+  updatedBy?: string;
+  scanHistoryDays: number;
+  actionReceiptDays: number;
+  evidenceBoardDays: number;
+  teamDeliveryReceiptDays: number;
+  aiAdvisoryLogDays: number;
+  casePacketDays: number;
+  protectPolicyHistory: true;
+}
+
+export interface PrivacyRetentionUpdateRequest {
+  subreddit?: string;
+  scanHistoryDays?: number;
+  actionReceiptDays?: number;
+  evidenceBoardDays?: number;
+  teamDeliveryReceiptDays?: number;
+  aiAdvisoryLogDays?: number;
+  casePacketDays?: number;
+}
+
+export interface PrivacyRetentionCategoryReport {
+  category: PrivacyRetentionCategory | 'policy_history';
+  retainedCount: number;
+  deletedCount: number;
+  protected: boolean;
+  detail: string;
+}
+
+export interface PrivacyRetentionExport {
+  subreddit: string;
+  exportedAt: string;
+  settings: PrivacyRetentionSettings;
+  categories: PrivacyRetentionCategoryReport[];
+  warnings: string[];
+}
+
+export interface PrivacyDeletionRequest {
+  subreddit?: string;
+  categories?: PrivacyRetentionCategory[];
+  dryRun?: boolean;
+  expiredOnly?: boolean;
+}
+
+export interface PrivacyDeletionResult {
+  subreddit: string;
+  dryRun: boolean;
+  deletedAt: string;
+  categories: PrivacyRetentionCategoryReport[];
+  warnings: string[];
+}
+
 export interface AiAdvisoryCapabilityStatus {
   state: AiAdvisoryCapabilityState;
   label: string;

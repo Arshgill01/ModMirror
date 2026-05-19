@@ -38,6 +38,7 @@ import type {
   PolicyHealthStatus,
   PortableConfigSchemaVersion,
   PortableConfigSource,
+  PrivacyRetentionCategory,
   ResponseTemplateKind,
   RedditModerationOperation,
   TeamDeliveryChannel,
@@ -189,6 +190,15 @@ export const PORTABLE_CONFIG_SOURCE_VALUES = [
   'starter_template',
   'demo_test_config',
 ] as const satisfies readonly PortableConfigSource[];
+
+export const PRIVACY_RETENTION_CATEGORY_VALUES = [
+  'scan_history',
+  'action_receipts',
+  'evidence_boards',
+  'team_delivery_receipts',
+  'case_packets',
+  'ai_advisory_logs',
+] as const satisfies readonly PrivacyRetentionCategory[];
 
 export const APPEAL_POSTURE_VALUES = [
   'policy_consistent',
@@ -413,6 +423,9 @@ export const API_ROUTES = {
   configExport: '/api/config/export',
   configImport: '/api/config/import',
   configTemplates: '/api/config/templates',
+  privacyRetention: '/api/privacy/retention',
+  privacyExport: '/api/privacy/export',
+  privacyDelete: '/api/privacy/delete',
   digestGenerate: '/api/digest/generate',
   digestHistory: '/api/digest/history',
   digestCapabilities: '/api/digest/capabilities',
