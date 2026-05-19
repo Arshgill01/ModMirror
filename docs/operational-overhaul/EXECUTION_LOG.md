@@ -870,3 +870,27 @@ Validation:
 Runtime playtest was not run for this guard. Public comment ordering, comment
 identity/sticky behavior, private message/modmail delivery, native Mod Notes,
 and real Reddit moderation execution remain disabled or unverified.
+
+### 2026-05-20 - Post-W34 Local Override Sorted-Set Ordering Test
+
+Implemented local persistence coverage for the historical Redis override
+ordering follow-up:
+
+- Added `src/server/services/auditPersistence.test.ts`.
+- The test writes three override events with out-of-order timestamps through
+  `saveOverrideEvent` and verifies `listRecentAuditEvents` returns newest
+  events first from `modmirror:{subreddit}:overrides`.
+- Updated TODO, research, and capability docs to distinguish local coverage
+  from the still-open runtime Redis sorted-set confirmation.
+
+Validation:
+
+- `npm test -- src/server/services/auditPersistence.test.ts src/server/services/audit.test.ts`
+  - passed, 2 files and 5 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 205 tests.
+- `git diff --check` - passed.
+
+Runtime playtest was not run for this local test slice. Exact Devvit Redis
+sorted-set ordering remains a runtime follow-up.

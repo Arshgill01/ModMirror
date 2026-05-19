@@ -418,7 +418,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 
 - [x] Hit `/api/smoke/redis` in playtest and confirm `modmirror:{subreddit}:smoke:redis-data-layer` write/read.
 - [x] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
-- [ ] Confirm Redis sorted-set ordering for `modmirror:{subreddit}:overrides`.
+- [x] Locally test reverse sorted-set ordering for
+      `modmirror:{subreddit}:overrides`.
+- [ ] Runtime-confirm Redis sorted-set ordering for
+      `modmirror:{subreddit}:overrides`.
 - [ ] Confirm practical Redis storage limits for scan metadata and audit events before storing larger live datasets.
 
 ## Wave 0 Completed Locally
