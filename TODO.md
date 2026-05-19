@@ -6,7 +6,7 @@ Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
 the UI sweep proof has been merged through PR #14, and the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16. The
 latest Devvit playtest observed while continuing runtime proof work is
-`v0.0.1.126`.
+`v0.0.1.130`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -28,7 +28,10 @@ modqueue reads, external AI, non-mod runtime account proof, reviewed adoption
 with multiple distinct moderators, and native Reddit mobile app behavior remain
 unverified or disabled. Server-side protected API moderator access checks are
 now locally verified, and the guarded build reached Devvit playtest ready on
-`v0.0.1.126`, but still needs a true non-mod account playtest. The next
+`v0.0.1.126`, but still needs a true non-mod account playtest. A protected
+current-user permission diagnostic route is locally and runtime verified for
+the current moderator account: the Devvit WebView Settings check on
+`r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` The next
 runtime-proof wave should target one of those remaining gaps with the same
 safety constraints used by the post-W34 probes.
 
@@ -433,6 +436,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add server-side protected API moderator access checks for live subreddit context.
 - [x] Add route-level middleware tests proving public health stays reachable and
       protected API routes require moderator access.
+- [x] Add a protected current-user permission diagnostic route for safe runtime
+      permission-string capture.
+- [x] Runtime-capture the current moderator account's permission string in the
+      Devvit WebView diagnostic (`all` on `r/modmirror_dev`).
 - [x] Classify moderator-access API failures separately in the client so blocked
       users see moderator-account guidance instead of generic input-fix text.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.

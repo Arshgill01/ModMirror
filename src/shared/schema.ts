@@ -2054,6 +2054,17 @@ export interface RuntimeCapabilityMatrix {
   warnings: string[];
 }
 
+export interface ModeratorAccessDiagnostic {
+  subreddit?: string;
+  username?: string;
+  evidence:
+    | 'skipped_no_subreddit_context'
+    | 'moderator_permissions_verified';
+  permissionCount: number;
+  permissions: string[];
+  source: 'current_user_permissions';
+}
+
 export type ApiSuccess<T> = {
   ok: true;
   data: T;

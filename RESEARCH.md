@@ -51,9 +51,9 @@ Updated by: Codex
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
-| Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `src/routes/apiAccess.test.ts` proves the route middleware leaves `/api/health` reachable without a current user, denies `/api/policies` without a current user, and allows `/api/runtime-capabilities` when moderator permissions are present. `npm test -- src/routes/apiAccess.test.ts`, `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`, and `npm run type-check` pass. Runtime proof with a true non-mod account remains open. |
+| Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `src/routes/apiAccess.test.ts` proves the route middleware leaves `/api/health` reachable without a current user, denies `/api/policies` without a current user, allows `/api/runtime-capabilities` when moderator permissions are present, and returns current-user permission strings from protected `/api/access/diagnostics`. `npm test -- src/routes/apiAccess.test.ts`, `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`, and `npm run type-check` pass. Devvit WebView Settings diagnostics returned the current moderator account's permission string as `all`; runtime proof with a true non-mod account remains open. |
 | Verified locally | Client errors distinguish moderator access failures from generic API errors. | `src/shared/clientResilience.ts` classifies `moderator_access_required` and related permission messages as `access_denied`, and `src/client/main.ts` preserves API error codes in common fetch failures. `npm test -- src/shared/clientResilience.test.ts` and `npm run type-check` pass. |
-| Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
+| Partially verified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks, and protected `GET /api/access/diagnostics` is locally verified for safe current-user runtime capture. The Devvit WebView Settings diagnostic for `u/BrightyBrainiac` on `r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` Lower-permission moderator roles and true per-mod/manage-level gates remain unverified. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
@@ -483,7 +483,7 @@ Wave 1 data layer notes:
 | Can identify current user?                      | Yes. `context.username`, `context.userId`, and `reddit.getCurrentUser()` exist.                                                                              |
 | Can identify whether current user is moderator? | Menu config can restrict to `forUserType: "moderator"`; runtime permission checks can use `getModPermissionsForSubreddit`.                                   |
 | Can inspect moderator permissions?              | Yes. `User.getModPermissionsForSubreddit(subredditName): Promise<ModeratorPermission[]>`.                                                                    |
-| Can distinguish full/manage permissions?        | Typings expose permission strings including `all`; the template checks `all` or `posts`. Exact available permission values need runtime logging in playtest. |
+| Can distinguish full/manage permissions?        | Typings expose permission strings including `all`; the current moderator account returned `all` in Devvit WebView. Lower-permission role strings still need runtime proof before product gates depend on them. |
 
 Conclusion:
 
@@ -1548,9 +1548,13 @@ Evidence source:
   passed after updating the guard and truth matrices.
 - `npm test -- src/routes/apiAccess.test.ts` passed after adding route-level
   middleware proof for public health, denied protected access, and allowed
-  moderator access.
+  moderator access. It now also covers protected current-user permission
+  diagnostics.
 - `npx devvit whoami` reported `u/BrightyBrainiac`.
 - `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.126`.
+- A follow-up Devvit playtest reached `v0.0.1.129`; Safari accessibility
+  readback from the Settings `Check access` diagnostic showed:
+  `Access check passed: 1 permission(s): all.`
 
 Implemented behavior:
 
@@ -1563,6 +1567,8 @@ Implemented behavior:
   health/status/capability metadata routes available.
 - `src/routes/apiAccess.test.ts` proves the middleware behavior at the Hono API
   route layer.
+- `GET /api/access/diagnostics` returns the current moderator's own permission
+  strings from the protected API path without writing Reddit or Redis state.
 - Local no-subreddit-context execution is allowed so static/demo development
   does not depend on Devvit runtime context.
 - `src/shared/clientResilience.ts` classifies `moderator_access_required` and
@@ -1573,6 +1579,8 @@ Decision:
 
 - Server-side protected API moderator access checks may be described as locally
   verified, including client-side access-denied messaging.
+- The current moderator account on `r/modmirror_dev` may be described as
+  runtime-probed with the exact returned permission string `all`.
 - This does not prove true non-moderator account behavior in Reddit runtime.
   Runtime proof still requires a non-mod account opening or probing the
   protected routes and recording the exact HTTP/UI failure shape.

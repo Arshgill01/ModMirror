@@ -60,6 +60,7 @@ import type {
   MirrorScanComparison,
   MirrorScanDepth,
   MirrorScanRecord,
+  ModeratorAccessDiagnostic,
   ModqueueContentType,
   ModqueueTriageResponse,
   OverrideEvent,
@@ -302,6 +303,31 @@ api.get('/runtime-capabilities', async (c) => {
   const response: ApiResponse<RuntimeCapabilityMatrix> = {
     ok: true,
     data: await getRuntimeCapabilityMatrix(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.get('/access/diagnostics', async (c) => {
+  const access = await assertModeratorAccess({
+    currentSubreddit: context.subredditName,
+    contextUsername: context.username,
+    getCurrentUser: () => reddit.getCurrentUser(),
+  });
+  const diagnostic: ModeratorAccessDiagnostic = {
+    evidence: access.evidence,
+    permissionCount: access.permissions?.length ?? 0,
+    permissions: access.permissions ?? [],
+    source: 'current_user_permissions',
+  };
+  if (access.subreddit !== undefined) {
+    diagnostic.subreddit = access.subreddit;
+  }
+  if (access.username !== undefined) {
+    diagnostic.username = access.username;
+  }
+  const response: ApiResponse<ModeratorAccessDiagnostic> = {
+    ok: true,
+    data: diagnostic,
   };
   return c.json(response);
 });

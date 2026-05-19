@@ -92,4 +92,43 @@ describe('api moderator access guard', () => {
     expect(payload.ok).toBe(true);
     expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
   });
+
+  it('returns the current moderator permission strings from the protected diagnostic route', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => [
+      'all',
+      'posts',
+      'access',
+    ]);
+    devvitState.context.username = 'mod_a';
+    devvitState.currentUser = {
+      username: 'mod_a',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/access/diagnostics');
+    const payload = (await response.json()) as {
+      ok: true;
+      data: {
+        subreddit: string;
+        username: string;
+        evidence: string;
+        permissionCount: number;
+        permissions: string[];
+        source: string;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.data).toEqual({
+      subreddit: 'modmirror_dev',
+      username: 'mod_a',
+      evidence: 'moderator_permissions_verified',
+      permissionCount: 3,
+      permissions: ['all', 'posts', 'access'],
+      source: 'current_user_permissions',
+    });
+    expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
+  });
 });

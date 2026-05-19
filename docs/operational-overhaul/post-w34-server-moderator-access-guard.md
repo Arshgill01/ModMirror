@@ -12,6 +12,8 @@ Date: 2026-05-19
 - Added client-side access-denied classification for
   `moderator_access_required` and related permission failures.
 - Added route-level Hono middleware tests in `src/routes/apiAccess.test.ts`.
+- Added protected `GET /api/access/diagnostics` for current-user permission
+  string capture.
 
 The guard requires a signed-in current Reddit user and a non-empty
 `getModPermissionsForSubreddit(currentSubreddit)` result before protected API
@@ -32,6 +34,8 @@ allowed so static/demo fallback work is not blocked by missing Devvit context.
 - Local no-subreddit-context execution skips the guard.
 - `/api/health` stays reachable without a current user, while protected routes
   deny missing-current-user requests and allow users with moderator permissions.
+- `/api/access/diagnostics` returns the current moderator's permission strings
+  after passing the protected API guard.
 - The client labels moderator-access API failures as `access_denied` and tells
   the user to open ModMirror with a moderator account instead of treating the
   error as a generic validation problem.
@@ -48,10 +52,16 @@ allowed so static/demo fallback work is not blocked by missing Devvit context.
 `npm run dev` reached Devvit playtest ready for `r/modmirror_dev` on
 `v0.0.1.126`.
 
+A follow-up Devvit WebView Settings diagnostic reached playtest `v0.0.1.129`
+and returned `Access check passed: 1 permission(s): all.` for the current
+moderator account on `r/modmirror_dev`.
+
 ## Still unverified
 
 - True non-moderator account runtime behavior in Reddit/Devvit WebView.
-- Exact permission strings needed for stronger per-mod or admin-level gates.
+- Lower-permission moderator role strings needed for stronger per-mod or
+  admin-level gates; only the current full moderator account's `all` permission
+  string has been runtime-probed.
 - Native mobile access behavior.
 
 No public Reddit writes, moderation actions, Mod Notes, Mod Discussion sends,
