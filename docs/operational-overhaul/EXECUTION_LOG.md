@@ -1303,3 +1303,21 @@ Validation:
 Runtime proof status: no new Devvit playtest was run. True non-mod blocking and
 lower-permission moderator strings remain unverified until the plan is executed
 with the required accounts.
+
+### 2026-05-20 - Runtime Matrix Access/Retention Reconciliation
+
+- Updated `docs/operational-overhaul/RUNTIME_VERIFICATION_MATRIX.md` so the
+  post-W34 runtime pass points at the latest observed playtest version
+  `v0.0.1.138`.
+- Added the later safe runtime observations for current moderator access
+  diagnostics, Redis sorted-set ordering, Redis storage envelope, and synthetic
+  retention cleanup to the matrix narrative.
+- Linked the non-mod and lower-permission moderator rows to
+  `ACCESS_RUNTIME_TEST_PLAN.md` while keeping both runtime proof gaps open.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. This was a truth-doc
+reconciliation only.
