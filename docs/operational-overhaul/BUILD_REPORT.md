@@ -1,7 +1,7 @@
 # Operational Overhaul Build Report
 
 Date: 2026-05-18
-Updated: 2026-05-19
+Updated: 2026-05-20
 
 Integrated branch: `integration/operational-overhaul`
 Current merged branch: `master`
@@ -25,6 +25,10 @@ Current merged branch: `master`
 - Added preview-first team delivery spike with manual/skipped receipts.
 - Reframed UI around Act / Scan / Agree / Review / Prove / Settings.
 - Added runtime verification matrix endpoint and docs.
+- Added protected moderator access diagnostics with a full-access-only
+  visibility gate for future per-mod surfaces.
+- Added a Settings manual runtime capability event recorder for safe proof
+  bookkeeping.
 
 ## Branches / Worktrees
 
@@ -88,12 +92,29 @@ Post-W34 runtime proof obtained after integration:
   tagging, config import/export, privacy dry-run controls, response preview
   receipts, review health, policy impact, attribution correction, replay, and
   policy ratification paths.
+- A static client smoke check for the Settings manual runtime event recorder
+  rendered from `dist/client` in Safari at
+  `http://127.0.0.1:4173/?manualEvent=1#settings`; no Devvit playtest was run
+  for that UI follow-up.
 
 Post-W34 merged validation:
 
 - `npm run type-check` - passed.
 - `npm run lint` - passed.
 - `npm test` - passed, 43 files and 186 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Latest post-W34 merged validation after the access-gate and manual-event
+recorder follow-ups:
+
+- `npm test -- src/server/services/moderatorAccess.test.ts src/routes/apiAccess.test.ts`
+  - passed.
+- `npm test -- src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 45 files and 201 tests.
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
@@ -114,6 +135,10 @@ Post-W34 merged validation:
   `v0.0.1.129` returned current moderator permission `all`. True non-mod
   account runtime blocking and lower-permission moderator role strings remain
   separate gaps.
+- The Settings manual runtime event recorder is locally and statically verified
+  and route-tested for safe capabilities. It is a bookkeeping surface, not
+  proof of destructive actions, native Mod Notes, Mod Discussion delivery,
+  scheduler behavior, native mobile behavior, or non-mod account blocking.
 - The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
   desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
   new pixel-level visual proof remain separate gaps.

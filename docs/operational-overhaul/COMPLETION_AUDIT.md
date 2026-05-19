@@ -1,6 +1,6 @@
 # Operational Overhaul Completion Audit
 
-Date: 2026-05-19
+Date: 2026-05-20
 
 ## Objective Restated
 
@@ -49,10 +49,10 @@ Concrete success criteria:
 | AI advisory spike | W10 reports record disabled-by-default advisory contracts and mocked tests; no external AI runtime call made. | Satisfied as disabled spike |
 | Team delivery spike | W11 reports and post-W34 proof record manual/skipped delivery receipts; real Mod Discussion send remains disabled. | Partially satisfied |
 | Operational IA | W12/W13 and post-W34 UI proof record Act / Scan / Agree / Review / Prove / Settings in Reddit-hosted WebView. | Satisfied for desktop WebView |
-| Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. | Satisfied |
+| Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. The Settings manual runtime event recorder is route-tested and statically verified as a bookkeeping surface for safe capability observations. | Satisfied |
 | Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. | Satisfied for Devvit Web request context |
 | Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
-| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`. | Satisfied |
+| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest manual-runtime-event follow-up passed the same broad gates with 45 files and 201 tests. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
 ## Not Complete Enough To Mark The Larger Goal Done
@@ -69,6 +69,10 @@ fully complete because these requirements remain incomplete or weakly verified:
   keeps future per-mod/manage-level visibility full-access-only for `all`; true
   non-mod runtime account blocking and lower-permission moderator role strings
   remain unverified.
+- The Settings manual runtime event recorder is implemented, route-tested, and
+  statically rendered, but manual bookkeeping events are not substitutes for
+  action-time Devvit proof of the remaining unsafe or platform-dependent
+  capabilities.
 - Native Mod Notes writes are type-supported but not runtime-proven.
 - Mod Discussion delivery and scheduler behavior are not runtime-proven.
 - Actual retention deletion is not runtime-proven; only dry-run controls are.
