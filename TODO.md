@@ -479,7 +479,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 
 - [x] Wave 1 shared contracts, Redis helper, health/status endpoint, and dashboard shell exist and pass typecheck/build.
 - [x] Runtime playtest either verifies Redis/Reddit/menu/form behavior or Wave 2 explicitly stays demo/local-only until auth is unblocked.
-- [ ] Comment delivery ordering is tested or Mirror Scan/Policy work defaults all outbound messaging to `log_only`.
+- [x] Comment delivery ordering is tested or Mirror Scan/Policy work defaults all outbound messaging to `log_only`.
 - [x] The rule attribution contract uses confidence labels and evidence arrays for every inferred match.
 - [x] Demo seed data is available before judging-facing screenshots or video work.
 

@@ -9,6 +9,7 @@ import type {
   PolicyAdoptInput,
   PolicyChangeEvent,
   PolicyCreateInput,
+  MessageDeliveryMode,
   PolicyProposeInput,
   PolicyReviewInput,
   PolicyReviewRecord,
@@ -102,7 +103,10 @@ export async function getPolicyByRule(
 ): Promise<RulePolicy | undefined> {
   const policy = await readJson<RulePolicy>(redisKeys.policy(subreddit, ruleKey));
   if (policy) {
-    const versioned = await ensurePolicyVersioned(policy, 'legacy_migrated');
+    const versioned = await ensurePolicyVersioned(
+      withPolicyMessageDeliveryGuard(policy),
+      'legacy_migrated'
+    );
     return isAdoptedPolicy(versioned) ? versioned : undefined;
   }
 
@@ -115,16 +119,21 @@ export async function getPolicyById(
   policyId: string
 ): Promise<RulePolicy | undefined> {
   const policies = await listPolicies(subreddit);
-  return policies.find((policy) => policy.id === policyId);
+  const policy = policies.find((item) => item.id === policyId);
+  return policy === undefined ? undefined : withPolicyMessageDeliveryGuard(policy);
 }
 
 export async function setPolicyByRule(policy: RulePolicy): Promise<void> {
-  const policyJson = serializeJson(policy);
+  const guardedPolicy = withPolicyMessageDeliveryGuard(policy);
+  const policyJson = serializeJson(guardedPolicy);
 
   await Promise.all([
-    writeJson(redisKeys.policy(policy.subreddit, policy.ruleKey), policy),
-    redis.hSet(redisKeys.policies(policy.subreddit), {
-      [policy.ruleKey]: policyJson,
+    writeJson(
+      redisKeys.policy(guardedPolicy.subreddit, guardedPolicy.ruleKey),
+      guardedPolicy
+    ),
+    redis.hSet(redisKeys.policies(guardedPolicy.subreddit), {
+      [guardedPolicy.ruleKey]: policyJson,
     }),
   ]);
 }
@@ -136,11 +145,16 @@ export async function listPolicies(subreddit: string): Promise<RulePolicy[]> {
     .map((value) => parseJson<RulePolicy>(value))
     .filter((policy): policy is RulePolicy => policy !== undefined);
   const versionedPolicies = await Promise.all(
-    policies.map((policy) => ensurePolicyVersioned(policy, 'legacy_migrated'))
+    policies.map((policy) =>
+      ensurePolicyVersioned(
+        withPolicyMessageDeliveryGuard(policy),
+        'legacy_migrated'
+      )
+    )
   );
 
   return versionedPolicies
-    .map(withRatificationDefaults)
+    .map((policy) => withRatificationDefaults(withPolicyMessageDeliveryGuard(policy)))
     .sort((left, right) => left.ruleName.localeCompare(right.ruleName));
 }
 
@@ -161,7 +175,9 @@ export async function createPolicy(
     updatedAt: now,
     createdBy: input.createdBy,
     steps: normalizeSteps(input.steps),
-    defaultMessageMode: input.defaultMessageMode ?? 'log_only',
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      input.defaultMessageMode
+    ),
     active: false,
     reviewRecords: [],
     ratificationSettings: normalizeRatificationSettings(
@@ -229,8 +245,9 @@ export async function updatePolicy(
   const proposalSteps = input.steps
     ? normalizeSteps(input.steps)
     : normalizeSteps(current.steps);
-  const proposalDefaultMessageMode =
-    input.defaultMessageMode ?? current.defaultMessageMode;
+  const proposalDefaultMessageMode = normalizePolicyMessageDeliveryMode(
+    input.defaultMessageMode ?? current.defaultMessageMode
+  );
   const proposalRuleName = input.ruleName ?? current.ruleName;
   const changedBy = input.updatedBy ?? current.createdBy;
   const updated: RulePolicy = {
@@ -383,13 +400,16 @@ export async function getActivePolicyVersion(
     return undefined;
   }
 
-  return readJson<PolicyVersion>(
+  const version = await readJson<PolicyVersion>(
     redisKeys.policyVersion(
       versionedPolicy.subreddit,
       versionedPolicy.id,
       versionedPolicy.activeVersionId
     )
   );
+  return version === undefined
+    ? undefined
+    : withPolicyVersionMessageDeliveryGuard(version);
 }
 
 export async function proposePolicyVersion(
@@ -601,6 +621,9 @@ export async function adoptPolicyVersion(
 
   const adoptedVersion: PolicyVersion = {
     ...version,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      version.defaultMessageMode
+    ),
     active: true,
     lifecycleState: 'adopted',
     adoptedBy: input.adoptedBy,
@@ -616,7 +639,9 @@ export async function adoptPolicyVersion(
     archived: false,
     lifecycleState: 'adopted',
     steps: normalizeSteps(adoptedVersion.steps),
-    defaultMessageMode: adoptedVersion.defaultMessageMode,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      adoptedVersion.defaultMessageMode
+    ),
     updatedAt: now,
     adoptedBy: input.adoptedBy,
     adoptedAt: now,
@@ -670,7 +695,10 @@ export async function listPolicyVersions(
     const stored = await readJson<PolicyVersion>(
       redisKeys.policyVersion(subreddit, policyId, version.id)
     );
-    versionsById.set(version.id, stored ?? version);
+    versionsById.set(
+      version.id,
+      withPolicyVersionMessageDeliveryGuard(stored ?? version)
+    );
   }
 
   return [...versionsById.values()].sort(
@@ -715,7 +743,9 @@ export function capturePolicySnapshot(
     ruleKey: policy.ruleKey,
     ruleName: policy.ruleName,
     steps: normalizeSteps(policy.steps),
-    defaultMessageMode: policy.defaultMessageMode,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      policy.defaultMessageMode
+    ),
     capturedAt: new Date().toISOString(),
   };
 }
@@ -803,9 +833,12 @@ async function getStoredPolicyVersion(
   if (versionId === undefined) {
     return undefined;
   }
-  return readJson<PolicyVersion>(
+  const version = await readJson<PolicyVersion>(
     redisKeys.policyVersion(policy.subreddit, policy.id, versionId)
   );
+  return version === undefined
+    ? undefined
+    : withPolicyVersionMessageDeliveryGuard(version);
 }
 
 async function getReviewableVersion(
@@ -911,7 +944,9 @@ function buildPolicyVersion(options: {
     ruleKey: options.policy.ruleKey,
     ruleName: options.policy.ruleName,
     steps: normalizeSteps(options.policy.steps),
-    defaultMessageMode: options.policy.defaultMessageMode,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      options.policy.defaultMessageMode
+    ),
     active: options.policy.active,
     createdAt: options.createdAt,
     createdBy: options.createdBy,
@@ -976,16 +1011,48 @@ async function savePolicyVersion(
   policy: RulePolicy,
   version: PolicyVersion
 ): Promise<void> {
+  const guardedVersion: PolicyVersion = {
+    ...version,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      version.defaultMessageMode
+    ),
+  };
   await Promise.all([
     writeJson(
-      redisKeys.policyVersion(policy.subreddit, policy.id, version.id),
-      version
+      redisKeys.policyVersion(policy.subreddit, policy.id, guardedVersion.id),
+      guardedVersion
     ),
     redis.zAdd(redisKeys.policyVersions(policy.subreddit, policy.id), {
-      member: serializeJson(version),
-      score: version.versionNumber,
+      member: serializeJson(guardedVersion),
+      score: guardedVersion.versionNumber,
     }),
   ]);
+}
+
+function normalizePolicyMessageDeliveryMode(
+  _mode: MessageDeliveryMode | undefined
+): MessageDeliveryMode {
+  return 'log_only';
+}
+
+function withPolicyMessageDeliveryGuard(policy: RulePolicy): RulePolicy {
+  return {
+    ...policy,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      policy.defaultMessageMode
+    ),
+  };
+}
+
+function withPolicyVersionMessageDeliveryGuard(
+  version: PolicyVersion
+): PolicyVersion {
+  return {
+    ...version,
+    defaultMessageMode: normalizePolicyMessageDeliveryMode(
+      version.defaultMessageMode
+    ),
+  };
 }
 
 function buildPolicyChangeEvent(options: {

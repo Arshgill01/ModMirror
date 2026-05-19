@@ -21,6 +21,9 @@ It currently supports:
 - Policy CRUD with immutable version records.
 - Apply Policy target-aware preview, policy snapshots, evidence notes, explicit
   log-only confirmation copy, and `log_only` confirmation.
+- Policy message delivery defaults are guarded to `log_only` across
+  create/update/version/adoption/read paths until public comment delivery order
+  and identity are runtime-proven.
 - A W03 gated moderation execution engine with typed success, failure, and
   skipped results. Product-integrated live Reddit actions remain disabled by
   default until receipts and runtime proof exist.

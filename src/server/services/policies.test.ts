@@ -299,6 +299,80 @@ describe('policy version lifecycle', () => {
     expect(policy?.ruleName).toBe(indexedPolicy.ruleName);
   });
 
+  it('keeps new policy message delivery log-only until runtime delivery is proven', async () => {
+    const { createPolicy, listPolicyVersions } = await import('./policies');
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+      defaultMessageMode: 'public_comment',
+    });
+    const versions = await listPolicyVersions(policy.subreddit, policy.id);
+
+    expect(policy.defaultMessageMode).toBe('log_only');
+    expect(versions[0]?.defaultMessageMode).toBe('log_only');
+  });
+
+  it('keeps updated policy drafts log-only even when imported config requests delivery', async () => {
+    const { createPolicy, listPolicyVersions, updatePolicy } = await import(
+      './policies'
+    );
+    const policy = await createPolicy({
+      subreddit: 'ExampleLearning',
+      createdBy: 'leadmod',
+      ruleKey: 'rule-2-low-effort-questions-2',
+      ruleName: 'Rule 2: Low-effort questions',
+      steps: [baseStep],
+    });
+
+    const updated = await updatePolicy(policy.subreddit, policy.id, {
+      steps: [
+        {
+          ...baseStep,
+          recommendedAction: 'remove',
+        },
+      ],
+      defaultMessageMode: 'private_message',
+      updatedBy: 'leadmod',
+      changeReason: 'portable_config_import',
+      changeSummary: 'Imported delivery mode should stay gated.',
+    });
+    const versions = await listPolicyVersions(policy.subreddit, policy.id);
+
+    expect(updated?.defaultMessageMode).toBe('log_only');
+    expect(versions.at(-1)?.defaultMessageMode).toBe('log_only');
+  });
+
+  it('guards legacy indexed policies with non-log delivery modes on read', async () => {
+    const { getPolicyByRule } = await import('./policies');
+    const indexedPolicy: RulePolicy = {
+      id: 'policy-indexed-delivery',
+      subreddit: 'ExampleLearning',
+      ruleKey: 'delivery-risk',
+      ruleName: 'Delivery risk',
+      activeVersionId: 'version-1',
+      activeVersionNumber: 1,
+      createdAt: '2026-05-16T00:00:00.000Z',
+      updatedAt: '2026-05-16T00:00:00.000Z',
+      createdBy: 'leadmod',
+      steps: [baseStep],
+      defaultMessageMode: 'modmail',
+      active: true,
+    };
+    redisState.hashes.set('modmirror:ExampleLearning:policies', {
+      [indexedPolicy.ruleKey]: JSON.stringify(indexedPolicy),
+    });
+
+    const policy = await getPolicyByRule(
+      indexedPolicy.subreddit,
+      indexedPolicy.ruleKey
+    );
+
+    expect(policy?.defaultMessageMode).toBe('log_only');
+  });
+
   it('captures action snapshots from the active policy version', async () => {
     const { adoptPolicyVersion, capturePolicySnapshot, createPolicy, proposePolicyVersion } =
       await import('./policies');
