@@ -1002,3 +1002,30 @@ Validation:
 - `git diff --check` - passed.
 
 Runtime playtest was not run. This was a tracked-docs audit only.
+
+### 2026-05-20 - Post-W34 Synthetic Multi-Community Fixture
+
+Closed the local W32 follow-up for future multi-community scenario coverage
+under the W29 isolation-first contract:
+
+- Added `multi_community_isolation` to the synthetic evaluation harness.
+- The fixture contains foreign-subreddit actions, but replay evaluation and
+  scan summaries stay scoped to the dataset subreddit.
+- Added a synthetic safeguard count for foreign-subreddit actions and updated
+  the checked-in golden manifest intentionally.
+- Updated the W32 report and TODO to distinguish isolation coverage from
+  cross-community benchmarking.
+
+Validation:
+
+- `npm test -- src/server/services/syntheticEval.test.ts` - passed, 1 file and
+  6 tests.
+- `node scripts/synthetic-eval.mjs` - passed.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 209 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run. The harness does not call Reddit APIs, Redis,
+Devvit runtime, mod notes, modmail, scheduler, or external AI.

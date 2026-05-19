@@ -35,7 +35,7 @@ describe('synthetic evaluation harness', () => {
 
     expect(result.failures).toEqual([]);
     expect(result.passed).toBe(true);
-    expect(result.manifest.scenarioCount).toBe(8);
+    expect(result.manifest.scenarioCount).toBe(9);
   });
 
   it('keeps synthetic scans and receipts out of live execution claims', () => {
@@ -75,6 +75,33 @@ describe('synthetic evaluation harness', () => {
     expect(improved.analytics.policyImpactStatusByRule).toEqual({
       'low-effort-questions-2': 'improving',
     });
+  });
+
+  it('keeps multi-community synthetic actions scoped to the dataset subreddit', () => {
+    const dataset = buildSyntheticEvalDataset('multi_community_isolation');
+    const result = evaluateSyntheticEvalDataset(dataset);
+
+    expect(dataset.actions).toHaveLength(7);
+    expect(
+      dataset.actions.filter((action) => action.subreddit !== dataset.subreddit)
+    ).toHaveLength(3);
+    expect(result.replay.totalActionsEvaluated).toBe(4);
+    expect(result.safeguards.foreignSubredditActionCount).toBe(3);
+    expect(
+      dataset.scans.flatMap((scan) => [
+        ...scan.attributedActions,
+        ...scan.unmatchedActions,
+      ])
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ subreddit: dataset.subreddit }),
+      ])
+    );
+    expect(
+      dataset.scans
+        .flatMap((scan) => [...scan.attributedActions, ...scan.unmatchedActions])
+        .some((action) => action.subreddit !== dataset.subreddit)
+    ).toBe(false);
   });
 
   it('matches the checked-in golden evaluation manifest', () => {

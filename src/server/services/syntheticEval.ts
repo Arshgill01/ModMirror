@@ -19,6 +19,7 @@ import { runPolicyReplay, toPolicyReplayActions } from './replaySandbox';
 export const SYNTHETIC_EVAL_SCHEMA_VERSION = 'modmirror.synthetic-eval.v1';
 export const SYNTHETIC_EVAL_GENERATED_AT = '2026-05-18T18:00:00.000Z';
 export const SYNTHETIC_EVAL_SUBREDDIT = 'SyntheticLearningLab';
+export const SYNTHETIC_EVAL_FOREIGN_SUBREDDIT = 'SyntheticNeighborLab';
 
 export const SYNTHETIC_EVAL_SCENARIO_IDS = [
   'stable_rule',
@@ -29,6 +30,7 @@ export const SYNTHETIC_EVAL_SCENARIO_IDS = [
   'repeated_offender',
   'policy_version_change',
   'incident_mode',
+  'multi_community_isolation',
 ] as const;
 
 export type SyntheticEvalScenarioId =
@@ -81,6 +83,7 @@ export interface SyntheticSafeguardExpectation {
   liveReceiptAttempts: number;
   incidentReceiptCount: number;
   syntheticScanWarningCount: number;
+  foreignSubredditActionCount: number;
 }
 
 export interface SyntheticEvalManifest {
@@ -117,6 +120,7 @@ type ActionSpec = {
   ruleName?: string | null;
   confidence?: Confidence;
   source?: AttributedModAction['source'];
+  subreddit?: string;
 };
 
 type ReceiptSpec = {
@@ -158,6 +162,8 @@ export function buildSyntheticEvalDataset(
       return policyVersionChangeDataset();
     case 'incident_mode':
       return incidentModeDataset();
+    case 'multi_community_isolation':
+      return multiCommunityIsolationDataset();
   }
 }
 
@@ -174,7 +180,7 @@ export function evaluateSyntheticEvalDataset(
     subreddit: dataset.subreddit,
     policy: dataset.policy,
     source: 'synthetic',
-    actions: toPolicyReplayActions(dataset.actions),
+    actions: toPolicyReplayActions(scopedActions(dataset)),
     generatedAt: dataset.generatedAt,
   });
   const analytics = computeConsistencyAnalytics({
@@ -231,6 +237,9 @@ export function evaluateSyntheticEvalDataset(
       ).length,
       syntheticScanWarningCount: dataset.scans.filter((scan) =>
         scan.warnings.includes(SYNTHETIC_SCAN_WARNING)
+      ).length,
+      foreignSubredditActionCount: dataset.actions.filter(
+        (action) => action.subreddit !== dataset.subreddit
       ).length,
     },
   };
@@ -640,6 +649,46 @@ function incidentModeDataset(): SyntheticEvalDataset {
   });
 }
 
+function multiCommunityIsolationDataset(): SyntheticEvalDataset {
+  const policy = policyFixture();
+  const actions = actionsFromSpecs([
+    actionSpec('multi-local-1', 'warn', 'learner_a', 0),
+    actionSpec('multi-local-2', 'warn', 'learner_b', 5),
+    actionSpec('multi-local-3', 'remove', 'learner_a', 10),
+    actionSpec('multi-local-4', 'warn', 'learner_c', 15),
+    actionSpec('multi-foreign-1', 'temporary_ban_suggested', 'neighbor_a', 20, {
+      subreddit: SYNTHETIC_EVAL_FOREIGN_SUBREDDIT,
+    }),
+    actionSpec('multi-foreign-2', 'approve', 'neighbor_b', 25, {
+      subreddit: SYNTHETIC_EVAL_FOREIGN_SUBREDDIT,
+    }),
+    actionSpec('multi-foreign-3', 'remove', 'neighbor_c', 30, {
+      subreddit: SYNTHETIC_EVAL_FOREIGN_SUBREDDIT,
+    }),
+  ]);
+  const localActions = actions.filter(
+    (action) => action.subreddit === SYNTHETIC_EVAL_SUBREDDIT
+  );
+  const scans = [
+    scanFixture('multi-scan-1', policy, localActions.slice(0, 2), {
+      createdAt: '2026-05-18T10:00:00.000Z',
+      distribution: { warn: 2 },
+    }),
+    scanFixture('multi-scan-2', policy, localActions, {
+      createdAt: '2026-05-18T11:00:00.000Z',
+      distribution: { warn: 3, remove: 1 },
+    }),
+  ];
+  return dataset('multi_community_isolation', policy, actions, scans, [], [], {
+    replay: replayExpectation(4, 4, 0, 0),
+    analytics: analyticsExpectation('limited', { [RULE_KEY]: 'regressing' }, {
+      [RULE_KEY]: 'insufficient_data',
+    }),
+    drift: driftExpectation(1, 2, 4, false, 0),
+    safeguards: safeguardsExpectation(0, 0, 2, 3),
+  });
+}
+
 function dataset(
   id: SyntheticEvalScenarioId,
   policy: RulePolicy,
@@ -723,7 +772,7 @@ function actionSpec(
   minuteOffset: number,
   options: Partial<Omit<ActionSpec, 'id' | 'normalizedAction' | 'targetAuthor' | 'minuteOffset'>> = {}
 ): ActionSpec {
-  return {
+  const spec: ActionSpec = {
     id,
     normalizedAction,
     targetAuthor,
@@ -733,13 +782,17 @@ function actionSpec(
     confidence: options.confidence ?? 'high',
     source: options.source ?? 'demo',
   };
+  if (options.subreddit !== undefined) {
+    spec.subreddit = options.subreddit;
+  }
+  return spec;
 }
 
 function actionsFromSpecs(specs: ActionSpec[]): AttributedModAction[] {
   return specs.map((spec) => {
     const action: AttributedModAction = {
       id: `synthetic-${spec.id}`,
-      subreddit: SYNTHETIC_EVAL_SUBREDDIT,
+      subreddit: spec.subreddit ?? SYNTHETIC_EVAL_SUBREDDIT,
       source: spec.source ?? 'demo',
       rawActionType: spec.normalizedAction,
       normalizedAction: spec.normalizedAction,
@@ -973,12 +1026,14 @@ function driftExpectation(
 function safeguardsExpectation(
   liveReceiptAttempts: number,
   incidentReceiptCount: number,
-  syntheticScanWarningCount: number
+  syntheticScanWarningCount: number,
+  foreignSubredditActionCount = 0
 ): SyntheticSafeguardExpectation {
   return {
     liveReceiptAttempts,
     incidentReceiptCount,
     syntheticScanWarningCount,
+    foreignSubredditActionCount,
   };
 }
 
@@ -1022,7 +1077,26 @@ function validationFailuresForDataset(
   if (dataset.scans.some((scan) => !scan.warnings.includes(SYNTHETIC_SCAN_WARNING))) {
     failures.push(`${dataset.id}: scan is missing synthetic warning`);
   }
+  if (
+    dataset.scans.some((scan) =>
+      [...scan.attributedActions, ...scan.unmatchedActions].some(
+        (action) => action.subreddit !== dataset.subreddit
+      )
+    )
+  ) {
+    failures.push(`${dataset.id}: scan included a foreign-subreddit action`);
+  }
+  if (dataset.receipts.some((receipt) => receipt.subreddit !== dataset.subreddit)) {
+    failures.push(`${dataset.id}: receipt used a foreign subreddit`);
+  }
+  if (dataset.overrides.some((event) => event.subreddit !== dataset.subreddit)) {
+    failures.push(`${dataset.id}: override used a foreign subreddit`);
+  }
   return failures;
+}
+
+function scopedActions(dataset: SyntheticEvalDataset): AttributedModAction[] {
+  return dataset.actions.filter((action) => action.subreddit === dataset.subreddit);
 }
 
 function confidenceBreakdown(
@@ -1084,6 +1158,7 @@ function descriptionForScenario(id: SyntheticEvalScenarioId): string {
     repeated_offender: 'A single author accumulates offenses through the policy ladder.',
     policy_version_change: 'Receipts span a policy version transition and measure impact.',
     incident_mode: 'Receipts are grouped under an incident while preserving policy checks.',
+    multi_community_isolation: 'Foreign-community actions are present in the fixture but excluded from replay and scan summaries.',
   };
   return descriptions[id];
 }
