@@ -1618,6 +1618,11 @@ Decision:
   runtime-probed with the exact returned permission string `all`.
 - Future per-mod/manage-level product surfaces should use the full-access-only
   visibility helper unless lower-permission role strings are runtime-verified.
+- `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
+  runtime proof plan for true non-mod access blocking and lower-permission
+  moderator role strings.
+- This plan does not prove either runtime behavior; it only sets the account,
+  route, evidence, and no-go gates for a future proof pass.
 - This does not prove true non-moderator account behavior in Reddit runtime.
   Runtime proof still requires a non-mod account opening or probing the
   protected routes and recording the exact HTTP/UI failure shape.

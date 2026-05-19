@@ -1285,3 +1285,21 @@ Validation:
 
 Runtime proof status: no destructive cleanup was run. Real operational-record
 deletion remains unverified until the plan is explicitly approved and executed.
+
+### 2026-05-20 - Access Runtime Test Plan
+
+- Added `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` as the required
+  plan before claiming true non-mod access blocking or lower-permission
+  moderator role-string proof.
+- The plan requires explicit account separation, protected-route probes, exact
+  HTTP/UI evidence, and keeps per-mod visibility aggregate-only without `all`.
+- Updated `TODO.md` and `RESEARCH.md` to distinguish the planned proof gate
+  from the still-unverified runtime behavior.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. True non-mod blocking and
+lower-permission moderator strings remain unverified until the plan is executed
+with the required accounts.

@@ -67,6 +67,7 @@ the repo root are intentionally left untouched.
 - [x] Add a full-access-only visibility helper for future per-mod/manage-level
       surfaces.
 - [x] Include the visibility level in protected access diagnostics.
+- [x] Add a non-mod and lower-permission moderator runtime test plan.
 - [ ] Verify lower-permission moderator role strings needed for expanding
       per-mod/manage-level visibility beyond the current `all` gate.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.
@@ -481,6 +482,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       Devvit WebView diagnostic (`all` on `r/modmirror_dev`).
 - [x] Classify moderator-access API failures separately in the client so blocked
       users see moderator-account guidance instead of generic input-fix text.
+- [x] Add the required runtime test plan for true non-mod blocking and
+      lower-permission moderator role strings.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.
 - [ ] Verify lower-permission moderator role strings needed for per-mod/manage-level visibility.
 
