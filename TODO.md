@@ -443,7 +443,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Classify moderator-access API failures separately in the client so blocked
       users see moderator-account guidance instead of generic input-fix text.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.
-- [ ] Verify exact moderator permission strings needed for aggregate versus per-mod visibility.
+- [ ] Verify lower-permission moderator role strings needed for per-mod/manage-level visibility.
 
 ## Wave 1 Tasks
 
