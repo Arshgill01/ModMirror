@@ -72,7 +72,7 @@ describe('runtime capability observability', () => {
         source: 'smoke_route',
       },
     });
-    expect(matrix.summary.verifiedRuntime).toBe(1);
+    expect(matrix.summary.verifiedRuntime).toBeGreaterThanOrEqual(2);
   });
 
   it('records failures without enabling unsafe capabilities', async () => {

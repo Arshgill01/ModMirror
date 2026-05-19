@@ -459,6 +459,17 @@ Post-W34 policy ratification runtime validation passed:
 - `screencapture -x output/runtime-proof/post34-v101-policy-ratification-quick-adopt-block.png`
 - `screencapture -x output/runtime-proof/post34-v104-policy-ratification-quick-adopt-hidden.png`
 
+Post-W34 runtime matrix truth refresh passed:
+
+- `npm test -- src/server/services/runtimeCapabilities.test.ts src/server/services/runtimeVerification.test.ts`
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Computer Use Zen Fullscreen Settings inspection on Reddit Devvit WebView
+  `v0.0.1.109`.
+- `screencapture -x output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
+
 ## Next Engineering Risks
 
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:

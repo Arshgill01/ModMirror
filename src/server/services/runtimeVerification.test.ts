@@ -22,8 +22,9 @@ describe('runtime verification matrix', () => {
       username: 'tester',
     });
     expect(matrix.summary.total).toBe(matrix.items.length);
+    expect(matrix.summary.runtimeVerified).toBeGreaterThanOrEqual(8);
     expect(matrix.summary.disabled).toBeGreaterThanOrEqual(3);
-    expect(matrix.summary.typeOnly).toBeGreaterThanOrEqual(4);
+    expect(matrix.summary.typeOnly).toBe(0);
     expect(matrix.criticalBlockers.some((item) => item.includes('Real Reddit'))).toBe(
       true
     );

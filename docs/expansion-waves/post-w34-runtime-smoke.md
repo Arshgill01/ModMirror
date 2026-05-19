@@ -456,6 +456,37 @@ Verified in Reddit Devvit WebView:
 - A UI cleanup now hides Quick adopt for policies whose ratification settings
   disable it, while keeping the server-side guard.
 
+## Runtime Matrix Truth Refresh
+
+Validated on Devvit playtest `v0.0.1.109` in the Reddit-hosted Devvit WebView.
+
+Screenshot:
+
+- `output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
+
+Verified in Reddit Devvit WebView:
+
+- The Devvit host modal was switched from `Mobile` to `Fullscreen` before
+  inspection.
+- The Settings workspace showed build `0.0.1.109`.
+- The Runtime Capability Matrix showed Reddit API reads, Redis read/write, and
+  Menu entrypoints as `verified runtime`.
+- The Menu entrypoints card now states that the subreddit launcher plus
+  post/comment Apply Policy menu target capture are runtime-proven in playtest.
+- The old stale warning about post/comment Apply Policy menus needing
+  target-context proof is no longer rendered.
+- The remaining type-only capability is Modmail/mod discussion delivery, which
+  is still accurately gated and not enabled.
+
+Runtime gap found and fixed:
+
+- The code-side runtime capability and runtime verification matrices still
+  described post/comment menu capture and several already-proven safe paths as
+  type-only or local-only after the W13 and post-W34 playtest proofs. The
+  matrices now match the actual evidence while keeping destructive moderation,
+  native Mod Notes, Mod Discussion send, scheduler, and retention deletion
+  gated.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -526,3 +557,11 @@ Verified in Reddit Devvit WebView:
 - `npm run lint`
 - `npm run build`
 - `screencapture -x output/runtime-proof/post34-v104-policy-ratification-quick-adopt-hidden.png`
+- `npm test -- src/server/services/runtimeCapabilities.test.ts src/server/services/runtimeVerification.test.ts`
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- `git diff --check`
+- Computer Use Zen Fullscreen Settings inspection for the `v0.0.1.109`
+  runtime matrix proof.
+- `screencapture -x output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`

@@ -1479,3 +1479,40 @@ Decision:
   as runtime-verified for this desktop Reddit Devvit WebView playtest path.
 - The proof confirms small-sample/insufficient-data labeling, not a mature
   before/after impact claim.
+
+## Post-W34 Runtime Matrix Truth Refresh
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/runtimeCapabilities.test.ts src/server/services/runtimeVerification.test.ts`
+  passed after the matrix truth-state updates.
+- `npm run type-check`, `npm run lint`, `npm run build`, and
+  `git diff --check` passed.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.109`.
+- Computer Use switched the Reddit host modal to `Fullscreen` and inspected the
+  Settings runtime matrix.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v109-runtime-matrix-menu-proof-refresh-zen.png`
+
+Verified behavior:
+
+- Settings rendered build `0.0.1.109`.
+- Reddit API reads, Redis read/write, and Menu entrypoints were shown as
+  `verified runtime`.
+- Menu entrypoints now cite the subreddit launcher plus post/comment Apply
+  Policy menu target capture as runtime-proven.
+- The stale post/comment target-context warning is gone.
+- Modmail/mod discussion delivery remains `type only`, and destructive or
+  externally visible operations remain disabled/gated.
+
+Decision:
+
+- Runtime capability and runtime verification matrices may now describe the
+  safe, already-proven menu, target-context, Redis, Reddit-read, scan replay,
+  policy lifecycle, log-only receipt, and Case Packet paths as runtime-verified.
+- This does not promote native Mod Notes, Mod Discussion send, scheduler,
+  destructive moderation, public/private message delivery, actual retention
+  deletion, or AI provider calls.
