@@ -92,10 +92,24 @@ Post-W34 runtime smoke proof:
 - This proof covers safe Redis read/write and Reddit read-only source access
   only. It does not cover destructive moderation execution.
 
+Post-W34 post-menu target proof:
+
+- Branch `post34/runtime-smoke-controls` added Devvit custom post `postData`
+  handoff for Apply Policy guidance posts plus `GET /api/launch-context`.
+- Devvit playtest `v0.0.1.83` on the ordinary safe post
+  `t3_1texjev` showed `Apply ModMirror Policy` in the post moderation actions
+  menu.
+- The Devvit form resolved `t3_1texjev`, target type `post`, author
+  `BrightyBrainiac`, subreddit `modmirror_dev`, and title
+  `ModMirror Wave 2 smoke test`.
+- The expanded guidance WebView displayed `Selected Reddit target` with the
+  captured target ID, author, subreddit, title, and source link in the Act
+  workspace.
+- No Reddit moderation action was executed during this proof.
+
 ## Known Gaps
 
-- Post/comment Apply Policy menu runtime proof is still open.
-- Target context capture from real post/comment menu requests is still open.
+- Comment Apply Policy menu runtime proof is still open.
 - Log-only receipt creation needs Devvit Redis proof.
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
@@ -121,6 +135,12 @@ Post-W34 runtime-smoke validation passed:
 - `npm run type-check`
 - `npm run lint`
 - `npm run build`
+- `npm run dev`
+
+Post-W34 post-menu target validation passed:
+
+- `npm run type-check`
+- `npm test -- src/server/services/targetContext.test.ts`
 - `npm run dev`
 
 ## Next Engineering Risks

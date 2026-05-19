@@ -945,3 +945,43 @@ Decision:
   runtime-verified for this test subreddit and playtest path.
 - This proof does not authorize destructive moderation execution or delivery
   features.
+
+## Post-W34 Post Menu Target Context Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.83`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Ordinary safe post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1texjev/modmirror_wave_2_smoke_test/?playtest=modmirror`.
+
+Verified:
+
+- The Reddit post moderation actions menu displayed `Apply ModMirror Policy`.
+- The menu action opened the Devvit form and resolved the real post target:
+  `t3_1texjev`, target type `post`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, title `ModMirror Wave 2 smoke test`.
+- Submitting `Open policy dashboard` created a guidance custom post.
+- The expanded WebView on that guidance custom post loaded the Act workspace
+  and displayed `Selected Reddit target` with the captured target ID, author,
+  subreddit, title, and source link.
+- The working target handoff uses Devvit custom post `postData` and
+  `/api/launch-context`, because Reddit preserves `#act?...` on the parent
+  post URL while the embedded WebView only receives `#act`.
+- No moderation action was executed.
+
+Not verified:
+
+- Comment menu target capture.
+- Log-only Apply Policy receipt creation from this real post target.
+- Destructive moderation execution.
+
+Decision:
+
+- Post-level Apply Policy entrypoint discovery and target-context handoff may
+  now be described as runtime-verified for this desktop Reddit playtest path.
+- Comment entrypoints and execution receipts remain unverified.

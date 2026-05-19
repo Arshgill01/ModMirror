@@ -863,6 +863,30 @@ dd {
   text-align: left;
 }
 
+.target-context-strip {
+  background: var(--mm-paper);
+  border-block: 1px solid var(--mm-line);
+  display: grid;
+  gap: 10px;
+  margin-block: 14px;
+  padding-block: 12px;
+}
+
+.target-context-strip > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.target-context-strip span,
+.target-context-strip a {
+  color: var(--mm-muted);
+  font-size: 13px;
+}
+
+.target-context-strip a {
+  width: fit-content;
+}
+
 .confidence-grid,
 .distribution-grid {
   background: var(--mm-paper);

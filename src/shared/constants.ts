@@ -435,6 +435,7 @@ export const API_ROUTES = {
   teamDeliveryCapabilities: '/api/delivery/capabilities',
   teamDeliveryPreview: '/api/delivery/preview',
   teamDeliveryConfirm: '/api/delivery/confirm',
+  launchContext: '/api/launch-context',
   runtimeVerification: '/api/runtime-verification',
   runtimeCapabilities: '/api/runtime-capabilities',
   runtimeCapabilityEvents: '/api/runtime-capabilities/events',

@@ -486,6 +486,13 @@ export interface ModerationTargetContext {
   warnings: string[];
 }
 
+export interface LaunchContextResponse {
+  target?: ModerationTargetContext;
+  source?: 'apply_policy_menu';
+  createdAt?: string;
+  warnings: string[];
+}
+
 export interface ContentSnapshotPrivacyMetadata {
   retentionCategory: 'moderation_evidence';
   authorStored: boolean;

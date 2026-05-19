@@ -2,7 +2,10 @@ import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import type { UiResponse } from '@devvit/web/shared';
 import type { ModerationTargetContext } from '../shared/schema';
-import { resolveModerationTargetContext } from '../server/services/targetContext';
+import {
+  buildApplyPolicyLaunchPostData,
+  resolveModerationTargetContext,
+} from '../server/services/targetContext';
 
 type ApplyPolicyTargetFormValues = {
   targetThingId?: string;
@@ -77,6 +80,9 @@ async function createDashboardNavigation(options?: {
       ? `ModMirror policy guidance for ${options.target.targetType}`
       : 'ModMirror policy dashboard',
     entry: 'default',
+    ...(options?.target
+      ? { postData: buildApplyPolicyLaunchPostData(options.target) }
+      : {}),
     textFallback: {
       text: 'Open this post in Reddit to use the ModMirror policy dashboard.',
     },

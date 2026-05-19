@@ -483,7 +483,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       confirmation form.
 - [x] Verify the W12 operational IA renders inside Reddit's desktop expanded
       WebView.
-- [ ] Verify post Apply Policy menu entry on an ordinary safe post detail page.
+- [x] Verify post Apply Policy menu entry on an ordinary safe post detail page.
+- [x] Verify post menu target context handoff into the Act workspace.
 - [ ] Verify comment Apply Policy menu entry on an ordinary safe comment.
 - [x] Hit `/api/smoke/redis` in Devvit runtime and record a redacted read/write
       result.
@@ -551,6 +552,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       playtest so the matrix can promote safe capabilities with real proof.
 - [x] Add operator UI for running safe Redis and Reddit read-only smoke checks
       from inside the authenticated WebView.
+- [x] Runtime-verify post-menu Apply Policy target capture in Devvit playtest.
 - [ ] Add operator UI for recording manual playtest events if future runtime
       proof needs moderator-observed states that are not reachable by smoke
       routes.

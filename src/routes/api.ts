@@ -55,6 +55,7 @@ import type {
   GenerateDigestResponse,
   DriftCandidate,
   LastScanMetadata,
+  LaunchContextResponse,
   MirrorScan,
   MirrorScanComparison,
   MirrorScanDepth,
@@ -186,6 +187,7 @@ import {
   getPrivacyRetentionSettings,
   updatePrivacyRetentionSettings,
 } from '../server/services/privacyRetention';
+import { readApplyPolicyLaunchContext } from '../server/services/targetContext';
 import {
   isSubredditIsolationError,
   resolveLiveSubredditScope,
@@ -264,6 +266,14 @@ api.get('/runtime-verification', (c) => {
   const response: ApiResponse<RuntimeVerificationMatrix> = {
     ok: true,
     data: buildRuntimeVerificationMatrix(runtimeContext),
+  };
+  return c.json(response);
+});
+
+api.get('/launch-context', (c) => {
+  const response: ApiResponse<LaunchContextResponse> = {
+    ok: true,
+    data: readApplyPolicyLaunchContext(context.postData),
   };
   return c.json(response);
 });

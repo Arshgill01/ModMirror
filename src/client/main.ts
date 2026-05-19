@@ -65,6 +65,7 @@ import type {
   IncidentModeReport,
   IncidentModeStartRequest,
   IncidentModeStateResponse,
+  LaunchContextResponse,
   MessageDeliveryMode,
   MirrorScan,
   MirrorScanDepth,
@@ -1497,9 +1498,43 @@ function renderApplyPolicyPanel() {
         </div>
         <button class="secondary-button" data-load-policies type="button">Refresh policies</button>
       </div>
+      ${renderApplyTargetContext()}
       ${renderApplyForm()}
       ${renderApplyPreview()}
     </section>
+  `;
+}
+
+function renderApplyTargetContext() {
+  const form = applyState.form;
+  if (!form.targetThingId || form.targetThingId === 't3_demo_policy_target') {
+    return '';
+  }
+
+  const details = [
+    renderCommandSignal('Target', form.targetThingId),
+    renderCommandSignal('Author', form.targetAuthor || 'Unavailable'),
+    renderCommandSignal('Subreddit', form.subreddit || 'Current context'),
+  ];
+  if (form.targetTitle) {
+    details.push(renderCommandSignal('Title', form.targetTitle));
+  }
+
+  return `
+    <div class="target-context-strip" aria-label="Selected Reddit target">
+      <div>
+        <strong>Selected Reddit target</strong>
+        <span>Captured from the post/comment menu; no moderation action has been taken.</span>
+      </div>
+      <dl class="compact-metrics">
+        ${details.join('')}
+      </dl>
+      ${
+        form.targetPermalink
+          ? `<a href="${escapeAttribute(form.targetPermalink)}" target="_blank" rel="noreferrer">Open source item</a>`
+          : ''
+      }
+    </div>
   `;
 }
 
@@ -5128,6 +5163,52 @@ async function loadHealth() {
   render();
 }
 
+async function loadLaunchContext() {
+  const hashParams = getApplyTargetParamsFromHash();
+  if (hashParams.targetThingId !== undefined) {
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        ...hashParams,
+      },
+    };
+    render();
+    return;
+  }
+
+  try {
+    const payload = await fetchApi<LaunchContextResponse>(API_ROUTES.launchContext);
+    const target = payload.target;
+    if (target === undefined) {
+      return;
+    }
+
+    applyState = {
+      ...applyState,
+      form: {
+        ...applyState.form,
+        targetThingId: target.targetThingId,
+        targetAuthor: target.authorName ?? applyState.form.targetAuthor,
+        targetTitle: target.title ?? '',
+        targetBody: target.body ?? '',
+        targetPermalink: target.permalink ?? '',
+        subreddit: target.subreddit ?? applyState.form.subreddit,
+      },
+    };
+    render();
+  } catch (error) {
+    applyState = {
+      ...applyState,
+      error: normalizeClientError(
+        error,
+        'Target context could not be loaded from this launch post.'
+      ),
+    };
+    render();
+  }
+}
+
 async function loadRuntimeCapabilities() {
   runtimeCapabilityState = {
     ...runtimeCapabilityState,
@@ -7428,6 +7509,7 @@ window.addEventListener('hashchange', () => {
 });
 
 render();
+void loadLaunchContext();
 void loadHealth();
 void loadRuntimeCapabilities();
 void loadPolicies();

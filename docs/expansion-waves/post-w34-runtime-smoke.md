@@ -21,6 +21,13 @@ curl calls that lack the WebView authorization token.
 - Reloaded the runtime capability matrix after each smoke check.
 - Updated the legacy Redis/Reddit Settings summary cards to read from the
   runtime capability matrix so they do not contradict verified runtime status.
+- Added a compact Apply Policy launch payload to form-created custom posts via
+  Devvit `postData`.
+- Added `GET /api/launch-context` so the WebView can recover the selected
+  post/comment target from Devvit request context instead of relying on the
+  parent Reddit URL hash.
+- Added an Act workspace target context strip that shows the selected Reddit
+  target before any policy action is previewed or confirmed.
 
 ## Runtime Proof
 
@@ -47,10 +54,37 @@ Verified in Devvit WebView:
   - `Redis status`: `verified runtime`
   - `Reddit source status`: `verified runtime`
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version observed: `v0.0.1.83`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: ordinary safe post
+  `https://www.reddit.com/r/modmirror_dev/comments/1texjev/modmirror_wave_2_smoke_test/?playtest=modmirror`.
+
+Verified in Reddit post menu and Devvit WebView:
+
+- The post moderation actions menu showed `Apply ModMirror Policy`.
+- Selecting it opened the `Apply ModMirror Policy` form with:
+  - target thing ID `t3_1texjev`
+  - target type `post`
+  - target author `BrightyBrainiac`
+  - subreddit `modmirror_dev`
+  - resolved title `ModMirror Wave 2 smoke test`
+- Accepting `Open policy dashboard` created and opened a guidance custom post.
+- Expanding the dashboard showed the Act workspace target strip:
+  - `Selected Reddit target`
+  - `t3_1texjev`
+  - `BrightyBrainiac`
+  - `modmirror_dev`
+  - `ModMirror Wave 2 smoke test`
+  - `Open source item`
+- No Reddit moderation action was taken during this proof.
+
 ## Still Not Verified
 
-- Post/comment Apply Policy menu entrypoints.
-- Real target context capture from post/comment menus.
+- Comment Apply Policy menu entrypoint.
 - Log-only Apply Policy receipt creation in Devvit Redis.
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
@@ -63,4 +97,3 @@ Verified in Devvit WebView:
 - `npm run lint`
 - `npm run build`
 - `npm run dev`
-

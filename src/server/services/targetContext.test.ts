@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildApplyPolicyLaunchPostData,
   getTargetType,
+  readApplyPolicyLaunchContext,
   resolveModerationTargetContext,
   type TargetContextDependencies,
 } from './targetContext';
@@ -88,5 +90,44 @@ describe('target context service', () => {
     expect(deps.getPostById).not.toHaveBeenCalled();
     expect(deps.getCommentById).not.toHaveBeenCalled();
     expect(deps.getCurrentUser).not.toHaveBeenCalled();
+  });
+
+  it('round trips apply policy launch context through custom post data', () => {
+    const postData = buildApplyPolicyLaunchPostData(
+      {
+        targetThingId: 't3_post',
+        targetType: 'post',
+        subreddit: 'modmirror_dev',
+        authorName: 'poster',
+        title: 'Target post',
+        permalink: 'https://www.reddit.com/r/modmirror_dev/comments/post/target_post/',
+        currentModerator: 'mod_a',
+        warnings: [],
+      },
+      '2026-05-19T08:00:00.000Z'
+    );
+
+    expect(readApplyPolicyLaunchContext(postData)).toEqual({
+      source: 'apply_policy_menu',
+      createdAt: '2026-05-19T08:00:00.000Z',
+      target: {
+        targetThingId: 't3_post',
+        targetType: 'post',
+        subreddit: 'modmirror_dev',
+        authorName: 'poster',
+        title: 'Target post',
+        permalink: 'https://www.reddit.com/r/modmirror_dev/comments/post/target_post/',
+        currentModerator: 'mod_a',
+        warnings: [],
+      },
+      warnings: [],
+    });
+  });
+
+  it('ignores custom posts without apply policy launch data', () => {
+    expect(readApplyPolicyLaunchContext(undefined)).toEqual({ warnings: [] });
+    expect(readApplyPolicyLaunchContext({ other: 'value' })).toEqual({
+      warnings: [],
+    });
   });
 });
