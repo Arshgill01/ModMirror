@@ -1,4 +1,5 @@
 export type ClientErrorKind =
+  | 'access_denied'
   | 'api_error'
   | 'clipboard_denied'
   | 'clipboard_unavailable'
@@ -56,6 +57,21 @@ export function classifyClientError(
       kind: 'network_unavailable',
       message: `${fallback} The network request did not complete.`,
       action: 'Check the Reddit WebView connection, then retry the action.',
+    };
+  }
+
+  if (
+    lower.includes('moderator_access_required') ||
+    lower.includes('moderator permissions are required') ||
+    lower.includes('signed-in reddit user is required') ||
+    lower.includes('permission checks are unavailable') ||
+    lower.includes('unable to verify moderator permissions')
+  ) {
+    return {
+      kind: 'access_denied',
+      message: message || fallback,
+      action:
+        'Open ModMirror from a moderator account for this subreddit, or ask a moderator with access to run this action.',
     };
   }
 

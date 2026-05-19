@@ -52,6 +52,7 @@ Updated by: Codex
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
 | Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts` and `npm run type-check` pass. Runtime proof with a true non-mod account remains open. |
+| Verified locally | Client errors distinguish moderator access failures from generic API errors. | `src/shared/clientResilience.ts` classifies `moderator_access_required` and related permission messages as `access_denied`, and `src/client/main.ts` preserves API error codes in common fetch failures. `npm test -- src/shared/clientResilience.test.ts` and `npm run type-check` pass. |
 | Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
@@ -1559,11 +1560,14 @@ Implemented behavior:
   health/status/capability metadata routes available.
 - Local no-subreddit-context execution is allowed so static/demo development
   does not depend on Devvit runtime context.
+- `src/shared/clientResilience.ts` classifies `moderator_access_required` and
+  related permission messages as `access_denied`, and common API fetches
+  preserve the server error code.
 
 Decision:
 
 - Server-side protected API moderator access checks may be described as locally
-  verified.
+  verified, including client-side access-denied messaging.
 - This does not prove true non-moderator account behavior in Reddit runtime.
   Runtime proof still requires a non-mod account opening or probing the
   protected routes and recording the exact HTTP/UI failure shape.

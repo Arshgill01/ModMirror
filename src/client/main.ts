@@ -6361,7 +6361,7 @@ async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
     throw new Error(`API response was not JSON for ${url}: ${String(error)}`);
   }
   if (!payload.ok) {
-    throw new Error(`API error: ${payload.error.message}`);
+    throw new Error(`API error (${payload.error.code}): ${payload.error.message}`);
   }
   if (!response.ok) {
     throw new Error(`API request returned ${response.status} for ${url}.`);
