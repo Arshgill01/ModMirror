@@ -162,6 +162,7 @@ import {
 } from '../server/services/runtimeCapabilities';
 import { loadModqueueTriage } from '../server/services/modqueueTriage';
 import {
+  applyAttributionCorrectionsToStoredActions,
   listAttributionCorrections,
   saveAttributionCorrection,
 } from '../server/services/attributionCalibration';
@@ -886,7 +887,12 @@ api.post('/policies/:id/replay', async (c) => {
     const actions =
       scanRecord === undefined
         ? normalizeReplayActions(body.actions)
-        : toPolicyReplayActions(scanRecord.attributedActions);
+        : toPolicyReplayActions(
+            applyAttributionCorrectionsToStoredActions(
+              scanRecord.attributedActions,
+              await listAttributionCorrections(subreddit)
+            )
+          );
     if (actions.length === 0) {
       return c.json(
         {

@@ -77,4 +77,113 @@ describe('attribution calibration persistence', () => {
       })
     ).rejects.toThrow('correctedRuleKey is required');
   });
+
+  it('applies stored corrections before scan replay', async () => {
+    const {
+      applyAttributionCorrectionsToStoredActions,
+      listAttributionCorrections,
+      saveAttributionCorrection,
+    } = await import('./attributionCalibration');
+
+    await saveAttributionCorrection({
+      subreddit: 'ExampleLearning',
+      actionId: 'act-1',
+      sourceScanId: 'scan-live',
+      originalConfidence: 'unmatched',
+      correctedRuleKey: 'low-effort-questions-2',
+      correctedRuleName: 'Low-effort questions',
+      correctedBy: 'leadmod',
+      note: 'Replay should honor the moderator correction.',
+    });
+
+    const [corrected] = applyAttributionCorrectionsToStoredActions(
+      [
+        {
+          id: 'act-1',
+          subreddit: 'ExampleLearning',
+          source: 'live',
+          rawActionType: 'remove',
+          normalizedAction: 'remove',
+          createdAt: '2026-05-18T00:00:00.000Z',
+          confidence: 'unmatched',
+          attributionKind: 'unmatched',
+          evidence: ['No rule signal met the minimum attribution threshold.'],
+        },
+      ],
+      await listAttributionCorrections('ExampleLearning')
+    );
+
+    expect(corrected).toBeDefined();
+    if (corrected === undefined) {
+      throw new Error('expected corrected action');
+    }
+    expect(corrected).toMatchObject({
+      inferredRuleKey: 'low-effort-questions-2',
+      inferredRuleName: 'Low-effort questions',
+      confidence: 'high',
+      attributionKind: 'corrected',
+      correction: {
+        correctedRuleKey: 'low-effort-questions-2',
+        correctedRuleName: 'Low-effort questions',
+        correctedBy: 'leadmod',
+        originalConfidence: 'unmatched',
+      },
+    });
+    expect(corrected.evidence[0]).toContain('Moderator correction applied');
+  });
+
+  it('does not apply one correction to every action with a shared non-content target', async () => {
+    const {
+      applyAttributionCorrectionsToStoredActions,
+      createAttributionCorrectionIndex,
+      listAttributionCorrections,
+      saveAttributionCorrection,
+    } = await import('./attributionCalibration');
+
+    await saveAttributionCorrection({
+      subreddit: 'ExampleLearning',
+      actionId: 'act-1',
+      targetThingId: 't5_shared_subreddit',
+      originalConfidence: 'unmatched',
+      correctedRuleKey: 'low-effort-questions-2',
+      correctedBy: 'leadmod',
+    });
+
+    const corrections = await listAttributionCorrections('ExampleLearning');
+    const index = createAttributionCorrectionIndex(corrections);
+
+    expect(corrections[0]?.targetThingId).toBeUndefined();
+    expect(index.byTargetThingId.size).toBe(0);
+
+    const corrected = applyAttributionCorrectionsToStoredActions(
+      [
+        {
+          id: 'act-1',
+          subreddit: 'ExampleLearning',
+          source: 'live',
+          rawActionType: 'dev_platform_app_changed',
+          createdAt: '2026-05-18T00:00:00.000Z',
+          confidence: 'unmatched',
+          attributionKind: 'unmatched',
+          evidence: ['No rule signal met the minimum attribution threshold.'],
+        },
+        {
+          id: 'act-2',
+          subreddit: 'ExampleLearning',
+          source: 'live',
+          rawActionType: 'dev_platform_app_changed',
+          createdAt: '2026-05-18T00:01:00.000Z',
+          targetThingId: 't5_shared_subreddit',
+          confidence: 'unmatched',
+          attributionKind: 'unmatched',
+          evidence: ['No rule signal met the minimum attribution threshold.'],
+        },
+      ],
+      corrections
+    );
+
+    expect(corrected[0]?.inferredRuleKey).toBe('low-effort-questions-2');
+    expect(corrected[1]?.inferredRuleKey).toBeUndefined();
+    expect(corrected[1]?.confidence).toBe('unmatched');
+  });
 });

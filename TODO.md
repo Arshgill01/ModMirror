@@ -153,7 +153,7 @@ disabled.
 - [x] Add policy replay UI on the Agree page.
 - [x] Add replay fixtures and edge-case tests.
 - [x] Keep replay from mutating action receipts or live Reddit state.
-- [ ] Runtime-verify replay route against a stored scan in Devvit Web/Redis
+- [x] Runtime-verify replay route against a stored scan in Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 19 Checklist
@@ -177,7 +177,7 @@ disabled.
 - [x] Add correction API endpoints.
 - [x] Add scan-page calibration UI for stored scan actions.
 - [x] Add synthetic tests for correction persistence and future attribution.
-- [ ] Runtime-verify correction persistence through Devvit Web/Redis playtest.
+- [x] Runtime-verify correction persistence through Devvit Web/Redis playtest.
 
 ## Expansion Wave 17 Checklist
 

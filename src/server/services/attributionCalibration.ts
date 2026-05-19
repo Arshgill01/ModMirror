@@ -5,6 +5,7 @@ import type {
   AttributionCorrectionInput,
   AttributionCorrectionSnapshot,
   AttributionResult,
+  AttributedModAction,
   NormalizedModAction,
 } from '../../shared/schema';
 import { parseJson, redisKeys, serializeJson } from './redis';
@@ -50,12 +51,29 @@ export function createAttributionCorrectionIndex(
 
   for (const correction of corrections) {
     byActionId.set(correction.actionId, correction);
-    if (correction.targetThingId !== undefined) {
+    if (
+      correction.targetThingId !== undefined &&
+      isContentThingId(correction.targetThingId)
+    ) {
       byTargetThingId.set(correction.targetThingId, correction);
     }
   }
 
   return { byActionId, byTargetThingId };
+}
+
+export function applyAttributionCorrectionsToStoredActions(
+  actions: AttributedModAction[],
+  corrections: AttributionCorrection[]
+): AttributedModAction[] {
+  if (corrections.length === 0) {
+    return actions;
+  }
+
+  const correctionIndex = createAttributionCorrectionIndex(corrections);
+  return actions.map((action) =>
+    applyStoredAttributionCorrection(action, correctionIndex)
+  );
 }
 
 export function applyAttributionCorrection(
@@ -116,6 +134,9 @@ function normalizeCorrectionInput(
   };
 
   copyString(input.targetThingId, (value) => {
+    if (!isContentThingId(value)) {
+      return;
+    }
     correction.targetThingId = value;
   });
   copyString(input.sourceScanId, (value) => {
@@ -135,6 +156,73 @@ function normalizeCorrectionInput(
   });
 
   return correction;
+}
+
+function applyStoredAttributionCorrection(
+  action: AttributedModAction,
+  correctionIndex: AttributionCorrectionIndex
+): AttributedModAction {
+  if (action.attributionKind === 'direct') {
+    return action;
+  }
+
+  const correction =
+    correctionIndex.byActionId.get(action.id) ??
+    (action.targetThingId === undefined
+      ? undefined
+      : correctionIndex.byTargetThingId.get(action.targetThingId));
+  if (correction === undefined) {
+    return action;
+  }
+
+  const originalConfidence =
+    action.correction?.originalConfidence ?? action.confidence;
+  const originalRuleKey =
+    action.correction?.originalRuleKey ??
+    action.inferredRuleKey ??
+    correction.originalRuleKey;
+  const originalRuleName =
+    action.correction?.originalRuleName ??
+    action.inferredRuleName ??
+    correction.originalRuleName;
+
+  const corrected: AttributedModAction = {
+    ...action,
+    inferredRuleKey: correction.correctedRuleKey,
+    confidence: 'high',
+    attributionKind: 'corrected',
+    correction: {
+      correctionId: correction.id,
+      correctedRuleKey: correction.correctedRuleKey,
+      correctedBy: correction.correctedBy,
+      correctedAt: correction.correctedAt,
+      originalConfidence,
+    },
+    evidence: [
+      `Moderator correction applied by ${correction.correctedBy}.`,
+      `Original attribution was ${formatOriginalStoredAttribution(
+        originalRuleName ?? originalRuleKey,
+        originalConfidence
+      )}.`,
+      ...action.evidence,
+    ],
+  };
+
+  copyString(correction.correctedRuleName, (value) => {
+    corrected.inferredRuleName = value;
+    corrected.correction!.correctedRuleName = value;
+  });
+  copyString(originalRuleKey, (value) => {
+    corrected.correction!.originalRuleKey = value;
+  });
+  copyString(originalRuleName, (value) => {
+    corrected.correction!.originalRuleName = value;
+  });
+  copyString(correction.note, (value) => {
+    corrected.correction!.note = value;
+  });
+
+  return corrected;
 }
 
 function toCorrectionSnapshot(
@@ -170,6 +258,13 @@ function formatOriginalAttribution(result: AttributionResult): string {
   return `${rule} (${result.confidence})`;
 }
 
+function formatOriginalStoredAttribution(
+  rule: string | undefined,
+  confidence: AttributedModAction['confidence']
+): string {
+  return `${rule ?? 'unmatched'} (${confidence})`;
+}
+
 function copyString(
   value: string | undefined,
   assign: (value: string) => void
@@ -178,4 +273,8 @@ function copyString(
   if (trimmed) {
     assign(trimmed);
   }
+}
+
+function isContentThingId(value: string): boolean {
+  return value.startsWith('t1_') || value.startsWith('t3_');
 }

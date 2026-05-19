@@ -76,4 +76,22 @@ describe('live source normalizers', () => {
     });
     expect(action.detailsText).toContain('Rule 2');
   });
+
+  it('does not treat subreddit or user targets as content thing IDs', () => {
+    const action = normalizeModAction(
+      {
+        id: 'modaction_2',
+        type: 'dev_platform_app_changed',
+        createdAt: '2026-05-16T00:00:00.000Z',
+        target: {
+          id: 't5_shared_subreddit',
+          title: 'Application updated',
+        },
+      },
+      'ExampleLearning'
+    );
+
+    expect(action.targetThingId).toBeUndefined();
+    expect(action.detailsText).toBe('Application updated');
+  });
 });

@@ -402,6 +402,38 @@ Verified in Reddit Devvit WebView:
   receipts `0`, after receipts `2`, before `0%`, after `100%`, and
   `Insufficient Data` due the before-adoption threshold.
 
+## Live Scan Correction And Replay Proof
+
+Validated on Devvit playtest `v0.0.1.101` in the Reddit-hosted Devvit WebView.
+
+Screenshots:
+
+- `output/runtime-proof/post34-v101-live-scan-correction-scope-fixed.png`
+- `output/runtime-proof/post34-v101-replay-stored-live-scan-correction.png`
+
+Verified in Reddit Devvit WebView:
+
+- Quick live scan read `25` moderation-log actions with the existing quick-cap
+  and pagination caveats.
+- One persisted moderator correction was applied to
+  `ModAction_93c58485-5373-11f1-be5c-33304dd642d9` as Runtime Smoke Policy.
+- The scan summary showed `1` attributed action and `24` unmatched actions,
+  confirming the correction did not relabel unrelated
+  `dev_platform_app_changed` rows.
+- Replay for Runtime Smoke Policy used source `scan`, evaluated `1` corrected
+  action, reported `1` changed recommendation, skipped `24` unrelated actions,
+  and repeated the read-only warning that no receipts, action events, or Reddit
+  moderation calls are created.
+
+Runtime gaps found and fixed:
+
+- Stored-scan replay initially ignored corrections saved after scan persistence,
+  so it evaluated `0` actions and skipped all `25`.
+- A non-content target correction could over-apply to unrelated mod-log rows
+  sharing a subreddit/app target. Correction target indexing now only uses
+  content thing IDs (`t1_`/`t3_`); action-ID matching still works for the exact
+  corrected mod action.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -457,3 +489,10 @@ Verified in Reddit Devvit WebView:
 - Computer Use Zen Review health and impact inspection for the `v0.0.1.94`
   proof.
 - `screencapture -x output/runtime-proof/post34-v94-review-health-impact.png`
+- `npm test -- src/server/services/attributionCalibration.test.ts src/server/services/replaySandbox.test.ts`
+- `npm run type-check`
+- `npm test -- src/server/services/attributionCalibration.test.ts src/server/services/replaySandbox.test.ts src/server/services/normalizers.test.ts src/server/services/mirrorScan.test.ts`
+- Computer Use Zen live quick scan, attribution correction, and stored-scan
+  replay inspection for the `v0.0.1.101` proof.
+- `screencapture -x output/runtime-proof/post34-v101-live-scan-correction-scope-fixed.png`
+- `screencapture -x output/runtime-proof/post34-v101-replay-stored-live-scan-correction.png`

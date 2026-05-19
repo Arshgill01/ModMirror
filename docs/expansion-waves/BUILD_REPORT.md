@@ -436,9 +436,27 @@ Post-W34 Review health and impact runtime validation passed:
 - Computer Use Zen Review health and impact inspection on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v94-review-health-impact.png`
 
+Post-W34 live scan correction and replay validation passed:
+
+- `npm test -- src/server/services/attributionCalibration.test.ts src/server/services/replaySandbox.test.ts`
+- `npm run type-check`
+- `npm test -- src/server/services/attributionCalibration.test.ts src/server/services/replaySandbox.test.ts src/server/services/normalizers.test.ts src/server/services/mirrorScan.test.ts`
+- `npm run dev`
+- Computer Use Zen live quick scan, attribution correction scope check, and
+  stored-scan replay inspection on Reddit Devvit WebView `v0.0.1.101`.
+- `screencapture -x output/runtime-proof/post34-v101-live-scan-correction-scope-fixed.png`
+- `screencapture -x output/runtime-proof/post34-v101-replay-stored-live-scan-correction.png`
+
 ## Next Engineering Risks
 
-- Runtime proof should be the next focus before expanding feature surface.
+- Runtime proof should continue to focus on unchecked live Reddit capabilities:
+  native Mod Notes, Mod Discussion sending, actual retention deletion,
+  destructive moderation operations, scheduler jobs, native mobile, non-mod
+  access, and live modqueue items.
+- The W18/W20 runtime pass found and fixed two real integration gaps:
+  stored-scan replay ignored post-scan corrections, and non-content mod-log
+  targets could over-apply attribution corrections before target matching was
+  restricted to `t1_`/`t3_` content IDs.
 - Capability vocabulary in `schema.ts`, delivery services, and Settings should
   be consolidated if future waves add more proof states.
 - The client is now large enough that future UI changes should be isolated and
