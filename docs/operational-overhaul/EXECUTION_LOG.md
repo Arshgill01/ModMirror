@@ -760,6 +760,9 @@ Implemented local server-side moderator access checks for protected API routes:
 - Added API middleware in `src/routes/api.ts` so protected routes require a
   signed-in user with a non-empty `getModPermissionsForSubreddit` result when
   Devvit supplies live subreddit context.
+- Added `src/routes/apiAccess.test.ts` route-level middleware tests for public
+  health metadata, denied protected access without a current user, and allowed
+  moderator access with permissions.
 - Left health/status/capability metadata routes public.
 - Added client-side `access_denied` classification for moderator-access API
   failures.
@@ -768,6 +771,7 @@ Implemented local server-side moderator access checks for protected API routes:
 Validation:
 
 - `npm run type-check` - passed.
+- `npm test -- src/routes/apiAccess.test.ts` - passed, 1 file and 3 tests.
 - `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
   - passed, 3 files and 12 tests.
 - `npm test -- src/shared/clientResilience.test.ts` - passed, 1 file and 5
