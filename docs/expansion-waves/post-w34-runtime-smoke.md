@@ -434,12 +434,34 @@ Runtime gaps found and fixed:
   content thing IDs (`t1_`/`t3_`); action-ID matching still works for the exact
   corrected mod action.
 
+## Policy Ratification Runtime Proof
+
+Validated on Devvit playtest `v0.0.1.104` in the Reddit-hosted Devvit WebView.
+
+Screenshots:
+
+- `output/runtime-proof/post34-v101-policy-ratification-proposed-review-block.png`
+- `output/runtime-proof/post34-v101-policy-ratification-quick-adopt-block.png`
+- `output/runtime-proof/post34-v104-policy-ratification-quick-adopt-hidden.png`
+
+Verified in Reddit Devvit WebView:
+
+- The Spam and repeated promotion policy moved from draft to proposed.
+- One reviewer approval persisted, moving the policy to under review with
+  `1/2` votes and `1` review.
+- The policy remained blocked with the configured
+  `Requires 2 approval vote(s) before adoption.` message.
+- The API rejected quick adoption because this policy disables single-mod
+  adoption.
+- A UI cleanup now hides Quick adopt for policies whose ratification settings
+  disable it, while keeping the server-side guard.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Actual retention deletion, native Mod Notes, modmail/mod discussion delivery,
-  scheduler jobs, native Reddit mobile app behavior, and non-mod access
-  blocking.
+  scheduler jobs, native Reddit mobile app behavior, non-mod access blocking,
+  and reviewed adoption with multiple distinct moderators.
 
 ## Commands Run
 
@@ -496,3 +518,11 @@ Runtime gaps found and fixed:
   replay inspection for the `v0.0.1.101` proof.
 - `screencapture -x output/runtime-proof/post34-v101-live-scan-correction-scope-fixed.png`
 - `screencapture -x output/runtime-proof/post34-v101-replay-stored-live-scan-correction.png`
+- Computer Use Zen policy propose/review/blocked quick-adopt inspection for the
+  `v0.0.1.101` and `v0.0.1.104` proofs.
+- `screencapture -x output/runtime-proof/post34-v101-policy-ratification-proposed-review-block.png`
+- `screencapture -x output/runtime-proof/post34-v101-policy-ratification-quick-adopt-block.png`
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- `screencapture -x output/runtime-proof/post34-v104-policy-ratification-quick-adopt-hidden.png`

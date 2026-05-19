@@ -165,7 +165,7 @@ disabled.
 - [x] Keep quick adoption explicit and block it when policy settings disable it.
 - [x] Show approval thresholds and proposal notes in the Agree UI.
 - [x] Add threshold and invalid-transition tests.
-- [ ] Runtime-verify policy lifecycle API writes through Devvit Web/Redis
+- [x] Runtime-verify policy lifecycle API writes through Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 18 Checklist

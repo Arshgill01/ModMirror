@@ -1341,6 +1341,8 @@ function renderPolicyLifecycleButtons(policy: RulePolicy) {
   const lifecycle = getPolicyLifecycle(policy);
   const ratification = getPolicyRatificationSummary(policy);
   const policyId = escapeAttribute(policy.id);
+  const quickAdoptionAllowed =
+    policy.ratificationSettings?.allowSingleModAdoption ?? true;
   if (lifecycle === 'draft') {
     return `<button class="secondary-button" data-propose-policy="${policyId}" type="button">Propose</button>`;
   }
@@ -1353,7 +1355,11 @@ function renderPolicyLifecycleButtons(policy: RulePolicy) {
           ? `<button class="primary-button" data-adopt-policy="${policyId}" type="button">Adopt reviewed</button>`
           : ''
       }
-      <button class="secondary-button" data-adopt-policy="${policyId}" data-quick-adoption="true" type="button">Quick adopt</button>
+      ${
+        quickAdoptionAllowed
+          ? `<button class="secondary-button" data-adopt-policy="${policyId}" data-quick-adoption="true" type="button">Quick adopt</button>`
+          : ''
+      }
     `;
   }
   return '';

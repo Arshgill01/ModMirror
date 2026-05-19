@@ -447,12 +447,28 @@ Post-W34 live scan correction and replay validation passed:
 - `screencapture -x output/runtime-proof/post34-v101-live-scan-correction-scope-fixed.png`
 - `screencapture -x output/runtime-proof/post34-v101-replay-stored-live-scan-correction.png`
 
+Post-W34 policy ratification runtime validation passed:
+
+- `npm run type-check`
+- `npm run lint`
+- `npm run build`
+- Computer Use Zen policy propose/review/blocked quick-adopt inspection on
+  Reddit Devvit WebView `v0.0.1.101`, followed by a UI cleanup verification on
+  `v0.0.1.104`.
+- `screencapture -x output/runtime-proof/post34-v101-policy-ratification-proposed-review-block.png`
+- `screencapture -x output/runtime-proof/post34-v101-policy-ratification-quick-adopt-block.png`
+- `screencapture -x output/runtime-proof/post34-v104-policy-ratification-quick-adopt-hidden.png`
+
 ## Next Engineering Risks
 
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:
   native Mod Notes, Mod Discussion sending, actual retention deletion,
   destructive moderation operations, scheduler jobs, native mobile, non-mod
-  access, and live modqueue items.
+  access, live modqueue items, and reviewed adoption with multiple distinct
+  moderators.
+- The W19 runtime pass found and fixed a UI affordance gap: quick adoption was
+  correctly rejected by the API when disabled, but the Agree UI still showed the
+  button. The button is now hidden unless the policy allows single-mod adoption.
 - The W18/W20 runtime pass found and fixed two real integration gaps:
   stored-scan replay ignored post-scan corrections, and non-content mod-log
   targets could over-apply attribution corrections before target matching was
