@@ -840,3 +840,33 @@ playtest `v0.0.1.129` and returned
 `Access check passed: 1 permission(s): all.` This verifies only the current
 moderator account's permission string; true non-mod runtime blocking and
 lower-permission moderator role strings remain unverified.
+
+### 2026-05-20 - Post-W34 Policy Message Delivery Guard
+
+Implemented a local guard for the remaining comment-delivery prerequisite:
+
+- `src/server/services/policies.ts` now normalizes policy
+  `defaultMessageMode` to `log_only` for create, update/import-style drafts,
+  policy versions, adoption, snapshots, saved policies, and legacy indexed
+  reads.
+- `src/server/services/policies.test.ts` covers create, update/import-style
+  drafts, stored versions, and legacy indexed reads that request non-log
+  delivery modes.
+- Runtime capability, current-truth, capability-matrix, runtime-matrix,
+  research, and TODO docs now record that public comment delivery remains
+  disabled while policy defaults are locally guarded.
+
+Validation:
+
+- `npm test -- src/server/services/policies.test.ts` - passed, 11 tests.
+- `npm test -- src/server/services/policies.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 2 files and 14 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 45 files and 204 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime playtest was not run for this guard. Public comment ordering, comment
+identity/sticky behavior, private message/modmail delivery, native Mod Notes,
+and real Reddit moderation execution remain disabled or unverified.

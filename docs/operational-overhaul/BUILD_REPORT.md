@@ -29,6 +29,8 @@ Current merged branch: `master`
   visibility gate for future per-mod surfaces.
 - Added a Settings manual runtime capability event recorder for safe proof
   bookkeeping.
+- Added a policy message-delivery guard that keeps policy defaults `log_only`
+  until public comment delivery ordering and identity are runtime-proven.
 
 ## Branches / Worktrees
 
@@ -118,6 +120,17 @@ recorder follow-ups:
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
+Latest post-W34 validation after the policy message-delivery guard:
+
+- `npm test -- src/server/services/policies.test.ts` - passed, 11 tests.
+- `npm test -- src/server/services/policies.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 2 files and 14 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 45 files and 204 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -139,6 +152,9 @@ recorder follow-ups:
   and route-tested for safe capabilities. It is a bookkeeping surface, not
   proof of destructive actions, native Mod Notes, Mod Discussion delivery,
   scheduler behavior, native mobile behavior, or non-mod account blocking.
+- Public comment/private message/modmail policy delivery defaults are locally
+  guarded to `log_only`; public comment ordering, identity, and sticky behavior
+  remain unverified.
 - The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
   desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
   new pixel-level visual proof remain separate gaps.

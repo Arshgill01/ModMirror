@@ -37,7 +37,7 @@ Status labels:
 | Apply Policy confirm log-only | verified locally | `applyPolicy.ts`, `audit.ts`, tests | Preserve fallback while adding execution gates. |
 | Real Reddit remove/approve execution | disabled with local engine tests | W03 `moderationExecution.ts` can call typed SDK methods only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
 | Ignore reports execution | disabled with local engine tests | W03 `moderationExecution.ts` uses target model `ignoreReports()` only when live and runtime-proof flags are enabled; W04 receipt service now exists | Runtime-proof on safe test content before enabling. |
-| Public comment delivery | disabled/unverified | `RESEARCH.md` says unknown ordering | Keep disabled until runtime proof. |
+| Public comment delivery | disabled/unverified, local log-only guard | `RESEARCH.md` says unknown ordering; `policies.ts` normalizes policy default delivery to `log_only` across create/update/version/adoption/read paths. | Keep disabled until runtime proof. |
 | Modmail/mod discussion delivery | disabled/type-only | W11 `teamDelivery.ts`, `/api/delivery/*`, mocked adapter tests; Devvit docs/typings expose internal Mod Discussion creation | Keep disabled until explicit confirmation, runtime proof, and a real adapter are available. |
 | Native Mod Notes | disabled/unverified | Typings only | Spike only after runtime proof. |
 | Scheduler | unavailable/type-only | W11 delivery capabilities mark scheduler unavailable because no scheduler task is registered in `devvit.json`; Devvit docs/typings expose scheduler APIs | Register only after runtime proof and opt-in design. |

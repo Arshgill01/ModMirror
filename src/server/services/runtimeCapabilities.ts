@@ -292,6 +292,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
         'Public comments are not used for enforcement messaging in this build.',
       evidence: [
         'No runtime proof exists for comment delivery before/after removal, sticky behavior, or identity.',
+        'policies.ts forces policy defaultMessageMode to log_only for create/update/version/adoption/read paths until delivery proof exists.',
       ],
       destructive: false,
       safeToTest: false,
