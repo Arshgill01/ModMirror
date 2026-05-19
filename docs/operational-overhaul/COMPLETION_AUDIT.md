@@ -53,6 +53,7 @@ Concrete success criteria:
 | Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. PR #35 adds local synthetic coverage for the isolation-first contract by including foreign-subreddit actions that are excluded from replay and scan summaries. | Satisfied for Devvit Web request context plus local synthetic regression coverage |
 | Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
 | Access runtime proof plan | `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the account, route, evidence, and no-go gates for true non-mod protected-route blocking and lower-permission moderator role-string proof. `TODO.md`, `RESEARCH.md`, and `RUNTIME_VERIFICATION_MATRIX.md` keep those runtime behaviors open. | Satisfied as plan only; runtime proof open |
+| Live modqueue runtime proof plan | `docs/operational-overhaul/MODQUEUE_RUNTIME_TEST_PLAN.md` defines the safe content, route, evidence, and no-go gates for proving `/api/modqueue/triage` against live Reddit modqueue items or an exact adapter failure. `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`, and `RUNTIME_VERIFICATION_MATRIX.md` keep live modqueue item reads open. | Satisfied as plan only; runtime proof open |
 | Real retention cleanup proof plan | `docs/operational-overhaul/RETENTION_DESTRUCTIVE_TEST_PLAN.md` defines the approval, dry-run, marked-record, exact-count, and policy-history gates before any destructive cleanup proof against real operational records. `TODO.md`, `RESEARCH.md`, and `RUNTIME_VERIFICATION_MATRIX.md` keep real deletion proof open. | Satisfied as plan only; runtime proof open |
 | Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest full local validation after runtime capability baseline reconciliation passed 47 files and 216 tests. Later documentation-only truth syncs passed `git diff --check`. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
@@ -106,7 +107,8 @@ fully complete because these requirements remain incomplete or weakly verified:
   rejected, not that same-subreddit queue reads return live Reddit items.
   A follow-up Devvit playtest `v0.0.1.123` reached the same-subreddit
   Operational Queue refresh path but still returned the type-supported/no-items
-  fallback.
+  fallback. `MODQUEUE_RUNTIME_TEST_PLAN.md` now defines the required safe proof
+  pass, but it has not been executed.
 - Cross-community analytics or benchmarking are out of scope. PR #35 added
   local synthetic coverage for the W29 isolation-first contract only; it does
   not prove new runtime multi-community behavior.

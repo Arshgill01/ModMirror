@@ -1354,3 +1354,17 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. Live modqueue item reads
 remain unverified.
+
+### 2026-05-20 - Completion Audit Modqueue Plan Refresh
+
+- Updated `docs/operational-overhaul/COMPLETION_AUDIT.md` to include the
+  modqueue runtime proof plan as an explicit prompt-to-artifact checklist row.
+- Kept the row marked as plan-only and preserved the audit decision that live
+  modqueue item reads remain unverified.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. Live modqueue item reads
+remain unverified.
