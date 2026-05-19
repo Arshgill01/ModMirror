@@ -1,8 +1,10 @@
 # Operational Overhaul Build Report
 
 Date: 2026-05-18
+Updated: 2026-05-19
 
 Integrated branch: `integration/operational-overhaul`
+Current merged branch: `master`
 
 ## Implemented
 
@@ -32,6 +34,14 @@ Integrated branch: `integration/operational-overhaul`
 - Integration worktree:
   `/Users/arshdeepsingh/Developer/modmirror-integration-operational-overhaul`.
 
+Post-merge cleanup update:
+
+- W00-W14, W16-W34, and post-W34 local worktrees were removed after all
+  checked branch tips were confirmed merged and clean.
+- Local merged wave branches were deleted.
+- The merged remote branch `post34/runtime-smoke-controls` was deleted.
+- The only remaining local worktree is the root `master` worktree.
+
 ## Validation
 
 Integrated local checks:
@@ -53,11 +63,36 @@ Runtime proof obtained before integration:
   moderator account.
 - W12 operational IA rendered inside Reddit's desktop expanded WebView modal.
 
+Post-W34 runtime proof obtained after integration:
+
+- PR #12 merged into `master` with merge commit
+  `7598f122fc704468bd01d212575b87741fb7ef2c`.
+- `npm run dev` from `master` uploaded Devvit playtest `v0.0.1.120`.
+- Computer Use verified the Reddit-hosted launch card, dashboard open,
+  fullscreen host mode, Agree page, and Settings runtime matrix on the latest
+  playtest without taking moderation/write actions.
+- Earlier post-W34 playtests verified safe Redis smoke, Reddit read-only smoke,
+  post/comment Apply Policy menu target capture, log-only receipt persistence,
+  receipt-backed Evidence Boards and Case Packets, Incident Mode receipt
+  tagging, config import/export, privacy dry-run controls, response preview
+  receipts, review health, policy impact, attribution correction, replay, and
+  policy ratification paths.
+
+Post-W34 merged validation:
+
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 43 files and 186 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
-  detail contexts.
+  detail contexts. Closed for desktop Reddit WebView by post-W34 proof.
 - Devvit Redis receipt/scan/policy persistence needs route-level runtime proof.
+  Closed for selected safe routes by post-W34 proof; live modqueue reads and
+  destructive cleanup remain unverified.
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
 - Non-mod access blocking, native mobile, Mod Discussion delivery, scheduler,
   native Mod Notes, and external AI are unverified/disabled.

@@ -1,6 +1,6 @@
 # Runtime Verification Matrix
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 This matrix distinguishes runtime proof from local tests, static browser proof,
 type-only support, and disabled capability gates. It is mirrored in the
@@ -40,24 +40,54 @@ Artifact:
 
 - `output/runtime/w13/devvit-w12-act-modal-v0.0.1.71.png`
 
+## Post-W34 Runtime Pass
+
+Environment:
+
+- Worktree: `/Users/arshdeepsingh/Developer/ModMirror`
+- Branch: `master`
+- Devvit user: `u/BrightyBrainiac`
+- Playtest subreddit: `r/modmirror_dev`
+- Latest playtest version observed from merged `master`: `v0.0.1.120`
+- Browser/UI driver: Zen desktop browser with Computer Use
+
+Runtime observations:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- The inline launch card rendered app version `0.0.1.120` and opened the
+  dashboard.
+- Reddit host fullscreen mode rendered the Act, Agree, and Settings surfaces
+  without the previously reported card alignment issue.
+- Earlier post-W34 playtests recorded in `RESEARCH.md` and
+  `docs/expansion-waves/post-w34-runtime-smoke.md` verified safe Redis smoke,
+  Reddit read-only smoke, post/comment Apply Policy menu target capture,
+  log-only receipt persistence, receipt-backed Evidence Boards and Case
+  Packets, Incident Mode receipt tagging, config import/export, privacy
+  dry-run controls, response preview receipts, review health, policy impact,
+  attribution correction, replay, and policy ratification.
+- No real Reddit moderation action, public post, native Mod Note write, Mod
+  Discussion send, scheduler task, actual retention deletion, or external AI
+  call was executed.
+
 ## Capability Matrix
 
 | Capability | Status | Proof / Evidence | Next Action |
 |---|---|---|---|
-| Subreddit dashboard launcher | runtime verified | W13 playtest `v0.0.1.71`; Zen showed `Open ModMirror dashboard` and the confirmation form. | Re-run after W14 integration. |
-| Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal. | Capture integrated-branch screenshots. |
-| Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` viewport control. | Verify desktop/tablet/mobile host states after integration. |
-| Post Apply Policy menu | type/build-only | `devvit.json` config and `src/routes/menu.ts`; not found/proven in W13 feed menu checks. | Test on an ordinary safe post detail page. |
-| Comment Apply Policy menu | type/build-only | `devvit.json` config and `src/routes/menu.ts`; no comment target was verified in W13. | Add/locate a safe comment and test comment context menu. |
-| Target context capture | type/build-only | `targetContext.test.ts` passes with mocks. | Verify resolved author/permalink from real post/comment menu target. |
-| Redis smoke | type/build-only | `/api/smoke/redis` exists; local tests/build pass. | Hit route from Devvit runtime and record redacted read/write result. |
-| Reddit read smoke | type/build-only | `/api/smoke/reddit` exists; local tests/build pass. | Hit route from Devvit runtime and record redacted rules/removal/modlog result. |
-| Scan history persistence | local verified | `scans.test.ts` passes with mocked Redis. | Run demo/live scans in playtest, then verify list/detail/compare routes. |
-| Policy proposal/review/adoption | local verified | `policies.test.ts` passes. | Complete lifecycle in playtest and reload. |
-| Log-only Apply Policy receipts | local verified | `applyPolicy.test.ts` and `receipts.test.ts` pass. | Confirm an action in runtime and verify `/api/receipts`. |
+| Subreddit dashboard launcher | runtime verified | W13 playtest `v0.0.1.71`; post-W34 `v0.0.1.120` launch card opened the dashboard from merged `master`. | Keep in runtime regression checklist. |
+| Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment. | Complete broader narrow/fullscreen sweep for Scan/Review/Prove. |
+| Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 mobile host mode rendered Act and Receipt Ledger. | Verify native Reddit mobile separately. |
+| Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
+| Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
+| Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |
+| Redis smoke | runtime verified | Post-W34 WebView Settings smoke reported write/read matched inside Devvit playtest. | Keep safe smoke button available. |
+| Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. | Keep read-only; do not infer live execution support. |
+| Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. | Deep pagination remains unverified. |
+| Policy proposal/review/adoption | runtime verified for single-mod playtest path | `policies.test.ts` passes; post-W34 `v0.0.1.104` verified proposed/under-review state and threshold blocking. | Multi-moderator distinct-reviewer proof remains open. |
+| Log-only Apply Policy receipts | runtime verified | Post-W34 playtest `v0.0.1.90` recorded `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` for comment `t1_ommzgtz`; later WebView loads showed it in the Receipt Ledger. | Keep real Reddit execution disabled until separate proof. |
 | Real remove/approve/ignore-reports | disabled | Gated by `moderationExecution.ts`; no safe runtime proof. | Test only on controlled throwaway content after receipt proof. |
-| Case Packets v2 | local verified | `casePacket.test.ts` passes. | Generate after a runtime receipt exists. |
-| Team delivery | disabled/type-only | W11 preview-only service; no live adapter in product routes. | Verify internal destination and permission errors before enabling. |
+| Case Packets v2 | runtime verified | Post-W34 playtest generated an Official Case Packet from runtime receipt `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` and opened a receipt-backed Evidence Board. | Preserve evidence labels and caveats. |
+| Team delivery | manual/skipped receipts runtime verified, real send disabled | W11 preview-only service; post-W34 verified manual-ready and skipped Mod Discussion draft receipt persistence. Product routes still do not inject a live adapter. | Verify internal destination and permission errors before enabling any send path. |
 | AI advisory | disabled/type-only | W10 disabled provider abstraction; no HTTP permission/secret proof. | Keep disabled until provider, secret, fetch, latency, and privacy proof exists. |
 | Non-mod access blocking | unverified | Menu config uses `forUserType: "moderator"` only. | Test with non-mod account or document blocker. |
 | Native Reddit mobile app | unverified | W12 static 390px screenshot exists; W13 did not use native mobile app. | Verify in native Reddit app/device mirror. |

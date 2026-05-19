@@ -1,6 +1,7 @@
 # Current Repo Truth
 
 Created: 2026-05-18
+Updated: 2026-05-19
 
 ## Product Truth
 
@@ -10,8 +11,10 @@ an operational Reddit moderation tool at the moment of action.
 It currently supports:
 
 - Devvit Web + Hono server scaffold.
-- Non-destructive post/comment menu entrypoints for Apply Policy guidance
-  with target context capture, added in W01 and type/build-verified locally.
+- Non-destructive post/comment menu entrypoints for Apply Policy guidance with
+  target context capture. W01 added these locally; post-W34 runtime proof
+  verified both post and comment menu target handoff in Reddit's desktop
+  WebView path.
 - Redis key helpers and service-level persistence.
 - Demo and live Mirror Scan source paths.
 - Deterministic attribution and drift summaries.
@@ -23,7 +26,8 @@ It currently supports:
   default until receipts and runtime proof exist.
 - W04 action receipts for every confirmed Apply Policy operation, with target
   snapshot, policy snapshot, recommendation, selected action, override context,
-  and execution result.
+  and execution result. Post-W34 runtime proof verified log-only receipt
+  persistence in Devvit Redis.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
@@ -38,7 +42,9 @@ It currently supports:
 - Case Packet generation from tracked ModMirror action data.
 - W09 Case Packets v2 prefer W04 action receipts when present and include
   receipt IDs, target snapshots, execution results, packet types, and evidence
-  labels that distinguish verified receipts from inferred history.
+  labels that distinguish verified receipts from inferred history. Post-W34
+  runtime proof generated a receipt-backed official Case Packet and opened an
+  Evidence Board from it.
 - W10 AI advisory spike contracts, capability endpoints, Settings labels, and
   mocked-provider tests. The feature remains disabled-by-default and cannot
   decide or execute enforcement.
@@ -53,13 +59,16 @@ It does not yet support:
 
 - Default-enabled safe execution of Reddit moderation actions from Apply
   Policy. W03 added the gated engine, but live execution remains disabled.
-- Runtime-verified action receipts in Devvit playtest. Receipt storage is
-  locally tested only.
-- Runtime-verified full attributed scan history persistence. W05 local tests
-  cover the Redis storage shape.
+- Runtime-verified destructive action receipts. Log-only receipt persistence is
+  runtime-verified; real Reddit action receipts remain disabled until live
+  action proof exists.
+- Runtime-verified deep attributed scan pagination. Safe live scan persistence
+  and replay/correction paths have post-W34 runtime evidence, but deep
+  moderation-log pagination remains unverified.
 - Runtime-verified deep moderation-log pagination. W06 verifies installed
   typings and local mocks only.
-- Runtime-verified comment, modmail, scheduler, or native Mod Notes delivery.
+- Runtime-verified public comment, modmail, scheduler, or native Mod Notes
+  delivery.
 - Runtime-verified external AI calls or Devvit secret retrieval for AI
   providers. W10 is docs/type-supported and locally tested with mocks only.
 - Registered scheduler tasks for ModMirror delivery. W11 marks scheduler
@@ -114,9 +123,10 @@ It does not yet support:
   expanded WebView on playtest `v0.0.1.71`; native mobile remains unverified.
 - W13 added `GET /api/runtime-verification` and a matrix service so runtime,
   local, static, type-only, disabled, and unverified claims are explicit.
-- W01 target context is type/build-verified only. Runtime proof for post/comment
-  menu visibility, form behavior, dashboard navigation, target fetch, and
-  moderator permission shape is still pending.
+- W01 target context is runtime-verified for post/comment menu visibility,
+  form behavior, dashboard navigation, and target fetch in the desktop Reddit
+  WebView path. Exact moderator permission shape, non-mod access behavior, and
+  native Reddit mobile behavior remain pending.
 
 ## Runtime Truth
 
@@ -125,7 +135,16 @@ Runtime evidence exists for:
 - Devvit app identity and playtest readiness.
 - Compact inline card and expanded dashboard modal.
 - W12 operational IA inside the desktop expanded WebView on playtest
-  `v0.0.1.71`.
+  `v0.0.1.71`, plus latest launch/fullscreen/Agree/Settings proof on
+  `v0.0.1.120`.
+- Safe Redis smoke and Reddit read-only smoke from inside the Devvit WebView.
+- Post/comment Apply Policy menu target capture and Act target strip handoff.
+- Log-only Apply Policy receipt persistence in Devvit Redis.
+- Receipt-backed Evidence Board creation, Case Packet generation, Incident
+  Mode receipt tagging, config import/export, privacy dry-run controls,
+  response preview receipt persistence, attribution correction, replay, review
+  health, policy impact, and policy ratification in desktop Reddit WebView
+  playtest paths.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 
@@ -137,11 +156,11 @@ Runtime evidence does not yet exist for:
 - Native Mod Notes.
 - Scheduler.
 - Mod discussion delivery through Reddit Modmail.
-- Team delivery receipt persistence in Devvit Redis.
 - External AI fetch, provider secret retrieval, and provider latency/failure
   behavior.
 - Non-moderator access blocking.
 - Exact moderator permission strings.
+- Native Reddit mobile app behavior.
 
 ## Product Boundary
 
