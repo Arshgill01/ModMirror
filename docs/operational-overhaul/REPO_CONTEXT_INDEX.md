@@ -4,9 +4,9 @@ Created: 2026-05-18
 
 Updated: 2026-05-20
 
-Branch: `overhaul/w00-truth-and-control`
+Branch: `master`
 
-Base commit: `74dcd70 docs: mark Wave 9 10 pushed`
+Initial overhaul base commit: `74dcd70 docs: mark Wave 9 10 pushed`
 
 ## Purpose
 
@@ -28,30 +28,30 @@ work begins.
 ## Repository State
 
 - Working directory inspected: `/Users/arshdeepsingh/Developer/ModMirror`.
-- Starting branch: `master`.
-- Starting status: only `modmirror_operational_overhaul_spec_pack/` was
-  untracked.
-- `master` was up to date with `origin/master`.
-- Current W00 worktree:
-  `/Users/arshdeepsingh/Developer/modmirror-w00-truth-and-control`.
-- Existing worktrees remain from prior waves under
-  `/Users/arshdeepsingh/Developer/modmirror-worktrees/` and
-  `/Users/arshdeepsingh/Developer/modmirror-wave2-worktrees/`.
+- Initial operational-overhaul work began from `master` at `74dcd70`.
+- Current continuation work is on the root `master` worktree.
+- PR #12 merge cleanup removed the historical local wave worktrees and local
+  wave branches.
+- The untracked `modmirror-expansion-waves-16-34/` and
+  `modmirror_operational_overhaul_spec_pack/` directories are intentionally
+  preserved and untouched during post-W34 continuation work.
 
 Latest relevant commits on `master`:
 
+- `36bbb19 docs: add modqueue plan to completion audit`
+- `c3c2706 docs: plan modqueue runtime proof`
+- `d05957b docs: refresh operational completion audit`
+- `abcd664 docs: reconcile runtime verification matrix`
+- `c9c265a docs: plan access runtime proof`
+- `a9d36bb test: harden moderator permission normalization`
+- `d5371eb docs: plan retention destructive cleanup proof`
+- `d88b24a fix: include redis proofs in runtime verification`
+- `49aac7c fix: align runtime capability baseline`
+- `01de18c docs: refresh operational context index`
 - `b876767 docs: record retention cleanup runtime pass`
 - `1bb93b3 feat: add retention cleanup smoke diagnostic`
 - `d4a0d5c Merge pull request #41 from Arshgill01/post34/redis-storage-runtime-pass`
 - `610fb4d docs: record redis storage runtime pass`
-- `74dcd70 docs: mark Wave 9 10 pushed`
-- `ea90080 docs: mark Wave 9 10 merged`
-- `9b9c88c merge: Wave 9 10 launch readiness`
-- `1c4a532 docs: record Wave 9 10 runtime proof`
-- `ef81d6b feat: add persisted digest engine`
-- `273316d Merge pull request #11 from Arshgill01/redesign/wave7-8-command-center-ui`
-- `4186dc7 feat: redesign moderation workspace UI`
-- `791c938 merge: Wave 7 8 productization`
 
 ## Guidance Files Read
 
@@ -134,26 +134,28 @@ Operational-overhaul spec pack read:
 
 - `src/index.ts` creates a Hono app, mounts public `/api` routes, and mounts
   internal `/internal/menu`, `/internal/form`, and `/internal/triggers`.
-- `devvit.json` defines one inline Devvit Web custom post entrypoint and three
-  menu entries.
-- `src/routes/api.ts` exposes health, smoke, scan, policy, action, override,
-  policy health, case packet, digest, and Apply Policy APIs.
-- `src/routes/menu.ts` still exposes post/comment smoke menu handlers and a
-  subreddit dashboard launcher.
-- `src/routes/forms.ts` handles smoke target/chained forms and dashboard custom
-  post launch.
-- `src/core/smoke.ts` contains Redis/Reddit smoke helpers and a minimal target
-  summary helper for smoke flows.
+- `devvit.json` defines one inline Devvit Web custom post entrypoint, two
+  `Apply ModMirror Policy` post/comment menu entries, and one subreddit
+  dashboard launcher.
+- `src/routes/api.ts` exposes health, smoke/runtime diagnostics, access
+  diagnostics, scan, policy, action, override, policy health, case packet,
+  digest, delivery, AI capability, modqueue, privacy, and Apply Policy APIs.
+- `src/routes/menu.ts` exposes target-aware Apply Policy post/comment handlers
+  and a subreddit dashboard launcher.
+- `src/routes/forms.ts` handles target guidance and dashboard custom-post
+  launch forms.
+- `src/core/smoke.ts` contains explicit Redis/Reddit diagnostic helpers, not
+  production-facing moderator menu flows.
 - `src/server/services/redis.ts` centralizes Redis keys and JSON helpers.
-- `src/server/services/mirrorScan.ts` runs demo/live scan attribution and saves
-  last-scan metadata only.
+- `src/server/services/mirrorScan.ts` runs demo/live scan attribution and now
+  participates in persisted scan history/replay flows.
 - `src/server/services/redditSources.ts` loads live rules, removal reasons, and
   moderation log actions with a default shallow window of 60 actions.
-- `src/server/services/policies.ts` implements policy CRUD plus immutable
-  version records, but not a proposal/review/adoption lifecycle.
+- `src/server/services/policies.ts` implements policy CRUD, immutable versions,
+  and the proposal/review/adoption lifecycle used by the Agree workspace.
 - `src/server/services/applyPolicy.ts` previews policy recommendations and
-  confirms by writing `log_only` action and override events. It does not call
-  Reddit moderation execution APIs.
+  confirms by writing receipt-backed log-only action and override events. Real
+  Reddit moderation execution remains gated and disabled without runtime proof.
 - `src/server/services/audit.ts` stores action and override events in Redis
   sorted sets and strips moderator names from aggregate override summaries.
 - `src/server/services/casePacket.ts` builds deterministic case packets from
@@ -161,11 +163,11 @@ Operational-overhaul spec pack read:
 - `src/server/services/digest.ts` generates deterministic digest reports and
   persists digest history; mod discussion delivery and scheduler are
   unverified capability states.
-- `src/client/main.ts` is a large single-file DOM dashboard with Command
-  Center, Scan, Policies, Review, Case Packets, Digest, and Settings pages.
+- `src/client/main.ts` is a large single-file DOM dashboard organized around
+  Act, Scan, Agree, Review, Prove, and Settings workspaces.
 - `src/client/styles.css` contains the current operational workspace styling.
-- Tests currently cover shared logic and server services. There are no route,
-  client, or menu/form integration tests.
+- Tests cover shared logic, server services, route behavior, and selected
+  static client behavior.
 
 ## Runtime Truth From Research And Readiness Docs
 
@@ -208,32 +210,32 @@ Still unverified or disabled:
 - Lower-permission moderator role strings for stronger permission-gating; keep
   product gates conservative until roles beyond the current `all` account are
   verified.
+- Live same-subreddit modqueue item reads; the route and UI are read-only and
+  fallback-observed, but no live `reddit_modqueue` item or exact adapter
+  failure has been captured.
 - Reddit mobile app behavior.
 - Redis behavior beyond the current sorted-set and `10/500/500` storage
   envelope remains unproven.
 - Actual retention deletion against real operational records remains unverified
   and requires a separate controlled destructive cleanup test.
 
-## Current Implementation Gaps From Code
+## Current Remaining Gaps From Code And Runtime Evidence
 
-- `devvit.json` still exposes production-facing `"ModMirror smoke test"` post
-  and comment menu labels.
-- Post/comment menu handlers in `src/routes/menu.ts` open smoke forms, not real
-  ModMirror policy flows.
-- There is no real target-context service outside the smoke helper.
-- Apply Policy confirm stores `ActionEvent` records but performs no Reddit
-  moderation action.
-- Apply Policy has no typed execution result or receipt model.
-- Existing action events do not distinguish live execution, failed execution,
-  dry run, skipped execution, or unverified-disabled execution.
-- Mirror Scan persists only `LastScanMetadata`, not full attributed scan
-  records or scan history.
-- Live scan uses a shallow moderation-log fetch by default.
-- Policy Agreement is policy CRUD/versioning, not draft/propose/review/adopt.
-- Case Packets depend mostly on ModMirror action/audit records and lack a
-  receipt-backed evidence model.
-- Client UI uses static fallback/demo paths for preview and screenshots; those
-  must stay clearly separated from live runtime functionality.
+- Real Reddit remove/approve/ignore-reports execution is still disabled until
+  controlled throwaway-content runtime proof exists.
+- Public comment delivery, private messages, modmail/Mod Discussion sends,
+  native Mod Notes, scheduler jobs, and external AI calls remain disabled or
+  unverified.
+- True non-mod protected API blocking and lower-permission moderator role
+  strings have an access runtime test plan but no account-separated runtime
+  proof.
+- Live same-subreddit modqueue reads have a runtime test plan but no safe queue
+  item or exact adapter failure proof yet.
+- Actual retention deletion against real operational records has a destructive
+  cleanup test plan but has not been approved or executed.
+- Deep moderation-log pagination, native Reddit mobile behavior,
+  multi-moderator policy ratification, and larger Redis storage envelopes
+  remain unverified.
 
 ## Contradictions And Stale Documentation
 
@@ -252,9 +254,11 @@ Still unverified or disabled:
 - `TREE.txt` is a Wave 7/8 prompt-pack tree, not the current repository tree.
 - Prior Wave 9/10 docs include submission-oriented drafts. The operational
   overhaul explicitly forbids new submission hardening in this run.
-- The operational-overhaul pack's smoking-gun claims match current code for
-  smoke menus, log-only Apply Policy, shallow scans, metadata-only scans, and
-  incomplete policy agreement.
+- The operational-overhaul pack's early smoking-gun claims about smoke menus,
+  log-only Apply Policy, metadata-only scans, and incomplete policy
+  agreement were valid at preload time but are now historical. Current
+  completion truth lives in `COMPLETION_AUDIT.md`, `CAPABILITY_MATRIX.md`, and
+  `RUNTIME_VERIFICATION_MATRIX.md`.
 
 ## Integration With Existing Repo Structure
 

@@ -1368,3 +1368,20 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. Live modqueue item reads
 remain unverified.
+
+### 2026-05-20 - Repo Context Index Current-State Refresh
+
+- Updated `docs/operational-overhaul/REPO_CONTEXT_INDEX.md` so it no longer
+  describes removed worktrees or the old W00 branch as the active branch.
+- Refreshed the current architecture and remaining-gap sections to reflect the
+  post-W34 Apply Policy menus, receipt-backed flows, policy lifecycle, runtime
+  proof plans, and still-open platform proof gaps.
+- Kept the preload purpose intact while making stale smoking-gun claims
+  explicitly historical.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. This was a context-index
+truth refresh only.
