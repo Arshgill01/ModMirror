@@ -324,13 +324,29 @@ Post-W34 Review health and impact runtime proof:
   receipts `0`, after receipts `2`, before `0%`, after `100%`, and
   `Insufficient Data` due the before-adoption threshold.
 
+Post-W34 server moderator access guard:
+
+- Added `src/server/services/moderatorAccess.ts` to require a signed-in Reddit
+  user and non-empty `getModPermissionsForSubreddit` result before protected
+  API routes continue in live subreddit context.
+- Added API middleware in `src/routes/api.ts` so health/status/capability
+  metadata remains reachable, while operational data and write routes are
+  protected.
+- Added `src/server/services/moderatorAccess.test.ts` coverage for missing
+  users, unavailable permission APIs, empty permission lists, permission-check
+  failures, and local no-subreddit-context fallback.
+- This is local/type proof only. A true non-moderator account runtime test is
+  still required before claiming runtime non-mod access blocking.
+- `npm run dev` reached Devvit playtest ready for `r/modmirror_dev` on
+  `v0.0.1.126` after the guard was added.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
 - Actual retention deletion, native Mod Notes, modmail/mod discussion send,
-  scheduler jobs, external AI, native Reddit mobile app behavior, and non-mod
-  access blocking remain unverified or disabled.
+  scheduler jobs, external AI, native Reddit mobile app behavior, and true
+  non-mod account blocking remain unverified or disabled.
 - W34 did not publish, submit, market, or prepare final demo material.
 
 ## Validation Status
@@ -452,6 +468,14 @@ Post-W34 Review health and impact runtime validation passed:
 - Computer Use Zen Review health and impact inspection on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v94-review-health-impact.png`
 
+Post-W34 server moderator access guard validation passed, with non-mod runtime
+proof still open:
+
+- `npm run type-check`
+- `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
+- `npx devvit whoami`
+- `npm run dev`
+
 Post-W34 live scan correction and replay validation passed:
 
 - `npm test -- src/server/services/attributionCalibration.test.ts src/server/services/replaySandbox.test.ts`
@@ -537,9 +561,9 @@ Post-W34 Wave 29 subreddit-isolation runtime proof:
 
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:
   native Mod Notes, Mod Discussion sending, actual retention deletion,
-  destructive moderation operations, scheduler jobs, native mobile, non-mod
-  access, live modqueue items, and reviewed adoption with multiple distinct
-  moderators.
+  destructive moderation operations, scheduler jobs, native mobile, true
+  non-mod account access blocking, live modqueue items, and reviewed adoption
+  with multiple distinct moderators.
 - The W19 runtime pass found and fixed a UI affordance gap: quick adoption was
   correctly rejected by the API when disabled, but the Agree UI still showed the
   button. The button is now hidden unless the policy allows single-mod adoption.

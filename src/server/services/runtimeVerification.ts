@@ -251,15 +251,18 @@ function buildRuntimeVerificationItems(): RuntimeVerificationItem[] {
       id: 'non-mod-access',
       category: 'access_control',
       capability: 'Non-moderator access blocking',
-      status: 'unverified',
+      status: 'local_verified',
       evidence: [
         'Menu items are configured with forUserType=moderator.',
-        'Exact permission failure behavior for direct API/WebView access is not proven.',
+        'src/server/services/moderatorAccess.ts requires a signed-in current user and a non-empty getModPermissionsForSubreddit result before protected API routes continue in live subreddit context.',
+        'src/server/services/moderatorAccess.test.ts covers no-user, unavailable permission API, empty permission, and permission failure denials.',
+        'Exact non-mod account behavior in Devvit runtime is not proven.',
       ],
+      proofCommand: 'npm test -- src/server/services/moderatorAccess.test.ts',
       safeToRunInPlaytest: true,
       destructive: false,
       nextAction:
-        'Test with a non-moderator account or explicitly document why access proof is blocked.',
+        'Test with a non-moderator account to promote this from local guard proof to runtime proof.',
     },
     {
       id: 'desktop-expanded-webview',

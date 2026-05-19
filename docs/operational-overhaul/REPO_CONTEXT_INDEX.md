@@ -175,6 +175,9 @@ Verified locally or in runtime notes:
 - Installed typings expose moderation log, subreddit rules, removal reasons,
   remove/approve/ignore reports, comments, modmail, Mod Notes, scheduler, and
   permission APIs.
+- Protected API routes now have local server-side moderator access checks in
+  live subreddit context through `moderatorAccess.ts`; true non-mod runtime
+  proof remains open.
 
 Still unverified or disabled:
 
@@ -182,7 +185,7 @@ Still unverified or disabled:
 - Public comment delivery before/after removal.
 - Private messages, modmail/mod discussion delivery, native Mod Notes, and
   scheduler runtime behavior.
-- True non-moderator access checks.
+- True non-moderator runtime account checks.
 - Exact moderator permission strings for stronger permission-gating.
 - Reddit mobile app behavior.
 - Redis smoke endpoints in playtest remain separately tracked as not broadly
@@ -251,4 +254,3 @@ The operational-overhaul should preserve the existing Devvit Web/Hono shape:
 - Later scan, policy agreement, case packet, digest, and UI waves should
   consume receipts and persisted scans where available instead of expanding
   reporting-only surfaces.
-

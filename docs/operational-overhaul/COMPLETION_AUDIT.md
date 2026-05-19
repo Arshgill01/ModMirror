@@ -63,7 +63,8 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Real Reddit remove/approve/ignore-reports execution is still disabled and
   not runtime-proven on controlled throwaway content.
 - Native Reddit mobile app behavior is unverified.
-- Non-mod access blocking and exact moderator permission strings are
+- Server-side protected API moderator access checks are locally verified, but
+  non-mod runtime account blocking and exact moderator permission strings are
   unverified.
 - Native Mod Notes writes are type-supported but not runtime-proven.
 - Mod Discussion delivery and scheduler behavior are not runtime-proven.

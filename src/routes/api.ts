@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import { runRedditSmoke, runRedisSmoke } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
@@ -194,10 +194,27 @@ import {
   resolveLiveSubredditScope,
   resolveSubredditScope,
 } from '../server/services/subredditIsolation';
+import {
+  assertModeratorAccess,
+  isModeratorAccessError,
+} from '../server/services/moderatorAccess';
 
 export const api = new Hono();
 
 api.onError((error, c) => {
+  if (isModeratorAccessError(error)) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'moderator_access_required',
+          message: error.message,
+        },
+      } satisfies ApiResponse<never>,
+      403
+    );
+  }
+
   if (isSubredditIsolationError(error)) {
     return c.json(
       {
@@ -222,6 +239,8 @@ api.onError((error, c) => {
     500
   );
 });
+
+api.use('*', requireModeratorAccess());
 
 api.get('/health', (c) =>
   c.json({
@@ -2257,6 +2276,37 @@ function applyPolicyError(
         error instanceof Error ? error.message : 'Apply Policy request failed',
     },
   };
+}
+
+function requireModeratorAccess(): MiddlewareHandler {
+  return async (c, next) => {
+    if (c.req.method === 'OPTIONS' || isPublicApiPath(c.req.path)) {
+      await next();
+      return;
+    }
+
+    await assertModeratorAccess({
+      currentSubreddit: context.subredditName,
+      contextUsername: context.username,
+      getCurrentUser: () => reddit.getCurrentUser(),
+    });
+    await next();
+  };
+}
+
+const PUBLIC_API_PATHS = new Set([
+  '/health',
+  '/runtime-verification',
+  '/launch-context',
+  '/config/templates',
+  '/digest/capabilities',
+  '/delivery/capabilities',
+  '/ai/capabilities',
+]);
+
+function isPublicApiPath(path: string): boolean {
+  const apiPath = path.replace(/^\/api(?=\/|$)/, '');
+  return PUBLIC_API_PATHS.has(apiPath);
 }
 
 function overrideError(error: unknown): ApiResponse<OverrideEvent[]> {

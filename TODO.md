@@ -6,7 +6,7 @@ Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
 the UI sweep proof has been merged through PR #14, and the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16. The
 latest Devvit playtest observed while continuing runtime proof work is
-`v0.0.1.123`.
+`v0.0.1.126`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -24,10 +24,13 @@ on Devvit playtest `v0.0.1.122`. A follow-up W17 attempt on Devvit playtest
 still returned the labeled type-supported/no-items fallback, so live modqueue
 item reads remain open. Live Reddit moderation execution, actual
 retention deletion, Mod Discussion delivery, scheduler, native Mod Notes, live
-modqueue reads, external AI, non-mod access, reviewed adoption with multiple
-distinct moderators, and native Reddit mobile app behavior remain unverified or
-disabled. The next runtime-proof wave should target one of those remaining
-gaps with the same safety constraints used by the post-W34 probes.
+modqueue reads, external AI, non-mod runtime account proof, reviewed adoption
+with multiple distinct moderators, and native Reddit mobile app behavior remain
+unverified or disabled. Server-side protected API moderator access checks are
+now locally verified, and the guarded build reached Devvit playtest ready on
+`v0.0.1.126`, but still needs a true non-mod account playtest. The next
+runtime-proof wave should target one of those remaining gaps with the same
+safety constraints used by the post-W34 probes.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -427,6 +430,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [ ] Verify whether a submitted removal comment can be distinguished/stickied.
 - [ ] Verify private message and modmail delivery behavior.
 - [ ] Verify native Mod Notes add/read/delete behavior with real moderator permissions.
+- [x] Add server-side protected API moderator access checks for live subreddit context.
+- [ ] Runtime-verify protected API blocking with a true non-moderator account.
 - [ ] Verify exact moderator permission strings needed for aggregate versus per-mod visibility.
 
 ## Wave 1 Tasks

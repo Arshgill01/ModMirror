@@ -9,8 +9,10 @@ Do not assume Devvit API behavior. Verify it here.
 Status: Expansion Waves 16-34 are implemented with post-W34 runtime proof in
 progress. Several safe Devvit WebView paths are runtime-verified; destructive
 moderation, native Mod Notes, Mod Discussion sending, scheduler jobs, native
-mobile, non-mod access, external AI provider calls, and live modqueue content
-remain disabled or unverified.
+mobile, non-mod runtime account proof, external AI provider calls, and live
+modqueue content remain disabled or unverified. Server-side protected API
+moderator access checks are locally verified but not yet proven with a true
+non-mod account.
 
 Last updated: 2026-05-19
 
@@ -49,6 +51,7 @@ Updated by: Codex
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
+| Verified locally | Protected API routes can require moderator access in live subreddit context. | `src/server/services/moderatorAccess.ts` uses `reddit.getCurrentUser().getModPermissionsForSubreddit(currentSubreddit)` and denies missing users, unavailable permission APIs, empty permission lists, and permission-check failures. `src/routes/api.ts` applies the guard to protected `/api/*` routes while leaving health/status/capability metadata public. `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts` and `npm run type-check` pass. Runtime proof with a true non-mod account remains open. |
 | Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
@@ -954,7 +957,7 @@ Not verified:
 - Log-only Apply Policy receipt creation in Devvit Redis.
 - Any destructive moderation operation.
 - Native Mod Notes, modmail/mod discussion, scheduler, external AI, native
-  mobile, or non-mod access blocking.
+  mobile, or non-mod runtime account blocking.
 
 Decision:
 
@@ -1530,3 +1533,37 @@ Decision:
 - This does not promote native Mod Notes, Mod Discussion send, scheduler,
   destructive moderation, public/private message delivery, actual retention
   deletion, or AI provider calls.
+
+## Post-W34 Server Moderator Access Guard
+
+Date: 2026-05-19
+
+Evidence source:
+
+- Installed typings and existing smoke code already verified
+  `User.getModPermissionsForSubreddit(subredditName)`.
+- `npm run type-check` passed after adding the guard.
+- `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
+  passed after updating the guard and truth matrices.
+- `npx devvit whoami` reported `u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.126`.
+
+Implemented behavior:
+
+- `src/server/services/moderatorAccess.ts` requires a signed-in current user and
+  non-empty `getModPermissionsForSubreddit(currentSubreddit)` result before
+  protected API routes continue in live subreddit context.
+- The guard denies missing users, unavailable permission APIs, empty permission
+  lists, and permission-check failures.
+- `src/routes/api.ts` applies the guard to protected API routes and leaves
+  health/status/capability metadata routes available.
+- Local no-subreddit-context execution is allowed so static/demo development
+  does not depend on Devvit runtime context.
+
+Decision:
+
+- Server-side protected API moderator access checks may be described as locally
+  verified.
+- This does not prove true non-moderator account behavior in Reddit runtime.
+  Runtime proof still requires a non-mod account opening or probing the
+  protected routes and recording the exact HTTP/UI failure shape.

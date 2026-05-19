@@ -1978,6 +1978,7 @@ export type RuntimeCapabilityDomain =
   | 'ai'
   | 'scheduler'
   | 'retention_cleanup'
+  | 'access_control'
   | 'demo_fallbacks';
 
 export type RuntimeCapabilityHealthStatus = 'passed' | 'failed' | 'skipped';

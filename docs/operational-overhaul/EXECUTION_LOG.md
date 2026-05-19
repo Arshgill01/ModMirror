@@ -750,3 +750,24 @@ W14 validation:
 
 Runtime playtest was not rerun in W14. W14 preserves W13 runtime proof and
 records the remaining gaps in `BUILD_REPORT.md`.
+
+### 2026-05-19 - Post-W34 Server Moderator Access Guard
+
+Implemented local server-side moderator access checks for protected API routes:
+
+- Added `src/server/services/moderatorAccess.ts`.
+- Added `src/server/services/moderatorAccess.test.ts`.
+- Added API middleware in `src/routes/api.ts` so protected routes require a
+  signed-in user with a non-empty `getModPermissionsForSubreddit` result when
+  Devvit supplies live subreddit context.
+- Left health/status/capability metadata routes public.
+- Updated runtime verification/capability matrices and current truth docs.
+
+Validation:
+
+- `npm run type-check` - passed.
+- `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 3 files and 12 tests.
+
+Runtime playtest was not run for this guard. True non-mod account blocking and
+exact moderator permission strings remain runtime-unverified.

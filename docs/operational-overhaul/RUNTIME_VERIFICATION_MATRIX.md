@@ -49,7 +49,7 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.1.123`
+  `v0.0.1.126`
 - Browser/UI driver: Zen desktop browser with Computer Use
 
 Runtime observations:
@@ -75,6 +75,9 @@ Runtime observations:
   Queue path in the authenticated expanded WebView. The read-only refresh
   entered the loading state, returned the labeled type-supported/no-items
   fallback, and did not return live queue items.
+- Devvit playtest `v0.0.1.126` reached Playtest ready after the server-side
+  moderator access guard was added. No true non-mod account runtime proof was
+  performed.
 - No real Reddit moderation action, public post, native Mod Note write, Mod
   Discussion send, scheduler task, actual retention deletion, or external AI
   call was executed.
@@ -100,7 +103,7 @@ Runtime observations:
 | Case Packets v2 | runtime verified | Post-W34 playtest generated an Official Case Packet from runtime receipt `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` and opened a receipt-backed Evidence Board. | Preserve evidence labels and caveats. |
 | Team delivery | manual/skipped receipts runtime verified, real send disabled | W11 preview-only service; post-W34 verified manual-ready and skipped Mod Discussion draft receipt persistence. Product routes still do not inject a live adapter. | Verify internal destination and permission errors before enabling any send path. |
 | AI advisory | disabled/type-only | W10 disabled provider abstraction; no HTTP permission/secret proof. | Keep disabled until provider, secret, fetch, latency, and privacy proof exists. |
-| Non-mod access blocking | unverified | Menu config uses `forUserType: "moderator"` only. | Test with non-mod account or document blocker. |
+| Non-mod access blocking | local server guard verified, runtime unverified | Menu config uses `forUserType: "moderator"` and `moderatorAccess.ts` now requires a signed-in user with non-empty `getModPermissionsForSubreddit` results before protected API routes continue in live subreddit context. Unit tests cover missing user, unavailable permission API, empty permissions, and permission-check failures. | Test with a true non-mod account and record the exact HTTP/UI failure shape. |
 | Native Reddit mobile app | unverified | W12 static 390px screenshot exists; W13 did not use native mobile app. | Verify in native Reddit app/device mirror. |
 
 ## Diagnostic Routes

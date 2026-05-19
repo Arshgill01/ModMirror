@@ -125,8 +125,10 @@ It does not yet support:
   local, static, type-only, disabled, and unverified claims are explicit.
 - W01 target context is runtime-verified for post/comment menu visibility,
   form behavior, dashboard navigation, and target fetch in the desktop Reddit
-  WebView path. Exact moderator permission shape, non-mod access behavior, and
-  native Reddit mobile behavior remain pending.
+  WebView path. Server-side protected API moderator access checks are locally
+  verified for live subreddit context. Exact moderator permission shape,
+  non-mod account runtime behavior, and native Reddit mobile behavior remain
+  pending.
 - W29 subreddit isolation is runtime-verified for Devvit Web request context:
   authenticated playtest `v0.0.1.122` exposed current subreddit
   `modmirror_dev`, kept default and explicit-current API reads in that
@@ -136,6 +138,8 @@ It does not yet support:
   Devvit playtest `v0.0.1.123` reached the same-subreddit Operational Queue
   refresh path for `modmirror_dev`, but still returned the labeled
   type-supported/no-items fallback instead of live queue items.
+- Server-side protected API moderator access checks are locally verified and
+  the guarded build reached Devvit playtest ready on `v0.0.1.126`.
 
 ## Runtime Truth
 
@@ -158,6 +162,9 @@ Runtime evidence exists for:
   playtest paths.
 - Context-derived subreddit isolation and cross-subreddit API rejection in the
   authenticated Devvit WebView path.
+- Server-side protected API moderator access checks for live subreddit context,
+  verified by unit tests with a playtest-ready build but not yet by a non-mod
+  runtime account.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 
@@ -171,7 +178,8 @@ Runtime evidence does not yet exist for:
 - Mod discussion delivery through Reddit Modmail.
 - External AI fetch, provider secret retrieval, and provider latency/failure
   behavior.
-- Non-moderator access blocking.
+- Non-moderator access blocking in live runtime; local server-side guard tests
+  pass, but a true non-mod account has not been used.
 - Exact moderator permission strings.
 - Native Reddit mobile app behavior.
 - Same-subreddit live modqueue item reads; the Operational Queue fallback was
