@@ -3,8 +3,9 @@
 ## Current Phase
 
 Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
-and the latest UI sweep playtest uploaded as `v0.0.1.121`. The current branch
-is a focused runtime-proof documentation pass for Wave 29 subreddit isolation.
+the UI sweep proof has been merged through PR #14, and the Wave 29
+subreddit-isolation runtime reconciliation has been merged through PR #16. The
+latest Devvit playtest uploaded from merged work is `v0.0.1.122`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -21,7 +22,8 @@ on Devvit playtest `v0.0.1.122`. Live Reddit moderation execution, actual
 retention deletion, Mod Discussion delivery, scheduler, native Mod Notes, live
 modqueue reads, external AI, non-mod access, reviewed adoption with multiple
 distinct moderators, and native Reddit mobile app behavior remain unverified or
-disabled.
+disabled. The next runtime-proof wave should target one of those remaining
+gaps with the same safety constraints used by the post-W34 probes.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
