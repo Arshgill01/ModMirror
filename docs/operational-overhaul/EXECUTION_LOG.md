@@ -93,6 +93,54 @@ Runtime playtest was not attempted for W00 and is not claimed here.
 - Unverified Reddit APIs must stay disabled or capability-labeled until
   playtest proves exact behavior.
 
+### 2026-05-19 - Post-W34 Merge, Runtime Proof, And Cleanup
+
+Commands run from `/Users/arshdeepsingh/Developer/ModMirror` after PR #12:
+
+- `git fetch origin master`
+- `git pull --ff-only origin master`
+- `npm run type-check`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `git diff --check`
+- `npx devvit whoami`
+- `npm run dev`
+- `git fetch origin --prune`
+- `git worktree list --porcelain`
+- `git branch --format='%(refname:short)'`
+- `git push origin --delete post34/runtime-smoke-controls`
+- `gh pr view 12 --json state,mergedAt,mergeCommit,url,headRefName,baseRefName`
+
+Findings and results:
+
+- PR #12 merged to `master` at
+  `7598f122fc704468bd01d212575b87741fb7ef2c`.
+- `master` and `origin/master` both resolved to `7598f12`.
+- `npm run type-check` passed.
+- `npm run lint` passed.
+- `npm test` passed, 43 files and 186 tests.
+- `npm run build` passed.
+- `git diff --check` passed.
+- `npx devvit whoami` returned `u/BrightyBrainiac`.
+- `npm run dev` uploaded playtest `v0.0.1.120` for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Computer Use verified the latest Reddit-hosted launch card, dashboard open,
+  fullscreen host mode, Agree page, and Settings runtime matrix without taking
+  Reddit moderation/write actions.
+- All non-master local worktrees were checked as merged and clean, then
+  removed.
+- All merged local wave branches were deleted.
+- The merged remote branch `post34/runtime-smoke-controls` was deleted.
+- The remaining root untracked spec-pack directories were left untouched.
+
+Open after this cleanup:
+
+- Native Reddit mobile behavior, non-mod access checks, exact moderator
+  permission shape, real Reddit moderation execution, actual retention
+  deletion, native Mod Notes, Mod Discussion delivery, scheduler behavior, live
+  modqueue reads, and external AI remain unverified or disabled.
+
 ## W00 Commit Plan
 
 Commit only the new `docs/operational-overhaul/` control documents. The

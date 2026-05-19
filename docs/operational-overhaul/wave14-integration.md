@@ -2,6 +2,11 @@
 
 Date: 2026-05-18
 
+Post-merge note, 2026-05-19: W14 is historical. Operational W00-W14,
+Expansion W16-W34, and the post-W34 runtime follow-up are now merged to
+`master`, and the temporary integration worktree/branch were removed locally
+after cleanup.
+
 Branch/worktree:
 
 - `integration/operational-overhaul`
@@ -46,16 +51,20 @@ No new runtime playtest was run in W14. W14 relies on W13 runtime proof:
 
 ## Remaining Gaps
 
-- Post/comment Apply Policy menus remain type/build-only.
-- Target context capture from a real Reddit menu request remains unverified.
-- Devvit Redis persistence for receipts/scans/policies remains unverified.
+- Post/comment Apply Policy menus are now runtime-verified for the desktop
+  Reddit WebView path by post-W34 playtest.
+- Target context capture from real post/comment Reddit menu requests is now
+  runtime-verified for the desktop Reddit WebView path.
+- Devvit Redis persistence for selected safe receipt/scan/policy paths is now
+  runtime-verified by post-W34 playtest.
 - Real Reddit remove/approve/ignore-reports execution remains disabled.
 - Team delivery, scheduler, native Mod Notes, external AI, non-mod access
-  blocking, and native Reddit mobile behavior remain unverified.
+  blocking, native Reddit mobile behavior, live modqueue reads, and actual
+  retention deletion remain unverified or disabled.
 
 ## Integration Notes
 
-- Expansion waves 16-34 should branch from `integration/operational-overhaul`,
-  not from `master`.
-- Re-run the W13 runtime matrix after the integration branch is pushed or
-  otherwise made the base for the next wave lane.
+- Historical note: Expansion waves 16-34 branched from the operational
+  integration line, then were merged through W34 and PR #12.
+- Continue new work from current `master` unless a future plan creates a new
+  long-lived integration lane.

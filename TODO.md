@@ -2,9 +2,10 @@
 
 ## Current Phase
 
-Post-W34 runtime-smoke follow-up is in progress on
-`post34/runtime-smoke-controls`, focused on replacing type/static proof with
-safe Devvit WebView runtime evidence before more feature surface is expanded.
+Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
+and the latest playtest uploaded as `v0.0.1.120`. The current branch is a
+documentation/status reconciliation pass after worktree cleanup, focused on
+making tracked repo status match the merged runtime evidence.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -25,6 +26,10 @@ UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
 column rhythm, and responsive wrapping are uniform across Act, Scan, Agree,
 Review, Prove, and Settings.
+
+PR #12 merge cleanup removed the merged local worktrees and local branches.
+Only the root `master` worktree remains. The untracked spec-pack directories in
+the repo root are intentionally left untouched.
 
 ## Post-W34 UI Uniformity Pass
 
@@ -595,9 +600,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Create the W34 integration branch from the sequential expansion line.
 - [x] Add expansion architecture notes.
 - [x] Add the expansion build report.
-- [ ] Push/review the W16-W34 branches if PR workflow is used.
+- [x] Review and merge the W16-W34/post-W34 line through PR #12.
 - [x] Run Devvit playtest proof for the W33 runtime capability matrix on a safe
       subreddit before promoting Redis/Reddit smoke beyond local/static proof.
-- [ ] Decide whether `expansion/w34-integration` should be merged into
-      `integration/operational-overhaul` or a new long-lived expansion
-      integration branch.
+- [x] Merge the expansion/post-W34 line to `master` and clean merged local
+      worktrees/branches.

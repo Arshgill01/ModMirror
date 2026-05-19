@@ -2,6 +2,21 @@
 
 Created: 2026-05-18
 
+## Current State
+
+Updated: 2026-05-19
+
+Operational overhaul W00-W14 has been integrated into `master`; Expansion
+W16-W34 and the post-W34 runtime-smoke/UI follow-up are also merged. PR #12
+merged at `7598f122fc704468bd01d212575b87741fb7ef2c`, and the latest Devvit
+playtest upload observed from `master` is `v0.0.1.120`.
+
+The branch/worktree list below is historical evidence for how the overhaul was
+executed. The merged local worktrees and local wave branches were removed after
+verification. The only remaining local worktree is:
+
+- `/Users/arshdeepsingh/Developer/ModMirror` on `master`
+
 ## Branch Strategy
 
 Use the new operational-overhaul branch/worktree lane rather than adding all
@@ -84,6 +99,15 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 | W12 Operational UI | complete locally/runtime partial | Reframed dashboard around Act / Scan / Agree / Review / Prove / Settings, added Act receipt ledger, captured static desktop/mobile screenshots, and W13 verified the IA in desktop expanded WebView. Native mobile remains unverified. |
 | W13 Runtime verification | complete locally/runtime partial | Added `/api/runtime-verification`, matrix docs, and runtime proof for playtest ready, subreddit launcher form, and W12 IA in expanded WebView. Post/comment menus, Redis routes, receipts, and native mobile remain unverified. |
 | W14 Integration | complete locally | Fast-forwarded `integration/operational-overhaul` to W13, ran full integrated checks, and added build report. No new runtime playtest in W14. |
+
+## Post-W34 Runtime Update
+
+The W13 gaps for safe Redis/Reddit smoke routes, post/comment Apply Policy menu
+target capture, and log-only receipt persistence were closed in the post-W34
+runtime-smoke follow-up. Native Reddit mobile behavior, real Reddit moderation
+execution, native Mod Notes, Mod Discussion delivery, scheduler behavior,
+actual retention deletion, live modqueue reads, non-mod access checks, and
+external AI remain unverified or disabled.
 
 ## W00 Definition Of Done
 

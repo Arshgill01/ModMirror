@@ -29,8 +29,8 @@ ModMirror helps moderator teams act consistently.
 
 ## Development Status
 
-Operational overhaul W00-W14 is integrated on
-`integration/operational-overhaul`.
+Operational overhaul W00-W14, Expansion W16-W34, and the post-W34 runtime
+proof follow-up are merged on `master`.
 
 The app opens with a compact Reddit inline launch card and can expand into
 Reddit's native WebView modal. The dashboard is now organized around moderator
@@ -45,10 +45,17 @@ verification matrix.
 
 W13 runtime proof verified the subreddit dashboard launcher and the operational
 IA in the desktop expanded WebView on `r/modmirror_dev` playtest `v0.0.1.71`.
-Post/comment Apply Policy menus, Devvit Redis receipts, native mobile behavior,
-real Reddit moderation execution, Mod Discussion delivery, scheduler, native
-Mod Notes, and external AI calls remain disabled or unverified until dedicated
-runtime proof exists.
+Post-W34 runtime proof advanced the safe desktop Reddit WebView paths through
+playtest `v0.0.1.120`: safe Redis and Reddit read smokes, post/comment Apply
+Policy menu target capture, log-only receipt persistence, receipt-backed
+Evidence Boards and Case Packets, Incident Mode receipt tagging, config import
+/ export, privacy dry-run controls, response preview receipts, and UI
+alignment in fullscreen.
+
+Native Reddit mobile behavior, real Reddit moderation execution, actual
+retention deletion, Mod Discussion delivery, scheduler behavior, native Mod
+Notes, live modqueue reads, non-mod access checks, and external AI calls remain
+disabled or unverified until dedicated runtime proof exists.
 
 ## Local Commands
 

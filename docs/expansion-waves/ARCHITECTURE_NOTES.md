@@ -7,6 +7,10 @@ from `integration/operational-overhaul`. The wave branches remain reviewable
 checkpoints, but the integration branch contains the full expansion line through
 W33 plus W34 reporting.
 
+Post-merge note, 2026-05-19: the expansion line and post-W34 runtime follow-up
+are merged on `master`. The historical local wave worktrees and local wave
+branches were removed after merge cleanup.
+
 ## Current Product Architecture
 
 - `src/routes/api.ts` remains the HTTP boundary for Devvit Web API calls.
@@ -50,14 +54,18 @@ copy:
 
 Runtime-verified remains narrower than local/test-verified:
 
-- Verified runtime: subreddit dashboard launcher and desktop expanded WebView
-  IA from prior W13 proof.
-- Static/local verified: service logic, UI build, mobile static layout,
-  synthetic eval, persistence contracts, and safety gates.
-- Type-only or disabled: post/comment Apply Policy menu proof, target context
-  runtime capture, Devvit Redis route proof, Reddit smoke route proof, real
-  moderation execution, native Mod Notes, modmail/mod discussion send,
-  scheduler, external AI, native mobile, and non-mod blocking.
+- Verified runtime: subreddit dashboard launcher, desktop expanded WebView IA,
+  safe Redis/Reddit smoke routes, post/comment Apply Policy target capture,
+  log-only receipt persistence, receipt-backed Evidence Boards and Case
+  Packets, Incident Mode receipt tagging, config import/export, privacy
+  dry-run controls, response preview receipts, review health, policy impact,
+  attribution correction, replay, and policy ratification.
+- Static/local verified: service logic, UI build, synthetic eval, persistence
+  contracts, safety gates, and parts of mobile/narrow layout.
+- Type-only, disabled, or unverified: real moderation execution, native Mod
+  Notes writes, live Mod Discussion send, scheduler, external AI, native
+  Reddit mobile app, live modqueue reads, non-mod blocking, and actual
+  retention deletion.
 
 ## Integration Risks
 

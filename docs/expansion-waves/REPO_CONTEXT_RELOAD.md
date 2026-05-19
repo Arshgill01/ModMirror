@@ -6,6 +6,10 @@ Branch: `expansion/w16-context-intake`
 
 Base: `integration/operational-overhaul` at `f790eb1`
 
+Post-merge note, 2026-05-19: this reload document is historical context for
+the W16-W34 implementation lane. W16-W34 and the post-W34 runtime follow-up are
+now merged on `master`.
+
 ## Scope Boundary
 
 This continuation pass is build-only. It must not do Devpost submission,
@@ -241,7 +245,8 @@ Shared shape:
 
 ## Prior Waves Already Implemented
 
-Operational W00-W14 are integrated on `integration/operational-overhaul`:
+Operational W00-W14 were integrated on `integration/operational-overhaul`
+during the expansion lane and are now merged on `master`:
 
 - W00: context/control docs and baseline validation.
 - W01: production smoke menu labels removed; post/comment Apply Policy menu
@@ -344,10 +349,11 @@ Demo/fallback paths:
 
 ## Contradictions Or Stale Docs
 
-- `README.md` reflects the current W14 truth and says W00-W14 are integrated on
-  `integration/operational-overhaul`.
-- `TODO.md` still opens with stale Wave 9/10 and operational W09 text, even
-  though later sections include W10-W13 follow-ups and W14 has integrated.
+- Older sections may reference the historical `integration/operational-overhaul`
+  or `expansion/w34-integration` branches; current tracked status should be
+  read from `README.md`, `TODO.md`,
+  `docs/operational-overhaul/COMPLETION_AUDIT.md`, and the post-W34 runtime
+  proof docs.
 - `TREE.txt` describes an old Wave 7/8 prompt pack layout, not the current repo
   tree.
 - `RESEARCH.md` top status still says operational W09 Case Packets v2, but the
@@ -355,9 +361,8 @@ Demo/fallback paths:
   and operational W13 docs as more current than the top status sentence.
 - Older launch/submission docs and prompt artifacts exist from prior hackathon
   work. This continuation pass must not continue submission work.
-- The root `master` worktree is older and contains the new expansion spec pack
-  as untracked files. Expansion implementation should branch from
-  `integration/operational-overhaul`, not root `master`.
+- The root `master` worktree is current after PR #12. The expansion and
+  operational spec-pack directories remain untracked reference material.
 
 ## Dangerous Files To Modify
 
