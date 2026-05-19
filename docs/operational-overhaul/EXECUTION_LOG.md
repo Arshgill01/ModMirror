@@ -1475,3 +1475,23 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. No Mod Discussion message
 was sent.
+
+### 2026-05-20 - Native Mod Notes Test Plan
+
+- Added `docs/operational-overhaul/NATIVE_MOD_NOTES_TEST_PLAN.md` as the
+  required proof gate before `reddit.addModNote` can be marked
+  runtime-verified or native mode can be enabled.
+- The plan requires explicit approval, throwaway target content, a clearly
+  marked `MODMIRROR_NATIVE_MOD_NOTE_TEST` body, receipt evidence, separate
+  readback/delete proof, and confirmation that native mode is not left enabled
+  by default.
+- Updated `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`,
+  `RUNTIME_VERIFICATION_MATRIX.md`, `RUNTIME_PROOF_BACKLOG.md`, and
+  `COMPLETION_AUDIT.md` to point at the plan while keeping runtime proof open.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. No native Mod Note was
+added, read, or deleted.

@@ -178,6 +178,7 @@ the repo root are intentionally left untouched.
 - [x] Add Apply Policy opt-in mode for native/log-only/no Mod Note.
 - [x] Record skipped, sent, and failed Mod Note attempts on receipts.
 - [x] Add fallback, success, and failure tests.
+- [x] Add a native Mod Notes runtime test plan before enabling native mode.
 - [ ] Runtime-verify `reddit.addModNote` in Devvit playtest on safe test
       content before enabling native mode.
 
@@ -484,6 +485,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       private delivery.
 - [ ] Verify private message and modmail delivery behavior.
 - [ ] Verify native Mod Notes add/read/delete behavior with real moderator permissions.
+- [x] Add a native Mod Notes runtime test plan before enabling native mode.
 - [x] Add server-side protected API moderator access checks for live subreddit context.
 - [x] Add route-level middleware tests proving public health stays reachable and
       protected API routes require moderator access.
