@@ -413,6 +413,7 @@ Conclusion:
 
 - Removal comment behavior remains a later playtest item after browser login. Do not promise comment-after-removal until tested.
 - Default MVP message delivery should be `log_only` until playtest proves public comment behavior in both normal and removed-thread states. Public comments can become the preferred moderator-facing delivery mode after that proof; deprecated subreddit PM should not be used.
+- `docs/operational-overhaul/PUBLIC_COMMENT_DELIVERY_TEST_PLAN.md` defines the required proof plan before any public comment delivery path can be enabled. It requires explicit approval, throwaway content, separate identity/distinguish/sticky observations, and keeps policy defaults `log_only`.
 
 ### remove/approve/ignore reports
 

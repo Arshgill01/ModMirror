@@ -476,6 +476,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       target context handoff in Reddit.
 - [ ] Verify whether `submitComment` works on normal content, before removal, and after removal.
 - [ ] Verify whether a submitted removal comment can be distinguished/stickied.
+- [x] Add a public comment delivery runtime test plan before enabling comment
+      delivery.
 - [ ] Verify private message and modmail delivery behavior.
 - [ ] Verify native Mod Notes add/read/delete behavior with real moderator permissions.
 - [x] Add server-side protected API moderator access checks for live subreddit context.

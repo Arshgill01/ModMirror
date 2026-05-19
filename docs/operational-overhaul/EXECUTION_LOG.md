@@ -1420,3 +1420,21 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. The backlog does not
 close any proof gap by itself.
+
+### 2026-05-20 - Public Comment Delivery Test Plan
+
+- Added `docs/operational-overhaul/PUBLIC_COMMENT_DELIVERY_TEST_PLAN.md` as the
+  required proof plan before any public-comment delivery path can be enabled.
+- The plan requires explicit approval, throwaway content, separate
+  before/after-removal observations, identity evidence, and distinguish/sticky
+  evidence before claims are updated.
+- Updated `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`,
+  `RUNTIME_VERIFICATION_MATRIX.md`, `RUNTIME_PROOF_BACKLOG.md`, and
+  `COMPLETION_AUDIT.md` while keeping public comment delivery disabled.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. No public comment was
+submitted.
