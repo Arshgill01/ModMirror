@@ -53,6 +53,9 @@ cleanup. The synthetic retention cleanup diagnostic passed on Devvit playtest
 `v0.0.1.138`: scans `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`,
 detail keys `0`, and index refs `0`.
 
+`docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
+single-page index for remaining proof gaps and proof-plan readiness.
+
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
 column rhythm, and responsive wrapping are uniform across Act, Scan, Agree,
@@ -68,6 +71,7 @@ the repo root are intentionally left untouched.
       surfaces.
 - [x] Include the visibility level in protected access diagnostics.
 - [x] Add a non-mod and lower-permission moderator runtime test plan.
+- [x] Add a consolidated runtime proof backlog covering remaining open gaps.
 - [ ] Verify lower-permission moderator role strings needed for expanding
       per-mod/manage-level visibility beyond the current `all` gate.
 - [ ] Runtime-verify protected API blocking with a true non-moderator account.

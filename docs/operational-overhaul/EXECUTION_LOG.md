@@ -1404,3 +1404,19 @@ Validation:
 - `git diff --check` passed.
 
 Runtime proof status: no new Devvit playtest was run.
+
+### 2026-05-20 - Runtime Proof Backlog
+
+- Added `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` as the consolidated
+  index of remaining runtime/platform proof gaps.
+- The backlog maps each open gap to required evidence, an existing proof plan
+  where one exists, or a clear "plan needed" next action.
+- Updated `TODO.md` and `COMPLETION_AUDIT.md` so this is treated as a control
+  artifact, not runtime proof.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. The backlog does not
+close any proof gap by itself.
