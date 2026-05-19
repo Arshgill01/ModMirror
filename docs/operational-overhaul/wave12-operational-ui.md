@@ -81,12 +81,15 @@ playtest and did not prove live Reddit menu, Redis, or moderation behavior.
 
 ## Remaining Risk
 
-- The new IA needs Devvit WebView runtime proof on desktop and mobile Reddit
-  clients.
-- The Act page can display receipts from the API, but receipt persistence is
-  still locally verified only until W13.
-- Old routes are mapped in hash navigation, but external docs/bookmarks should
-  be updated after integration.
+- The new IA now has desktop Reddit WebView runtime proof, including Reddit host
+  Mobile and Fullscreen modes from later post-W34 checks, but native Reddit
+  mobile app behavior remains unverified.
+- The Act page can display receipts from the API, and later post-W34 checks
+  verified selected receipt persistence paths in Devvit Redis. Real Reddit
+  execution receipts remain disabled and unverified.
+- Old routes are mapped in hash navigation. A post-W34 tracked-repo audit found
+  no current docs/bookmark-like references that need updating; user-owned
+  external docs/bookmarks outside this repo remain outside the workspace.
 
 ## Next Wave Notes
 

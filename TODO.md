@@ -552,8 +552,11 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Runtime-verify the new IA inside Devvit WebView on desktop Reddit.
 - [x] Runtime-verify the new IA inside Reddit desktop host `Mobile` Devvit
       modal/narrow WebView.
-- [ ] Update any external docs/bookmarks that still reference the old page IDs
-      after integration.
+- [x] Audit tracked docs/bookmark-like references for old W12 page IDs after
+      integration. No tracked current docs/bookmarks require an update; legacy
+      hash compatibility remains in client routing.
+- [ ] Update user-owned external docs/bookmarks outside this repo if any still
+      reference old page IDs.
 
 ## Operational Overhaul W13 Follow-up
 
