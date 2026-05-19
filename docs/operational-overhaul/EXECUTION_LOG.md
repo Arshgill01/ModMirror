@@ -924,3 +924,18 @@ Validation:
 
 Runtime playtest was not run for this local cap slice. Practical Devvit Redis
 storage limits remain a runtime follow-up before larger live datasets.
+
+### 2026-05-20 - Post-W34 AI Privacy Readiness Gate
+
+Added the W10 terms/privacy readiness note without enabling external AI:
+
+- Added `docs/operational-overhaul/AI_PRIVACY_READINESS.md`.
+- The gate requires provider terms review, privacy notice updates, data
+  minimization, evidence-ID citation checks, secret handling, HTTP permission
+  review, runtime failure proof, and retention decisions before any uploaded
+  build can use external AI fetch.
+- Updated TODO, research, capability matrix, runtime matrix, and W10 report
+  references.
+
+Runtime playtest was not run. No external fetch, provider secret retrieval, AI
+provider call, or AI enforcement behavior was added.

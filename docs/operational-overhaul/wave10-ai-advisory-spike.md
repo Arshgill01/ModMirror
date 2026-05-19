@@ -70,6 +70,10 @@ No live external AI call was made. Runtime proof remains pending.
 - Provider output must cite deterministic evidence IDs supplied in the request.
 - Response metadata always states moderator review is required and AI may not
   decide enforcement.
+- `docs/operational-overhaul/AI_PRIVACY_READINESS.md` records the provider
+  terms, privacy notice, data minimization, secret handling, HTTP permission,
+  runtime failure, and retention gates that must be satisfied before any
+  uploaded build enables external AI fetch.
 
 ## Integration Notes
 
