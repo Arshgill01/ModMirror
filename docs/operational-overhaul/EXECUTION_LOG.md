@@ -1113,3 +1113,25 @@ Validation:
 Runtime proof status: failed for `v0.0.1.131`; the next run should use the
 expanded diagnostic response to identify whether Devvit Redis writes,
 cardinality, score lookup, or reverse-rank reads differ from local mocks.
+
+### 2026-05-20 - Post-W34 Redis Sorted-Set Runtime Pass
+
+Reran the expanded Redis sorted-set diagnostic after the route switched to
+Devvit's documented variadic `zAdd` call:
+
+- Preflight passed: `npx devvit whoami` reported `u/BrightyBrainiac`,
+  `npm run type-check`, `npm run lint`, `npm run build`, and `npm test`.
+- `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.136`.
+- The Reddit desktop WebView was refreshed from the stale `v0.0.1.131`
+  WebView to the `v0.0.1.136` WebView before running the smoke.
+- Settings `Run Redis ZSET` returned:
+  `Redis sorted-set smoke passed: observed newest, middle, oldest.`
+- The runtime capability matrix showed `4 runtime`, `0 failed`, and no
+  longer showed the `At least one runtime capability has a recorded failure`
+  warning.
+- No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
+  jobs, external AI calls, or retention deletion were run.
+
+Runtime proof status: reverse-rank sorted-set ordering is now verified for the
+safe diagnostic route. Practical Redis storage limits remain a separate open
+follow-up.

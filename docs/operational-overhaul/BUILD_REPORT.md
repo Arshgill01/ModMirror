@@ -186,6 +186,21 @@ Latest Redis sorted-set runtime follow-up:
 - Follow-up local diagnostic enhancement: `npm run build` passed.
 - Follow-up local diagnostic enhancement: `git diff --check` passed.
 
+Latest Redis sorted-set rerun after diagnostic expansion:
+
+- `npx devvit whoami` - passed as `u/BrightyBrainiac`.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm run build` - passed.
+- `npm test` - passed, 47 files and 212 tests.
+- `npm run dev` - reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.136`.
+- Reddit desktop WebView Settings `Run Redis ZSET` - passed:
+  `Redis sorted-set smoke passed: observed newest, middle, oldest.` The
+  capability matrix showed `4 runtime` and `0 failed`.
+- Follow-up docs refresh: `git diff --check` passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -216,11 +231,11 @@ Latest Redis sorted-set runtime follow-up:
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
 - Native mobile, Mod Discussion delivery, scheduler, native Mod Notes, and
   external AI are unverified/disabled.
-- Redis sorted-set ordering now has a safe local diagnostic endpoint, and
-  Devvit playtest `v0.0.1.131` proved the current runtime path fails with an
-  empty observed order. The route now exposes add count, cardinality, row
-  count, observed scores, and score checks for the next playtest. Practical
-  Redis storage limits remain unverified.
+- Redis sorted-set ordering now has a safe local diagnostic endpoint. The first
+  Devvit playtest on `v0.0.1.131` failed with an empty observed order, and the
+  follow-up on `v0.0.1.136` passed after the diagnostic switched to the
+  documented variadic `zAdd` call. Practical Redis storage limits remain
+  unverified.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.
 
