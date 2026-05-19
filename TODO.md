@@ -507,3 +507,19 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       Redis on a safe test subreddit before claiming live cleanup proof.
 - [ ] Add a scheduled cleanup task only after scheduler behavior is
       runtime-verified in this app shape.
+
+## Expansion Wave 31 Follow-up
+
+- [x] Add client error taxonomy for static preview, timeout, network, API, and
+      clipboard failures.
+- [x] Add timeout-aware API fetches with actionable retry/fallback messages.
+- [x] Add static-preview/runtime resilience notice in the dashboard shell.
+- [x] Add clipboard failure handling for Case Packet and Digest Markdown copy.
+- [x] Add mobile CSS/static checks for core workspace collapse and wrapped
+      runtime data.
+- [x] Run a 390px Playwright static-client smoke check for Act, Scan, Review,
+      Prove, and Settings with no horizontal overflow.
+- [ ] Runtime-verify the same narrow layouts inside Reddit's Devvit WebView on
+      desktop mobile mode and native Reddit mobile app.
+- [ ] Replace static-client browser proof with Devvit WebView screenshots after
+      playtest access is available for W31.

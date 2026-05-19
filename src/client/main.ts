@@ -27,6 +27,11 @@ import {
 import { DEMO_POLICY } from '../shared/demoData';
 import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
 import { buildCasePacketDeliveryDraft } from '../shared/casePacketDelivery';
+import {
+  classifyClientError,
+  classifyClipboardFailure,
+  formatClientNotice,
+} from '../shared/clientResilience';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -329,6 +334,7 @@ const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
 const WEB_VIEW_INLINE_MODE = 1;
 const WEB_VIEW_IMMERSIVE_MODE = 2;
+const API_TIMEOUT_MS = 12_000;
 
 type DevvitWebViewGlobal = {
   webViewMode?: number;
@@ -636,6 +642,7 @@ function render() {
 
       <main class="ops-main page-${page.id}">
         ${renderDemoBanner(summary.dataMode)}
+        ${renderRuntimeResilienceBanner()}
         ${renderIncidentBanner()}
         <header class="workspace-header">
           <div>
@@ -718,6 +725,31 @@ function renderDemoBanner(dataMode: ProductDataMode) {
     <aside class="demo-banner" aria-label="Demo data mode">
       <strong>Demo data active</strong>
       <span>ExampleLearning is loaded for review, screenshots, and the 3-minute walkthrough. Live subreddit data remains separate.</span>
+    </aside>
+  `;
+}
+
+function renderRuntimeResilienceBanner() {
+  const notices: string[] = [];
+  if (isStandaloneStaticPreview()) {
+    notices.push(
+      'Static preview mode: live Reddit and Redis calls may fail. Demo data and log-only paths are labeled.'
+    );
+  } else if (getDevvitGlobal() === undefined) {
+    notices.push(
+      'Devvit WebView signal is unavailable. Use explicit confirmation paths and expect live API fallback messages.'
+    );
+  }
+  if (healthError !== undefined) {
+    notices.push(healthError);
+  }
+  if (notices.length === 0) {
+    return '';
+  }
+
+  return `
+    <aside class="runtime-banner" aria-label="Runtime resilience notice">
+      ${notices.map((notice) => `<p>${escapeHtml(notice)}</p>`).join('')}
     </aside>
   `;
 }
@@ -3093,6 +3125,7 @@ function renderLoadingState(title: string, body: string) {
       <div>
         <h3>${escapeHtml(title)}</h3>
         <p>${escapeHtml(body)}</p>
+        <p class="helper-text">Requests time out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds with a labeled retry or fallback message.</p>
       </div>
     </section>
   `;
@@ -5962,12 +5995,64 @@ async function reviewOverride(
 }
 
 async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init);
-  const payload = (await response.json()) as ApiResponse<T>;
+  const response = await fetchWithTimeout(url, init);
+  let payload: ApiResponse<T>;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch (error) {
+    throw new Error(`API response was not JSON for ${url}: ${String(error)}`);
+  }
   if (!payload.ok) {
-    throw new Error(payload.error.message);
+    throw new Error(`API error: ${payload.error.message}`);
+  }
+  if (!response.ok) {
+    throw new Error(`API request returned ${response.status} for ${url}.`);
   }
   return payload.data;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init?: RequestInit
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`Request to ${url} timed out after ${API_TIMEOUT_MS}ms.`);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function writeClipboardText(text: string, subject: string): Promise<void> {
+  if (!hasClipboardApi()) {
+    throw new Error(`${subject} clipboard API unavailable.`);
+  }
+  await navigator.clipboard.writeText(text);
+}
+
+function hasClipboardApi(): boolean {
+  return typeof navigator.clipboard?.writeText === 'function';
+}
+
+function formatClipboardError(error: unknown, subject: string): string {
+  return formatClientNotice(
+    classifyClipboardFailure({
+      hasClipboardApi: hasClipboardApi(),
+      error,
+      subject,
+    })
+  );
 }
 
 async function generateCasePacket(
@@ -6050,17 +6135,17 @@ async function copyCasePacketMarkdown() {
   }
 
   try {
-    await navigator.clipboard.writeText(markdown);
+    await writeClipboardText(markdown, 'Case Packet Markdown');
     casePacketState = {
       ...casePacketState,
       message: 'Markdown copied to clipboard.',
       error: undefined,
     };
-  } catch {
+  } catch (error) {
     casePacketState = {
       ...casePacketState,
-      message: 'Markdown is ready in the export textarea.',
-      error: undefined,
+      message: undefined,
+      error: formatClipboardError(error, 'Case Packet Markdown'),
     };
   }
 
@@ -6334,7 +6419,7 @@ async function fetchPolicyReplay(
   policyId: string,
   body: Record<string, unknown>
 ): Promise<PolicyReplayResult> {
-  const response = await fetch(
+  return fetchApi<PolicyReplayResult>(
     withWorkspaceSubreddit(
       API_ROUTES.policyReplay.replace(':id', encodeURIComponent(policyId))
     ),
@@ -6344,11 +6429,6 @@ async function fetchPolicyReplay(
       body: JSON.stringify(body),
     }
   );
-  const payload = (await response.json()) as ApiResponse<PolicyReplayResult>;
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
-  return payload.data;
 }
 
 async function fetchPolicyLifecycle(
@@ -6356,7 +6436,7 @@ async function fetchPolicyLifecycle(
   suffix: string,
   body: Record<string, unknown>
 ): Promise<RulePolicy> {
-  const response = await fetch(
+  return fetchApi<RulePolicy>(
     withWorkspaceSubreddit(`${API_ROUTES.policies}/${policyId}/${suffix}`),
     {
       method: 'POST',
@@ -6364,11 +6444,6 @@ async function fetchPolicyLifecycle(
       body: JSON.stringify(body),
     }
   );
-  const payload = (await response.json()) as ApiResponse<RulePolicy>;
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
-  return payload.data;
 }
 
 function applyClientDemoLifecycle(
@@ -6670,10 +6745,18 @@ async function copyDigestMarkdown() {
     return;
   }
   try {
-    await navigator.clipboard.writeText(markdown);
-    digestState = { ...digestState, message: 'Digest copied to clipboard.' };
-  } catch {
-    digestState = { ...digestState, message: 'Digest is ready in the textarea.' };
+    await writeClipboardText(markdown, 'Digest Markdown');
+    digestState = {
+      ...digestState,
+      message: 'Digest copied to clipboard.',
+      error: undefined,
+    };
+  } catch (error) {
+    digestState = {
+      ...digestState,
+      message: undefined,
+      error: formatClipboardError(error, 'Digest Markdown'),
+    };
   }
   render();
 }
@@ -7063,15 +7146,7 @@ function escapeAttribute(value: string) {
 }
 
 function normalizeClientError(error: unknown, fallback: string) {
-  const message = error instanceof Error ? error.message : '';
-  if (
-    message.includes('Unexpected token') ||
-    message.includes('<!DOCTYPE') ||
-    message.includes('returned 404')
-  ) {
-    return `${fallback} Run the app through Devvit playtest for live API data.`;
-  }
-  return message || fallback;
+  return formatClientNotice(classifyClientError(error, fallback));
 }
 
 window.addEventListener('hashchange', () => {

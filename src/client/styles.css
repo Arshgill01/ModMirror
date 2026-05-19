@@ -33,6 +33,7 @@ body {
   background: var(--mm-bg);
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
 }
 
 button,
@@ -44,6 +45,8 @@ textarea {
 
 button {
   cursor: pointer;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 button:disabled {
@@ -270,7 +273,8 @@ dd {
 }
 
 .demo-banner,
-.incident-banner {
+.incident-banner,
+.runtime-banner {
   align-items: center;
   display: grid;
   gap: 10px;
@@ -291,10 +295,18 @@ dd {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.runtime-banner {
+  background: #f2f4f6;
+  border: 1px solid var(--mm-line-strong);
+  color: var(--mm-text);
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .demo-banner strong,
 .demo-banner span,
 .incident-banner strong,
-.incident-banner span {
+.incident-banner span,
+.runtime-banner p {
   font-size: 13px;
   line-height: 1.35;
 }
@@ -303,6 +315,11 @@ dd {
   display: grid;
   gap: 3px;
   min-width: 0;
+}
+
+.runtime-banner p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .workspace-header h2 {
@@ -1462,7 +1479,7 @@ dd {
 
 .digest-rule-row.status-watch,
 .digest-recommendation.severity-watch {
-  border-left: 3px solid var(--mm-warning);
+  border-left: 3px solid var(--mm-watch);
   padding-left: 12px;
 }
 
@@ -1884,6 +1901,7 @@ dd {
 
   .demo-banner,
   .incident-banner,
+  .runtime-banner,
   .incident-form-grid,
   .incident-guidance-grid,
   .config-grid,

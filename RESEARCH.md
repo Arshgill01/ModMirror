@@ -834,6 +834,35 @@ Runtime status:
 - No Devvit playtest was run in W30. Runtime proof is still required before
   claiming live Redis cleanup or scheduled cleanup behavior.
 
+## Wave 31 Mobile And Runtime Resilience
+
+Date: 2026-05-19
+
+Evidence source:
+
+- Static built client served from `dist/client` through `http-server`.
+- Playwright CLI at a 390px viewport.
+- Local CSS/static tests for narrow workspace collapse.
+
+Decision:
+
+- W31 adds timeout-aware client API calls and classifies static preview,
+  timeout, network, API, and clipboard failures into actionable messages.
+- Static preview and missing Devvit WebView signals are shown as runtime
+  resilience notices instead of silent fallback behavior.
+- Clipboard failures keep Markdown export text visible and tell moderators to
+  copy manually from the export box.
+
+Runtime status:
+
+- Static browser proof: Act, Scan, Review, Prove, and Settings reported
+  `documentElement.scrollWidth === window.innerWidth === 390`.
+- Screenshot artifact:
+  `output/playwright/w31/settings-390.png` (ignored local output).
+- No Devvit playtest or native mobile app verification was run in W31.
+  Runtime mobile/WebView proof remains required before claiming mobile runtime
+  readiness.
+
 ## Operational Overhaul W13 Runtime Findings
 
 Date: 2026-05-18
