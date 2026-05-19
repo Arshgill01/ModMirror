@@ -74,9 +74,9 @@ Runtime observations:
 
 | Capability | Status | Proof / Evidence | Next Action |
 |---|---|---|---|
-| Subreddit dashboard launcher | runtime verified | W13 playtest `v0.0.1.71`; post-W34 `v0.0.1.120` launch card opened the dashboard from merged `master`. | Keep in runtime regression checklist. |
-| Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment. | Complete broader narrow/fullscreen sweep for Scan/Review/Prove. |
-| Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 mobile host mode rendered Act and Receipt Ledger. | Verify native Reddit mobile separately. |
+| Subreddit dashboard launcher | runtime verified | W13 playtest `v0.0.1.71`; post-W34 `v0.0.1.120` and `v0.0.1.121` launch cards opened the dashboard from merged `master`. | Keep in runtime regression checklist. |
+| Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment; `v0.0.1.121` accessibility-tree sweep covered Act, Scan, Review, and Prove. | Keep in runtime regression checklist; add pixel screenshot proof when capture is reliable. |
+| Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 `v0.0.1.121` rendered launch, Act, Scan, Review, and Prove in both host modes by accessibility-tree inspection. | Verify native Reddit mobile separately. |
 | Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
 | Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
 | Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |

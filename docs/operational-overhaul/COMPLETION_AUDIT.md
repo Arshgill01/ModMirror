@@ -70,9 +70,10 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items.
 - Policy ratification has not been proven with multiple distinct moderators.
-- The post-W34 UI sweep still has open coverage for Scan, Review, Prove, and
-  narrow/fullscreen cross-checks beyond the latest launch, Act, Agree, and
-  Settings proof.
+- The post-W34 UI sweep now has accessibility-tree proof for the embedded
+  launch card plus Act, Scan, Review, and Prove in Reddit host Mobile and
+  Fullscreen modes on Devvit playtest `v0.0.1.121`. Native Reddit mobile app
+  behavior and new pixel-level screenshot proof remain open.
 
 ## Audit Decision
 

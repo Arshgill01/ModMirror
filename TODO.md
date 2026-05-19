@@ -3,9 +3,9 @@
 ## Current Phase
 
 Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
-and the latest playtest uploaded as `v0.0.1.120`. The current branch is a
-documentation/status reconciliation pass after worktree cleanup, focused on
-making tracked repo status match the merged runtime evidence.
+and the latest UI sweep playtest uploaded as `v0.0.1.121`. The current branch
+is a focused runtime-proof documentation pass for the remaining Devvit host UI
+sweep.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -39,7 +39,7 @@ the repo root are intentionally left untouched.
       `src/client/styles.css`.
 - [x] Verify the reported Agree and Settings alignment issues in desktop
       fullscreen/static-rendered layouts.
-- [ ] Verify Act, Scan, Review, Prove, and the embedded launch card in both
+- [x] Verify Act, Scan, Review, Prove, and the embedded launch card in both
       fullscreen and narrow/mobile Devvit host modes after this CSS pass.
 - [x] Add screenshot evidence and update the post-W34 build report.
 
