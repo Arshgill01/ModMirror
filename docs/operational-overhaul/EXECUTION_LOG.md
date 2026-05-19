@@ -1321,3 +1321,20 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. This was a truth-doc
 reconciliation only.
+
+### 2026-05-20 - Completion Audit Plan-Gate Refresh
+
+- Updated `docs/operational-overhaul/COMPLETION_AUDIT.md` to include the access
+  runtime proof plan and real retention cleanup proof plan as explicit
+  prompt-to-artifact checklist rows.
+- Kept both rows marked as plan-only so the audit does not treat proof plans as
+  runtime verification.
+- Updated the integrated-validation row to distinguish prior full validation
+  from later documentation-only `git diff --check` truth syncs.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. The active goal remains
+incomplete because several runtime/platform proof gates are still open.

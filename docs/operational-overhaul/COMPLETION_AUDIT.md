@@ -52,7 +52,9 @@ Concrete success criteria:
 | Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. The Settings manual runtime event recorder is route-tested and statically verified as a bookkeeping surface for safe capability observations. | Satisfied |
 | Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. PR #35 adds local synthetic coverage for the isolation-first contract by including foreign-subreddit actions that are excluded from replay and scan summaries. | Satisfied for Devvit Web request context plus local synthetic regression coverage |
 | Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
-| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest synthetic multi-community fixture follow-up passed the same broad gates with 46 files and 209 tests. | Satisfied |
+| Access runtime proof plan | `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the account, route, evidence, and no-go gates for true non-mod protected-route blocking and lower-permission moderator role-string proof. `TODO.md`, `RESEARCH.md`, and `RUNTIME_VERIFICATION_MATRIX.md` keep those runtime behaviors open. | Satisfied as plan only; runtime proof open |
+| Real retention cleanup proof plan | `docs/operational-overhaul/RETENTION_DESTRUCTIVE_TEST_PLAN.md` defines the approval, dry-run, marked-record, exact-count, and policy-history gates before any destructive cleanup proof against real operational records. `TODO.md`, `RESEARCH.md`, and `RUNTIME_VERIFICATION_MATRIX.md` keep real deletion proof open. | Satisfied as plan only; runtime proof open |
+| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest full local validation after runtime capability baseline reconciliation passed 47 files and 216 tests. Later documentation-only truth syncs passed `git diff --check`. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
 ## Not Complete Enough To Mark The Larger Goal Done
@@ -68,7 +70,8 @@ fully complete because these requirements remain incomplete or weakly verified:
   the current full moderator account returned permission `all`. The repo now
   keeps future per-mod/manage-level visibility full-access-only for `all`; true
   non-mod runtime account blocking and lower-permission moderator role strings
-  remain unverified.
+  remain unverified. `ACCESS_RUNTIME_TEST_PLAN.md` now defines the required
+  proof pass, but it has not been executed.
 - The Settings manual runtime event recorder is implemented, route-tested, and
   statically rendered, but manual bookkeeping events are not substitutes for
   action-time Devvit proof of the remaining unsafe or platform-dependent
@@ -85,7 +88,9 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Actual retention deletion against real operational records is not
   runtime-proven; only dry-run controls are. A synthetic cleanup smoke route is
   runtime-verified on Devvit playtest `v0.0.1.138`, but it only proves bounded
-  synthetic expired-record cleanup.
+  synthetic expired-record cleanup. `RETENTION_DESTRUCTIVE_TEST_PLAN.md` now
+  defines the required controlled destructive proof pass, but it has not been
+  approved or executed.
 - Redis sorted-set ordering is now runtime verified through
   `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, after the earlier
   `v0.0.1.131` empty observed-order failure. The current bounded Redis storage
