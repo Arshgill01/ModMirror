@@ -248,13 +248,14 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       id: 'redis-zset-ordering',
       domain: 'redis',
       label: 'Redis sorted-set ordering',
-      state: 'type_only',
-      evidenceKind: 'type',
+      state: 'verified_runtime',
+      evidenceKind: 'runtime',
       summary:
-        'Sorted-set APIs compile and are locally tested; Devvit Redis ordering still needs smoke-route proof.',
+        'Sorted-set ordering is runtime-verified for newest-first reads in Devvit Redis.',
       evidence: [
         'POST /api/smoke/redis-zset writes deterministic members, reads reverse-rank order, and deletes the smoke key.',
         'Local tests exercise zAdd/zRange behavior with a mocked Redis client.',
+        'Devvit playtest v0.0.1.136 reported: Redis sorted-set smoke passed: observed newest, middle, oldest.',
       ],
       diagnosticRoute: '/api/smoke/redis-zset',
       proofCommand: 'curl -X POST <playtest-origin>/api/smoke/redis-zset',
@@ -262,19 +263,20 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       safeToTest: true,
       canUpdateFromHealthEvents: true,
       nextAction:
-        'Run the Redis sorted-set smoke route in playtest and verify observedOrder matches expectedOrder.',
+        'Keep the Redis sorted-set smoke route in regression checks before relying on newest-first audit reads.',
     },
     {
       id: 'redis-storage-envelope',
       domain: 'redis',
       label: 'Redis storage envelope',
-      state: 'type_only',
-      evidenceKind: 'type',
+      state: 'verified_runtime',
+      evidenceKind: 'runtime',
       summary:
-        'Bounded smoke route writes current scan/action/override storage envelopes and deletes the smoke keys; Devvit runtime proof is still pending.',
+        'The current bounded scan/action/override storage envelope is runtime-verified in Devvit Redis.',
       evidence: [
         'POST /api/smoke/redis-storage writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to namespaced smoke keys.',
         'The route deletes the smoke keys and verifies post-cleanup key absence.',
+        'Devvit playtest v0.0.1.137 reported: Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.',
       ],
       diagnosticRoute: '/api/smoke/redis-storage',
       proofCommand: 'curl -X POST <playtest-origin>/api/smoke/redis-storage',
@@ -282,7 +284,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       safeToTest: true,
       canUpdateFromHealthEvents: true,
       nextAction:
-        'Run the Redis storage smoke route in playtest and verify expected counts plus cleanup.',
+        'Keep the Redis storage smoke route in regression checks before raising scan/action/override caps.',
     },
     {
       id: 'menu-entrypoints',
@@ -419,13 +421,14 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       id: 'retention-cleanup',
       domain: 'retention_cleanup',
       label: 'Retention cleanup',
-      state: 'verified_static',
-      evidenceKind: 'static',
+      state: 'verified_runtime',
+      evidenceKind: 'runtime',
       summary:
-        'Retention cleanup is unit-tested with dry-run controls and has a synthetic smoke route, but Redis runtime cleanup proof is still open.',
+        'Synthetic expired-record retention cleanup is runtime-verified in Devvit Redis.',
       evidence: [
         'privacyRetention.test.ts covers defaults, inventory, dry-run deletion, and expired cleanup.',
         'POST /api/smoke/retention-cleanup creates old synthetic scan, receipt, evidence board, and delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus index references are gone.',
+        'Devvit playtest v0.0.1.138 reported: Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.',
       ],
       diagnosticRoute: '/api/smoke/retention-cleanup',
       proofCommand:
@@ -434,7 +437,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       safeToTest: true,
       canUpdateFromHealthEvents: true,
       nextAction:
-        'Run the synthetic cleanup smoke route in playtest before deleting any real operational records.',
+        'Keep the synthetic cleanup smoke route in regression checks; do not delete real operational records without a controlled destructive cleanup test.',
     },
     {
       id: 'moderator-access-guard',

@@ -1224,3 +1224,26 @@ Ran the safe synthetic retention cleanup diagnostic in Devvit playtest:
 Runtime proof status: synthetic expired-record cleanup is verified for the
 bounded diagnostic path. Actual deletion against real operational records
 remains a separate controlled destructive cleanup test.
+
+### 2026-05-20 - Runtime Capability Baseline Reconciliation
+
+- Updated `src/server/services/runtimeCapabilities.ts` so the static baseline
+  now reflects the recorded runtime proof for Redis sorted-set ordering, the
+  current Redis storage envelope, and synthetic retention cleanup.
+- Kept each diagnostic `canUpdateFromHealthEvents: true`, so later failed
+  smoke events can still demote the capability state for the current subreddit.
+- Updated `runtimeCapabilities.test.ts` to assert the runtime baseline for
+  storage and synthetic retention cleanup.
+
+Validation:
+
+- `npm test -- src/server/services/runtimeCapabilities.test.ts src/routes/apiAccess.test.ts`
+  passed: 2 files, 12 tests.
+- `npm run type-check` passed.
+- `npm run lint` passed.
+- `npm test` passed: 47 files, 216 tests.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run in this reconciliation.
+The change only aligns code metadata with already recorded playtest evidence.

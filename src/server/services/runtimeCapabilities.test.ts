@@ -29,7 +29,7 @@ describe('runtime capability observability', () => {
     );
 
     expect(matrix.summary.total).toBe(matrix.entries.length);
-    expect(matrix.summary.typeOnly).toBeGreaterThanOrEqual(3);
+    expect(matrix.summary.typeOnly).toBeGreaterThanOrEqual(1);
     expect(matrix.summary.verifiedStatic).toBeGreaterThanOrEqual(1);
     expect(matrix.summary.demoOnly).toBe(1);
     expect(matrix.summary.disabled).toBeGreaterThanOrEqual(3);
@@ -41,8 +41,15 @@ describe('runtime capability observability', () => {
     expect(
       matrix.entries.find((entry) => entry.id === 'redis-storage-envelope')
     ).toMatchObject({
-      state: 'type_only',
-      evidenceKind: 'type',
+      state: 'verified_runtime',
+      evidenceKind: 'runtime',
+      safeToTest: true,
+    });
+    expect(
+      matrix.entries.find((entry) => entry.id === 'retention-cleanup')
+    ).toMatchObject({
+      state: 'verified_runtime',
+      evidenceKind: 'runtime',
       safeToTest: true,
     });
   });
