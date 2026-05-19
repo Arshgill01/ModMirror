@@ -763,6 +763,8 @@ Implemented local server-side moderator access checks for protected API routes:
 - Added `src/routes/apiAccess.test.ts` route-level middleware tests for public
   health metadata, denied protected access without a current user, and allowed
   moderator access with permissions.
+- Added protected `GET /api/access/diagnostics` for current-user permission
+  string capture.
 - Left health/status/capability metadata routes public.
 - Added client-side `access_denied` classification for moderator-access API
   failures.
@@ -771,11 +773,15 @@ Implemented local server-side moderator access checks for protected API routes:
 Validation:
 
 - `npm run type-check` - passed.
-- `npm test -- src/routes/apiAccess.test.ts` - passed, 1 file and 3 tests.
+- `npm test -- src/routes/apiAccess.test.ts` - passed, 1 file and 4 tests.
 - `npm test -- src/server/services/moderatorAccess.test.ts src/server/services/runtimeVerification.test.ts src/server/services/runtimeCapabilities.test.ts`
   - passed, 3 files and 12 tests.
 - `npm test -- src/shared/clientResilience.test.ts` - passed, 1 file and 5
   tests.
 
-Runtime playtest was not run for this guard. True non-mod account blocking and
-exact moderator permission strings remain runtime-unverified.
+Runtime playtest for true non-mod account blocking was not run for this guard.
+A follow-up Devvit WebView Settings diagnostic on `r/modmirror_dev` reached
+playtest `v0.0.1.129` and returned
+`Access check passed: 1 permission(s): all.` This verifies only the current
+moderator account's permission string; true non-mod runtime blocking and
+lower-permission moderator role strings remain unverified.

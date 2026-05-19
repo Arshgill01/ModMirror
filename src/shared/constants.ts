@@ -439,6 +439,7 @@ export const API_ROUTES = {
   runtimeVerification: '/api/runtime-verification',
   runtimeCapabilities: '/api/runtime-capabilities',
   runtimeCapabilityEvents: '/api/runtime-capabilities/events',
+  accessDiagnostics: '/api/access/diagnostics',
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',

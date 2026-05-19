@@ -164,7 +164,9 @@ Runtime evidence exists for:
   authenticated Devvit WebView path.
 - Server-side protected API moderator access checks for live subreddit context,
   verified by unit tests with a playtest-ready build but not yet by a non-mod
-  runtime account.
+  runtime account. A protected current-user permission diagnostic route is
+  locally verified; a Devvit WebView Settings diagnostic returned current
+  moderator permission `all`.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 
@@ -180,7 +182,8 @@ Runtime evidence does not yet exist for:
   behavior.
 - Non-moderator access blocking in live runtime; local server-side guard tests
   pass, but a true non-mod account has not been used.
-- Exact moderator permission strings.
+- Lower-permission moderator role strings for stronger per-mod/admin gates; the
+  current full moderator account returned `all` in Devvit WebView.
 - Native Reddit mobile app behavior.
 - Same-subreddit live modqueue item reads; the Operational Queue fallback was
   observed on playtests `v0.0.1.94` and `v0.0.1.123`.

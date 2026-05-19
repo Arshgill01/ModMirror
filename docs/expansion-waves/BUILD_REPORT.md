@@ -338,6 +338,9 @@ Post-W34 server moderator access guard:
 - Added `src/routes/apiAccess.test.ts` route-level coverage proving
   `/api/health` remains public, `/api/policies` is denied without a current
   user, and `/api/runtime-capabilities` is allowed with moderator permissions.
+- Added protected `GET /api/access/diagnostics` so a moderator can safely
+  capture their own runtime permission strings in Devvit WebView without
+  touching Reddit state.
 - Added client access-denied classification so `moderator_access_required`
   failures are shown as moderator-account access issues rather than generic API
   validation errors.
@@ -345,6 +348,9 @@ Post-W34 server moderator access guard:
   still required before claiming runtime non-mod access blocking.
 - `npm run dev` reached Devvit playtest ready for `r/modmirror_dev` on
   `v0.0.1.126` after the guard was added.
+- A follow-up Devvit WebView Settings diagnostic on playtest `v0.0.1.129`
+  returned `Access check passed: 1 permission(s): all.` for the current
+  moderator account on `r/modmirror_dev`.
 
 ## Known Gaps
 
@@ -569,8 +575,8 @@ Post-W34 Wave 29 subreddit-isolation runtime proof:
 - Runtime proof should continue to focus on unchecked live Reddit capabilities:
   native Mod Notes, Mod Discussion sending, actual retention deletion,
   destructive moderation operations, scheduler jobs, native mobile, true
-  non-mod account access blocking, live modqueue items, and reviewed adoption
-  with multiple distinct moderators.
+  non-mod account access blocking, lower-permission moderator role strings,
+  live modqueue items, and reviewed adoption with multiple distinct moderators.
 - The W19 runtime pass found and fixed a UI affordance gap: quick adoption was
   correctly rejected by the API when disabled, but the Agree UI still showed the
   button. The button is now hidden unless the policy allows single-mod adoption.

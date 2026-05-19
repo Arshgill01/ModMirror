@@ -177,7 +177,9 @@ Verified locally or in runtime notes:
   permission APIs.
 - Protected API routes now have local server-side moderator access checks in
   live subreddit context through `moderatorAccess.ts`; true non-mod runtime
-  proof remains open.
+  proof remains open. Protected `/api/access/diagnostics` is locally verified
+  for current-user permission string capture, and the Devvit WebView Settings
+  diagnostic returned current moderator permission `all`.
 
 Still unverified or disabled:
 
@@ -186,7 +188,9 @@ Still unverified or disabled:
 - Private messages, modmail/mod discussion delivery, native Mod Notes, and
   scheduler runtime behavior.
 - True non-moderator runtime account checks.
-- Exact moderator permission strings for stronger permission-gating.
+- Lower-permission moderator role strings for stronger permission-gating; keep
+  product gates conservative until roles beyond the current `all` account are
+  verified.
 - Reddit mobile app behavior.
 - Redis smoke endpoints in playtest remain separately tracked as not broadly
   proven despite digest history working in runtime QA.

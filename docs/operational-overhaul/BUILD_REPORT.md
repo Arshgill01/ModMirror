@@ -109,8 +109,11 @@ Post-W34 merged validation:
   reads remain separate gaps.
 - Server-side protected API moderator access checks are locally verified for
   live subreddit context, and the guarded build reached Devvit playtest ready
-  on `v0.0.1.126`, but true non-mod account runtime blocking and exact
-  permission strings remain separate gaps.
+  on `v0.0.1.126`. Protected `/api/access/diagnostics` is locally verified for
+  current-user permission capture; a follow-up Devvit WebView diagnostic on
+  `v0.0.1.129` returned current moderator permission `all`. True non-mod
+  account runtime blocking and lower-permission moderator role strings remain
+  separate gaps.
 - The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
   desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
   new pixel-level visual proof remain separate gaps.

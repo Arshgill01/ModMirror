@@ -10,7 +10,7 @@ Operational overhaul W00-W14 has been integrated into `master`; Expansion
 W16-W34 and the post-W34 runtime-smoke/UI follow-up are also merged. PR #12
 merged at `7598f122fc704468bd01d212575b87741fb7ef2c`; later proof PRs closed
 the UI sweep and W29 subreddit-isolation runtime gap. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.126`.
+playtest observed while continuing runtime proof work is `v0.0.1.130`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -112,10 +112,14 @@ behavior, real Reddit moderation execution, native Mod Notes, Mod Discussion
 delivery, scheduler behavior, actual retention deletion, non-mod access
 runtime proof, and external AI remain unverified or disabled. Server-side
 protected API moderator access checks are locally verified and reached Devvit
-playtest ready on `v0.0.1.126`, but a true non-mod account has not been used
-for runtime proof. A follow-up W17 same-subreddit Operational Queue refresh on
-Devvit playtest `v0.0.1.123` returned the labeled type-supported/no-items
-fallback, so live modqueue item reads remain unverified.
+playtest ready on `v0.0.1.126`, and protected current-user permission
+diagnostics are locally verified. A Devvit WebView Settings diagnostic on
+`v0.0.1.129` returned current moderator permission `all`. A true non-mod
+account has not been used for runtime proof, and lower-permission moderator
+role strings remain unverified. A
+follow-up W17 same-subreddit Operational Queue refresh on Devvit playtest
+`v0.0.1.123` returned the labeled type-supported/no-items fallback, so live
+modqueue item reads remain unverified.
 
 ## W00 Definition Of Done
 

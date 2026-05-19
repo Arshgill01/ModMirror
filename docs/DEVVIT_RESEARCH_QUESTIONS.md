@@ -87,8 +87,8 @@ Status labels:
 | Verified | What exact config is needed for Redis? | No separate generated permission found; Redis import typechecks/builds. | Runtime-test `/api/smoke/redis`. |
 | Verified | What exact config is needed for forms/menu actions? | `menu.items[]` and top-level `forms` map in `devvit.json`. | Runtime-confirm menu visibility and form chaining. |
 | Verified | What exact config is needed for triggers, if used? | Top-level `triggers` map; current smoke uses `onAppInstall`. | Do not expand triggers unless needed. |
-| Verified | Can current user permissions be checked? | `context.username`, `context.userId`, `reddit.getCurrentUser()`, and `User.getModPermissionsForSubreddit` exist. | Runtime-log actual permission strings. |
-| Unverified | Can we detect full/manage mod permissions? | Typings expose permission checks, but exact runtime values are unknown. | Keep per-mod analytics hidden until verified. |
+| Verified | Can current user permissions be checked? | `context.username`, `context.userId`, `reddit.getCurrentUser()`, and `User.getModPermissionsForSubreddit` exist. Protected `/api/access/diagnostics` is locally verified, and the Devvit WebView Settings diagnostic returned current moderator permission `all`. | Verify failure shape with a true non-mod account. |
+| Partially verified | Can we detect full/manage mod permissions? | Typings expose permission checks, and the current moderator account returned `all`; lower-permission moderator role strings are still unknown. | Keep per-mod analytics hidden until lower-permission roles are verified. |
 
 ## Testing
 

@@ -70,6 +70,7 @@ import type {
   MirrorScan,
   MirrorScanDepth,
   MirrorScanRecord,
+  ModeratorAccessDiagnostic,
   ModqueueTriageItem,
   ModqueueTriageResponse,
   NativeModNoteMode,
@@ -108,7 +109,7 @@ type OverrideReviewStatus =
   | 'policy_needs_update'
   | 'needs_team_discussion'
   | 'no_action_needed';
-type RuntimeSmokeCheck = 'redis' | 'reddit';
+type RuntimeSmokeCheck = 'redis' | 'reddit' | 'access';
 
 type Page = {
   id: ProductPageId;
@@ -2732,11 +2733,12 @@ function renderRuntimeCapabilitySettings() {
       <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
         <div>
           <strong>Safe smoke checks</strong>
-          <p>Run authenticated WebView diagnostics for Redis and read-only Reddit API access. These checks do not approve, remove, message, or ban.</p>
+          <p>Run authenticated WebView diagnostics for Redis, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
         </div>
         <div class="button-row">
           <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
           <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="access" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Check access</button>
         </div>
       </div>
       ${renderRuntimeSmokeMessage()}
@@ -2788,7 +2790,13 @@ function formatRuntimeCapabilityState(
 }
 
 function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
-  return check === 'redis' ? 'Redis' : 'Reddit read-only';
+  if (check === 'redis') {
+    return 'Redis';
+  }
+  if (check === 'reddit') {
+    return 'Reddit read-only';
+  }
+  return 'Access';
 }
 
 function renderConfigPortabilitySettings() {
@@ -3822,7 +3830,7 @@ function bindRuntimeCapabilityActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         const check = button.dataset.runtimeSmoke;
-        if (check === 'redis' || check === 'reddit') {
+        if (check === 'redis' || check === 'reddit' || check === 'access') {
           void runRuntimeSmokeCheck(check);
         }
       });
@@ -5269,11 +5277,19 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
   render();
 
   try {
-    const route =
-      check === 'redis' ? API_ROUTES.redisSmoke : API_ROUTES.redditSmoke;
-    const result = await fetchRawJson<unknown>(withWorkspaceSubreddit(route), {
-      method: 'POST',
-    });
+    const result =
+      check === 'access'
+        ? await fetchApi<ModeratorAccessDiagnostic>(
+            withWorkspaceSubreddit(API_ROUTES.accessDiagnostics)
+          )
+        : await fetchRawJson<unknown>(
+            withWorkspaceSubreddit(
+              check === 'redis' ? API_ROUTES.redisSmoke : API_ROUTES.redditSmoke
+            ),
+            {
+              method: 'POST',
+            }
+          );
     const matrix = await fetchApi<RuntimeCapabilityMatrix>(
       withWorkspaceSubreddit(API_ROUTES.runtimeCapabilities)
     );
@@ -5334,6 +5350,14 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     return redisResult.ok
       ? 'Redis smoke passed: write/read matched inside Devvit playtest.'
       : 'Redis smoke completed but did not report a matched readBack value.';
+  }
+
+  if (check === 'access') {
+    const access = result as Partial<ModeratorAccessDiagnostic>;
+    const permissions = access.permissions?.length
+      ? access.permissions.join(', ')
+      : 'none returned';
+    return `Access check passed: ${access.permissionCount ?? 0} permission(s): ${permissions}.`;
   }
 
   const resultRecord = result as {
