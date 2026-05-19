@@ -13,12 +13,13 @@ content snapshots, receipt-backed Case Packet generation, Evidence Board
 create/list/status persistence, portable config export/import, privacy
 retention inventory/dry-run controls, Incident Mode receipt tagging/reporting,
 response template preview receipt persistence, community health aggregate
-review, policy impact summaries, and manual/skipped Case Packet delivery
-receipt persistence are now runtime-verified on desktop Reddit playtest. Live
-Reddit moderation execution, actual retention deletion, Mod Discussion
-delivery, scheduler, native Mod Notes, live modqueue reads, external AI,
-non-mod access, and native Reddit mobile app behavior remain unverified or
-disabled.
+review, policy impact summaries, policy ratification propose/review/blocking,
+attribution correction persistence, stored-scan replay, and manual/skipped Case
+Packet delivery receipt persistence are now runtime-verified on desktop Reddit
+playtest. Live Reddit moderation execution, actual retention deletion, Mod
+Discussion delivery, scheduler, native Mod Notes, live modqueue reads, external
+AI, non-mod access, reviewed adoption with multiple distinct moderators, and
+native Reddit mobile app behavior remain unverified or disabled.
 
 ## Expansion Wave 29 Checklist
 

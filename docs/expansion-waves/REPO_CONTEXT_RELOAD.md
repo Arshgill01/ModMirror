@@ -264,24 +264,22 @@ Operational W00-W14 are integrated on `integration/operational-overhaul`:
 
 ## Incomplete Or Unverified
 
-Critical gaps that expansion must respect:
+Critical gaps that expansion must respect after the post-W34 runtime pass:
 
-- Post/comment Apply Policy menu entrypoints are still type/build-only. W13 did
-  not find/prove them in real post/comment detail contexts.
-- Target context capture from a real Devvit menu request is not runtime proven.
-- Redis read/write in Devvit runtime is still not proven through
-  `/api/smoke/redis`.
-- Reddit read smoke in Devvit runtime is still not proven through
-  `/api/smoke/reddit`.
-- Log-only Apply Policy receipts are locally tested but not proven in Devvit
-  Redis.
-- Scan history, policy lifecycle, receipt ledger, and receipt-backed Case
-  Packets are locally verified but need runtime route proof.
+- Live modqueue reads are type-supported and the UI fallback is runtime-proven,
+  but no playtest has produced real queue items from
+  `/api/modqueue/triage`.
 - Real Reddit remove/approve/ignore-reports execution remains disabled and
   must stay disabled until safe controlled playtest proof exists.
-- Comment delivery, Mod Discussion/modmail delivery, scheduler, native Mod
-  Notes, native Reddit mobile behavior, non-mod access blocking, and external
-  AI calls remain unverified or disabled.
+- Actual retention deletion remains unverified; only export and dry-run counts
+  are runtime-proven.
+- Native Mod Notes are type/test verified and gated, but no playtest write has
+  been made.
+- Mod Discussion/modmail delivery remains type-supported but disabled; only
+  manual/skipped delivery receipts are runtime-proven.
+- Scheduler delivery, native Reddit mobile behavior, non-mod access blocking,
+  external AI provider calls, and reviewed policy adoption with multiple
+  distinct moderators remain unverified.
 
 ## Runtime Capability Truth
 
@@ -296,14 +294,21 @@ Runtime verified:
 - Earlier runtime passes verified demo scan, demo policy creation, log-only
   override capture, Case Packet generation, and manual Digest in Reddit
   WebView.
+- Post/comment Apply Policy menu target capture for both post and comment
+  contexts.
+- Redis and Reddit smoke routes.
+- Log-only Apply Policy receipt persistence and receipt ledger display.
+- Receipt-backed content snapshots, Case Packets, Evidence Boards, Incident
+  Mode receipt tagging/reporting, response-template previews, manual/skipped
+  delivery receipts, config export/import, privacy retention inventory/dry-run,
+  community health, policy impact, attribution corrections, stored-scan replay,
+  and policy ratification propose/review/blocking paths.
 
 Local/static/type verified only:
 
-- Post/comment Apply Policy menu config and form route.
-- Target context service using `reddit.getPostById`, `reddit.getCommentById`,
-  `reddit.getCurrentUser`, and moderator permissions.
-- Scan persistence, receipts, policy lifecycle, analytics, Case Packets v2,
-  AI advisory mock path, team delivery mock path, and runtime matrix service.
+- AI advisory mock path, scheduler typings, live modqueue content reads,
+  native Mod Note writes, live Mod Discussion sending, destructive moderation
+  execution, and runtime matrix service.
 
 Disabled/unverified:
 

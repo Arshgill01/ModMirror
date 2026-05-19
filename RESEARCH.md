@@ -6,11 +6,13 @@ Do not assume Devvit API behavior. Verify it here.
 
 ## Research Status
 
-Status: Expansion Wave 29 Multi-Community Isolation is implemented locally.
-Subreddit scope resolution and Redis key namespace guards are type/test
-verified; exact Devvit runtime context behavior still requires playtest proof.
+Status: Expansion Waves 16-34 are implemented with post-W34 runtime proof in
+progress. Several safe Devvit WebView paths are runtime-verified; destructive
+moderation, native Mod Notes, Mod Discussion sending, scheduler jobs, native
+mobile, non-mod access, external AI provider calls, and live modqueue content
+remain disabled or unverified.
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 Updated by: Codex
 
@@ -42,9 +44,9 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Verified | Reddit API methods work in the target subreddit during playtest for dashboard launch and demo scan. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`; Safari created `t3_1teywdj` and rendered the dashboard WebView. Broader smoke routes still need manual QA. |
-| Unverified | Redis read/write works in playtest. | Type/build proof only; hit `/api/smoke/redis` after auth. |
-| Unverified | Menu actions and chained forms work in the Reddit UI. | Type/build proof only; invoke smoke menu actions after auth. |
+| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`; `/api/smoke/reddit`, post/comment menu target capture, and live quick scan have been playtest-verified. Write operations remain separately gated. |
+| Verified | Redis read/write works in playtest. | `/api/smoke/redis` and later WebView flows verified Redis-backed policies, scans, corrections, receipts, evidence boards, config import/export, privacy retention inventories/dry runs, incident mode, delivery receipts, and replay state. |
+| Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
 | Unverified | Comment delivery before/after removal works reliably, and comments can be distinguished/stickied in the intended order. | Must be tested on safe test content before enabling public-comment default. |
 | Unverified | Modmail/private message/native Mod Notes runtime permission behavior. | Typings exist; playtest with moderator permissions required. |
 | Unverified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks; runtime values need logging. |
