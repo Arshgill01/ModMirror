@@ -1,6 +1,9 @@
 import { context, reddit } from '@devvit/web/server';
 import { isT1, isT3 } from '@devvit/shared-types/tid.js';
-import { runRedisDataSmoke } from '../server/services/redis';
+import {
+  runRedisDataSmoke,
+  runRedisSortedSetSmoke as runRedisSortedSetDataSmoke,
+} from '../server/services/redis';
 
 export type SmokeTargetSummary = {
   id: string;
@@ -12,6 +15,11 @@ export type SmokeTargetSummary = {
 export async function runRedisSmoke() {
   const subreddit = context.subredditName || context.subredditId || 'unknown';
   return runRedisDataSmoke(subreddit);
+}
+
+export async function runRedisSortedSetSmoke() {
+  const subreddit = context.subredditName || context.subredditId || 'unknown';
+  return runRedisSortedSetDataSmoke(subreddit);
 }
 
 export async function getTargetSummary(

@@ -647,6 +647,11 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add operator UI for recording manual playtest events if future runtime
       proof needs moderator-observed states that are not reachable by smoke
       routes.
+- [x] Add a safe Redis sorted-set ordering diagnostic route and Settings
+      control for future Devvit runtime proof.
+- [ ] Runtime-run `/api/smoke/redis-zset` in Devvit playtest and verify
+      `observedOrder` matches `expectedOrder` before closing the sorted-set
+      ordering/storage follow-up.
 
 ## Expansion Wave 34 Follow-up
 

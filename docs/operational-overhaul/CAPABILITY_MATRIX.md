@@ -1,7 +1,7 @@
 # Operational Capability Matrix
 
 Created: 2026-05-18
-Updated: 2026-05-19
+Updated: 2026-05-20
 
 Status labels:
 
@@ -42,7 +42,7 @@ Status labels:
 | Native Mod Notes | disabled/unverified | Typings only | Spike only after runtime proof. |
 | Scheduler | unavailable/type-only | W11 delivery capabilities mark scheduler unavailable because no scheduler task is registered in `devvit.json`; Devvit docs/typings expose scheduler APIs; post-W34 local guard keeps scheduler confirmations from using the Mod Discussion adapter | Register only after runtime proof and opt-in design. |
 | Action receipts | runtime verified for log-only path | W04 `receipts.ts`, `receipts.test.ts`, Apply Policy confirm integration; post-W34 `v0.0.1.90` persisted receipt `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` in Devvit Redis. | Real Reddit execution receipts remain disabled until live action proof. |
-| Override audit/review | verified locally with local index caps | `audit.ts`, `audit.test.ts`, and `auditPersistence.test.ts` cover aggregate summaries, newest-first override sorted-set reads, and 500-row caps for action/override indexes. | Runtime-confirm exact Redis sorted-set ordering and practical storage limits before closing the historical Redis follow-up. |
+| Override audit/review | verified locally with local index caps | `audit.ts`, `audit.test.ts`, and `auditPersistence.test.ts` cover aggregate summaries, newest-first override sorted-set reads, and 500-row caps for action/override indexes. `/api/smoke/redis-zset` now exists as a safe diagnostic for deterministic sorted-set ordering proof. | Runtime-run the Redis sorted-set diagnostic and separately confirm practical storage limits before closing the historical Redis follow-up. |
 | Policy health | verified locally | `policyHealth.ts`, tests | Recompute with receipts when available. |
 | Case Packets v2 | runtime verified for receipt-backed generation | W09 `casePacket.ts`, receipt-backed tests, packet type/evidence contracts; post-W34 generated an Official Case Packet from a runtime receipt and opened a receipt-backed Evidence Board. | Keep labels honest for missing comparables/override context. |
 | Manual digest/history | verified | `digest.ts`, tests, runtime reports | Rebase on receipts/scan history later. |

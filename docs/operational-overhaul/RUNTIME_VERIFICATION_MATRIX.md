@@ -116,6 +116,7 @@ Safe/non-destructive routes:
 - `GET /api/runtime-capabilities`
 - `POST /api/runtime-capabilities/events`
 - `POST /api/smoke/redis`
+- `POST /api/smoke/redis-zset`
 - `POST /api/smoke/reddit`
 - `GET /api/health`
 - `GET /api/access/diagnostics`

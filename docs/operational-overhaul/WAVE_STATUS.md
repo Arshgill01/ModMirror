@@ -130,7 +130,10 @@ PR #32 locally proves scheduler delivery confirmations are skipped rather than
 sent through the Mod Discussion adapter, but scheduler jobs and live Mod
 Discussion sends remain runtime-unverified. PR #35 adds local synthetic
 coverage for the W29 isolation-first multi-community contract without adding
-cross-community analytics or new runtime claims.
+cross-community analytics or new runtime claims. A post-PR35 local follow-up
+adds `/api/smoke/redis-zset` and a Settings control so Redis sorted-set
+ordering can be safely proven later in Devvit runtime; it does not close that
+runtime gap.
 
 ## W00 Definition Of Done
 

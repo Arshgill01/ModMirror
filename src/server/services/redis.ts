@@ -1,5 +1,8 @@
 import { redis } from '@devvit/web/server';
-import type { RedisSmokeResult } from '../../shared/schema';
+import type {
+  RedisSmokeResult,
+  RedisSortedSetSmokeResult,
+} from '../../shared/schema';
 import { assertSafeSubredditName } from './subredditIsolation';
 
 export function mmKey(subreddit: string, suffix: string): string {
@@ -63,6 +66,8 @@ export const redisKeys = {
   runtimeHealthEvents: (subreddit: string) =>
     mmKey(subreddit, 'runtime:health-events'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
+  smokeSortedSet: (subreddit: string) =>
+    mmKey(subreddit, 'smoke:redis-zset-ordering'),
 };
 
 export function serializeJson(value: unknown): string {
@@ -114,4 +119,62 @@ export async function runRedisDataSmoke(
   }
 
   return result;
+}
+
+type RedisSortedSetSmokeMember = {
+  id: string;
+  subreddit: string;
+  checkedAt: string;
+  ordinal: number;
+};
+
+export async function runRedisSortedSetSmoke(
+  subreddit: string
+): Promise<RedisSortedSetSmokeResult> {
+  const key = redisKeys.smokeSortedSet(subreddit);
+  const checkedAt = new Date().toISOString();
+  const members: Array<{ id: string; score: number; ordinal: number }> = [
+    { id: 'oldest', score: 1000, ordinal: 1 },
+    { id: 'middle', score: 2000, ordinal: 2 },
+    { id: 'newest', score: 3000, ordinal: 3 },
+  ];
+
+  await deleteKeys(key);
+  const rows = await (async () => {
+    try {
+      await Promise.all(
+        members.map((member) =>
+          redis.zAdd(key, {
+            score: member.score,
+            member: serializeJson({
+              id: member.id,
+              subreddit,
+              checkedAt,
+              ordinal: member.ordinal,
+            } satisfies RedisSortedSetSmokeMember),
+          })
+        )
+      );
+
+      return redis.zRange(key, 0, members.length - 1, {
+        by: 'rank',
+        reverse: true,
+      });
+    } finally {
+      await deleteKeys(key);
+    }
+  })();
+
+  const expectedOrder = ['newest', 'middle', 'oldest'];
+  const observedOrder = rows.map((row) => {
+    const parsed = parseJson<RedisSortedSetSmokeMember>(row.member);
+    return parsed?.id ?? row.member;
+  });
+
+  return {
+    key,
+    expectedOrder,
+    observedOrder,
+    ok: expectedOrder.join('|') === observedOrder.join('|'),
+  };
 }

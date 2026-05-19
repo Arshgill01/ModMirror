@@ -86,6 +86,7 @@ import type {
   PrivacyRetentionExport,
   PrivacyRetentionSettings,
   RedisSmokeResult,
+  RedisSortedSetSmokeResult,
   ResponseTemplateKind,
   RuntimeCapabilityHealthEvent,
   RuntimeCapabilityHealthEventInput,
@@ -111,7 +112,7 @@ type OverrideReviewStatus =
   | 'policy_needs_update'
   | 'needs_team_discussion'
   | 'no_action_needed';
-type RuntimeSmokeCheck = 'redis' | 'reddit' | 'access';
+type RuntimeSmokeCheck = 'redis' | 'redis-zset' | 'reddit' | 'access';
 
 type Page = {
   id: ProductPageId;
@@ -2737,10 +2738,11 @@ function renderRuntimeCapabilitySettings() {
       <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
         <div>
           <strong>Safe smoke checks</strong>
-          <p>Run authenticated WebView diagnostics for Redis, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
+          <p>Run authenticated WebView diagnostics for Redis, Redis sorted-set ordering, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
         </div>
         <div class="button-row">
           <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="redis-zset" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis ZSET</button>
           <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
           <button class="secondary-button compact-button" data-runtime-smoke="access" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Check access</button>
         </div>
@@ -2858,6 +2860,9 @@ function formatRuntimeCapabilityState(
 function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
   if (check === 'redis') {
     return 'Redis';
+  }
+  if (check === 'redis-zset') {
+    return 'Redis sorted-set';
   }
   if (check === 'reddit') {
     return 'Reddit read-only';
@@ -3896,7 +3901,12 @@ function bindRuntimeCapabilityActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         const check = button.dataset.runtimeSmoke;
-        if (check === 'redis' || check === 'reddit' || check === 'access') {
+        if (
+          check === 'redis' ||
+          check === 'redis-zset' ||
+          check === 'reddit' ||
+          check === 'access'
+        ) {
           void runRuntimeSmokeCheck(check);
         }
       });
@@ -5359,7 +5369,11 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
           )
         : await fetchRawJson<unknown>(
             withWorkspaceSubreddit(
-              check === 'redis' ? API_ROUTES.redisSmoke : API_ROUTES.redditSmoke
+              check === 'redis'
+                ? API_ROUTES.redisSmoke
+                : check === 'redis-zset'
+                  ? API_ROUTES.redisSortedSetSmoke
+                  : API_ROUTES.redditSmoke
             ),
             {
               method: 'POST',
@@ -5528,6 +5542,15 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     return redisResult.ok
       ? 'Redis smoke passed: write/read matched inside Devvit playtest.'
       : 'Redis smoke completed but did not report a matched readBack value.';
+  }
+
+  if (check === 'redis-zset') {
+    const redisResult = result as Partial<RedisSortedSetSmokeResult>;
+    const expected = redisResult.expectedOrder?.join(', ') ?? 'unknown';
+    const observed = redisResult.observedOrder?.join(', ') ?? 'unknown';
+    return redisResult.ok
+      ? `Redis sorted-set smoke passed: observed ${observed}.`
+      : `Redis sorted-set smoke order mismatch: expected ${expected}, observed ${observed}.`;
   }
 
   if (check === 'access') {

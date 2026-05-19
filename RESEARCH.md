@@ -478,7 +478,7 @@ Wave 1 data layer notes:
 - `src/server/services/policies.ts` stores each policy under `modmirror:{subreddit}:policy:{ruleId}` and duplicates policy JSON into the `modmirror:{subreddit}:policies` hash for listing.
 - `src/server/services/scans.ts` stores scan metadata under `modmirror:{subreddit}:scan:{scanId}` and `modmirror:{subreddit}:scan:last`.
 - `src/server/services/audit.ts` stores override/audit events in the `modmirror:{subreddit}:overrides` sorted set with `createdAt` as the score.
-- `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`; runtime behavior remains unverified until browser playtest can exercise routes after login consent.
+- `zAdd`, `zRange`, `hSet`, and `hGetAll` signatures were verified against `node_modules/@devvit/redis/RedisClient.d.ts`; runtime behavior remains unverified until browser playtest can exercise routes after login consent. A local `/api/smoke/redis-zset` diagnostic now writes deterministic sorted-set members, reads reverse-rank order, deletes the smoke key, and records a `redis-zset-ordering` health event when run.
 
 ## Permission / Visibility Findings
 
