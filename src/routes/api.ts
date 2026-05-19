@@ -92,6 +92,9 @@ import type {
   TeamDeliveryConfirmResponse,
   TeamDeliveryPreviewRequest,
   TeamDeliverySubjectType,
+  RuntimeCapabilityHealthEvent,
+  RuntimeCapabilityHealthEventInput,
+  RuntimeCapabilityMatrix,
   RuntimeVerificationMatrix,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
@@ -152,6 +155,10 @@ import {
   getTeamDeliveryCapabilities,
 } from '../server/services/teamDelivery';
 import { buildRuntimeVerificationMatrix } from '../server/services/runtimeVerification';
+import {
+  getRuntimeCapabilityMatrix,
+  recordRuntimeHealthEvent,
+} from '../server/services/runtimeCapabilities';
 import { loadModqueueTriage } from '../server/services/modqueueTriage';
 import {
   listAttributionCorrections,
@@ -261,6 +268,31 @@ api.get('/runtime-verification', (c) => {
   return c.json(response);
 });
 
+api.get('/runtime-capabilities', async (c) => {
+  const response: ApiResponse<RuntimeCapabilityMatrix> = {
+    ok: true,
+    data: await getRuntimeCapabilityMatrix(getRequestedSubreddit(c)),
+  };
+  return c.json(response);
+});
+
+api.post('/runtime-capabilities/events', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<RuntimeCapabilityHealthEventInput>;
+
+  try {
+    const event = await recordRuntimeHealthEvent(
+      normalizeRuntimeHealthEventInput(body)
+    );
+    const response: ApiResponse<RuntimeCapabilityHealthEvent> = {
+      ok: true,
+      data: event,
+    };
+    return c.json(response, 201);
+  } catch (error) {
+    return c.json(runtimeCapabilityError(error), 400);
+  }
+});
+
 api.get('/modqueue/triage', async (c) => {
   const subreddit = getRequestedLiveSubreddit(c);
   const type = normalizeModqueueContentType(c.req.query('type'));
@@ -301,13 +333,62 @@ api.get('/modqueue/triage', async (c) => {
 });
 
 api.post('/smoke/redis', async (c) => {
-  const result = await runRedisSmoke();
-  return c.json(result);
+  const subreddit = getRequestedSubreddit(c);
+  try {
+    const result = await runRedisSmoke();
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-smoke',
+      status: result.ok ? 'passed' : 'failed',
+      source: 'smoke_route',
+      message: result.ok
+        ? 'Redis smoke write/read matched.'
+        : 'Redis smoke write/read did not match.',
+      diagnosticRoute: '/api/smoke/redis',
+      ...(result.ok ? {} : { errorCode: 'redis_smoke_mismatch' }),
+    });
+    return c.json(result);
+  } catch (error) {
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-smoke',
+      status: 'failed',
+      source: 'smoke_route',
+      message: 'Redis smoke route threw before returning a result.',
+      diagnosticRoute: '/api/smoke/redis',
+      errorCode: 'redis_smoke_failed',
+      errorMessage: error instanceof Error ? error.message : 'Unknown Redis smoke failure.',
+    });
+    throw error;
+  }
 });
 
 api.post('/smoke/reddit', async (c) => {
-  const result = await runRedditSmoke();
-  return c.json(result);
+  const subreddit = getRequestedSubreddit(c);
+  try {
+    const result = await runRedditSmoke();
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'reddit-api-smoke',
+      status: 'passed',
+      source: 'smoke_route',
+      message: 'Reddit read-only smoke route completed.',
+      diagnosticRoute: '/api/smoke/reddit',
+    });
+    return c.json(result);
+  } catch (error) {
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'reddit-api-smoke',
+      status: 'failed',
+      source: 'smoke_route',
+      message: 'Reddit read-only smoke route failed.',
+      diagnosticRoute: '/api/smoke/reddit',
+      errorCode: 'reddit_smoke_failed',
+      errorMessage: error instanceof Error ? error.message : 'Unknown Reddit smoke failure.',
+    });
+    throw error;
+  }
 });
 
 api.post('/scan', async (c) => {
@@ -1488,6 +1569,62 @@ function normalizeModqueueLimit(value: string | undefined): number {
   return Math.min(Math.max(Math.floor(limit), 1), 50);
 }
 
+function normalizeRuntimeHealthEventInput(
+  body: Partial<RuntimeCapabilityHealthEventInput>
+): RuntimeCapabilityHealthEventInput {
+  if (typeof body.capabilityId !== 'string' || body.capabilityId.length === 0) {
+    throw new Error('capabilityId is required.');
+  }
+  if (!isRuntimeHealthStatus(body.status)) {
+    throw new Error('status must be passed, failed, or skipped.');
+  }
+  if (!isRuntimeHealthSource(body.source)) {
+    throw new Error('source is invalid.');
+  }
+  if (typeof body.message !== 'string' || body.message.length === 0) {
+    throw new Error('message is required.');
+  }
+
+  const input: RuntimeCapabilityHealthEventInput = {
+    subreddit: getRequestedBodySubreddit(body),
+    capabilityId: body.capabilityId,
+    status: body.status,
+    source: body.source,
+    message: body.message,
+  };
+  if (body.diagnosticRoute !== undefined) {
+    input.diagnosticRoute = body.diagnosticRoute;
+  }
+  if (body.errorCode !== undefined) {
+    input.errorCode = body.errorCode;
+  }
+  if (body.errorMessage !== undefined) {
+    input.errorMessage = body.errorMessage;
+  }
+  if (body.observedAt !== undefined) {
+    input.observedAt = body.observedAt;
+  }
+  return input;
+}
+
+function isRuntimeHealthStatus(
+  value: RuntimeCapabilityHealthEventInput['status'] | undefined
+): value is RuntimeCapabilityHealthEventInput['status'] {
+  return value === 'passed' || value === 'failed' || value === 'skipped';
+}
+
+function isRuntimeHealthSource(
+  value: RuntimeCapabilityHealthEventInput['source'] | undefined
+): value is RuntimeCapabilityHealthEventInput['source'] {
+  return (
+    value === 'smoke_route' ||
+    value === 'playtest' ||
+    value === 'manual_qa' ||
+    value === 'unit_test' ||
+    value === 'system'
+  );
+}
+
 function normalizeReplayActions(
   actions: PolicyReplayActionInput[] | undefined
 ): PolicyReplayActionInput[] {
@@ -1610,6 +1747,21 @@ function digestSettingsError(error: unknown): ApiResponse<DigestSettings> {
       code: 'digest_settings_failed',
       message:
         error instanceof Error ? error.message : 'Digest settings update failed',
+    },
+  };
+}
+
+function runtimeCapabilityError(
+  error: unknown
+): ApiResponse<RuntimeCapabilityHealthEvent> {
+  return {
+    ok: false,
+    error: {
+      code: 'runtime_capability_event_failed',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Runtime capability event failed',
     },
   };
 }

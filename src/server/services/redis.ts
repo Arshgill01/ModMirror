@@ -60,6 +60,8 @@ export const redisKeys = {
   incidentActive: (subreddit: string) => mmKey(subreddit, 'incident:active'),
   privacyRetentionSettings: (subreddit: string) =>
     mmKey(subreddit, 'privacy:retention-settings'),
+  runtimeHealthEvents: (subreddit: string) =>
+    mmKey(subreddit, 'runtime:health-events'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
 };
 

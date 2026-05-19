@@ -1509,6 +1509,63 @@ dd {
   gap: 18px;
 }
 
+.runtime-capability-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.runtime-capability-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.runtime-capability-row {
+  border: 1px solid var(--mm-line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.runtime-capability-row div {
+  align-items: start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.runtime-capability-row strong,
+.runtime-capability-row span,
+.runtime-capability-row small,
+.runtime-capability-row p {
+  overflow-wrap: anywhere;
+}
+
+.runtime-capability-row span {
+  color: var(--mm-muted);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.runtime-capability-row p,
+.runtime-capability-row small {
+  margin: 0;
+}
+
+.runtime-capability-row small {
+  color: var(--mm-muted);
+}
+
+.capability-verified_runtime {
+  border-color: rgb(34 197 94 / 45%);
+}
+
+.capability-failed_runtime {
+  border-color: rgb(220 38 38 / 45%);
+}
+
 .incident-settings {
   background: var(--mm-paper);
   border: 1px solid var(--mm-line);

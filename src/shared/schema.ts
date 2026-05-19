@@ -1950,6 +1950,102 @@ export interface RuntimeVerificationMatrix {
   criticalBlockers: string[];
 }
 
+export type RuntimeCapabilityState =
+  | 'verified_runtime'
+  | 'verified_static'
+  | 'type_only'
+  | 'demo_only'
+  | 'disabled'
+  | 'unsupported'
+  | 'failed_runtime'
+  | 'deferred';
+
+export type RuntimeCapabilityDomain =
+  | 'reddit_api'
+  | 'redis'
+  | 'menus'
+  | 'execution_operations'
+  | 'comments'
+  | 'mod_notes'
+  | 'modmail'
+  | 'ai'
+  | 'scheduler'
+  | 'retention_cleanup'
+  | 'demo_fallbacks';
+
+export type RuntimeCapabilityHealthStatus = 'passed' | 'failed' | 'skipped';
+
+export type RuntimeCapabilityEvidenceKind =
+  | 'runtime'
+  | 'static'
+  | 'type'
+  | 'demo'
+  | 'disabled'
+  | 'failed';
+
+export interface RuntimeCapabilityHealthEvent {
+  id: string;
+  subreddit: string;
+  capabilityId: string;
+  status: RuntimeCapabilityHealthStatus;
+  observedAt: string;
+  source: 'smoke_route' | 'playtest' | 'manual_qa' | 'unit_test' | 'system';
+  message: string;
+  diagnosticRoute?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface RuntimeCapabilityHealthEventInput {
+  subreddit: string;
+  capabilityId: string;
+  status: RuntimeCapabilityHealthStatus;
+  source: RuntimeCapabilityHealthEvent['source'];
+  message: string;
+  diagnosticRoute?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  observedAt?: string;
+}
+
+export interface RuntimeCapabilityMatrixEntry {
+  id: string;
+  domain: RuntimeCapabilityDomain;
+  label: string;
+  state: RuntimeCapabilityState;
+  evidenceKind: RuntimeCapabilityEvidenceKind;
+  summary: string;
+  evidence: string[];
+  diagnosticRoute?: string;
+  proofCommand?: string;
+  destructive: boolean;
+  safeToTest: boolean;
+  canUpdateFromHealthEvents: boolean;
+  nextAction: string;
+  lastHealthEvent?: RuntimeCapabilityHealthEvent;
+}
+
+export interface RuntimeCapabilityMatrixSummary {
+  total: number;
+  verifiedRuntime: number;
+  verifiedStatic: number;
+  typeOnly: number;
+  demoOnly: number;
+  disabled: number;
+  unsupported: number;
+  failedRuntime: number;
+  deferred: number;
+}
+
+export interface RuntimeCapabilityMatrix {
+  generatedAt: string;
+  subreddit: string;
+  entries: RuntimeCapabilityMatrixEntry[];
+  healthEvents: RuntimeCapabilityHealthEvent[];
+  summary: RuntimeCapabilityMatrixSummary;
+  warnings: string[];
+}
+
 export type ApiSuccess<T> = {
   ok: true;
   data: T;

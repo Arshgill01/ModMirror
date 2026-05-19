@@ -84,6 +84,8 @@ import type {
   PrivacyRetentionExport,
   PrivacyRetentionSettings,
   ResponseTemplateKind,
+  RuntimeCapabilityMatrix,
+  RuntimeCapabilityMatrixEntry,
   RulePolicy,
   TeamDeliveryChannel,
   TeamDeliveryCapabilities,
@@ -323,6 +325,12 @@ type PrivacyRetentionUiState = {
   deletionResult: PrivacyDeletionResult | undefined;
 };
 
+type RuntimeCapabilityUiState = {
+  loading: boolean;
+  error: string | undefined;
+  matrix: RuntimeCapabilityMatrix | undefined;
+};
+
 type ModqueueTriageUiState = {
   loading: boolean;
   error: string | undefined;
@@ -487,6 +495,11 @@ let privacyRetentionState: PrivacyRetentionUiState = {
   settings: undefined,
   inventory: undefined,
   deletionResult: undefined,
+};
+let runtimeCapabilityState: RuntimeCapabilityUiState = {
+  loading: false,
+  error: undefined,
+  matrix: undefined,
 };
 let modqueueState: ModqueueTriageUiState = {
   loading: false,
@@ -2585,6 +2598,7 @@ function renderSettingsPage() {
   const summary = buildDashboardSummary();
   return `
     <section class="settings-stack">
+      ${renderRuntimeCapabilitySettings()}
       ${renderIncidentSettings()}
       ${renderConfigPortabilitySettings()}
       ${renderPrivacyRetentionSettings()}
@@ -2609,6 +2623,63 @@ function renderSettingsPage() {
       ${renderSettingsCard('Demo subreddit', `r/${DEMO_SUBREDDIT_NAME}`, 'ExampleLearning contains seeded Rule 2 drift for screenshots and the 3-minute demo.')}
     </section>
   `;
+}
+
+function renderRuntimeCapabilitySettings() {
+  const matrix = runtimeCapabilityState.matrix;
+  const status = runtimeCapabilityState.loading
+    ? 'loading'
+    : matrix
+      ? `${matrix.summary.verifiedRuntime} runtime`
+      : 'not loaded';
+  const detail =
+    runtimeCapabilityState.error ??
+    (matrix
+      ? `${matrix.summary.typeOnly} type-only, ${matrix.summary.demoOnly} demo-only, ${matrix.summary.failedRuntime} failed.`
+      : 'Capability truth has not loaded yet.');
+  const entries = matrix?.entries ?? [];
+
+  return `
+    <section class="document-panel runtime-capability-panel" aria-label="Runtime capability matrix">
+      <div class="section-header">
+        <div>
+          <h3>Runtime Capability Matrix</h3>
+          <p>${escapeHtml(detail)}</p>
+        </div>
+        <span class="status-pill">${escapeHtml(status)}</span>
+      </div>
+      <div class="runtime-capability-grid">
+        ${entries.map(renderRuntimeCapabilityEntry).join('')}
+      </div>
+      ${
+        matrix?.warnings.length
+          ? `<ul class="inline-list">${matrix.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>`
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderRuntimeCapabilityEntry(entry: RuntimeCapabilityMatrixEntry) {
+  const health = entry.lastHealthEvent
+    ? `Last ${entry.lastHealthEvent.status}: ${entry.lastHealthEvent.message}`
+    : entry.nextAction;
+  return `
+    <article class="runtime-capability-row capability-${escapeAttribute(entry.state)}">
+      <div>
+        <strong>${escapeHtml(entry.label)}</strong>
+        <span>${escapeHtml(formatRuntimeCapabilityState(entry.state))}</span>
+      </div>
+      <p>${escapeHtml(entry.summary)}</p>
+      <small>${escapeHtml(health)}</small>
+    </article>
+  `;
+}
+
+function formatRuntimeCapabilityState(
+  state: RuntimeCapabilityMatrixEntry['state']
+) {
+  return state.replaceAll('_', ' ');
 }
 
 function renderConfigPortabilitySettings() {
@@ -4986,6 +5057,37 @@ async function loadHealth() {
   render();
 }
 
+async function loadRuntimeCapabilities() {
+  runtimeCapabilityState = {
+    ...runtimeCapabilityState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const matrix = await fetchApi<RuntimeCapabilityMatrix>(
+      withWorkspaceSubreddit(API_ROUTES.runtimeCapabilities)
+    );
+    runtimeCapabilityState = {
+      loading: false,
+      error: undefined,
+      matrix,
+    };
+  } catch (error) {
+    runtimeCapabilityState = {
+      ...runtimeCapabilityState,
+      loading: false,
+      error: normalizeClientError(
+        error,
+        'Runtime capability matrix is unavailable.'
+      ),
+    };
+  }
+
+  render();
+}
+
 async function loadPolicies() {
   policyState = { ...policyState, loading: true, error: undefined };
   render();
@@ -7169,6 +7271,7 @@ window.addEventListener('hashchange', () => {
 
 render();
 void loadHealth();
+void loadRuntimeCapabilities();
 void loadPolicies();
 void loadGovernance();
 void loadModqueueTriage();

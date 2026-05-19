@@ -537,3 +537,17 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       semantics change.
 - [ ] Add future scenario coverage for multi-community comparison after W34
       integration decides the cross-community contract.
+
+## Expansion Wave 33 Follow-up
+
+- [x] Add a Settings-facing runtime capability matrix.
+- [x] Distinguish verified runtime, verified static, type-only, demo-only,
+      disabled, deferred, unsupported, and failed runtime states.
+- [x] Record Redis/Reddit smoke route health events without changing smoke
+      response shapes.
+- [x] Prevent health events from enabling destructive live moderation
+      operations.
+- [ ] Runtime-run `/api/smoke/redis` and `/api/smoke/reddit` in Devvit
+      playtest so the matrix can promote safe capabilities with real proof.
+- [ ] Add operator UI for recording manual playtest events if W34 keeps this
+      API as part of the integrated product surface.
