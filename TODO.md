@@ -40,7 +40,9 @@ safety constraints used by the post-W34 probes. Settings now includes a manual
 runtime capability event recorder for safe proof bookkeeping; those manual
 events do not replace runtime proof for destructive or platform-dependent
 capabilities. The expanded Redis sorted-set diagnostic passed on Devvit
-playtest `v0.0.1.136`.
+playtest `v0.0.1.136`. A safe Redis storage-envelope diagnostic has been added
+locally for the remaining practical storage-limit proof, but it still needs a
+Devvit playtest run.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -426,6 +428,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Rerun the expanded Redis sorted-set diagnostic in Devvit playtest
       `v0.0.1.136` and confirm `observedOrder` matched `expectedOrder`.
 - [x] Add local caps for scan metadata plus action and override audit indexes.
+- [x] Add a safe Redis storage-envelope diagnostic route and Settings control
+      for scan metadata, action-event, and override-event cap proof.
+- [ ] Runtime-run `/api/smoke/redis-storage` in Devvit playtest and verify
+      expected counts plus smoke-key cleanup.
 - [ ] Runtime-confirm practical Redis storage limits for scan metadata and
       audit events before storing larger live datasets.
 
@@ -657,6 +663,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Rerun `/api/smoke/redis-zset` after the diagnostic switched to the
       documented variadic `zAdd` call; Devvit playtest `v0.0.1.136` reported
       `Redis sorted-set smoke passed: observed newest, middle, oldest.`
+- [x] Add a safe Redis storage-envelope diagnostic route and Settings control
+      for bounded scan metadata, action-event, and override-event proof.
+- [ ] Runtime-run `/api/smoke/redis-storage` in Devvit playtest and verify
+      expected counts plus smoke-key cleanup.
 
 ## Expansion Wave 34 Follow-up
 

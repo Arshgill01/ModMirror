@@ -3,6 +3,7 @@ import { context, reddit } from '@devvit/web/server';
 import {
   runRedditSmoke,
   runRedisSmoke,
+  runRedisStorageSmoke,
   runRedisSortedSetSmoke,
 } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
@@ -456,6 +457,40 @@ api.post('/smoke/redis-zset', async (c) => {
         error instanceof Error
           ? error.message
           : 'Unknown Redis sorted-set smoke failure.',
+    });
+    throw error;
+  }
+});
+
+api.post('/smoke/redis-storage', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  try {
+    const result = await runRedisStorageSmoke();
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-storage-envelope',
+      status: result.ok ? 'passed' : 'failed',
+      source: 'smoke_route',
+      message: result.ok
+        ? 'Redis storage envelope smoke matched expected counts and cleaned up.'
+        : 'Redis storage envelope smoke did not match expected counts.',
+      diagnosticRoute: '/api/smoke/redis-storage',
+      ...(result.ok ? {} : { errorCode: 'redis_storage_envelope_mismatch' }),
+    });
+    return c.json(result);
+  } catch (error) {
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'redis-storage-envelope',
+      status: 'failed',
+      source: 'smoke_route',
+      message: 'Redis storage envelope smoke route threw before returning a result.',
+      diagnosticRoute: '/api/smoke/redis-storage',
+      errorCode: 'redis_storage_smoke_failed',
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : 'Unknown Redis storage smoke failure.',
     });
     throw error;
   }

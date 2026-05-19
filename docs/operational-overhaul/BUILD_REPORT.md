@@ -201,6 +201,19 @@ Latest Redis sorted-set rerun after diagnostic expansion:
   capability matrix showed `4 runtime` and `0 failed`.
 - Follow-up docs refresh: `git diff --check` passed.
 
+Latest Redis storage-envelope diagnostic local validation:
+
+- `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed, 3 files and 14 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 214 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- Devvit playtest was not run for `/api/smoke/redis-storage` in this local
+  implementation pass; practical Redis storage limits remain open until the
+  safe smoke returns expected counts and cleanup in runtime.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -234,8 +247,9 @@ Latest Redis sorted-set rerun after diagnostic expansion:
 - Redis sorted-set ordering now has a safe local diagnostic endpoint. The first
   Devvit playtest on `v0.0.1.131` failed with an empty observed order, and the
   follow-up on `v0.0.1.136` passed after the diagnostic switched to the
-  documented variadic `zAdd` call. Practical Redis storage limits remain
-  unverified.
+  documented variadic `zAdd` call. `/api/smoke/redis-storage` is locally
+  implemented for bounded storage-envelope proof, but practical Redis storage
+  limits remain unverified until that route passes in Devvit playtest.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.
 

@@ -1,6 +1,12 @@
 import { redis } from '@devvit/web/server';
+import {
+  ACTION_EVENT_HISTORY_LIMIT,
+  OVERRIDE_EVENT_HISTORY_LIMIT,
+  SCAN_HISTORY_LIMIT,
+} from '../../shared/constants';
 import type {
   RedisSmokeResult,
+  RedisStorageSmokeResult,
   RedisSortedSetSmokeResult,
 } from '../../shared/schema';
 import { assertSafeSubredditName } from './subredditIsolation';
@@ -66,6 +72,14 @@ export const redisKeys = {
   runtimeHealthEvents: (subreddit: string) =>
     mmKey(subreddit, 'runtime:health-events'),
   smoke: (subreddit: string) => mmKey(subreddit, 'smoke:redis-data-layer'),
+  smokeStorageActions: (subreddit: string) =>
+    mmKey(subreddit, 'smoke:redis-storage:actions'),
+  smokeStorageOverrides: (subreddit: string) =>
+    mmKey(subreddit, 'smoke:redis-storage:overrides'),
+  smokeStorageScanIndex: (subreddit: string) =>
+    mmKey(subreddit, 'smoke:redis-storage:scan-index'),
+  smokeStorageScanRecord: (subreddit: string) =>
+    mmKey(subreddit, 'smoke:redis-storage:scan-record'),
   smokeSortedSet: (subreddit: string) =>
     mmKey(subreddit, 'smoke:redis-zset-ordering'),
 };
@@ -211,5 +225,130 @@ export async function runRedisSortedSetSmoke(
     observedScores: result.rows.map((row) => row.score),
     scoreChecks: result.scoreChecks,
     ok: expectedOrder.join('|') === observedOrder.join('|'),
+  };
+}
+
+export async function runRedisStorageSmoke(
+  subreddit: string
+): Promise<RedisStorageSmokeResult> {
+  const keys = {
+    scanRecord: redisKeys.smokeStorageScanRecord(subreddit),
+    scanIndex: redisKeys.smokeStorageScanIndex(subreddit),
+    actions: redisKeys.smokeStorageActions(subreddit),
+    overrides: redisKeys.smokeStorageOverrides(subreddit),
+  };
+  const allKeys = Object.values(keys);
+  const checkedAt = new Date().toISOString();
+  const scanRecord = serializeJson({
+    id: 'storage-smoke-scan',
+    subreddit,
+    source: 'runtime_storage_smoke',
+    checkedAt,
+    attributedActions: Array.from({ length: 80 }, (_, index) => ({
+      id: `storage-smoke-action-${index + 1}`,
+      confidence: index % 5 === 0 ? 'medium' : 'high',
+      inferredRuleName: index % 3 === 0 ? 'Low-effort questions' : 'Be civil',
+      evidence: [
+        'Synthetic bounded storage diagnostic.',
+        `Payload row ${index + 1}`,
+      ],
+    })),
+  });
+  const scanMetadataMembers = Array.from(
+    { length: SCAN_HISTORY_LIMIT },
+    (_, index) => ({
+      member: serializeJson({
+        id: `storage-smoke-scan-${index + 1}`,
+        subreddit,
+        source: 'runtime_storage_smoke',
+        createdAt: checkedAt,
+        scannedActionCount: 80,
+        driftCandidateCount: index % 2,
+      }),
+      score: index + 1,
+    })
+  );
+  const actionMembers = Array.from(
+    { length: ACTION_EVENT_HISTORY_LIMIT },
+    (_, index) => ({
+      member: serializeJson({
+        id: `storage-smoke-action-${index + 1}`,
+        subreddit,
+        createdAt: checkedAt,
+        ruleName: index % 3 === 0 ? 'Low-effort questions' : 'Be civil',
+        selectedAction: index % 2 === 0 ? 'remove' : 'warn',
+      }),
+      score: index + 1,
+    })
+  );
+  const overrideMembers = Array.from(
+    { length: OVERRIDE_EVENT_HISTORY_LIMIT },
+    (_, index) => ({
+      member: serializeJson({
+        id: `storage-smoke-override-${index + 1}`,
+        subreddit,
+        createdAt: checkedAt,
+        ruleName: 'Low-effort questions',
+        selectedAction: index % 2 === 0 ? 'remove' : 'manual_review',
+        recommendedAction: 'warn',
+        overrideReason:
+          index % 2 === 0 ? 'edge_case_mod_discretion' : 'policy_seems_wrong',
+      }),
+      score: index + 1,
+    })
+  );
+
+  await deleteKeys(...allKeys);
+  const observed = await (async () => {
+    try {
+      await redis.set(keys.scanRecord, scanRecord);
+      await Promise.all([
+        redis.zAdd(keys.scanIndex, ...scanMetadataMembers),
+        redis.zAdd(keys.actions, ...actionMembers),
+        redis.zAdd(keys.overrides, ...overrideMembers),
+      ]);
+      const [
+        readBackScanRecord,
+        scanIndexCardinality,
+        actionIndexCardinality,
+        overrideIndexCardinality,
+      ] = await Promise.all([
+        redis.get(keys.scanRecord),
+        redis.zCard(keys.scanIndex),
+        redis.zCard(keys.actions),
+        redis.zCard(keys.overrides),
+      ]);
+
+      const scanRecordBytes = readBackScanRecord?.length;
+      return {
+        ...(scanRecordBytes === undefined ? {} : { scanRecordBytes }),
+        scanIndexCardinality,
+        actionIndexCardinality,
+        overrideIndexCardinality,
+      };
+    } finally {
+      await deleteKeys(...allKeys);
+    }
+  })();
+  const postCleanupExistingKeys = await redis.exists(...allKeys);
+  const expected = {
+    scanMetadataCount: SCAN_HISTORY_LIMIT,
+    actionEventCount: ACTION_EVENT_HISTORY_LIMIT,
+    overrideEventCount: OVERRIDE_EVENT_HISTORY_LIMIT,
+  };
+
+  return {
+    keys,
+    expected,
+    observed: {
+      ...observed,
+      postCleanupExistingKeys,
+    },
+    ok:
+      observed.scanRecordBytes === scanRecord.length &&
+      observed.scanIndexCardinality === expected.scanMetadataCount &&
+      observed.actionIndexCardinality === expected.actionEventCount &&
+      observed.overrideIndexCardinality === expected.overrideEventCount &&
+      postCleanupExistingKeys === 0,
   };
 }

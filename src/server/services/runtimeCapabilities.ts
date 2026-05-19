@@ -265,6 +265,26 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
         'Run the Redis sorted-set smoke route in playtest and verify observedOrder matches expectedOrder.',
     },
     {
+      id: 'redis-storage-envelope',
+      domain: 'redis',
+      label: 'Redis storage envelope',
+      state: 'type_only',
+      evidenceKind: 'type',
+      summary:
+        'Bounded smoke route writes current scan/action/override storage envelopes and deletes the smoke keys; Devvit runtime proof is still pending.',
+      evidence: [
+        'POST /api/smoke/redis-storage writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to namespaced smoke keys.',
+        'The route deletes the smoke keys and verifies post-cleanup key absence.',
+      ],
+      diagnosticRoute: '/api/smoke/redis-storage',
+      proofCommand: 'curl -X POST <playtest-origin>/api/smoke/redis-storage',
+      destructive: false,
+      safeToTest: true,
+      canUpdateFromHealthEvents: true,
+      nextAction:
+        'Run the Redis storage smoke route in playtest and verify expected counts plus cleanup.',
+    },
+    {
       id: 'menu-entrypoints',
       domain: 'menus',
       label: 'Menu entrypoints',

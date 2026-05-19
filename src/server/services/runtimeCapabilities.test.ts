@@ -38,6 +38,13 @@ describe('runtime capability observability', () => {
       state: 'demo_only',
       evidenceKind: 'demo',
     });
+    expect(
+      matrix.entries.find((entry) => entry.id === 'redis-storage-envelope')
+    ).toMatchObject({
+      state: 'type_only',
+      evidenceKind: 'type',
+      safeToTest: true,
+    });
   });
 
   it('records health events and promotes capabilities after passing checks', async () => {
