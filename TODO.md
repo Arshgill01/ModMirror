@@ -7,7 +7,7 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.130`.
+playtest observed while continuing runtime proof work is `v0.0.1.136`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -39,7 +39,8 @@ runtime-proof wave should target one of those remaining gaps with the same
 safety constraints used by the post-W34 probes. Settings now includes a manual
 runtime capability event recorder for safe proof bookkeeping; those manual
 events do not replace runtime proof for destructive or platform-dependent
-capabilities.
+capabilities. The expanded Redis sorted-set diagnostic passed on Devvit
+playtest `v0.0.1.136`.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
@@ -422,8 +423,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       `modmirror:{subreddit}:overrides`.
 - [x] Runtime-run the Redis sorted-set diagnostic in Devvit playtest
       `v0.0.1.131` and record the failed empty observed-order result.
-- [ ] Diagnose why Devvit Redis sorted-set ordering returned an empty
-      observed order after local sorted-set tests passed.
+- [x] Rerun the expanded Redis sorted-set diagnostic in Devvit playtest
+      `v0.0.1.136` and confirm `observedOrder` matched `expectedOrder`.
 - [x] Add local caps for scan metadata plus action and override audit indexes.
 - [ ] Runtime-confirm practical Redis storage limits for scan metadata and
       audit events before storing larger live datasets.
@@ -653,10 +654,9 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       control for future Devvit runtime proof.
 - [x] Runtime-run `/api/smoke/redis-zset` in Devvit playtest `v0.0.1.131`
       and record that it returned `ok: false` with an empty `observedOrder`.
-- [ ] Rerun `/api/smoke/redis-zset` after the diagnostic reports add count,
-      cardinality, row count, observed scores, and score checks; close the
-      sorted-set ordering follow-up only if `observedOrder` matches
-      `expectedOrder`.
+- [x] Rerun `/api/smoke/redis-zset` after the diagnostic switched to the
+      documented variadic `zAdd` call; Devvit playtest `v0.0.1.136` reported
+      `Redis sorted-set smoke passed: observed newest, middle, oldest.`
 
 ## Expansion Wave 34 Follow-up
 

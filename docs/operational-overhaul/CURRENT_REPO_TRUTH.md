@@ -32,10 +32,12 @@ It currently supports:
   and execution result. Post-W34 runtime proof verified log-only receipt
   persistence in Devvit Redis.
 - Local Redis storage guardrails cap scan metadata plus action and override
-  audit indexes. Devvit playtest `v0.0.1.131` ran the safe
+  audit indexes. Devvit playtest `v0.0.1.131` first ran the safe
   `/api/smoke/redis-zset` diagnostic and recorded a failed empty observed-order
-  result, so exact Devvit Redis sorted-set ordering remains unverified.
-  Practical storage limits also still require runtime confirmation.
+  result; after the diagnostic switched to Devvit's documented variadic `zAdd`
+  call, Devvit playtest `v0.0.1.136` verified reverse-rank sorted-set ordering
+  with `observed newest, middle, oldest`. Practical storage limits still
+  require runtime confirmation.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
@@ -222,10 +224,9 @@ Runtime evidence does not yet exist for:
 - Native Reddit mobile app behavior.
 - Same-subreddit live modqueue item reads; the Operational Queue fallback was
   observed on playtests `v0.0.1.94` and `v0.0.1.123`.
-- Redis sorted-set ordering via `/api/smoke/redis-zset`; Devvit playtest
-  `v0.0.1.131` returned `ok: false` with an empty observed order. The
-  diagnostic now reports add count, cardinality, row count, observed scores,
-  and score checks for the next runtime investigation.
+- Practical Redis storage limits for larger live scan/audit datasets; reverse
+  sorted-set ordering itself is now runtime verified through
+  `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`.
 
 ## Product Boundary
 

@@ -13,7 +13,7 @@ the UI sweep, W29 subreddit-isolation runtime gap, full-access visibility gate,
 Settings manual runtime event recorder, audit storage caps, AI privacy readiness
 gate, local scheduler-delivery guard, legacy page-ID audit, and synthetic
 multi-community isolation fixture. The latest Devvit playtest observed while
-continuing runtime proof work is `v0.0.1.130`.
+continuing runtime proof work is `v0.0.1.136`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -132,9 +132,10 @@ Discussion sends remain runtime-unverified. PR #35 adds local synthetic
 coverage for the W29 isolation-first multi-community contract without adding
 cross-community analytics or new runtime claims. A post-PR35 follow-up added
 `/api/smoke/redis-zset` and a Settings control. Devvit playtest `v0.0.1.131`
-ran it and recorded a failed empty observed-order result, so the runtime gap
-remains open. The diagnostic now returns add count, cardinality, row count,
-observed scores, and score checks for the next investigation.
+ran it and recorded a failed empty observed-order result; after the diagnostic
+switched to the documented variadic `zAdd` call, Devvit playtest `v0.0.1.136`
+reported `Redis sorted-set smoke passed: observed newest, middle, oldest.`
+Practical Redis storage limits remain open.
 
 ## W00 Definition Of Done
 
