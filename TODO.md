@@ -2,16 +2,16 @@
 
 ## Current Phase
 
-Expansion Wave 29 — Multi-Community Isolation is locally implemented on
-`expansion/w29-multi-community` after W28 Configuration Portability. Continue
-with Wave 30 privacy controls next.
+Post-W34 runtime-smoke follow-up is in progress on
+`post34/runtime-smoke-controls`, focused on replacing type/static proof with
+safe Devvit WebView runtime evidence before more feature surface is expanded.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
-Apply Policy menu target capture is now runtime-verified on desktop Reddit
-playtest, but Devvit Redis receipt persistence, live Reddit moderation
-execution, Mod Discussion delivery, scheduler, native Mod Notes, external AI,
-non-mod access, and native mobile behavior remain unverified or disabled.
+Apply Policy menu target capture and log-only receipt persistence are now
+runtime-verified on desktop Reddit playtest. Live Reddit moderation execution,
+Mod Discussion delivery, scheduler, native Mod Notes, external AI, non-mod
+access, and native Reddit mobile app behavior remain unverified or disabled.
 
 ## Expansion Wave 29 Checklist
 
@@ -470,8 +470,9 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Put Apply Policy and the action receipt ledger on the Act workspace.
 - [x] Move policy lifecycle work into Agree and proof artifacts into Prove.
 - [x] Capture static desktop and mobile screenshots for the Act workspace.
-- [ ] Runtime-verify the new IA inside Devvit WebView on desktop Reddit.
-- [ ] Runtime-verify the new IA inside mobile/narrow Reddit WebView.
+- [x] Runtime-verify the new IA inside Devvit WebView on desktop Reddit.
+- [x] Runtime-verify the new IA inside Reddit desktop host `Mobile` Devvit
+      modal/narrow WebView.
 - [ ] Update any external docs/bookmarks that still reference the old page IDs
       after integration.
 
@@ -522,9 +523,11 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       runtime data.
 - [x] Run a 390px Playwright static-client smoke check for Act, Scan, Review,
       Prove, and Settings with no horizontal overflow.
-- [ ] Runtime-verify the same narrow layouts inside Reddit's Devvit WebView on
-      desktop mobile mode and native Reddit mobile app.
-- [ ] Replace static-client browser proof with Devvit WebView screenshots after
+- [x] Runtime-verify the same narrow layouts inside Reddit's Devvit WebView on
+      desktop mobile mode.
+- [ ] Runtime-verify the same narrow layouts inside the native Reddit mobile
+      app.
+- [x] Replace static-client browser proof with Devvit WebView screenshots after
       playtest access is available for W31.
 
 ## Expansion Wave 32 Follow-up

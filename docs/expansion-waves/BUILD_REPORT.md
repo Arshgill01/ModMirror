@@ -56,8 +56,11 @@ Current integrated head before W34 docs: `ca9d8e1`
 
 ## Runtime Proofs Obtained
 
-No new Devvit playtest proof was obtained during W16-W34 in this continuation
-pass except local/static browser proof for W31 and W33 UI surfaces.
+No Devvit playtest proof was obtained during the W16-W34 implementation pass
+except local/static browser proof for W31 and W33 UI surfaces. Post-W34
+follow-up runtime proof has since been added for safe smoke routes,
+post/comment menu target capture, log-only receipt persistence, and Reddit's
+desktop host mobile Devvit modal.
 
 Previously recorded runtime proof still applies only to the W13 verified areas:
 
@@ -138,13 +141,34 @@ Post-W34 log-only receipt proof:
   `skipped (disabled)`.
 - No Reddit moderation action was executed during this proof.
 
+Post-W34 mobile Devvit WebView proof:
+
+- Devvit playtest `v0.0.1.91` opened the comment guidance custom post
+  `1thheea` in Zen as `u/BrightyBrainiac`.
+- Computer Use inspected the Reddit-owned Devvit modal while the host viewport
+  selector remained on `Mobile`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v91-mobile-act-ledger.png`
+  - `output/runtime-proof/post34-v91-mobile-target-form.png`
+  - `output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+- The mobile modal rendered the ModMirror shell, nav, Act workspace, target
+  context, Apply Policy form, Operational Queue, guided setup, demo scenario,
+  and Receipt Ledger without switching to fullscreen.
+- The Receipt Ledger displayed
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- This is desktop Reddit host mobile-modal proof, not native Reddit mobile app
+  proof. No Reddit moderation action was executed.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
 - Native Mod Notes, modmail/mod discussion send, scheduler jobs, external AI,
-  native Reddit mobile behavior, and non-mod access blocking remain unverified
-  or disabled.
+  native Reddit mobile app behavior, and non-mod access blocking remain
+  unverified or disabled.
 - W34 did not publish, submit, market, or prepare final demo material.
 
 ## Validation Status
@@ -186,6 +210,12 @@ Post-W34 log-only receipt runtime validation passed:
 - Computer Use Zen fullscreen interaction on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v90-after-confirm-click.png`
 - `screencapture -x output/runtime-proof/post34-v90-receipt-ledger.png`
+
+Post-W34 mobile-modal runtime validation passed:
+
+- `npm run dev`
+- Computer Use Zen mobile-modal interaction on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
 
 ## Next Engineering Risks
 

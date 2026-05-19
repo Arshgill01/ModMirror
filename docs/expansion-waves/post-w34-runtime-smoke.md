@@ -158,6 +158,45 @@ Verified in fullscreen Reddit Devvit WebView:
   - native Mod Note `skipped (disabled)`
 - No Reddit moderation action was executed during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version observed: `v0.0.1.91`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: comment guidance custom post
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- UI driver: Computer Use against Zen with the Reddit host viewport selector
+  left on `Mobile`.
+- Screenshots:
+  - `output/runtime-proof/post34-v91-mobile-act-ledger.png`
+  - `output/runtime-proof/post34-v91-mobile-target-form.png`
+  - `output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+
+Verified in Reddit desktop host `Mobile` Devvit WebView:
+
+- The ModMirror shell, nav, Act workspace, target context, Apply Policy form,
+  Operational Queue, guided setup, demo scenario, and Receipt Ledger rendered
+  in the mobile modal without switching to fullscreen.
+- The Act workspace retained the menu-captured comment target:
+  - target thing ID `t1_ommzgtz`
+  - target author `BrightyBrainiac`
+  - subreddit `modmirror_dev`
+  - body `Runtime comment target smoke for ModMirror; safe test content.`
+- The Apply Policy form retained the captured target fields, `Runtime Smoke
+  Policy`, selected action control, Native Mod Note control, override controls,
+  Preview, and Confirm log-only action controls.
+- The Receipt Ledger displayed the prior log-only receipt:
+  - receipt ID `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`
+  - recommended action `warn`
+  - selected action `warn`
+  - execution `skipped`
+  - mode `log only`
+  - capability `not applicable`
+  - response template draft captured; delivery remained gated
+  - native Mod Note `skipped (disabled)`
+- No Reddit moderation action was executed during this proof.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -172,3 +211,6 @@ Verified in fullscreen Reddit Devvit WebView:
 - `npm run build`
 - `npm run dev`
 - Computer Use Zen fullscreen interaction for the `v0.0.1.90` receipt proof.
+- Computer Use Zen mobile-modal interaction for the `v0.0.1.91` narrow
+  WebView proof.
+- `screencapture -x output/runtime-proof/post34-v91-mobile-receipt-ledger.png`

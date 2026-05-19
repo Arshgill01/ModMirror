@@ -1071,3 +1071,51 @@ Decision:
   runtime-verified for this desktop Reddit Devvit WebView playtest path.
 - This proof does not authorize destructive Reddit moderation execution or
   native Mod Note delivery.
+
+## Post-W34 Mobile Devvit WebView Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.91`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use inspected the Reddit-owned Devvit modal while the host viewport
+  selector remained on `Mobile`.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v91-mobile-act-ledger.png`
+  - `output/runtime-proof/post34-v91-mobile-target-form.png`
+  - `output/runtime-proof/post34-v91-mobile-receipt-ledger.png`
+
+Verified:
+
+- The Reddit desktop host `Mobile` Devvit modal rendered the ModMirror shell,
+  nav, Act workspace, target context, Apply Policy form, Operational Queue,
+  guided setup, demo scenario, and Receipt Ledger without requiring fullscreen.
+- The Act workspace showed the selected comment target `t1_ommzgtz`, author
+  `BrightyBrainiac`, subreddit `modmirror_dev`, and body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- The Apply Policy form retained the captured target fields and allowed the
+  safe log-only control state to remain visible in the narrow modal.
+- The Receipt Ledger displayed
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- No Reddit moderation action was executed.
+
+Not verified:
+
+- This is a desktop Reddit host mobile-modal proof, not native Reddit mobile
+  app proof. Native mobile app layout and interaction behavior remain
+  unverified.
+
+Decision:
+
+- The W12/W31 narrow Devvit WebView layout may now be described as
+  runtime-verified for Reddit's desktop host `Mobile` modal.
+- Native Reddit mobile app behavior must remain a separate open runtime gap.
