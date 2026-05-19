@@ -79,6 +79,20 @@ describe('moderator access guard', () => {
     });
   });
 
+  it('denies access when permission strings are only blank values', async () => {
+    await expect(
+      assertModeratorAccess({
+        currentSubreddit: 'modmirror_dev',
+        getCurrentUser: vi.fn(async () => ({
+          username: 'not_mod',
+          getModPermissionsForSubreddit: vi.fn(async () => [' ', '']),
+        })),
+      })
+    ).rejects.toMatchObject({
+      code: 'moderator_permissions_empty',
+    });
+  });
+
   it('denies access when the Reddit permission check fails', async () => {
     await expect(
       assertModeratorAccess({

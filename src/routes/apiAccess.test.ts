@@ -184,7 +184,11 @@ describe('api moderator access guard', () => {
   });
 
   it('keeps diagnostic visibility aggregate-only without the all permission', async () => {
-    const getModPermissionsForSubreddit = vi.fn(async () => ['posts']);
+    const getModPermissionsForSubreddit = vi.fn(async () => [
+      ' posts ',
+      '',
+      'access',
+    ]);
     devvitState.context.username = 'mod_b';
     devvitState.currentUser = {
       username: 'mod_b',
@@ -198,11 +202,17 @@ describe('api moderator access guard', () => {
       ok: true;
       data: {
         moderatorVisibilityLevel: string;
+        permissionCount: number;
+        permissions: string[];
       };
     };
 
     expect(response.status).toBe(200);
     expect(payload.data.moderatorVisibilityLevel).toBe('aggregate_only');
+    expect(payload.data).toMatchObject({
+      permissionCount: 2,
+      permissions: ['posts', 'access'],
+    });
     expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
   });
 
