@@ -3,10 +3,11 @@
 ## Current Phase
 
 Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
-the UI sweep proof has been merged through PR #14, and the Wave 29
-subreddit-isolation runtime reconciliation has been merged through PR #16. The
-latest Devvit playtest observed while continuing runtime proof work is
-`v0.0.1.130`.
+the UI sweep proof has been merged through PR #14, the Wave 29
+subreddit-isolation runtime reconciliation has been merged through PR #16, the
+full-access visibility gate has been merged through PR #24, and the manual
+runtime event recorder has been merged through PR #25. The latest Devvit
+playtest observed while continuing runtime proof work is `v0.0.1.130`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -35,7 +36,10 @@ the current moderator account: the Devvit WebView Settings check on
 conservative full-access-only visibility gate now keeps future per-mod surfaces
 aggregate-only unless that runtime-probed `all` permission is present. The next
 runtime-proof wave should target one of those remaining gaps with the same
-safety constraints used by the post-W34 probes.
+safety constraints used by the post-W34 probes. Settings now includes a manual
+runtime capability event recorder for safe proof bookkeeping; those manual
+events do not replace runtime proof for destructive or platform-dependent
+capabilities.
 
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,

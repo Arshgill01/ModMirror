@@ -181,6 +181,61 @@ Open after this reconciliation:
   item reads, multi-moderator ratification proof, and external AI remain
   unverified or disabled.
 
+### 2026-05-20 - Post-W34 Access Gate And Manual Runtime Event Recorder
+
+Follow-up branches after the runtime-proof reconciliation:
+
+- PR #24 merged the full-access visibility gate at
+  `365541ea145105717c2f554c3e3fc88c1d65cdb1`.
+- PR #25 merged the Settings manual runtime event recorder at
+  `51bdd1c450c51238591c8fd78230cea8f201a990`.
+
+Implemented:
+
+- Added a `ModeratorVisibilityLevel` helper so future per-mod/manage-level
+  surfaces stay `aggregate_only` unless the runtime-probed moderator
+  permission set includes `all`.
+- Extended protected `/api/access/diagnostics` and Settings access diagnostic
+  copy with the visibility gate result.
+- Added a Settings form for recording manual runtime capability observations
+  against safe, event-updatable capabilities.
+- Added route coverage proving a protected manual runtime event write updates
+  the runtime capability matrix.
+- Updated runtime-capability docs to make clear that manual events are
+  bookkeeping evidence, not proof for destructive or unsafe capability rows.
+
+Validation:
+
+- `npm test -- src/server/services/moderatorAccess.test.ts src/routes/apiAccess.test.ts`
+  - passed.
+- `npm test -- src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  - passed.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 45 files and 201 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Static UI verification for the manual event recorder:
+
+- `npx vite --host 127.0.0.1 --port 4173 --strictPort` failed because the
+  Devvit Vite plugin only supports `vite build`.
+- `npx --yes http-server dist/client -a 127.0.0.1 -p 4173` served the built
+  client successfully.
+- Safari opened `http://127.0.0.1:4173/?manualEvent=1#settings`; the Settings
+  page rendered the manual runtime event panel and disabled static-preview
+  state without visible overlap.
+
+Open after these follow-ups:
+
+- The visibility gate is conservative and locally verified, but true non-mod
+  runtime blocking and lower-permission moderator role strings remain
+  unverified.
+- The manual event recorder reduces proof-recording friction, but it does not
+  close native mobile, real Reddit moderation execution, native Mod Notes, Mod
+  Discussion delivery, scheduler, actual retention deletion, live modqueue
+  item read, or external AI gaps.
+
 ## W00 Commit Plan
 
 Commit only the new `docs/operational-overhaul/` control documents. The
