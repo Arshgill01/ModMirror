@@ -10,9 +10,10 @@ The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menu target capture, log-only receipt persistence, receipt-backed
 content snapshots, receipt-backed Case Packet generation, Evidence Board
-create/list/status persistence, portable config export/import, and privacy
-retention inventory/dry-run controls, and Incident Mode receipt
-tagging/reporting are now runtime-verified on desktop Reddit playtest. Live
+create/list/status persistence, portable config export/import, privacy
+retention inventory/dry-run controls, Incident Mode receipt tagging/reporting,
+and manual/skipped Case Packet delivery receipt persistence are now
+runtime-verified on desktop Reddit playtest. Live
 Reddit moderation execution, actual retention deletion, Mod Discussion
 delivery, scheduler, native Mod Notes, external AI, non-mod access, and native
 Reddit mobile app behavior remain unverified or disabled.
@@ -93,7 +94,7 @@ Reddit mobile app behavior remain unverified or disabled.
       subject storage.
 - [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
       before enabling any real send path.
-- [ ] Runtime-verify delivery receipt persistence through Devvit Web/Redis
+- [x] Runtime-verify delivery receipt persistence through Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 24 Checklist

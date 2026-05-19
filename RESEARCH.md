@@ -73,7 +73,7 @@ Updated by: Codex
 | Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
 | Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
-| Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
+| Runtime verified / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Post-W34 Devvit playtest verified manual-ready and skipped Mod Discussion draft receipt persistence in the Reddit-hosted WebView. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
 | Runtime verified | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Post-W34 Devvit playtest verified receipt-backed board create/list/status persistence in the Reddit-hosted WebView. |
 | Runtime verified | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Post-W34 Devvit playtest verified start persistence, active banner, receipt tagging, and post-incident reporting in the Reddit-hosted WebView. |
 | Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
@@ -1313,3 +1313,47 @@ Decision:
   desktop Reddit Devvit WebView playtest path.
 - Incident Mode remains a context and evidence workflow only. It does not
   enable auto-remove, auto-ban, or policy override automation.
+
+## Post-W34 Case Packet Delivery Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/teamDelivery.test.ts src/shared/casePacketDelivery.test.ts src/server/services/privacyRetention.test.ts`
+  passed before the playtest interaction.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Prove tab in the fullscreen Reddit-owned Devvit
+  WebView modal on the comment guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+  - `output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+
+Verified delivery receipt behavior:
+
+- Prove generated a Case Packet from latest action
+  `action-b10aa953-9338-4932-82de-caaa6aeaa29a` and receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1`.
+- Clicking `Save manual receipt` returned
+  `Manual delivery receipt saved. Copy the Markdown into your review thread.`
+- The UI displayed delivery receipt
+  `delivery-df85dc45-32e0-41fb-86be-f354247094be` recorded as
+  `manual ready`.
+- Clicking `Save mod discussion draft` returned
+  `Mod Discussion draft receipt saved. No Reddit message was sent.`
+- The UI displayed delivery receipt
+  `delivery-615df3a3-5dfc-422a-a474-293fa1312c5b` recorded as `skipped`.
+- The Prove tab retained the safety note that manual copy is the supported path
+  and Mod Discussion delivery is unverified unless runtime delivery is
+  explicitly proven and enabled.
+
+Decision:
+
+- W25 delivery receipt persistence may now be described as runtime-verified for
+  manual-ready receipts and skipped Mod Discussion draft receipts in this
+  desktop Reddit Devvit WebView playtest path.
+- Live Mod Discussion sending remains unverified and disabled. No Reddit
+  message was sent during this proof.

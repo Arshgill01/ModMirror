@@ -321,6 +321,30 @@ Verified in Reddit Devvit WebView:
 - The recent incidents list changed from `raid - active` to `raid - ended`.
 - No Reddit moderation action was executed during this proof.
 
+## Case Packet Delivery Receipt Proof
+
+Validated on Devvit playtest `v0.0.1.94` in the fullscreen Reddit-hosted
+Devvit WebView.
+
+Screenshots:
+
+- `output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+- `output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+
+Verified in Reddit Devvit WebView:
+
+- Prove generated a Case Packet from latest action
+  `action-b10aa953-9338-4932-82de-caaa6aeaa29a` and receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1`.
+- Clicking `Save manual receipt` persisted delivery receipt
+  `delivery-df85dc45-32e0-41fb-86be-f354247094be` with status
+  `manual ready`.
+- Clicking `Save mod discussion draft` persisted delivery receipt
+  `delivery-615df3a3-5dfc-422a-a474-293fa1312c5b` with status `skipped`.
+- The UI confirmed `Mod Discussion draft receipt saved. No Reddit message was sent.`
+- The supported path remains manual Markdown copy. Live Mod Discussion delivery
+  remains disabled and unverified.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -359,3 +383,8 @@ Verified in Reddit Devvit WebView:
 - `screencapture -x output/runtime-proof/post34-v94-incident-mode-start.png`
 - `screencapture -x output/runtime-proof/post34-v94-incident-receipt-tag.png`
 - `screencapture -x output/runtime-proof/post34-v94-incident-report.png`
+- `npm test -- src/server/services/teamDelivery.test.ts src/shared/casePacketDelivery.test.ts src/server/services/privacyRetention.test.ts`
+- Computer Use Zen Case Packet delivery receipt interaction for the
+  `v0.0.1.94` proof.
+- `screencapture -x output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+- `screencapture -x output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`

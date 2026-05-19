@@ -257,6 +257,25 @@ Post-W34 Incident Mode runtime proof:
   `0` overrides, `0` successes, `0` failures, and `1` skipped execution.
 - No Reddit moderation action was executed during this proof.
 
+Post-W34 Case Packet delivery receipt runtime proof:
+
+- Devvit CLI playtest reported `v0.0.1.94`.
+- Computer Use drove the Prove UI in the fullscreen Reddit-hosted Devvit
+  WebView as signed-in moderator `u/BrightyBrainiac`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+  - `output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+- Prove generated a Case Packet from latest action
+  `action-b10aa953-9338-4932-82de-caaa6aeaa29a` and receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1`.
+- `Save manual receipt` persisted delivery receipt
+  `delivery-df85dc45-32e0-41fb-86be-f354247094be` with status
+  `manual ready`.
+- `Save mod discussion draft` persisted delivery receipt
+  `delivery-615df3a3-5dfc-422a-a474-293fa1312c5b` with status `skipped`.
+- The UI confirmed no Reddit message was sent. Live Mod Discussion delivery
+  remains disabled and unverified.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
@@ -349,6 +368,14 @@ Post-W34 Incident Mode runtime validation passed:
 - `screencapture -x output/runtime-proof/post34-v94-incident-mode-start.png`
 - `screencapture -x output/runtime-proof/post34-v94-incident-receipt-tag.png`
 - `screencapture -x output/runtime-proof/post34-v94-incident-report.png`
+
+Post-W34 Case Packet delivery receipt runtime validation passed:
+
+- `npm test -- src/server/services/teamDelivery.test.ts src/shared/casePacketDelivery.test.ts src/server/services/privacyRetention.test.ts`
+- Computer Use Zen Case Packet delivery receipt interaction on Reddit Devvit
+  WebView
+- `screencapture -x output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
+- `screencapture -x output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
 
 ## Next Engineering Risks
 
