@@ -133,48 +133,83 @@ export async function runRedisSortedSetSmoke(
 ): Promise<RedisSortedSetSmokeResult> {
   const key = redisKeys.smokeSortedSet(subreddit);
   const checkedAt = new Date().toISOString();
-  const members: Array<{ id: string; score: number; ordinal: number }> = [
-    { id: 'oldest', score: 1000, ordinal: 1 },
-    { id: 'middle', score: 2000, ordinal: 2 },
-    { id: 'newest', score: 3000, ordinal: 3 },
+  const members = [
+    {
+      id: 'oldest',
+      score: 1000,
+      member: serializeJson({
+        id: 'oldest',
+        subreddit,
+        checkedAt,
+        ordinal: 1,
+      } satisfies RedisSortedSetSmokeMember),
+    },
+    {
+      id: 'middle',
+      score: 2000,
+      member: serializeJson({
+        id: 'middle',
+        subreddit,
+        checkedAt,
+        ordinal: 2,
+      } satisfies RedisSortedSetSmokeMember),
+    },
+    {
+      id: 'newest',
+      score: 3000,
+      member: serializeJson({
+        id: 'newest',
+        subreddit,
+        checkedAt,
+        ordinal: 3,
+      } satisfies RedisSortedSetSmokeMember),
+    },
   ];
 
   await deleteKeys(key);
-  const rows = await (async () => {
+  const result = await (async () => {
     try {
-      await Promise.all(
-        members.map((member) =>
-          redis.zAdd(key, {
-            score: member.score,
-            member: serializeJson({
-              id: member.id,
-              subreddit,
-              checkedAt,
-              ordinal: member.ordinal,
-            } satisfies RedisSortedSetSmokeMember),
-          })
-        )
+      const addCount = await redis.zAdd(
+        key,
+        ...members.map(({ member, score }) => ({ member, score }))
       );
-
-      return redis.zRange(key, 0, members.length - 1, {
+      const cardinality = await redis.zCard(key);
+      const scoreEntries = await Promise.all(
+        members.map(async ({ id, member }) => [id, await redis.zScore(key, member)])
+      );
+      const rows = await redis.zRange(key, 0, members.length - 1, {
         by: 'rank',
         reverse: true,
       });
+
+      return {
+        addCount,
+        cardinality,
+        rows,
+        scoreChecks: Object.fromEntries(scoreEntries) as Record<
+          string,
+          number | undefined
+        >,
+      };
     } finally {
       await deleteKeys(key);
     }
   })();
 
   const expectedOrder = ['newest', 'middle', 'oldest'];
-  const observedOrder = rows.map((row) => {
+  const observedOrder = result.rows.map((row) => {
     const parsed = parseJson<RedisSortedSetSmokeMember>(row.member);
     return parsed?.id ?? row.member;
   });
 
   return {
     key,
+    addCount: result.addCount,
+    cardinality: result.cardinality,
     expectedOrder,
     observedOrder,
+    observedScores: result.rows.map((row) => row.score),
+    scoreChecks: result.scoreChecks,
     ok: expectedOrder.join('|') === observedOrder.join('|'),
   };
 }

@@ -5548,9 +5548,10 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     const redisResult = result as Partial<RedisSortedSetSmokeResult>;
     const expected = redisResult.expectedOrder?.join(', ') ?? 'unknown';
     const observed = redisResult.observedOrder?.join(', ') ?? 'unknown';
+    const rowCount = redisResult.observedOrder?.length ?? 0;
     return redisResult.ok
       ? `Redis sorted-set smoke passed: observed ${observed}.`
-      : `Redis sorted-set smoke order mismatch: expected ${expected}, observed ${observed}.`;
+      : `Redis sorted-set smoke order mismatch: expected ${expected}, observed ${observed}. Added ${redisResult.addCount ?? 'unknown'}, cardinality ${redisResult.cardinality ?? 'unknown'}, rows ${rowCount}.`;
   }
 
   if (check === 'access') {

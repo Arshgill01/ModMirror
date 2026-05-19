@@ -84,8 +84,10 @@ fully complete because these requirements remain incomplete or weakly verified:
   uploaded build can use external AI.
 - Actual retention deletion is not runtime-proven; only dry-run controls are.
 - Redis sorted-set ordering has a locally tested safe diagnostic route, but
-  `/api/smoke/redis-zset` has not been run in Devvit runtime and does not
-  prove practical storage limits.
+  Devvit playtest `v0.0.1.131` returned `ok: false` with an empty observed
+  order. The route now returns add count, cardinality, row count, observed
+  scores, and score checks for the next diagnosis. Practical storage limits
+  also remain unproven.
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
   rejected, not that same-subreddit queue reads return live Reddit items.

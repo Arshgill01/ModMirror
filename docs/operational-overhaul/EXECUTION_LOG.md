@@ -1074,3 +1074,42 @@ Validation:
 
 Runtime playtest was not run. The new route is a proof surface for a future
 Devvit runtime check, not runtime evidence by itself.
+
+### 2026-05-20 - Post-W34 Redis Sorted-Set Runtime Failure
+
+Ran the Redis sorted-set diagnostic in Devvit playtest and recorded the failure
+instead of closing the capability:
+
+- Preflight passed: `npx devvit whoami` reported `u/BrightyBrainiac`,
+  `npm run type-check`, `npm run lint`, `npm run build`, and `npm test`.
+- `npm run dev` reached Playtest ready for `r/modmirror_dev` on `v0.0.1.131`.
+- Reddit desktop WebView Settings `Run Redis ZSET` returned:
+  `Redis sorted-set smoke order mismatch: expected newest, middle, oldest,
+  observed .`
+- The runtime capability matrix moved `redis-zset-ordering` to failed, with
+  `1 type-only, 1 demo-only, 1 failed` shown in Settings.
+- No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
+  jobs, external AI calls, or retention deletion were run.
+
+Follow-up implementation:
+
+- Switched the smoke diagnostic to Devvit's documented variadic `zAdd` call.
+- Added add count, cardinality, row count, observed scores, and per-member
+  score checks to the `/api/smoke/redis-zset` response and Settings mismatch
+  summary.
+- Kept sorted-set ordering and practical storage limits open pending another
+  Devvit runtime run.
+
+Validation:
+
+- `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts`
+  - passed, 2 files and 9 tests.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 212 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
+Runtime proof status: failed for `v0.0.1.131`; the next run should use the
+expanded diagnostic response to identify whether Devvit Redis writes,
+cardinality, score lookup, or reverse-rank reads differ from local mocks.

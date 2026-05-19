@@ -162,6 +162,30 @@ Latest post-W34 validation after the Redis sorted-set diagnostic:
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
+Latest Redis sorted-set runtime follow-up:
+
+- `npx devvit whoami` - passed as `u/BrightyBrainiac`.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm run build` - passed.
+- `npm test` - passed, 47 files and 212 tests.
+- `npm run dev` - reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on
+  `v0.0.1.131`.
+- Reddit desktop WebView Settings `Run Redis ZSET` - failed as useful runtime
+  evidence: `Redis sorted-set smoke order mismatch: expected newest, middle,
+  oldest, observed .` The capability matrix recorded `redis-zset-ordering` as
+  failed.
+- Follow-up local diagnostic enhancement:
+  `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts`
+  passed, 2 files and 9 tests.
+- Follow-up local diagnostic enhancement: `npm run type-check` passed.
+- Follow-up local diagnostic enhancement: `npm run lint` passed.
+- Follow-up local diagnostic enhancement: `npm test` passed, 47 files and
+  212 tests.
+- Follow-up local diagnostic enhancement: `npm run build` passed.
+- Follow-up local diagnostic enhancement: `git diff --check` passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -192,8 +216,10 @@ Latest post-W34 validation after the Redis sorted-set diagnostic:
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
 - Native mobile, Mod Discussion delivery, scheduler, native Mod Notes, and
   external AI are unverified/disabled.
-- Redis sorted-set ordering now has a safe local diagnostic endpoint, but
-  `/api/smoke/redis-zset` has not been run in Devvit runtime and practical
+- Redis sorted-set ordering now has a safe local diagnostic endpoint, and
+  Devvit playtest `v0.0.1.131` proved the current runtime path fails with an
+  empty observed order. The route now exposes add count, cardinality, row
+  count, observed scores, and score checks for the next playtest. Practical
   Redis storage limits remain unverified.
 - `npm install` continues to report inherited audit findings; W14 did not
   change dependency versions.

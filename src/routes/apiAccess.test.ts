@@ -37,12 +37,21 @@ vi.mock('@devvit/web/server', () => ({
       }
       return Promise.resolve();
     }),
-    zAdd: vi.fn((key: string, value: { member: string; score: number }) => {
+    zAdd: vi.fn((key: string, ...values: { member: string; score: number }[]) => {
       const rows = devvitState.sortedSets.get(key) ?? [];
-      rows.push(value);
+      rows.push(...values);
       devvitState.sortedSets.set(key, rows);
-      return Promise.resolve(1);
+      return Promise.resolve(values.length);
     }),
+    zCard: vi.fn((key: string) =>
+      Promise.resolve(devvitState.sortedSets.get(key)?.length ?? 0)
+    ),
+    zScore: vi.fn((key: string, member: string) =>
+      Promise.resolve(
+        devvitState.sortedSets.get(key)?.find((row) => row.member === member)
+          ?.score
+      )
+    ),
     zRange: vi.fn(
       (
         key: string,
@@ -260,15 +269,27 @@ describe('api moderator access guard', () => {
     });
     const payload = (await response.json()) as {
       ok: boolean;
+      addCount: number;
+      cardinality: number;
       expectedOrder: string[];
       observedOrder: string[];
+      observedScores: number[];
+      scoreChecks: Record<string, number | undefined>;
     };
 
     expect(response.status).toBe(200);
     expect(payload).toMatchObject({
       ok: true,
+      addCount: 3,
+      cardinality: 3,
       expectedOrder: ['newest', 'middle', 'oldest'],
       observedOrder: ['newest', 'middle', 'oldest'],
+      observedScores: [3000, 2000, 1000],
+      scoreChecks: {
+        newest: 3000,
+        middle: 2000,
+        oldest: 1000,
+      },
     });
 
     const matrixResponse = await api.request(
