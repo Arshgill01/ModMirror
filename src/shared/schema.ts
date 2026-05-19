@@ -2089,7 +2089,11 @@ export interface RedisSmokeResult {
 
 export interface RedisSortedSetSmokeResult {
   key: string;
+  addCount: number;
+  cardinality: number;
   expectedOrder: string[];
   observedOrder: string[];
+  observedScores: number[];
+  scoreChecks: Record<string, number | undefined>;
   ok: boolean;
 }

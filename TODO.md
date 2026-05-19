@@ -420,8 +420,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
 - [x] Locally test reverse sorted-set ordering for
       `modmirror:{subreddit}:overrides`.
-- [ ] Runtime-confirm Redis sorted-set ordering for
-      `modmirror:{subreddit}:overrides`.
+- [x] Runtime-run the Redis sorted-set diagnostic in Devvit playtest
+      `v0.0.1.131` and record the failed empty observed-order result.
+- [ ] Diagnose why Devvit Redis sorted-set ordering returned an empty
+      observed order after local sorted-set tests passed.
 - [x] Add local caps for scan metadata plus action and override audit indexes.
 - [ ] Runtime-confirm practical Redis storage limits for scan metadata and
       audit events before storing larger live datasets.
@@ -649,9 +651,12 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       routes.
 - [x] Add a safe Redis sorted-set ordering diagnostic route and Settings
       control for future Devvit runtime proof.
-- [ ] Runtime-run `/api/smoke/redis-zset` in Devvit playtest and verify
-      `observedOrder` matches `expectedOrder` before closing the sorted-set
-      ordering/storage follow-up.
+- [x] Runtime-run `/api/smoke/redis-zset` in Devvit playtest `v0.0.1.131`
+      and record that it returned `ok: false` with an empty `observedOrder`.
+- [ ] Rerun `/api/smoke/redis-zset` after the diagnostic reports add count,
+      cardinality, row count, observed scores, and score checks; close the
+      sorted-set ordering follow-up only if `observedOrder` matches
+      `expectedOrder`.
 
 ## Expansion Wave 34 Follow-up
 

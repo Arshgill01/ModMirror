@@ -19,12 +19,21 @@ vi.mock('@devvit/web/server', () => ({
       }
       return Promise.resolve();
     }),
-    zAdd: vi.fn((key: string, value: { member: string; score: number }) => {
+    zAdd: vi.fn((key: string, ...values: { member: string; score: number }[]) => {
       const rows = redisState.sortedSets.get(key) ?? [];
-      rows.push(value);
+      rows.push(...values);
       redisState.sortedSets.set(key, rows);
-      return Promise.resolve(1);
+      return Promise.resolve(values.length);
     }),
+    zCard: vi.fn((key: string) =>
+      Promise.resolve(redisState.sortedSets.get(key)?.length ?? 0)
+    ),
+    zScore: vi.fn((key: string, member: string) =>
+      Promise.resolve(
+        redisState.sortedSets.get(key)?.find((row) => row.member === member)
+          ?.score
+      )
+    ),
     zRange: vi.fn(
       (
         key: string,
@@ -67,8 +76,16 @@ describe('redis service diagnostics', () => {
 
     expect(result).toEqual({
       key: 'modmirror:ExampleLearning:smoke:redis-zset-ordering',
+      addCount: 3,
+      cardinality: 3,
       expectedOrder: ['newest', 'middle', 'oldest'],
       observedOrder: ['newest', 'middle', 'oldest'],
+      observedScores: [3000, 2000, 1000],
+      scoreChecks: {
+        newest: 3000,
+        middle: 2000,
+        oldest: 1000,
+      },
       ok: true,
     });
     expect(redisState.sortedSets.has(redisKeys.smokeSortedSet('ExampleLearning'))).toBe(
