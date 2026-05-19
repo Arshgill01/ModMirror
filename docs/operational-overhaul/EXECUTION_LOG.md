@@ -1268,3 +1268,20 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. The change only aligns
 the legacy verification matrix with already recorded playtest evidence.
+
+### 2026-05-20 - Retention Destructive Cleanup Test Plan
+
+- Added `docs/operational-overhaul/RETENTION_DESTRUCTIVE_TEST_PLAN.md` as the
+  required plan before any real operational-record retention deletion proof.
+- The plan requires explicit user approval, marked throwaway records, pre/post
+  inventory export, a dry-run-only gate, exact-count destructive deletion, and
+  policy-history preservation checks.
+- Updated `TODO.md` and `RESEARCH.md` to distinguish the now-planned test gate
+  from the still-unverified real operational-record deletion runtime proof.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no destructive cleanup was run. Real operational-record
+deletion remains unverified until the plan is explicitly approved and executed.

@@ -1305,6 +1305,9 @@ Decision:
   playtest path.
 - A synthetic expired-data cleanup diagnostic is runtime-verified on Devvit
   playtest `v0.0.1.138` through `/api/smoke/retention-cleanup`.
+- `docs/operational-overhaul/RETENTION_DESTRUCTIVE_TEST_PLAN.md` defines the
+  required controlled destructive cleanup test gate for real operational
+  records.
 - Actual expired-data cleanup/deletion against real operational records remains
   unverified and should require a separate controlled destructive cleanup test.
 

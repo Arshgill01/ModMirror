@@ -614,6 +614,8 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       cleanup, and verifies detail keys plus index references are gone.
 - [x] Runtime-verify the synthetic retention cleanup smoke route in Devvit
       playtest.
+- [x] Add a controlled destructive cleanup test plan before attempting real
+      operational-record deletion proof.
 - [ ] Runtime-verify actual expired-data cleanup only after a controlled
       destructive cleanup test is planned.
 - [ ] Add a scheduled cleanup task only after scheduler behavior is
