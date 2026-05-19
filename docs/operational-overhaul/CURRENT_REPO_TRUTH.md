@@ -1,7 +1,7 @@
 # Current Repo Truth
 
 Created: 2026-05-18
-Updated: 2026-05-19
+Updated: 2026-05-20
 
 ## Product Truth
 
@@ -53,10 +53,14 @@ It currently supports:
   Evidence Board from it.
 - W10 AI advisory spike contracts, capability endpoints, Settings labels, and
   mocked-provider tests. The feature remains disabled-by-default and cannot
-  decide or execute enforcement.
+  decide or execute enforcement. `AI_PRIVACY_READINESS.md` now records the
+  provider terms, privacy notice, data-minimization, secret-handling, HTTP
+  permission, runtime failure, and retention gates required before any external
+  AI fetch.
 - W11 team-delivery capability state, preview/confirm APIs, manual/skipped
   delivery receipts, and mocked adapter tests. It stores receipts but does not
-  send Reddit messages by default.
+  send Reddit messages by default. Scheduler confirmations are locally guarded
+  as skipped because no scheduler task is registered.
 - Manual digest generation and digest history.
 - Productized dashboard UI with runtime Settings.
 - Unit tests for core shared and server service logic.
@@ -76,9 +80,13 @@ It does not yet support:
 - Runtime-verified public comment, modmail, scheduler, or native Mod Notes
   delivery.
 - Runtime-verified external AI calls or Devvit secret retrieval for AI
-  providers. W10 is docs/type-supported and locally tested with mocks only.
+  providers. W10 is docs/type-supported and locally tested with mocks only, and
+  the AI privacy readiness gate is documentation-only until a provider,
+  permissions, secrets, and runtime proof exist.
 - Registered scheduler tasks for ModMirror delivery. W11 marks scheduler
-  delivery unavailable because no scheduler task exists in `devvit.json`.
+  delivery unavailable because no scheduler task exists in `devvit.json`; local
+  tests prove scheduler confirmations stay skipped instead of using the Mod
+  Discussion adapter.
 
 ## Remaining Smoking-Gun Code Facts
 
@@ -117,11 +125,15 @@ It does not yet support:
 - W10 `src/server/services/aiAdvisory.ts` returns disabled fallback responses
   unless an explicit provider is injected and enabled. It requires
   deterministic evidence IDs and rejects provider output that does not cite
-  known evidence.
+  known evidence. `docs/operational-overhaul/AI_PRIVACY_READINESS.md` blocks
+  any external AI build until terms/privacy, input minimization, secret storage,
+  HTTP permissions, runtime failures, and retention behavior are reviewed.
 - W11 `src/server/services/teamDelivery.ts` builds digest/policy proposal
   delivery previews and stores delivery receipts. Mod discussion sends require
   explicit confirmation, runtime-proof flags, and an injected adapter; product
   routes do not inject an adapter, so default confirmations are skipped.
+  Scheduler confirmations are always skipped before adapter dispatch because no
+  runtime scheduler task is registered.
 - W12 reframed the client IA around Act, Scan, Agree, Review, Prove, and
   Settings. Apply Policy and the receipt ledger now live in Act; policy
   lifecycle records live in Agree; case packets, digest, and before-after

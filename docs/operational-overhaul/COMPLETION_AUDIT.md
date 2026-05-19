@@ -46,13 +46,13 @@ Concrete success criteria:
 | Full scan persistence and history | W05/W06/W07 reports and post-W34 live scan/replay/correction proof record persisted scan-derived flows; deep pagination remains unverified. | Partially satisfied |
 | Policy agreement lifecycle | W08 reports and post-W34 policy ratification proof record proposal/review/threshold blocking. Distinct multi-moderator proof remains open. | Partially satisfied |
 | Case Packets v2 | W09 reports and post-W34 Evidence Board proof record receipt-backed official packet generation. | Satisfied for receipt-backed path |
-| AI advisory spike | W10 reports record disabled-by-default advisory contracts and mocked tests; no external AI runtime call made. | Satisfied as disabled spike |
-| Team delivery spike | W11 reports and post-W34 proof record manual/skipped delivery receipts; real Mod Discussion send remains disabled. | Partially satisfied |
+| AI advisory spike | W10 reports record disabled-by-default advisory contracts and mocked tests; PR #31 added `AI_PRIVACY_READINESS.md` as the terms/privacy/data-minimization gate before any external AI fetch. No external AI runtime call was made. | Satisfied as disabled spike |
+| Team delivery spike | W11 reports and post-W34 proof record manual/skipped delivery receipts; PR #32 locally guards scheduler confirmations as skipped so they cannot route through the Mod Discussion adapter. Real Mod Discussion send and scheduler jobs remain disabled. | Partially satisfied |
 | Operational IA | W12/W13 and post-W34 UI proof record Act / Scan / Agree / Review / Prove / Settings in Reddit-hosted WebView. | Satisfied for desktop WebView |
 | Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. The Settings manual runtime event recorder is route-tested and statically verified as a bookkeeping surface for safe capability observations. | Satisfied |
 | Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. | Satisfied for Devvit Web request context |
 | Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
-| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest policy delivery guard follow-up passed the same broad gates with 45 files and 204 tests. | Satisfied |
+| Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`; the latest scheduler delivery guard follow-up passed the same broad gates with 46 files and 208 tests. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
 ## Not Complete Enough To Mark The Larger Goal Done
@@ -76,7 +76,12 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Policy message-delivery defaults are locally guarded to `log_only`, but
   public comment ordering, identity, and sticky behavior are not runtime-proven.
 - Native Mod Notes writes are type-supported but not runtime-proven.
-- Mod Discussion delivery and scheduler behavior are not runtime-proven.
+- Mod Discussion delivery and scheduler behavior are not runtime-proven. PR #32
+  locally proves scheduler confirmations are skipped instead of routed through
+  the Mod Discussion adapter, but no scheduler task has been registered or run.
+- External AI fetch and Devvit secret retrieval are not runtime-proven. PR #31
+  added the required terms/privacy/data-minimization readiness gate before any
+  uploaded build can use external AI.
 - Actual retention deletion is not runtime-proven; only dry-run controls are.
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
