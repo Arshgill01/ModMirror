@@ -623,10 +623,12 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add a local synthetic evaluation command.
 - [x] Cover replay, drift, policy-impact, and safety-label expectations in
       tests.
-- [ ] Update the golden manifest intentionally when replay or analytics
-      semantics change.
-- [ ] Add future scenario coverage for multi-community comparison after W34
-      integration decides the cross-community contract.
+- [x] Update the golden manifest intentionally when replay, analytics, or
+      synthetic safeguard semantics change. Post-W34 added a
+      foreign-subreddit action safeguard to the manifest.
+- [x] Add future scenario coverage for multi-community comparison after W34
+      integration decides the cross-community contract. Coverage now reflects
+      the W29 isolation-first contract rather than cross-community analytics.
 
 ## Expansion Wave 33 Follow-up
 

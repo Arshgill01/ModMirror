@@ -141,6 +141,17 @@ Latest post-W34 validation after the team delivery scheduler guard:
 - `npm run build` - passed.
 - `git diff --check` - passed.
 
+Latest post-W34 validation after the synthetic multi-community fixture:
+
+- `npm test -- src/server/services/syntheticEval.test.ts` - passed, 1 file and
+  6 tests.
+- `node scripts/synthetic-eval.mjs` - passed.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 46 files and 209 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment

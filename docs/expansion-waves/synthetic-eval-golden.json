@@ -1,7 +1,7 @@
 {
   "schemaVersion": "modmirror.synthetic-eval.v1",
   "generatedAt": "2026-05-18T18:00:00.000Z",
-  "scenarioCount": 8,
+  "scenarioCount": 9,
   "scenarios": [
     {
       "id": "stable_rule",
@@ -34,7 +34,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -68,7 +69,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -102,7 +104,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -136,7 +139,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 1
+        "syntheticScanWarningCount": 1,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -170,7 +174,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -204,7 +209,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -238,7 +244,8 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 0,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
       }
     },
     {
@@ -272,7 +279,43 @@
       "safeguards": {
         "liveReceiptAttempts": 0,
         "incidentReceiptCount": 4,
-        "syntheticScanWarningCount": 2
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 0
+      }
+    },
+    {
+      "id": "multi_community_isolation",
+      "actionCount": 7,
+      "scanCount": 2,
+      "receiptCount": 0,
+      "overrideCount": 0,
+      "replay": {
+        "totalActionsEvaluated": 4,
+        "matchedPolicyCount": 4,
+        "changedRecommendationCount": 0,
+        "skippedActionCount": 0
+      },
+      "analytics": {
+        "dataQuality": "limited",
+        "ruleTrendStatusByRule": {
+          "low-effort-questions-2": "regressing"
+        },
+        "policyImpactStatusByRule": {
+          "low-effort-questions-2": "insufficient_data"
+        }
+      },
+      "drift": {
+        "candidateCount": 1,
+        "latestDistinctActions": 2,
+        "latestTotalActions": 4,
+        "smallSubredditMeetsThreshold": false,
+        "unmatchedCount": 0
+      },
+      "safeguards": {
+        "liveReceiptAttempts": 0,
+        "incidentReceiptCount": 0,
+        "syntheticScanWarningCount": 2,
+        "foreignSubredditActionCount": 3
       }
     }
   ]
