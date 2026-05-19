@@ -380,6 +380,28 @@ Observed in Reddit Devvit WebView:
 - W17 remains open because this proves safe fallback behavior, not live Reddit
   modqueue read capability.
 
+## Review Health And Impact Proof
+
+Validated on Devvit playtest `v0.0.1.94` in the Reddit-hosted Devvit WebView.
+
+Screenshot:
+
+- `output/runtime-proof/post34-v94-review-health-impact.png`
+
+Verified in Reddit Devvit WebView:
+
+- Review loaded Governance overview, Community Health, Consistency Over Time,
+  Policy health cards, Override inbox, and Policy Versions from runtime state.
+- Community Health showed `2` tracked actions, `0` unresolved overrides,
+  aggregate guardrails, small-sample labeling, and no per-moderator leaderboard
+  fields.
+- Runtime Smoke Policy showed `100%` consistency across `2` tracked actions and
+  remained `Insufficient Data` because the health threshold is `5` actions.
+- Policy Impact loaded stored summaries for Runtime Smoke Policy and Spam and
+  repeated promotion. Runtime Smoke Policy showed source `stored`, before
+  receipts `0`, after receipts `2`, before `0%`, after `100%`, and
+  `Insufficient Data` due the before-adoption threshold.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -431,3 +453,7 @@ Observed in Reddit Devvit WebView:
 - Computer Use Zen Operational Queue refresh for the `v0.0.1.94` fallback
   observation.
 - `screencapture -x output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+- `npm test -- src/server/services/communityHealth.test.ts src/server/services/policyImpact.test.ts src/server/services/policyHealth.test.ts`
+- Computer Use Zen Review health and impact inspection for the `v0.0.1.94`
+  proof.
+- `screencapture -x output/runtime-proof/post34-v94-review-health-impact.png`

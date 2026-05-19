@@ -302,6 +302,20 @@ Post-W34 modqueue runtime fallback observation:
 - W17 remains open because this did not prove Reddit modqueue adapter runtime
   behavior.
 
+Post-W34 Review health and impact runtime proof:
+
+- Devvit CLI playtest reported `v0.0.1.94`.
+- Computer Use opened the Review tab in the Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-review-health-impact.png`
+- Community Health loaded aggregate runtime state with `2` tracked actions,
+  `0` unresolved overrides, `2` case-ready receipts, small-sample labels, and
+  no per-moderator leaderboard fields.
+- Policy Impact loaded stored summaries for Runtime Smoke Policy and Spam and
+  repeated promotion. Runtime Smoke Policy showed source `stored`, before
+  receipts `0`, after receipts `2`, before `0%`, after `100%`, and
+  `Insufficient Data` due the before-adoption threshold.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
@@ -415,6 +429,12 @@ Post-W34 modqueue fallback validation passed, with W17 still open:
 - `npm test -- src/server/services/modqueueTriage.test.ts`
 - Computer Use Zen Operational Queue refresh on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+
+Post-W34 Review health and impact runtime validation passed:
+
+- `npm test -- src/server/services/communityHealth.test.ts src/server/services/policyImpact.test.ts src/server/services/policyHealth.test.ts`
+- Computer Use Zen Review health and impact inspection on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v94-review-health-impact.png`
 
 ## Next Engineering Risks
 

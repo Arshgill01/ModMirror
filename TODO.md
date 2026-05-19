@@ -12,9 +12,9 @@ Apply Policy menu target capture, log-only receipt persistence, receipt-backed
 content snapshots, receipt-backed Case Packet generation, Evidence Board
 create/list/status persistence, portable config export/import, privacy
 retention inventory/dry-run controls, Incident Mode receipt tagging/reporting,
-response template preview receipt persistence, and manual/skipped Case Packet
-delivery receipt persistence are now runtime-verified on desktop Reddit
-playtest. Live
+response template preview receipt persistence, community health aggregate
+review, policy impact summaries, and manual/skipped Case Packet delivery
+receipt persistence are now runtime-verified on desktop Reddit playtest. Live
 Reddit moderation execution, actual retention deletion, Mod Discussion
 delivery, scheduler, native Mod Notes, live modqueue reads, external AI,
 non-mod access, and native Reddit mobile app behavior remain unverified or
@@ -131,7 +131,7 @@ disabled.
 - [x] Add policy-detail before/after UI.
 - [x] Add demo-labeled impact fallback.
 - [x] Add tests for thresholds, insufficient data, and demo labeling.
-- [ ] Runtime-verify policy impact route through Devvit Web/Redis playtest.
+- [x] Runtime-verify policy impact route through Devvit Web/Redis playtest.
 
 ## Expansion Wave 21 Checklist
 
@@ -143,7 +143,7 @@ disabled.
 - [x] Add `/api/community-health`.
 - [x] Surface community health on the Review page.
 - [x] Add empty/small-community tests.
-- [ ] Runtime-verify community health route through Devvit Web/Redis playtest.
+- [x] Runtime-verify community health route through Devvit Web/Redis playtest.
 
 ## Expansion Wave 20 Checklist
 

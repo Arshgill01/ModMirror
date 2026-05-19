@@ -69,8 +69,8 @@ Updated by: Codex
 | Verified locally | W18 attribution calibration can apply moderator corrections to future scan attribution. | `src/server/services/attributionCalibration.ts` stores corrections by subreddit/action ID, `mirrorScan.ts` loads corrections before attribution, and tests cover persistence plus correction application. Redis runtime remains unverified. |
 | Verified locally | W19 policy ratification enforces reviewer approval thresholds before non-quick adoption. | `src/server/services/policyRatification.ts` summarizes latest reviewer votes, `policies.ts` stores proposal notes/settings and blocks adoption until approval thresholds are met, and policy tests cover threshold success/failure plus disabled quick adoption. Redis runtime remains unverified. |
 | Verified locally | W20 replay sandbox can simulate proposed policy outcomes without live Reddit calls or receipt mutation. | `src/server/services/replaySandbox.ts` runs read-only policy replay over supplied or scan-derived attributed actions, `/api/policies/:id/replay` loads stored scan actions when given `scanId`, and replay tests cover changed recommendations, skipped rules, and input immutability. Redis/API runtime remains unverified. |
-| Verified locally | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Tests cover empty and small-community states. Redis/API runtime remains unverified. |
-| Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
+| Runtime verified | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Post-W34 Devvit playtest verified the Review-page community health route in the Reddit-hosted WebView with small-sample labels and aggregate guardrails. |
+| Runtime verified | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Post-W34 Devvit playtest verified stored policy impact summaries on Review in the Reddit-hosted WebView; the sample remained below before-adoption threshold. |
 | Runtime verified | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts persist the preview. Post-W34 Devvit playtest verified the response preview gate and receipt-ledger persisted draft count in the Reddit-hosted WebView. Delivery remains disabled. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Runtime verified / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Post-W34 Devvit playtest verified manual-ready and skipped Mod Discussion draft receipt persistence in the Reddit-hosted WebView. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
@@ -1427,3 +1427,45 @@ Decision:
 - Runtime verification requires safe queue content that returns
   `source: reddit_modqueue` or an exact Devvit permission/runtime failure from
   the Reddit adapter path.
+
+## Post-W34 Review Health And Impact Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/server/services/communityHealth.test.ts src/server/services/policyImpact.test.ts src/server/services/policyHealth.test.ts`
+  passed before documenting this proof.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Computer Use opened the Review tab in the Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-review-health-impact.png`
+
+Verified Review behavior:
+
+- Governance overview loaded from runtime state with `1` active policy,
+  `0` stable policies, `0` policies needing review, and `0` unresolved
+  overrides.
+- Community Health reported small-sample status with `2` tracked actions,
+  `0` unresolved overrides, churn `4`, drift `insufficient data`, and
+  `2` case-ready receipts.
+- The health panel showed the aggregate guardrails:
+  no per-moderator leaderboard fields, repeat-offense signals aggregated by
+  rule, and small-sample labels before health claims.
+- Runtime Smoke Policy showed `100%` consistency across `2` tracked actions and
+  stayed labeled `Insufficient Data` because the health threshold is `5`
+  actions.
+- Policy Versions displayed stored version history for Runtime Smoke Policy and
+  the imported Spam and repeated promotion draft.
+- Policy Impact loaded stored summaries: Runtime Smoke Policy had source
+  `stored`, before receipts `0`, after receipts `2`, before `0%`, after
+  `100%`, and remained `Insufficient Data` because before-adoption receipts are
+  below threshold.
+
+Decision:
+
+- W21 community health route and W22 policy impact route may now be described
+  as runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- The proof confirms small-sample/insufficient-data labeling, not a mature
+  before/after impact claim.
