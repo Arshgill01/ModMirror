@@ -9,10 +9,11 @@ safe Devvit WebView runtime evidence before more feature surface is expanded.
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menu target capture, log-only receipt persistence, receipt-backed
-content snapshots, and Evidence Board create/list/status persistence are now
-runtime-verified on desktop Reddit playtest. Live Reddit moderation execution,
-Mod Discussion delivery, scheduler, native Mod Notes, external AI, non-mod
-access, and native Reddit mobile app behavior remain unverified or disabled.
+content snapshots, receipt-backed Case Packet generation, and Evidence Board
+create/list/status persistence are now runtime-verified on desktop Reddit
+playtest. Live Reddit moderation execution, Mod Discussion delivery, scheduler,
+native Mod Notes, external AI, non-mod access, and native Reddit mobile app
+behavior remain unverified or disabled.
 
 ## Expansion Wave 29 Checklist
 

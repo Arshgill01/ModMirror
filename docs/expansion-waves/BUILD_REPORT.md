@@ -181,6 +181,20 @@ Post-W34 Evidence Board runtime proof:
   `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
 - Submitting the note `Runtime evidence-board smoke note.` through the status
   form returned `Evidence board status updated.`
+- Entering `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` into the tracked
+  action/receipt field and clicking `Generate from action` returned
+  `Case packet generated.`
+- The generated packet was an `Official Case Packet` for `r/modmirror_dev`
+  with posture `Policy Consistent`, the same receipt ID, content snapshot
+  status `captured`, verified receipt/content-snapshot/policy-version evidence
+  labels, missing override/comparable labels, Markdown export, and deterministic
+  caveats.
+- Clicking `Open from packet` created
+  `Review case packet case-packet-a7146342-1d4d-4a69-b333-790ad3e9e986`.
+- The Case Packet-origin board showed `3 evidence items`, including the
+  content snapshot and a case-packet summary.
+- Additional screenshot captured:
+  - `output/runtime-proof/post34-v92-case-packet-evidence-board.png`
 - No Reddit moderation action was executed during this proof.
 
 ## Known Gaps
@@ -188,8 +202,8 @@ Post-W34 Evidence Board runtime proof:
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
 - Native Mod Notes, modmail/mod discussion send, scheduler jobs, external AI,
-  native Reddit mobile app behavior, Case Packet-origin evidence boards, and
-  non-mod access blocking remain unverified or disabled.
+  native Reddit mobile app behavior, and non-mod access blocking remain
+  unverified or disabled.
 - W34 did not publish, submit, market, or prepare final demo material.
 
 ## Validation Status
@@ -249,6 +263,9 @@ Post-W34 Evidence Board runtime validation passed:
 - Computer Use Zen Evidence Board creation/status interaction on Reddit Devvit
   WebView
 - `screencapture -x output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`
+- Computer Use Zen Case Packet generation and Case Packet-origin Evidence Board
+  interaction on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v92-case-packet-evidence-board.png`
 
 ## Next Engineering Risks
 

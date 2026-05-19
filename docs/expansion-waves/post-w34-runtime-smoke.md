@@ -224,14 +224,29 @@ Verified in Reddit Devvit WebView:
   `Snapshot captured: Runtime comment target smoke for ModMirror; safe test content.`
 - Submitting the note `Runtime evidence-board smoke note.` through the board
   status form returned `Evidence board status updated.`
+- Entering `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` into the tracked
+  action/receipt field and clicking `Generate from action` returned
+  `Case packet generated.`
+- The generated packet showed:
+  - `Official Case Packet`
+  - subreddit `r/modmirror_dev`
+  - posture `Policy Consistent`
+  - receipt `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`
+  - content snapshot status `captured`
+  - evidence labels for verified receipt, content snapshot, policy version,
+    missing override context, and missing comparables
+  - Markdown export with deterministic caveats
+- Clicking `Open from packet` created
+  `Review case packet case-packet-a7146342-1d4d-4a69-b333-790ad3e9e986`.
+- The Case Packet-origin board showed `3 evidence items`, including the
+  content snapshot and a case-packet summary.
 - No Reddit moderation action was executed during this proof.
 
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
-  Reddit mobile app behavior, Case Packet-origin evidence boards, and non-mod
-  access blocking.
+  Reddit mobile app behavior, and non-mod access blocking.
 
 ## Commands Run
 
@@ -248,3 +263,6 @@ Verified in Reddit Devvit WebView:
 - Computer Use Zen Evidence Board creation/status interaction for the
   `v0.0.1.92` receipt-backed board proof.
 - `screencapture -x output/runtime-proof/post34-v92-evidence-board-receipt-snapshot.png`
+- Computer Use Zen Case Packet generation and Case Packet-origin Evidence Board
+  interaction for the `v0.0.1.92` proof.
+- `screencapture -x output/runtime-proof/post34-v92-case-packet-evidence-board.png`

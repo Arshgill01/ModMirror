@@ -1161,5 +1161,29 @@ Decision:
   runtime-verified for this desktop Reddit Devvit WebView playtest path.
 - W16 receipt-backed content snapshot persistence is runtime-verified for the
   previously captured real comment menu target.
-- This proof does not cover Case Packet-origin evidence boards or native
-  mobile behavior.
+- This proof does not cover native mobile behavior.
+
+Additional Case Packet proof on the same playtest:
+
+- Entering `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` into the tracked
+  action/receipt field and clicking `Generate from action` returned
+  `Case packet generated.`
+- The generated packet was labeled `Official Case Packet` for
+  `r/modmirror_dev`, posture `Policy Consistent`, action
+  `action-4f669df3-18a2-411a-a13d-78a66ec1fdbb`, and receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`.
+- The packet's evidence labels included:
+  - `Action receipt: verified receipt`
+  - `Content snapshot: verified receipt`
+  - `Policy version: verified modmirror action`
+  - `Override context: missing`
+  - `Comparable cases: missing`
+- The Markdown export included `Content snapshot: captured` and retained the
+  deterministic caveats.
+- Clicking `Open from packet` created a second Evidence Board:
+  `Review case packet case-packet-a7146342-1d4d-4a69-b333-790ad3e9e986`.
+- The Case Packet-origin board displayed `3 evidence items`, including the
+  content snapshot and a case-packet evidence summary:
+  `Case packet appeal_context: matched_policy; posture policy_consistent; 5 evidence labels.`
+- Screenshot captured:
+  `output/runtime-proof/post34-v92-case-packet-evidence-board.png`.
