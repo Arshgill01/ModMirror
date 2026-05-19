@@ -36,8 +36,11 @@ the current moderator account: the Devvit WebView Settings check on
 conservative full-access-only visibility gate now keeps future per-mod surfaces
 aggregate-only unless that runtime-probed `all` permission is present. The next
 runtime-proof wave should target one of those remaining gaps with the same
-safety constraints used by the post-W34 probes. Settings now includes a manual
-runtime capability event recorder for safe proof bookkeeping; those manual
+safety constraints used by the post-W34 probes. A synthetic retention cleanup
+smoke route is now locally tested and wired into Settings, but it still needs
+Devvit playtest proof before actual cleanup is considered runtime-verified.
+Settings now includes a manual runtime capability event recorder for safe proof
+bookkeeping; those manual
 events do not replace runtime proof for destructive or platform-dependent
 capabilities. The expanded Redis sorted-set diagnostic passed on Devvit
 playtest `v0.0.1.136`. The Redis storage-envelope diagnostic passed on Devvit
@@ -601,6 +604,11 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       dry-run behavior, and expired cleanup.
 - [x] Runtime-verify retention settings, privacy inventory, and dry-run deletion
       controls against Devvit Redis on a safe test subreddit.
+- [x] Add a safe synthetic retention cleanup smoke route that creates old
+      synthetic Redis records, deletes only those records through retention
+      cleanup, and verifies detail keys plus index references are gone.
+- [ ] Runtime-verify the synthetic retention cleanup smoke route in Devvit
+      playtest.
 - [ ] Runtime-verify actual expired-data cleanup only after a controlled
       destructive cleanup test is planned.
 - [ ] Add a scheduled cleanup task only after scheduler behavior is

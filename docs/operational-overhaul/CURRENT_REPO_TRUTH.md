@@ -148,6 +148,11 @@ It does not yet support:
   routes do not inject an adapter, so default confirmations are skipped.
   Scheduler confirmations are always skipped before adapter dispatch because no
   runtime scheduler task is registered.
+- `POST /api/smoke/retention-cleanup` is a local synthetic diagnostic for
+  retention deletion: it writes old synthetic scan, action receipt, Evidence
+  Board, and team-delivery receipt records, deletes only those records through
+  retention cleanup, and verifies detail keys plus index references are gone.
+  It is locally tested and still needs Devvit playtest proof.
 - W12 reframed the client IA around Act, Scan, Agree, Review, Prove, and
   Settings. Apply Policy and the receipt ledger now live in Act; policy
   lifecycle records live in Agree; case packets, digest, and before-after

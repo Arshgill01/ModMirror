@@ -49,7 +49,7 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.1.126`
+  `v0.0.1.137`
 - Browser/UI driver: Zen desktop browser with Computer Use
 
 Runtime observations:
@@ -79,8 +79,8 @@ Runtime observations:
   moderator access guard was added. No true non-mod account runtime proof was
   performed.
 - No real Reddit moderation action, public post, native Mod Note write, Mod
-  Discussion send, scheduler task, actual retention deletion, or external AI
-  call was executed.
+  Discussion send, scheduler task, actual retention deletion against real
+  operational records, or external AI call was executed.
 
 ## Capability Matrix
 
@@ -97,6 +97,7 @@ Runtime observations:
 | Redis smoke | runtime verified | Post-W34 WebView Settings smoke reported write/read matched inside Devvit playtest. | Keep safe smoke button available. |
 | Redis sorted-set ordering | runtime verified | Devvit playtest `v0.0.1.131` ran Settings `Run Redis ZSET`; the WebView reported `Redis sorted-set smoke order mismatch: expected newest, middle, oldest, observed .` and the runtime capability matrix recorded `redis-zset-ordering` as failed. After the diagnostic switched to the documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` and the matrix showed `4 runtime`, `0 failed`. | Keep the safe smoke in regression checks. |
 | Redis storage envelope | runtime verified for current caps | `/api/smoke/redis-storage` writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to smoke keys, then deletes them and verifies cleanup. Devvit playtest `v0.0.1.137` returned `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` The runtime matrix showed `5 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep the safe storage smoke in regression checks before raising caps or storing larger live envelopes. |
+| Retention cleanup synthetic smoke | local route/type verified, runtime pending | `/api/smoke/retention-cleanup` creates old synthetic scan, receipt, evidence board, and team-delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus sorted-set index references are gone. Local tests cover the route and runtime health event promotion. | Run Settings `Run retention cleanup` in Devvit playtest and record the exact WebView result before claiming runtime cleanup proof. Real operational-record deletion still requires a separate controlled test. |
 | Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. | Keep read-only; do not infer live execution support. |
 | Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. | Deep pagination remains unverified. |
 | Policy proposal/review/adoption | runtime verified for single-mod playtest path | `policies.test.ts` passes; post-W34 `v0.0.1.104` verified proposed/under-review state and threshold blocking. | Multi-moderator distinct-reviewer proof remains open. |
@@ -120,6 +121,7 @@ Safe/non-destructive routes:
 - `POST /api/smoke/redis`
 - `POST /api/smoke/redis-zset`
 - `POST /api/smoke/redis-storage`
+- `POST /api/smoke/retention-cleanup`
 - `POST /api/smoke/reddit`
 - `GET /api/health`
 - `GET /api/access/diagnostics`

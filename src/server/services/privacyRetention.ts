@@ -11,6 +11,7 @@ import type {
   PrivacyRetentionExport,
   PrivacyRetentionSettings,
   PrivacyRetentionUpdateRequest,
+  RetentionCleanupSmokeResult,
   TeamDeliveryReceipt,
 } from '../../shared/schema';
 import { listEvidenceBoards } from './evidenceBoard';
@@ -182,6 +183,164 @@ export async function cleanupExpiredPrivacyData(options: {
       ? { dependencies: options.dependencies }
       : {}),
   });
+}
+
+export async function runRetentionCleanupSmoke(
+  subreddit: string
+): Promise<RetentionCleanupSmokeResult> {
+  const checkedAt = new Date().toISOString();
+  const oldCreatedAt = '2000-01-01T00:00:00.000Z';
+  const ids = {
+    scanId: 'retention-smoke-scan',
+    receiptId: 'retention-smoke-receipt',
+    evidenceBoardId: 'retention-smoke-board',
+    deliveryReceiptId: 'retention-smoke-delivery',
+  };
+  const scan = syntheticScanMetadata(subreddit, ids.scanId, oldCreatedAt);
+  const receipt = syntheticActionReceipt(subreddit, ids.receiptId, oldCreatedAt);
+  const board = syntheticEvidenceBoard(
+    subreddit,
+    ids.evidenceBoardId,
+    oldCreatedAt
+  );
+  const deliveryReceipt = syntheticTeamDeliveryReceipt(
+    subreddit,
+    ids.deliveryReceiptId,
+    oldCreatedAt
+  );
+  const detailKeys = [
+    redisKeys.scan(subreddit, scan.id),
+    redisKeys.receipt(subreddit, receipt.id),
+    redisKeys.evidenceBoard(subreddit, board.id),
+    redisKeys.deliveryReceipt(subreddit, deliveryReceipt.id),
+  ];
+  const indexMembers = [
+    {
+      key: redisKeys.scans(subreddit),
+      member: serializeJson(scan),
+    },
+    {
+      key: redisKeys.scansBySource(subreddit, scan.source),
+      member: serializeJson(scan),
+    },
+    {
+      key: redisKeys.receipts(subreddit),
+      member: serializeJson(receipt),
+    },
+    {
+      key: redisKeys.receiptsByTarget(subreddit, receipt.targetThingId ?? ''),
+      member: serializeJson(receipt),
+    },
+    {
+      key: redisKeys.evidenceBoards(subreddit),
+      member: serializeJson(board),
+    },
+    {
+      key: redisKeys.deliveryReceipts(subreddit),
+      member: serializeJson(deliveryReceipt),
+    },
+  ];
+
+  await deleteKeys(...detailKeys);
+  await Promise.all(
+    indexMembers.map(({ key, member }) => redis.zRem(key, [member]))
+  );
+
+  await Promise.all([
+    writeJson(redisKeys.scan(subreddit, scan.id), scan),
+    redis.zAdd(redisKeys.scans(subreddit), {
+      member: serializeJson(scan),
+      score: Date.parse(scan.createdAt),
+    }),
+    redis.zAdd(redisKeys.scansBySource(subreddit, scan.source), {
+      member: serializeJson(scan),
+      score: Date.parse(scan.createdAt),
+    }),
+    writeJson(redisKeys.receipt(subreddit, receipt.id), receipt),
+    redis.zAdd(redisKeys.receipts(subreddit), {
+      member: serializeJson(receipt),
+      score: Date.parse(receipt.createdAt),
+    }),
+    redis.zAdd(redisKeys.receiptsByTarget(subreddit, receipt.targetThingId ?? ''), {
+      member: serializeJson(receipt),
+      score: Date.parse(receipt.createdAt),
+    }),
+    writeJson(redisKeys.evidenceBoard(subreddit, board.id), board),
+    redis.zAdd(redisKeys.evidenceBoards(subreddit), {
+      member: serializeJson(board),
+      score: Date.parse(board.updatedAt),
+    }),
+    writeJson(
+      redisKeys.deliveryReceipt(subreddit, deliveryReceipt.id),
+      deliveryReceipt
+    ),
+    redis.zAdd(redisKeys.deliveryReceipts(subreddit), {
+      member: serializeJson(deliveryReceipt),
+      score: Date.parse(deliveryReceipt.createdAt),
+    }),
+  ]);
+
+  const deletion = await deletePrivacyData({
+    subreddit,
+    request: {
+      categories: [
+        'scan_history',
+        'action_receipts',
+        'evidence_boards',
+        'team_delivery_receipts',
+      ],
+      dryRun: false,
+      expiredOnly: true,
+    },
+    dependencies: {
+      now: () => checkedAt,
+      listScans: async () => [scan],
+      getLastScan: async () => undefined,
+      listReceipts: async () => [receipt],
+      listEvidenceBoards: async () => [board],
+      listTeamDeliveryReceipts: async () => [deliveryReceipt],
+    },
+  });
+
+  const [detailKeysRemaining, indexScores] = await Promise.all([
+    redis.exists(...detailKeys),
+    Promise.all(
+      indexMembers.map(({ key, member }) => redis.zScore(key, member))
+    ),
+  ]);
+  const observed = {
+    scanHistoryDeleted: deletedCount(deletion, 'scan_history'),
+    actionReceiptsDeleted: deletedCount(deletion, 'action_receipts'),
+    evidenceBoardsDeleted: deletedCount(deletion, 'evidence_boards'),
+    teamDeliveryReceiptsDeleted: deletedCount(
+      deletion,
+      'team_delivery_receipts'
+    ),
+    detailKeysRemaining,
+    indexReferencesRemaining: indexScores.filter((score) => score !== undefined)
+      .length,
+  };
+  const expected = {
+    scanHistoryDeleted: 1,
+    actionReceiptsDeleted: 1,
+    evidenceBoardsDeleted: 1,
+    teamDeliveryReceiptsDeleted: 1,
+  };
+
+  return {
+    subreddit,
+    syntheticIds: ids,
+    expected,
+    observed,
+    ok:
+      observed.scanHistoryDeleted === expected.scanHistoryDeleted &&
+      observed.actionReceiptsDeleted === expected.actionReceiptsDeleted &&
+      observed.evidenceBoardsDeleted === expected.evidenceBoardsDeleted &&
+      observed.teamDeliveryReceiptsDeleted ===
+        expected.teamDeliveryReceiptsDeleted &&
+      observed.detailKeysRemaining === 0 &&
+      observed.indexReferencesRemaining === 0,
+  };
 }
 
 function defaultPrivacyRetentionSettings(
@@ -442,6 +601,126 @@ function policyHistoryProtectedReport(): PrivacyRetentionCategoryReport {
     deletedCount: 0,
     protected: true,
     detail: 'Policy versions and policy change history are protected by default.',
+  };
+}
+
+function deletedCount(
+  deletion: PrivacyDeletionResult,
+  category: PrivacyRetentionCategory
+): number {
+  return (
+    deletion.categories.find((report) => report.category === category)
+      ?.deletedCount ?? 0
+  );
+}
+
+function syntheticScanMetadata(
+  subreddit: string,
+  id: string,
+  createdAt: string
+): LastScanMetadata {
+  return {
+    id,
+    subreddit,
+    createdAt,
+    createdBy: 'retention_smoke',
+    source: 'live',
+    totalActionsScanned: 1,
+    attributedCount: 1,
+    unmatchedCount: 0,
+    confidenceBreakdown: {
+      high: 1,
+      medium: 0,
+      low: 0,
+      unmatched: 0,
+    },
+    driftCandidateCount: 0,
+  };
+}
+
+function syntheticActionReceipt(
+  subreddit: string,
+  id: string,
+  createdAt: string
+): ActionReceipt {
+  return {
+    id,
+    actionEventId: `action-${id}`,
+    subreddit,
+    targetThingId: 't3_retention_smoke',
+    targetType: 'post',
+    targetSnapshot: {
+      targetThingId: 't3_retention_smoke',
+      targetType: 'post',
+      source: 'provided',
+      warnings: [],
+    },
+    modUsername: 'retention_smoke',
+    source: 'dashboard',
+    recommendation: {
+      ruleKey: 'retention-smoke-rule',
+      offenseCount: 1,
+      recommendedAction: 'warn',
+      messageDeliveryMode: 'log_only',
+      requiresOverrideReason: false,
+      selectedAction: 'warn',
+      deviatesFromPolicy: false,
+      fallbackReason: 'policy_found',
+      message: 'Synthetic retention cleanup smoke receipt.',
+    },
+    selectedAction: 'warn',
+    deviatesFromPolicy: false,
+    executionMode: 'log_only',
+    executionAttempted: false,
+    executionResult: 'skipped',
+    redditOperation: 'none',
+    capabilityState: 'not_applicable',
+    createdAt,
+  };
+}
+
+function syntheticEvidenceBoard(
+  subreddit: string,
+  id: string,
+  updatedAt: string
+): EvidenceBoardThread {
+  return {
+    id,
+    subreddit,
+    title: 'Retention cleanup smoke',
+    status: 'open',
+    subject: {
+      policyId: 'retention-smoke-policy',
+    },
+    evidence: [],
+    statusHistory: [
+      {
+        toStatus: 'open',
+        changedAt: updatedAt,
+      },
+    ],
+    createdAt: updatedAt,
+    updatedAt,
+  };
+}
+
+function syntheticTeamDeliveryReceipt(
+  subreddit: string,
+  id: string,
+  createdAt: string
+): TeamDeliveryReceipt {
+  return {
+    id,
+    subreddit,
+    channel: 'manual_markdown',
+    subjectType: 'digest',
+    title: 'Retention cleanup smoke',
+    status: 'manual_ready',
+    requestedBy: 'retention_smoke',
+    createdAt,
+    deliveryAttempted: false,
+    runtimeVerified: false,
+    previewMarkdown: '# Retention cleanup smoke',
   };
 }
 

@@ -422,17 +422,19 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       state: 'verified_static',
       evidenceKind: 'static',
       summary:
-        'Retention cleanup is unit-tested with dry-run controls, but Redis runtime cleanup proof is still open.',
+        'Retention cleanup is unit-tested with dry-run controls and has a synthetic smoke route, but Redis runtime cleanup proof is still open.',
       evidence: [
         'privacyRetention.test.ts covers defaults, inventory, dry-run deletion, and expired cleanup.',
+        'POST /api/smoke/retention-cleanup creates old synthetic scan, receipt, evidence board, and delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus index references are gone.',
       ],
-      diagnosticRoute: '/api/privacy/delete',
-      proofCommand: 'npm test -- src/server/services/privacyRetention.test.ts',
+      diagnosticRoute: '/api/smoke/retention-cleanup',
+      proofCommand:
+        'curl -X POST <playtest-origin>/api/smoke/retention-cleanup',
       destructive: true,
       safeToTest: true,
       canUpdateFromHealthEvents: true,
       nextAction:
-        'Run dry-run cleanup in playtest before deleting any persisted operational records.',
+        'Run the synthetic cleanup smoke route in playtest before deleting any real operational records.',
     },
     {
       id: 'moderator-access-guard',

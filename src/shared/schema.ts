@@ -1762,6 +1762,31 @@ export interface PrivacyDeletionResult {
   warnings: string[];
 }
 
+export interface RetentionCleanupSmokeResult {
+  subreddit: string;
+  syntheticIds: {
+    scanId: string;
+    receiptId: string;
+    evidenceBoardId: string;
+    deliveryReceiptId: string;
+  };
+  expected: {
+    scanHistoryDeleted: number;
+    actionReceiptsDeleted: number;
+    evidenceBoardsDeleted: number;
+    teamDeliveryReceiptsDeleted: number;
+  };
+  observed: {
+    scanHistoryDeleted: number;
+    actionReceiptsDeleted: number;
+    evidenceBoardsDeleted: number;
+    teamDeliveryReceiptsDeleted: number;
+    detailKeysRemaining: number;
+    indexReferencesRemaining: number;
+  };
+  ok: boolean;
+}
+
 export interface AiAdvisoryCapabilityStatus {
   state: AiAdvisoryCapabilityState;
   label: string;

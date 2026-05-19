@@ -5,6 +5,7 @@ import {
   runRedisStorageSmoke as runRedisStorageDataSmoke,
   runRedisSortedSetSmoke as runRedisSortedSetDataSmoke,
 } from '../server/services/redis';
+import { runRetentionCleanupSmoke as runRetentionCleanupDataSmoke } from '../server/services/privacyRetention';
 
 export type SmokeTargetSummary = {
   id: string;
@@ -26,6 +27,11 @@ export async function runRedisSortedSetSmoke() {
 export async function runRedisStorageSmoke() {
   const subreddit = context.subredditName || context.subredditId || 'unknown';
   return runRedisStorageDataSmoke(subreddit);
+}
+
+export async function runRetentionCleanupSmoke() {
+  const subreddit = context.subredditName || context.subredditId || 'unknown';
+  return runRetentionCleanupDataSmoke(subreddit);
 }
 
 export async function getTargetSummary(

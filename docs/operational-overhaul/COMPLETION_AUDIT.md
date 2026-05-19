@@ -82,7 +82,9 @@ fully complete because these requirements remain incomplete or weakly verified:
 - External AI fetch and Devvit secret retrieval are not runtime-proven. PR #31
   added the required terms/privacy/data-minimization readiness gate before any
   uploaded build can use external AI.
-- Actual retention deletion is not runtime-proven; only dry-run controls are.
+- Actual retention deletion against real operational records is not
+  runtime-proven; only dry-run controls are. A synthetic cleanup smoke route is
+  locally tested and still needs Devvit playtest proof.
 - Redis sorted-set ordering is now runtime verified through
   `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, after the earlier
   `v0.0.1.131` empty observed-order failure. The current bounded Redis storage

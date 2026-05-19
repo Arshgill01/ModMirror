@@ -1188,3 +1188,20 @@ merged to `master`:
 Runtime proof status: current bounded Redis storage envelope is verified for
 the local caps. Raising scan metadata/action/override storage caps remains a
 separate future proof item.
+
+### 2026-05-20 - Synthetic Retention Cleanup Diagnostic
+
+- Added `/api/smoke/retention-cleanup` for a bounded synthetic retention
+  cleanup check. The route writes old synthetic scan, action receipt, Evidence
+  Board, and team-delivery receipt records; deletes only those records through
+  retention cleanup; and verifies detail keys plus sorted-set index references
+  are gone.
+- Added Settings `Run retention cleanup` wiring and runtime capability health
+  event recording for `retention-cleanup`.
+- Local validation passed for
+  `npm test -- src/server/services/privacyRetention.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  and `npm run type-check`.
+
+Runtime proof status: local/static only. The synthetic smoke route still needs
+Devvit playtest proof, and actual deletion against real operational records
+remains a separate controlled-test item.

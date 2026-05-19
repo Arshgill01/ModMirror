@@ -88,6 +88,7 @@ import type {
   RedisSmokeResult,
   RedisStorageSmokeResult,
   RedisSortedSetSmokeResult,
+  RetentionCleanupSmokeResult,
   ResponseTemplateKind,
   RuntimeCapabilityHealthEvent,
   RuntimeCapabilityHealthEventInput,
@@ -117,6 +118,7 @@ type RuntimeSmokeCheck =
   | 'redis'
   | 'redis-zset'
   | 'redis-storage'
+  | 'retention-cleanup'
   | 'reddit'
   | 'access';
 
@@ -2744,12 +2746,13 @@ function renderRuntimeCapabilitySettings() {
       <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
         <div>
           <strong>Safe smoke checks</strong>
-          <p>Run authenticated WebView diagnostics for Redis, Redis sorted-set ordering, the Redis storage envelope, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
+          <p>Run authenticated WebView diagnostics for Redis, Redis sorted-set ordering, the Redis storage envelope, synthetic retention cleanup, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
         </div>
         <div class="button-row">
           <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
           <button class="secondary-button compact-button" data-runtime-smoke="redis-zset" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis ZSET</button>
           <button class="secondary-button compact-button" data-runtime-smoke="redis-storage" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis storage</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="retention-cleanup" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run retention cleanup</button>
           <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
           <button class="secondary-button compact-button" data-runtime-smoke="access" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Check access</button>
         </div>
@@ -2873,6 +2876,9 @@ function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
   }
   if (check === 'redis-storage') {
     return 'Redis storage envelope';
+  }
+  if (check === 'retention-cleanup') {
+    return 'Retention cleanup';
   }
   if (check === 'reddit') {
     return 'Reddit read-only';
@@ -3915,6 +3921,7 @@ function bindRuntimeCapabilityActions() {
           check === 'redis' ||
           check === 'redis-zset' ||
           check === 'redis-storage' ||
+          check === 'retention-cleanup' ||
           check === 'reddit' ||
           check === 'access'
         ) {
@@ -5386,7 +5393,9 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
                   ? API_ROUTES.redisSortedSetSmoke
                   : check === 'redis-storage'
                     ? API_ROUTES.redisStorageSmoke
-                    : API_ROUTES.redditSmoke
+                    : check === 'retention-cleanup'
+                      ? API_ROUTES.retentionCleanupSmoke
+                      : API_ROUTES.redditSmoke
             ),
             {
               method: 'POST',
@@ -5578,6 +5587,21 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     return redisResult.ok
       ? `Redis storage smoke passed: scan ${scan}, actions ${actions}, overrides ${overrides}, cleanup ${cleanup}.`
       : `Redis storage smoke mismatch: scan ${scan}, actions ${actions}, overrides ${overrides}, cleanup ${cleanup}.`;
+  }
+
+  if (check === 'retention-cleanup') {
+    const cleanupResult = result as Partial<RetentionCleanupSmokeResult>;
+    const expected = cleanupResult.expected;
+    const observed = cleanupResult.observed;
+    const scans = `${observed?.scanHistoryDeleted ?? 'unknown'}/${expected?.scanHistoryDeleted ?? 'unknown'}`;
+    const receipts = `${observed?.actionReceiptsDeleted ?? 'unknown'}/${expected?.actionReceiptsDeleted ?? 'unknown'}`;
+    const boards = `${observed?.evidenceBoardsDeleted ?? 'unknown'}/${expected?.evidenceBoardsDeleted ?? 'unknown'}`;
+    const delivery = `${observed?.teamDeliveryReceiptsDeleted ?? 'unknown'}/${expected?.teamDeliveryReceiptsDeleted ?? 'unknown'}`;
+    const detailKeys = observed?.detailKeysRemaining ?? 'unknown';
+    const indexRefs = observed?.indexReferencesRemaining ?? 'unknown';
+    return cleanupResult.ok
+      ? `Retention cleanup smoke passed: scans ${scans}, receipts ${receipts}, boards ${boards}, delivery ${delivery}, detail keys ${detailKeys}, index refs ${indexRefs}.`
+      : `Retention cleanup smoke mismatch: scans ${scans}, receipts ${receipts}, boards ${boards}, delivery ${delivery}, detail keys ${detailKeys}, index refs ${indexRefs}.`;
   }
 
   if (check === 'access') {

@@ -60,6 +60,14 @@ vi.mock('@devvit/web/server', () => ({
           ?.score
       )
     ),
+    zRem: vi.fn((key: string, members: string[]) => {
+      const rows = devvitState.sortedSets.get(key) ?? [];
+      devvitState.sortedSets.set(
+        key,
+        rows.filter((row) => !members.includes(row.member))
+      );
+      return Promise.resolve();
+    }),
     zRange: vi.fn(
       (
         key: string,
@@ -395,6 +403,84 @@ describe('api moderator access guard', () => {
         source: 'smoke_route',
         message:
           'Redis storage envelope smoke matched expected counts and cleaned up.',
+      },
+    });
+  });
+
+  it('records retention cleanup smoke results as runtime health events', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => ['all']);
+    devvitState.context.username = 'mod_a';
+    devvitState.currentUser = {
+      username: 'mod_a',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/smoke/retention-cleanup', {
+      method: 'POST',
+    });
+    const payload = (await response.json()) as {
+      ok: boolean;
+      expected: {
+        scanHistoryDeleted: number;
+        actionReceiptsDeleted: number;
+        evidenceBoardsDeleted: number;
+        teamDeliveryReceiptsDeleted: number;
+      };
+      observed: {
+        scanHistoryDeleted: number;
+        actionReceiptsDeleted: number;
+        evidenceBoardsDeleted: number;
+        teamDeliveryReceiptsDeleted: number;
+        detailKeysRemaining: number;
+        indexReferencesRemaining: number;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      ok: true,
+      expected: {
+        scanHistoryDeleted: 1,
+        actionReceiptsDeleted: 1,
+        evidenceBoardsDeleted: 1,
+        teamDeliveryReceiptsDeleted: 1,
+      },
+      observed: {
+        scanHistoryDeleted: 1,
+        actionReceiptsDeleted: 1,
+        evidenceBoardsDeleted: 1,
+        teamDeliveryReceiptsDeleted: 1,
+        detailKeysRemaining: 0,
+        indexReferencesRemaining: 0,
+      },
+    });
+
+    const matrixResponse = await api.request(
+      '/runtime-capabilities?subreddit=modmirror_dev'
+    );
+    const matrixPayload = (await matrixResponse.json()) as {
+      ok: true;
+      data: {
+        entries: Array<{
+          id: string;
+          state: string;
+          lastHealthEvent?: { source: string; message: string };
+        }>;
+      };
+    };
+    const retentionEntry = matrixPayload.data.entries.find(
+      (entry) => entry.id === 'retention-cleanup'
+    );
+
+    expect(matrixResponse.status).toBe(200);
+    expect(retentionEntry).toMatchObject({
+      state: 'verified_runtime',
+      lastHealthEvent: {
+        source: 'smoke_route',
+        message:
+          'Retention cleanup smoke deleted synthetic records and cleaned indexes.',
       },
     });
   });

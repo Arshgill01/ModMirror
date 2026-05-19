@@ -5,6 +5,7 @@ import {
   runRedisSmoke,
   runRedisStorageSmoke,
   runRedisSortedSetSmoke,
+  runRetentionCleanupSmoke,
 } from '../core/smoke';
 import { APP_NAME, type HealthResponse } from '../shared/status';
 import {
@@ -491,6 +492,40 @@ api.post('/smoke/redis-storage', async (c) => {
         error instanceof Error
           ? error.message
           : 'Unknown Redis storage smoke failure.',
+    });
+    throw error;
+  }
+});
+
+api.post('/smoke/retention-cleanup', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  try {
+    const result = await runRetentionCleanupSmoke();
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'retention-cleanup',
+      status: result.ok ? 'passed' : 'failed',
+      source: 'smoke_route',
+      message: result.ok
+        ? 'Retention cleanup smoke deleted synthetic records and cleaned indexes.'
+        : 'Retention cleanup smoke left synthetic records or index references behind.',
+      diagnosticRoute: '/api/smoke/retention-cleanup',
+      ...(result.ok ? {} : { errorCode: 'retention_cleanup_smoke_mismatch' }),
+    });
+    return c.json(result);
+  } catch (error) {
+    await recordRuntimeHealthEvent({
+      subreddit,
+      capabilityId: 'retention-cleanup',
+      status: 'failed',
+      source: 'smoke_route',
+      message: 'Retention cleanup smoke route threw before returning a result.',
+      diagnosticRoute: '/api/smoke/retention-cleanup',
+      errorCode: 'retention_cleanup_smoke_failed',
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : 'Unknown retention cleanup smoke failure.',
     });
     throw error;
   }

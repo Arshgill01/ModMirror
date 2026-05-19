@@ -226,6 +226,9 @@ Latest Redis storage-envelope runtime follow-up:
   `Redis storage smoke passed: scan 10/10, actions 500/500, overrides
   500/500, cleanup 0.` The runtime capability matrix showed `5 runtime`,
   `1 type-only`, `1 demo-only`, and `0 failed`.
+- Local follow-up added `/api/smoke/retention-cleanup` and Settings `Run
+  retention cleanup` for synthetic expired-record cleanup; Devvit runtime proof
+  is still pending.
 - No destructive Reddit actions, Mod Notes, Mod Discussion sends, scheduler
   jobs, external AI calls, or retention deletion were run.
 
@@ -235,7 +238,7 @@ Latest Redis storage-envelope runtime follow-up:
   detail contexts. Closed for desktop Reddit WebView by post-W34 proof.
 - Devvit Redis receipt/scan/policy persistence needs route-level runtime proof.
   Closed for selected safe routes by post-W34 proof; live modqueue reads and
-  destructive cleanup remain unverified.
+  destructive cleanup against real operational records remain unverified.
 - W29 context-derived subreddit isolation is closed for Devvit Web request
   context; cross-community dashboards and same-subreddit live modqueue item
   reads remain separate gaps.

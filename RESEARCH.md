@@ -857,9 +857,15 @@ Runtime status:
   type-verified.
 - Post-W34 Devvit playtest verified Settings save, privacy inventory counts,
   and selected-category dry-run deletion controls in the Reddit-hosted WebView.
-- Actual Redis deletion behavior is tested with mocked dependencies only; no
-  destructive Devvit deletion was run. Runtime proof is still required before
-  claiming live Redis cleanup or scheduled cleanup behavior.
+- A bounded synthetic cleanup smoke route is locally tested and type-verified:
+  `POST /api/smoke/retention-cleanup` creates old synthetic scan, receipt,
+  evidence board, and team-delivery receipt records, deletes only those records
+  through retention cleanup, and verifies detail keys plus sorted-set index
+  references are gone.
+- The synthetic cleanup route still needs Devvit playtest proof. Deleting real
+  operational Redis records remains unverified; no destructive Devvit deletion
+  was run. Runtime proof is still required before claiming live operational
+  cleanup or scheduled cleanup behavior.
 
 ## Wave 31 Mobile And Runtime Resilience
 
@@ -1284,8 +1290,10 @@ Decision:
 - W30 retention settings, privacy inventory, and dry-run deletion controls may
   now be described as runtime-verified for this desktop Reddit Devvit WebView
   playtest path.
-- Actual expired-data cleanup/deletion remains unverified and should require a
-  separate controlled destructive cleanup test.
+- A synthetic expired-data cleanup diagnostic is locally available at
+  `/api/smoke/retention-cleanup`, but it is not yet playtest-verified.
+- Actual expired-data cleanup/deletion against real operational records remains
+  unverified and should require a separate controlled destructive cleanup test.
 
 ## Post-W34 Incident Mode Runtime Proof
 
@@ -1541,7 +1549,7 @@ Decision:
   policy lifecycle, log-only receipt, and Case Packet paths as runtime-verified.
 - This does not promote native Mod Notes, Mod Discussion send, scheduler,
   destructive moderation, public/private message delivery, actual retention
-  deletion, or AI provider calls.
+  deletion against real operational records, or AI provider calls.
 
 ## Post-W34 Server Moderator Access Guard
 

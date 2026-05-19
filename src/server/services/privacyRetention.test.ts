@@ -8,6 +8,7 @@ import type {
 
 const redisState = vi.hoisted(() => ({
   strings: new Map<string, string>(),
+  sortedSets: new Map<string, Array<{ member: string; score: number }>>(),
 }));
 
 vi.mock('@devvit/web/server', () => ({
@@ -17,14 +18,48 @@ vi.mock('@devvit/web/server', () => ({
       redisState.strings.set(key, value);
       return Promise.resolve();
     }),
-    del: vi.fn(() => Promise.resolve()),
-    zRem: vi.fn(() => Promise.resolve()),
+    del: vi.fn((...keys: string[]) => {
+      for (const key of keys) {
+        redisState.strings.delete(key);
+        redisState.sortedSets.delete(key);
+      }
+      return Promise.resolve();
+    }),
+    exists: vi.fn((...keys: string[]) =>
+      Promise.resolve(
+        keys.filter(
+          (key) =>
+            redisState.strings.has(key) || redisState.sortedSets.has(key)
+        ).length
+      )
+    ),
+    zAdd: vi.fn((key: string, ...values: { member: string; score: number }[]) => {
+      const rows = redisState.sortedSets.get(key) ?? [];
+      rows.push(...values);
+      redisState.sortedSets.set(key, rows);
+      return Promise.resolve(values.length);
+    }),
+    zRem: vi.fn((key: string, members: string[]) => {
+      const rows = redisState.sortedSets.get(key) ?? [];
+      redisState.sortedSets.set(
+        key,
+        rows.filter((row) => !members.includes(row.member))
+      );
+      return Promise.resolve();
+    }),
+    zScore: vi.fn((key: string, member: string) =>
+      Promise.resolve(
+        redisState.sortedSets.get(key)?.find((row) => row.member === member)
+          ?.score
+      )
+    ),
   },
 }));
 
 describe('privacy retention service', () => {
   beforeEach(() => {
     redisState.strings.clear();
+    redisState.sortedSets.clear();
     vi.clearAllMocks();
   });
 
@@ -224,6 +259,50 @@ describe('privacy retention service', () => {
       'modmirror:ExampleLearning:delivery:receipt:delivery-old'
     );
     expect(JSON.stringify(result.categories)).toContain('policy_history');
+  });
+
+  it('runs a synthetic retention cleanup smoke check through Redis indexes', async () => {
+    const { runRetentionCleanupSmoke } = await import('./privacyRetention');
+    const { redisKeys } = await import('./redis');
+
+    const result = await runRetentionCleanupSmoke('ExampleLearning');
+
+    expect(result).toMatchObject({
+      subreddit: 'ExampleLearning',
+      expected: {
+        scanHistoryDeleted: 1,
+        actionReceiptsDeleted: 1,
+        evidenceBoardsDeleted: 1,
+        teamDeliveryReceiptsDeleted: 1,
+      },
+      observed: {
+        scanHistoryDeleted: 1,
+        actionReceiptsDeleted: 1,
+        evidenceBoardsDeleted: 1,
+        teamDeliveryReceiptsDeleted: 1,
+        detailKeysRemaining: 0,
+        indexReferencesRemaining: 0,
+      },
+      ok: true,
+    });
+    expect(
+      redisState.strings.has(redisKeys.scan('ExampleLearning', 'retention-smoke-scan'))
+    ).toBe(false);
+    expect(
+      redisState.strings.has(
+        redisKeys.receipt('ExampleLearning', 'retention-smoke-receipt')
+      )
+    ).toBe(false);
+    expect(
+      redisState.sortedSets
+        .get(redisKeys.scans('ExampleLearning'))
+        ?.some((row) => row.member.includes('retention-smoke-scan')) ?? false
+    ).toBe(false);
+    expect(
+      redisState.sortedSets
+        .get(redisKeys.receipts('ExampleLearning'))
+        ?.some((row) => row.member.includes('retention-smoke-receipt')) ?? false
+    ).toBe(false);
   });
 });
 

@@ -447,6 +447,7 @@ export const API_ROUTES = {
   redisSmoke: '/api/smoke/redis',
   redisStorageSmoke: '/api/smoke/redis-storage',
   redisSortedSetSmoke: '/api/smoke/redis-zset',
+  retentionCleanupSmoke: '/api/smoke/retention-cleanup',
   redditSmoke: '/api/smoke/reddit',
 } as const;
 

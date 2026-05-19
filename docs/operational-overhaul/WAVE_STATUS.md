@@ -112,8 +112,10 @@ runtime-smoke follow-up. The post-W34 UI sweep is closed for desktop Reddit
 host accessibility-tree proof, and W29 context-derived subreddit isolation is
 runtime-verified on Devvit Web playtest `v0.0.1.122`. Native Reddit mobile
 behavior, real Reddit moderation execution, native Mod Notes, Mod Discussion
-delivery, scheduler behavior, actual retention deletion, non-mod access
-runtime proof, and external AI remain unverified or disabled. Server-side
+delivery, scheduler behavior, actual retention deletion against real
+operational records, non-mod access runtime proof, and external AI remain
+unverified or disabled. A synthetic retention cleanup smoke route is locally
+tested and still needs Devvit playtest proof. Server-side
 protected API moderator access checks are locally verified and reached Devvit
 playtest ready on `v0.0.1.126`, and protected current-user permission
 diagnostics are locally verified. A Devvit WebView Settings diagnostic on
