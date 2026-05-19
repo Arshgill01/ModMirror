@@ -1385,3 +1385,22 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. This was a context-index
 truth refresh only.
+
+### 2026-05-20 - Post-Continuation Local Validation
+
+- Ran the broad local gate after the access, modqueue, retention, runtime
+  matrix, completion audit, and context-index truth refreshes.
+- Updated `docs/operational-overhaul/BUILD_REPORT.md` with the latest local
+  validation result and refreshed the next-risk note so it points at the
+  current proof-plan gaps instead of the already closed desktop post/comment
+  menu proof.
+
+Validation:
+
+- `npm run type-check` passed.
+- `npm run lint` passed.
+- `npm test` passed: 47 files, 217 tests.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run.

@@ -239,6 +239,16 @@ Latest Redis storage-envelope runtime follow-up:
   jobs, external AI calls, or real operational-record retention deletion were
   run.
 
+Latest post-continuation local validation after runtime proof-plan and context
+truth-doc refreshes:
+
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 47 files and 217 tests.
+- `npm run build` - passed.
+- `git diff --check` - passed.
+- No Devvit playtest was run in this validation pass.
+
 ## Known Gaps
 
 - Post/comment Apply Policy menus need focused runtime proof in post/comment
@@ -281,7 +291,9 @@ Latest Redis storage-envelope runtime follow-up:
 ## Next Engineering Risks
 
 - Expansion waves must not build on unverified destructive behavior.
-- Any feature that uses post/comment context must first close the W13 menu proof
-  gap.
+- Any feature that depends on unverified platform behavior must first close the
+  relevant proof plan: access, modqueue, real retention cleanup, native mobile,
+  Mod Notes, Mod Discussion, scheduler, external AI, or live moderation
+  execution.
 - Runtime receipts should be verified before relying on analytics or case
   packets as live proof.
