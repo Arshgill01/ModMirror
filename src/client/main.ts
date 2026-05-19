@@ -5357,7 +5357,11 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     const permissions = access.permissions?.length
       ? access.permissions.join(', ')
       : 'none returned';
-    return `Access check passed: ${access.permissionCount ?? 0} permission(s): ${permissions}.`;
+    const visibility =
+      access.moderatorVisibilityLevel === 'full_moderator'
+        ? 'full moderator visibility'
+        : 'aggregate-only visibility';
+    return `Access check passed: ${access.permissionCount ?? 0} permission(s): ${permissions}. Per-mod gate: ${visibility}.`;
   }
 
   const resultRecord = result as {

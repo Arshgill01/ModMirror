@@ -127,8 +127,10 @@ It does not yet support:
   form behavior, dashboard navigation, and target fetch in the desktop Reddit
   WebView path. Server-side protected API moderator access checks are locally
   verified for live subreddit context. The current full moderator account
-  returned permission `all`; lower-permission moderator role strings, non-mod
-  account runtime behavior, and native Reddit mobile behavior remain pending.
+  returned permission `all`, and the repo now has a full-access-only visibility
+  helper for future per-mod/manage-level surfaces. Lower-permission moderator
+  role strings, non-mod account runtime behavior, and native Reddit mobile
+  behavior remain pending.
 - W29 subreddit isolation is runtime-verified for Devvit Web request context:
   authenticated playtest `v0.0.1.122` exposed current subreddit
   `modmirror_dev`, kept default and explicit-current API reads in that
@@ -168,7 +170,8 @@ Runtime evidence exists for:
   verified by unit tests with a playtest-ready build but not yet by a non-mod
   runtime account. A protected current-user permission diagnostic route is
   locally verified; a Devvit WebView Settings diagnostic returned current
-  moderator permission `all`.
+  moderator permission `all`. Future per-mod/manage-level visibility remains
+  aggregate-only unless that `all` permission is present.
 - Demo scan, demo policy creation, log-only Apply Policy override capture,
   Case Packet generation, manual digest generation, and digest history.
 
@@ -184,8 +187,8 @@ Runtime evidence does not yet exist for:
   behavior.
 - Non-moderator access blocking in live runtime; local server-side guard tests
   pass, but a true non-mod account has not been used.
-- Lower-permission moderator role strings for stronger per-mod/admin gates; the
-  current full moderator account returned `all` in Devvit WebView.
+- Lower-permission moderator role strings for expanding per-mod/admin gates
+  beyond the current full-access-only `all` helper.
 - Native Reddit mobile app behavior.
 - Same-subreddit live modqueue item reads; the Operational Queue fallback was
   observed on playtests `v0.0.1.94` and `v0.0.1.123`.

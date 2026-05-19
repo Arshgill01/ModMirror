@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assertModeratorAccess } from './moderatorAccess';
+import {
+  assertModeratorAccess,
+  resolveModeratorVisibilityLevel,
+} from './moderatorAccess';
 
 describe('moderator access guard', () => {
   it('skips enforcement when Devvit has no subreddit context', async () => {
@@ -91,5 +94,22 @@ describe('moderator access guard', () => {
       code: 'moderator_permissions_failed',
       message: 'Unable to verify moderator permissions: permission denied',
     });
+  });
+});
+
+describe('moderator visibility gate', () => {
+  it('allows full moderator visibility only when the all permission is present', () => {
+    expect(resolveModeratorVisibilityLevel(['all'])).toBe('full_moderator');
+    expect(resolveModeratorVisibilityLevel([' posts ', 'ALL'])).toBe(
+      'full_moderator'
+    );
+  });
+
+  it('keeps lower or missing permissions aggregate-only until runtime verified', () => {
+    expect(resolveModeratorVisibilityLevel(['posts', 'access'])).toBe(
+      'aggregate_only'
+    );
+    expect(resolveModeratorVisibilityLevel([])).toBe('aggregate_only');
+    expect(resolveModeratorVisibilityLevel(undefined)).toBe('aggregate_only');
   });
 });

@@ -51,7 +51,7 @@ Concrete success criteria:
 | Operational IA | W12/W13 and post-W34 UI proof record Act / Scan / Agree / Review / Prove / Settings in Reddit-hosted WebView. | Satisfied for desktop WebView |
 | Runtime verification harness | W13 reports and runtime matrix record `/api/runtime-verification`; post-W34 proof updates several safe paths to runtime verified. | Satisfied |
 | Multi-community subreddit isolation | W29 report, `RESEARCH.md`, and expansion build report record Devvit playtest `v0.0.1.122` proof that current-context reads resolve to `modmirror_dev`, the labeled ExampleLearning demo exception remains allowed, and cross-subreddit query/body requests are rejected before writes. | Satisfied for Devvit Web request context |
-| Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`. | Satisfied for current full moderator account |
+| Current moderator permission diagnostic | PR #22 added protected `GET /api/access/diagnostics`, route coverage in `src/routes/apiAccess.test.ts`, and a Settings `Check access` button. Devvit WebView proof on `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`; the diagnostic now reports full moderator visibility only when `all` is present. | Satisfied for current full moderator account |
 | Integrated validation | Post-W34 merged validation passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and `git diff --check`. | Satisfied |
 | Branch/worktree discipline | Historical wave worktrees are recorded; post-merge cleanup verified only root `master` worktree remains. | Satisfied |
 
@@ -65,9 +65,10 @@ fully complete because these requirements remain incomplete or weakly verified:
   not runtime-proven on controlled throwaway content.
 - Native Reddit mobile app behavior is unverified.
 - Server-side protected API moderator access checks are locally verified, and
-  the current full moderator account returned permission `all`; true non-mod
-  runtime account blocking and lower-permission moderator role strings remain
-  unverified.
+  the current full moderator account returned permission `all`. The repo now
+  keeps future per-mod/manage-level visibility full-access-only for `all`; true
+  non-mod runtime account blocking and lower-permission moderator role strings
+  remain unverified.
 - Native Mod Notes writes are type-supported but not runtime-proven.
 - Mod Discussion delivery and scheduler behavior are not runtime-proven.
 - Actual retention deletion is not runtime-proven; only dry-run controls are.

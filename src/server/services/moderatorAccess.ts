@@ -1,3 +1,5 @@
+import type { ModeratorVisibilityLevel } from '../../shared/schema';
+
 export type CurrentUserWithModPermissions = {
   username: string;
   getModPermissionsForSubreddit?: (subredditName: string) => Promise<string[]>;
@@ -102,6 +104,20 @@ export function isModeratorAccessError(
   error: unknown
 ): error is ModeratorAccessError {
   return error instanceof ModeratorAccessError;
+}
+
+export function resolveModeratorVisibilityLevel(
+  permissions: readonly string[] | undefined
+): ModeratorVisibilityLevel {
+  const normalizedPermissions = new Set(
+    (permissions ?? [])
+      .map((permission) => permission.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  return normalizedPermissions.has('all')
+    ? 'full_moderator'
+    : 'aggregate_only';
 }
 
 function normalizeSubredditName(value: string | undefined): string | undefined {

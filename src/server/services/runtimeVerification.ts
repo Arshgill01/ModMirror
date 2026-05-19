@@ -255,6 +255,7 @@ function buildRuntimeVerificationItems(): RuntimeVerificationItem[] {
       evidence: [
         'Menu items are configured with forUserType=moderator.',
         'src/server/services/moderatorAccess.ts requires a signed-in current user and a non-empty getModPermissionsForSubreddit result before protected API routes continue in live subreddit context.',
+        'src/server/services/moderatorAccess.ts keeps per-mod/manage-level visibility aggregate-only unless the runtime-probed "all" permission is present.',
         'src/server/services/moderatorAccess.test.ts covers no-user, unavailable permission API, empty permission, and permission failure denials.',
         'src/routes/apiAccess.test.ts covers protected current-user permission diagnostics.',
         'Devvit WebView Settings diagnostic returned current moderator permission "all" on r/modmirror_dev.',
@@ -266,7 +267,7 @@ function buildRuntimeVerificationItems(): RuntimeVerificationItem[] {
       safeToRunInPlaytest: true,
       destructive: false,
       nextAction:
-        'Test with a non-moderator account to promote this from local guard proof to runtime proof; verify lower-permission moderator role strings before stronger gates.',
+        'Test with a non-moderator account to promote this from local guard proof to runtime proof; verify lower-permission moderator role strings before expanding the full-access-only visibility gate.',
     },
     {
       id: 'desktop-expanded-webview',
