@@ -11,10 +11,11 @@ paths unless a wave report explicitly says playtest was run. Post/comment
 Apply Policy menu target capture, log-only receipt persistence, receipt-backed
 content snapshots, receipt-backed Case Packet generation, Evidence Board
 create/list/status persistence, portable config export/import, and privacy
-retention inventory/dry-run controls are now runtime-verified on desktop Reddit
-playtest. Live Reddit moderation execution, actual retention deletion, Mod
-Discussion delivery, scheduler, native Mod Notes, external AI, non-mod access,
-and native Reddit mobile app behavior remain unverified or disabled.
+retention inventory/dry-run controls, and Incident Mode receipt
+tagging/reporting are now runtime-verified on desktop Reddit playtest. Live
+Reddit moderation execution, actual retention deletion, Mod Discussion
+delivery, scheduler, native Mod Notes, external AI, non-mod access, and native
+Reddit mobile app behavior remain unverified or disabled.
 
 ## Expansion Wave 29 Checklist
 
@@ -61,7 +62,7 @@ and native Reddit mobile app behavior remain unverified or disabled.
       triage groups, recent incidents, and the last incident report.
 - [x] Add active Incident Mode banner and receipt-ledger incident tags.
 - [x] Add tests for start/end/expiry behavior and receipt tagging.
-- [ ] Runtime-verify Incident Mode route persistence and active receipt tagging
+- [x] Runtime-verify Incident Mode route persistence and active receipt tagging
       through Devvit Web/Redis playtest.
 
 ## Expansion Wave 26 Checklist

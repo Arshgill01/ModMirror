@@ -75,7 +75,7 @@ Updated by: Codex
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Verified locally / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
 | Runtime verified | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Post-W34 Devvit playtest verified receipt-backed board create/list/status persistence in the Reddit-hosted WebView. |
-| Verified locally | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Devvit Redis/API runtime remains unverified. |
+| Runtime verified | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Post-W34 Devvit playtest verified start persistence, active banner, receipt tagging, and post-incident reporting in the Reddit-hosted WebView. |
 | Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
 | Verified locally | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit context behavior remains runtime-unverified. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
@@ -1262,3 +1262,54 @@ Decision:
   playtest path.
 - Actual expired-data cleanup/deletion remains unverified and should require a
   separate controlled destructive cleanup test.
+
+## Post-W34 Incident Mode Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npx devvit whoami` reported `Logged in as u/BrightyBrainiac`.
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Devvit CLI reported playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit-owned Devvit WebView modal on the comment
+  guidance custom post:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-incident-mode-start.png`
+  - `output/runtime-proof/post34-v94-incident-receipt-tag.png`
+  - `output/runtime-proof/post34-v94-incident-report.png`
+
+Verified Incident Mode behavior:
+
+- Settings started Incident Mode with reason `raid`, default duration
+  `120` minutes, and description
+  `Runtime Incident Mode smoke for ModMirror.`
+- The active incident banner rendered and showed incident ID
+  `incident-7aa9f981-7461-4975-a4e1-d0925cb00b36`, expiring at
+  `May 19, 06:43 PM`.
+- The Incident Mode panel persisted status `active`, reason `raid`, start time
+  `May 19, 04:43 PM`, expiry `May 19, 06:43 PM`, policy preset suggestions,
+  and triage groups.
+- While the incident was active, Apply Policy created safe receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` for target `t1_ommzgtz`.
+- The receipt ledger tagged that receipt with
+  `Incident: incident-7aa9f981-7461-4975-a4e1-d0925cb00b36. Tagged for post-incident review.`
+- The receipt execution was skipped and gated: rule `Runtime Smoke Policy`,
+  recommended action `remove`, selected action `remove`, execution `skipped`,
+  mode `unverified disabled`, capability `disabled`, and Native Mod Note
+  `skipped (disabled)`.
+- Ending the incident produced a post-incident report with `1` receipt,
+  `0` overrides, `0` successes, `0` failures, and `1` skipped execution.
+- The recent incidents list changed the incident from `active` to `ended`.
+- No Reddit moderation action was executed during this proof.
+
+Decision:
+
+- W27 Incident Mode route persistence, active banner behavior, receipt tagging,
+  and post-incident reporting may now be described as runtime-verified for this
+  desktop Reddit Devvit WebView playtest path.
+- Incident Mode remains a context and evidence workflow only. It does not
+  enable auto-remove, auto-ban, or policy override automation.

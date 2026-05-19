@@ -286,6 +286,41 @@ Verified in Reddit Devvit WebView:
 - No destructive retention deletion and no Reddit moderation action were
   executed during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version reported by Devvit CLI: `v0.0.1.94`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: comment guidance custom post
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- UI driver: Computer Use against Zen in the Reddit-hosted Devvit WebView,
+  with the host viewport selector switched to `Fullscreen`.
+- Screenshots:
+  - `output/runtime-proof/post34-v94-incident-mode-start.png`
+  - `output/runtime-proof/post34-v94-incident-receipt-tag.png`
+  - `output/runtime-proof/post34-v94-incident-report.png`
+
+Verified in Reddit Devvit WebView:
+
+- Settings started Incident Mode with reason `raid`, default duration
+  `120` minutes, and description
+  `Runtime Incident Mode smoke for ModMirror.`
+- The active banner showed
+  `incident-7aa9f981-7461-4975-a4e1-d0925cb00b36` and stated that receipts
+  would be tagged.
+- Apply Policy created safe receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` for comment target
+  `t1_ommzgtz` while the incident was active.
+- The Receipt Ledger showed the incident tag:
+  `Incident: incident-7aa9f981-7461-4975-a4e1-d0925cb00b36. Tagged for post-incident review.`
+- The receipt stayed gated: execution `skipped`, mode `unverified disabled`,
+  capability `disabled`, and Native Mod Note `skipped (disabled)`.
+- Ending the incident produced a post-incident report with `1` receipt,
+  `0` overrides, `0` successes, `0` failures, and `1` skipped execution.
+- The recent incidents list changed from `raid - active` to `raid - ended`.
+- No Reddit moderation action was executed during this proof.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -318,3 +353,9 @@ Verified in Reddit Devvit WebView:
   interaction for the `v0.0.1.93` proof.
 - `screencapture -x output/runtime-proof/post34-v93-config-export-import.png`
 - `screencapture -x output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+- `npm test -- src/server/services/incidentMode.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+- Computer Use Zen Incident Mode start, receipt-tagging, and post-incident
+  report interaction for the `v0.0.1.94` proof.
+- `screencapture -x output/runtime-proof/post34-v94-incident-mode-start.png`
+- `screencapture -x output/runtime-proof/post34-v94-incident-receipt-tag.png`
+- `screencapture -x output/runtime-proof/post34-v94-incident-report.png`

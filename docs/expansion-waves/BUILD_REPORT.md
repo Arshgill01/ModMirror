@@ -231,6 +231,32 @@ Post-W34 config/privacy runtime proof:
 - No destructive retention deletion or Reddit moderation action was executed
   during this proof.
 
+Post-W34 Incident Mode runtime proof:
+
+- Devvit CLI playtest reported `v0.0.1.94`.
+- Computer Use drove the Settings and Act UI in the Reddit-hosted Devvit
+  WebView as signed-in moderator `u/BrightyBrainiac`, with the host viewport
+  selector switched to `Fullscreen`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v94-incident-mode-start.png`
+  - `output/runtime-proof/post34-v94-incident-receipt-tag.png`
+  - `output/runtime-proof/post34-v94-incident-report.png`
+- Settings started Incident Mode with reason `raid`, default duration
+  `120` minutes, and description
+  `Runtime Incident Mode smoke for ModMirror.`
+- The active banner persisted
+  `incident-7aa9f981-7461-4975-a4e1-d0925cb00b36` and stated receipts would
+  be tagged.
+- Apply Policy created safe receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` for comment target
+  `t1_ommzgtz` while the incident was active.
+- The Receipt Ledger showed the incident tag and retained gated execution:
+  execution `skipped`, mode `unverified disabled`, capability `disabled`,
+  Native Mod Note `skipped (disabled)`.
+- Ending the incident produced a post-incident report with `1` receipt,
+  `0` overrides, `0` successes, `0` failures, and `1` skipped execution.
+- No Reddit moderation action was executed during this proof.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
@@ -311,6 +337,18 @@ Post-W34 config/privacy runtime validation passed:
   retention inventory/dry-run controls on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v93-config-export-import.png`
 - `screencapture -x output/runtime-proof/post34-v93-privacy-retention-dry-run.png`
+
+Post-W34 Incident Mode runtime validation passed:
+
+- `npx devvit whoami`
+- `npm run type-check`
+- `npm test -- src/server/services/incidentMode.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+- `npm run dev`
+- Computer Use Zen Incident Mode start, receipt-tagging, and post-incident
+  report interaction on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v94-incident-mode-start.png`
+- `screencapture -x output/runtime-proof/post34-v94-incident-receipt-tag.png`
+- `screencapture -x output/runtime-proof/post34-v94-incident-report.png`
 
 ## Next Engineering Risks
 
