@@ -5,7 +5,8 @@
 Post-W34 runtime-smoke follow-up has been merged to `master` through PR #12,
 the UI sweep proof has been merged through PR #14, and the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16. The
-latest Devvit playtest uploaded from merged work is `v0.0.1.122`.
+latest Devvit playtest observed while continuing runtime proof work is
+`v0.0.1.123`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment
@@ -18,7 +19,10 @@ review, policy impact summaries, policy ratification propose/review/blocking,
 attribution correction persistence, stored-scan replay, and manual/skipped Case
 Packet delivery receipt persistence are now runtime-verified on desktop Reddit
 playtest. Wave 29 context-derived subreddit isolation is now runtime-verified
-on Devvit playtest `v0.0.1.122`. Live Reddit moderation execution, actual
+on Devvit playtest `v0.0.1.122`. A follow-up W17 attempt on Devvit playtest
+`v0.0.1.123` reached the same-subreddit Operational Queue refresh path but
+still returned the labeled type-supported/no-items fallback, so live modqueue
+item reads remain open. Live Reddit moderation execution, actual
 retention deletion, Mod Discussion delivery, scheduler, native Mod Notes, live
 modqueue reads, external AI, non-mod access, reviewed adoption with multiple
 distinct moderators, and native Reddit mobile app behavior remain unverified or
@@ -219,8 +223,9 @@ the repo root are intentionally left untouched.
 - [x] Add targeted service tests for capability, normalization, adapter failure,
       and missing subreddit context.
 - [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
-      content. Post-W34 playtest refreshed the panel but still returned the
-      type-supported fallback instead of a verified Reddit modqueue read.
+      content. Post-W34 playtests refreshed the panel on `v0.0.1.94` and
+      `v0.0.1.123`, but still returned the type-supported/no-items fallback
+      instead of verified Reddit modqueue items.
 
 ## Expansion Wave 16 Checklist
 

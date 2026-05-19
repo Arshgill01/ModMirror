@@ -48,7 +48,8 @@ Environment:
 - Branch: `master`
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
-- Latest playtest version observed from merged `master`: `v0.0.1.122`
+- Latest playtest version observed while continuing runtime proof work:
+  `v0.0.1.123`
 - Browser/UI driver: Zen desktop browser with Computer Use
 
 Runtime observations:
@@ -70,6 +71,10 @@ Runtime observations:
   authenticated WebView API: current/default reads resolved to `modmirror_dev`,
   the labeled `ExampleLearning` demo namespace remained allowed, and
   cross-subreddit query/body requests returned isolation errors before writes.
+- Devvit playtest `v0.0.1.123` rechecked the W17 same-subreddit Operational
+  Queue path in the authenticated expanded WebView. The read-only refresh
+  entered the loading state, returned the labeled type-supported/no-items
+  fallback, and did not return live queue items.
 - No real Reddit moderation action, public post, native Mod Note write, Mod
   Discussion send, scheduler task, actual retention deletion, or external AI
   call was executed.
@@ -82,6 +87,7 @@ Runtime observations:
 | Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment; `v0.0.1.121` accessibility-tree sweep covered Act, Scan, Review, and Prove. | Keep in runtime regression checklist; add pixel screenshot proof when capture is reliable. |
 | Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 `v0.0.1.121` rendered launch, Act, Scan, Review, and Prove in both host modes by accessibility-tree inspection. | Verify native Reddit mobile separately. |
 | Subreddit isolation guard | runtime verified | W29 Devvit playtest `v0.0.1.122` used authenticated WebView API probes: `/api/health` returned `modmirror_dev`; `/api/policies` default and explicit-current reads stayed scoped to `modmirror_dev`; `ExampleLearning` remained the labeled demo exception; cross-subreddit policy/runtime-capability/modqueue queries returned `403 subreddit_isolation_failed`; cross-subreddit policy creation returned `400 policy_validation_failed` before writes. | Keep same-subreddit live routes in regression checklist; cross-community dashboards are out of scope. |
+| Modqueue triage | runtime fallback observed | Post-W34 playtests `v0.0.1.94` and `v0.0.1.123` reached the Act-page Operational Queue refresh path. The `v0.0.1.123` same-subreddit authenticated WebView refresh showed the read-only loading state, then returned the labeled type-supported/no-items fallback with no live queue items. | Create or identify safe queue content only with explicit confirmation, then verify live `reddit_modqueue` items or capture the exact adapter permission/runtime failure. |
 | Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
 | Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
 | Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |
