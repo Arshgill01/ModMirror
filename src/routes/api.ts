@@ -198,6 +198,7 @@ import {
 import {
   assertModeratorAccess,
   isModeratorAccessError,
+  resolveModeratorVisibilityLevel,
 } from '../server/services/moderatorAccess';
 
 export const api = new Hono();
@@ -317,6 +318,9 @@ api.get('/access/diagnostics', async (c) => {
     evidence: access.evidence,
     permissionCount: access.permissions?.length ?? 0,
     permissions: access.permissions ?? [],
+    moderatorVisibilityLevel: resolveModeratorVisibilityLevel(
+      access.permissions
+    ),
     source: 'current_user_permissions',
   };
   if (access.subreddit !== undefined) {

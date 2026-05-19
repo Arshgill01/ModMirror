@@ -203,5 +203,6 @@ individual moderator performance.
 Reason:
 
 - ModMirror's product thesis is consistency and governance, not surveillance.
-- Exact moderator permission strings for per-mod visibility remain
-  runtime-unverified.
+- The current Devvit WebView permission diagnostic returned `all`; future
+  per-mod/manage-level surfaces should stay behind that full-access-only gate
+  until lower-permission moderator role strings are runtime-verified.

@@ -116,6 +116,7 @@ describe('api moderator access guard', () => {
         evidence: string;
         permissionCount: number;
         permissions: string[];
+        moderatorVisibilityLevel: string;
         source: string;
       };
     };
@@ -127,8 +128,32 @@ describe('api moderator access guard', () => {
       evidence: 'moderator_permissions_verified',
       permissionCount: 3,
       permissions: ['all', 'posts', 'access'],
+      moderatorVisibilityLevel: 'full_moderator',
       source: 'current_user_permissions',
     });
+    expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
+  });
+
+  it('keeps diagnostic visibility aggregate-only without the all permission', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => ['posts']);
+    devvitState.context.username = 'mod_b';
+    devvitState.currentUser = {
+      username: 'mod_b',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/access/diagnostics');
+    const payload = (await response.json()) as {
+      ok: true;
+      data: {
+        moderatorVisibilityLevel: string;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.data.moderatorVisibilityLevel).toBe('aggregate_only');
     expect(getModPermissionsForSubreddit).toHaveBeenCalledWith('modmirror_dev');
   });
 });

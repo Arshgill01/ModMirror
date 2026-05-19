@@ -31,7 +31,9 @@ now locally verified, and the guarded build reached Devvit playtest ready on
 `v0.0.1.126`, but still needs a true non-mod account playtest. A protected
 current-user permission diagnostic route is locally and runtime verified for
 the current moderator account: the Devvit WebView Settings check on
-`r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` The next
+`r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` A
+conservative full-access-only visibility gate now keeps future per-mod surfaces
+aggregate-only unless that runtime-probed `all` permission is present. The next
 runtime-proof wave should target one of those remaining gaps with the same
 safety constraints used by the post-W34 probes.
 
@@ -43,6 +45,15 @@ Review, Prove, and Settings.
 PR #12 merge cleanup removed the merged local worktrees and local branches.
 Only the root `master` worktree remains. The untracked spec-pack directories in
 the repo root are intentionally left untouched.
+
+## Post-W34 Access Hardening
+
+- [x] Add a full-access-only visibility helper for future per-mod/manage-level
+      surfaces.
+- [x] Include the visibility level in protected access diagnostics.
+- [ ] Verify lower-permission moderator role strings needed for expanding
+      per-mod/manage-level visibility beyond the current `all` gate.
+- [ ] Runtime-verify protected API blocking with a true non-moderator account.
 
 ## Post-W34 UI Uniformity Pass
 

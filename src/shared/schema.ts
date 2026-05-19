@@ -2054,6 +2054,8 @@ export interface RuntimeCapabilityMatrix {
   warnings: string[];
 }
 
+export type ModeratorVisibilityLevel = 'aggregate_only' | 'full_moderator';
+
 export interface ModeratorAccessDiagnostic {
   subreddit?: string;
   username?: string;
@@ -2062,6 +2064,7 @@ export interface ModeratorAccessDiagnostic {
     | 'moderator_permissions_verified';
   permissionCount: number;
   permissions: string[];
+  moderatorVisibilityLevel: ModeratorVisibilityLevel;
   source: 'current_user_permissions';
 }
 

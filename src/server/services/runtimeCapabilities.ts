@@ -401,6 +401,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
         'Protected API routes require a signed-in user with non-empty subreddit moderator permissions when Devvit supplies live subreddit context.',
       evidence: [
         'moderatorAccess.ts checks reddit.getCurrentUser().getModPermissionsForSubreddit before protected API routes continue.',
+        'moderatorAccess.ts resolves per-mod visibility as full_moderator only when the runtime-probed "all" permission is present; all other permission shapes remain aggregate_only.',
         'moderatorAccess.test.ts covers missing user, unavailable permission API, empty permissions, permission failures, and local no-context fallback.',
         'apiAccess.test.ts covers the protected current-user permission diagnostic route.',
         'Devvit WebView Settings diagnostic returned current moderator permission "all" on r/modmirror_dev.',
@@ -412,7 +413,7 @@ function baseCapabilityEntries(): RuntimeCapabilityMatrixEntry[] {
       safeToTest: true,
       canUpdateFromHealthEvents: true,
       nextAction:
-        'Verify with a true non-moderator account before claiming runtime access blocking; verify lower-permission moderator role strings before stronger gates.',
+        'Verify with a true non-moderator account before claiming runtime access blocking; verify lower-permission moderator role strings before expanding the full-access-only visibility gate.',
     },
     {
       id: 'demo-fallbacks',
