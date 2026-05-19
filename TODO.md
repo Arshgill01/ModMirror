@@ -578,6 +578,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       any real send path.
 - [ ] Runtime-verify internal Mod Discussion delivery on a safe test subreddit
       before enabling any real send path.
+- [x] Add a scheduler runtime test plan before registering any scheduler task.
 - [ ] Register and runtime-verify a scheduler task before scheduler delivery is
       marked anything stronger than unavailable.
 - [x] Locally verify scheduler confirmations cannot route through the Mod

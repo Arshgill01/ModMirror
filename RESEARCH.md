@@ -70,7 +70,7 @@ Updated by: Codex
 | Verified | The full demo workflow runs inside the Reddit playtest WebView. | On `v0.0.1.65`, Safari verified ExampleLearning demo scan, Low-effort questions policy creation, Apply Policy preview/confirm with an override, Case Packet generation with Markdown export, Review inbox/health update, Manual Digest generation, and Settings runtime state. |
 | Verified | Wave 9/10 digest history can use Redis sorted sets with the existing installation-scoped Redis client. | `src/server/services/digest.ts` stores reports in `modmirror:{subreddit}:digests` and `modmirror:{subreddit}:digest:{digestId}`; `npm run type-check` and `npm test -- src/server/services/digest.test.ts` pass. Runtime Redis read/write remains tracked separately. |
 | Verified | W01 post/comment Apply Policy menu entrypoints can use `MenuItemRequest.targetId`, `reddit.getPostById`, `reddit.getCommentById`, `reddit.getCurrentUser`, and `User.getModPermissionsForSubreddit` to build target context. | Local checks pass; post target capture was playtest-verified on `v0.0.1.83` with `t3_1texjev`, and comment target capture was playtest-verified on `v0.0.1.84` with `t1_ommzgtz`. Execution receipts remain separately unverified. |
-| Type/build only | Devvit scheduler client exists in installed typings. | `@devvit/web/server` re-exports `@devvit/scheduler`; `node_modules/@devvit/scheduler/SchedulerClient.d.ts` exposes `scheduler.runJob`, `cancelJob`, and `listJobs`, and `Devvit.addSchedulerJob` exists in `node_modules/@devvit/public-api/devvit/Devvit.d.ts`. No Wave 9/10 scheduler job is registered until runtime behavior is verified. |
+| Type/build only | Devvit scheduler client exists in installed typings. | `@devvit/web/server` re-exports `@devvit/scheduler`; `node_modules/@devvit/scheduler/SchedulerClient.d.ts` exposes `scheduler.runJob`, `cancelJob`, and `listJobs`, and `Devvit.addSchedulerJob` exists in `node_modules/@devvit/public-api/devvit/Devvit.d.ts`. No Wave 9/10 scheduler job is registered until runtime behavior is verified. `docs/operational-overhaul/SCHEDULER_RUNTIME_TEST_PLAN.md` defines the required approval, proof-only task, smoke record, and cleanup gate before scheduled behavior can be marked runtime-verified. |
 | Type/build only | Devvit modmail/mod discussion APIs exist in installed typings. | `node_modules/@devvit/reddit/models/ModMail.d.ts` and newmodmail proto typings expose modmail conversations including internal mod-only conversation fields. ModMirror keeps digest delivery disabled/unverified until a non-spam runtime playtest proves safe behavior. |
 | Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W08 Policy Agreement now has draft/propose/review/adopt lifecycle artifacts. | `RulePolicy` and `PolicyVersion` carry lifecycle/proposal/review/adoption metadata; `/api/policies/:id/propose`, `/reviews`, and `/adopt` exist; `policies.test.ts` covers draft, review, adopt, invalid transitions, and Apply Policy active-version snapshot behavior. Runtime Redis/API behavior remains unverified. |
@@ -588,6 +588,11 @@ Digest delivery/scheduler status:
 - Manual Markdown copy remains the verified launch path.
 - Mod discussion delivery is still unverified and disabled.
 - Scheduler execution is still unverified and disabled.
+- `docs/operational-overhaul/SCHEDULER_RUNTIME_TEST_PLAN.md` defines the
+  required proof plan before any scheduler task is registered or scheduled
+  behavior is marked runtime-verified. It requires explicit approval,
+  proof-only task registration, a smoke/status record only, and cleanup or
+  disablement after the run.
 
 ## Operational Overhaul W03 Findings
 
@@ -783,6 +788,8 @@ Runtime status:
 
 - No modmail/mod discussion message was sent in W11.
 - No scheduler task was registered or run in W11.
+- `docs/operational-overhaul/SCHEDULER_RUNTIME_TEST_PLAN.md` is the required
+  proof gate before registering or running any scheduler task in this app shape.
 - Delivery receipt persistence is locally tested with mocked Redis only. Later
   post-W34 playtest verified manual-ready and skipped Mod Discussion draft
   receipt persistence, but not live Mod Discussion sending or scheduler jobs.

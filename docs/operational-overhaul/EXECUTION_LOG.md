@@ -1515,3 +1515,23 @@ Validation:
 
 Runtime proof status: no new Devvit playtest was run. No Reddit moderation
 action was executed.
+
+### 2026-05-20 - Scheduler Runtime Test Plan
+
+- Added `docs/operational-overhaul/SCHEDULER_RUNTIME_TEST_PLAN.md` as the
+  required proof gate before any ModMirror scheduler task can be registered or
+  scheduled behavior can be marked runtime-verified.
+- The plan requires explicit approval, a proof-only scheduler task, smoke/status
+  record writes only, exact job result evidence, optional list/cancel evidence,
+  cleanup or disablement, and separation from Mod Discussion delivery,
+  retention deletion, moderation actions, native Mod Notes, and external AI.
+- Updated `TODO.md`, `RESEARCH.md`, `CAPABILITY_MATRIX.md`,
+  `RUNTIME_VERIFICATION_MATRIX.md`, `RUNTIME_PROOF_BACKLOG.md`, and
+  `COMPLETION_AUDIT.md` to point at the plan while keeping runtime proof open.
+
+Validation:
+
+- `git diff --check` passed.
+
+Runtime proof status: no new Devvit playtest was run. No scheduler task was
+registered, listed, cancelled, or run.
