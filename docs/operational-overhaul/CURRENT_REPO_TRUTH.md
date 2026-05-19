@@ -132,6 +132,10 @@ It does not yet support:
   `modmirror_dev`, kept default and explicit-current API reads in that
   namespace, allowed only the labeled `ExampleLearning` demo exception, and
   rejected cross-subreddit query/body requests before writes.
+- W17 modqueue triage has follow-up runtime fallback evidence: authenticated
+  Devvit playtest `v0.0.1.123` reached the same-subreddit Operational Queue
+  refresh path for `modmirror_dev`, but still returned the labeled
+  type-supported/no-items fallback instead of live queue items.
 
 ## Runtime Truth
 
@@ -142,7 +146,8 @@ Runtime evidence exists for:
 - W12 operational IA inside the desktop expanded WebView on playtest
   `v0.0.1.71`, plus launch/fullscreen/Agree/Settings proof on `v0.0.1.120`
   and later UI/accessibility-tree plus subreddit-isolation proof through
-  `v0.0.1.122`.
+  `v0.0.1.122`; W17 Operational Queue fallback evidence through
+  `v0.0.1.123`.
 - Safe Redis smoke and Reddit read-only smoke from inside the Devvit WebView.
 - Post/comment Apply Policy menu target capture and Act target strip handoff.
 - Log-only Apply Policy receipt persistence in Devvit Redis.
@@ -169,7 +174,8 @@ Runtime evidence does not yet exist for:
 - Non-moderator access blocking.
 - Exact moderator permission strings.
 - Native Reddit mobile app behavior.
-- Same-subreddit live modqueue item reads.
+- Same-subreddit live modqueue item reads; the Operational Queue fallback was
+  observed on playtests `v0.0.1.94` and `v0.0.1.123`.
 
 ## Product Boundary
 

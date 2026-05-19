@@ -299,6 +299,14 @@ Post-W34 modqueue runtime fallback observation:
   - `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
 - The panel stayed reachable and non-destructive, but returned the labeled
   `type-supported` fallback rather than live `reddit_modqueue` queue items.
+- A follow-up same-subreddit attempt reached Devvit playtest `v0.0.1.123` for
+  `r/modmirror_dev`, opened the existing authenticated expanded dashboard, and
+  clicked only the read-only Operational Queue `Refresh` button. The panel
+  showed the read-only loading state, then returned the same labeled no-items
+  fallback instead of live queue items.
+- No public Reddit writes, live scan/demo load actions, moderation actions,
+  native Mod Notes, Mod Discussion operations, scheduler actions, retention
+  deletion, or external AI calls were performed.
 - W17 remains open because this did not prove Reddit modqueue adapter runtime
   behavior.
 
@@ -429,6 +437,14 @@ Post-W34 modqueue fallback validation passed, with W17 still open:
 - `npm test -- src/server/services/modqueueTriage.test.ts`
 - Computer Use Zen Operational Queue refresh on Reddit Devvit WebView
 - `screencapture -x output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+- `npx devvit whoami`
+- `npm run type-check`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `npm run dev`
+- Computer Use Zen expanded-dashboard Operational Queue refresh on Devvit
+  playtest `v0.0.1.123`
 
 Post-W34 Review health and impact runtime validation passed:
 

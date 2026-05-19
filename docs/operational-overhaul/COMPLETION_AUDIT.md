@@ -71,6 +71,9 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
   rejected, not that same-subreddit queue reads return live Reddit items.
+  A follow-up Devvit playtest `v0.0.1.123` reached the same-subreddit
+  Operational Queue refresh path but still returned the type-supported/no-items
+  fallback.
 - Policy ratification has not been proven with multiple distinct moderators.
 - The post-W34 UI sweep now has accessibility-tree proof for the embedded
   launch card plus Act, Scan, Review, and Prove in Reddit host Mobile and

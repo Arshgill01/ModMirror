@@ -67,7 +67,7 @@ Updated by: Codex
 | Verified locally | W07 consistency analytics can summarize persisted scan drift trends and receipt-backed policy impact without inventing live proof. | `src/server/services/analytics.ts`, `src/server/services/analytics.test.ts`, `/api/analytics/consistency`, and client Review surface; `npm run type-check`, `npm run lint`, targeted analytics tests, full `npm test`, `npm run build`, and `git diff --check` pass. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W08 Policy Agreement now has draft/propose/review/adopt lifecycle artifacts. | `RulePolicy` and `PolicyVersion` carry lifecycle/proposal/review/adoption metadata; `/api/policies/:id/propose`, `/reviews`, and `/adopt` exist; `policies.test.ts` covers draft, review, adopt, invalid transitions, and Apply Policy active-version snapshot behavior. Runtime Redis/API behavior remains unverified. |
 | Verified locally | W09 Case Packets prefer immutable receipts and label evidence sources. | `casePacket.ts` loads receipts, emits packet types/evidence labels, includes receipt target snapshots and execution results, and falls back to action history with caveats. `casePacket.test.ts` covers receipt-backed packets and policy-changed-since-action. Runtime Redis/API behavior remains unverified. |
-| Type/build only | W17 modqueue triage can read Reddit modqueue items through Devvit when runtime permits. | Official Subreddit docs list `getModQueue(options?)` and `getReports(options?)` returning `Listing<Post | Comment>`; installed typings expose `Subreddit.getModQueue`, `RedditAPIClient.getModQueue`, `Subreddit.getReports`, and proto routes `/r/{subreddit}/about/modqueue` and `/about/reports`. `src/server/services/modqueueTriage.ts`, `/api/modqueue/triage`, and `src/server/services/modqueueTriage.test.ts` are local/type verified only. |
+| Type/build only / runtime fallback observed | W17 modqueue triage can read Reddit modqueue items through Devvit when runtime permits, but live queue item reads are not proven. | Official Subreddit docs list `getModQueue(options?)` and `getReports(options?)` returning `Listing<Post | Comment>`; installed typings expose `Subreddit.getModQueue`, `RedditAPIClient.getModQueue`, `Subreddit.getReports`, and proto routes `/r/{subreddit}/about/modqueue` and `/about/reports`. `src/server/services/modqueueTriage.ts`, `/api/modqueue/triage`, and `src/server/services/modqueueTriage.test.ts` are local/type verified. Post-W34 playtests `v0.0.1.94` and `v0.0.1.123` reached the WebView Operational Queue refresh path but returned the labeled no-items fallback instead of verified `reddit_modqueue` items. |
 | Runtime verified | W18 attribution calibration can apply moderator corrections to future scan attribution without relabeling unrelated non-content mod-log rows. | `src/server/services/attributionCalibration.ts` stores corrections by subreddit/action ID and only indexes content targets (`t1_`/`t3_`) for target-based correction reuse. Post-W34 playtest `v0.0.1.101` verified Redis correction persistence through a live quick scan: `1` corrected action, `24` unmatched actions, and the earlier over-broad `t5_` target correction bug was fixed. |
 | Runtime verified | W19 policy ratification enforces reviewer approval thresholds before non-quick adoption. | `src/server/services/policyRatification.ts` summarizes latest reviewer votes, `policies.ts` stores proposal notes/settings and blocks adoption until approval thresholds are met, and policy tests cover threshold success/failure plus disabled quick adoption. Post-W34 playtest `v0.0.1.104` verified Redis-backed propose/review writes in the Reddit-hosted WebView: Spam moved from draft to proposed to under review, recorded `1/2` approvals, kept adoption blocked, and no longer exposes the quick-adopt button when policy settings disable single-mod adoption. |
 | Runtime verified | W20 replay sandbox can simulate proposed policy outcomes from stored live scans without live Reddit calls or receipt mutation. | `src/server/services/replaySandbox.ts` runs read-only policy replay over supplied or scan-derived attributed actions, `/api/policies/:id/replay` reapplies persisted attribution corrections before converting stored scan actions, and replay tests cover changed recommendations, skipped rules, and input immutability. Post-W34 playtest `v0.0.1.101` verified replay evaluated the `1` corrected live action and skipped `24` unrelated actions. |
@@ -80,7 +80,7 @@ Updated by: Codex
 | Runtime verified | W27 Incident Mode is explicit, temporary, and receipt-tagging only. | `src/server/services/incidentMode.ts` stores incident state, preset suggestions, triage groups, and post-incident receipt summaries; `confirmApplyPolicy` tags receipts with the active incident ID. Tests cover start/end/expiry and receipt tagging. Post-W34 Devvit playtest verified start persistence, active banner, receipt tagging, and post-incident reporting in the Reddit-hosted WebView. |
 | Runtime verified | W28 Configuration Portability excludes private history and imports policy config as drafts. | `src/server/services/configPortability.ts` exports only policy ladders, response templates, digest settings, and starter-template packages. Imports validate schema/version first, support legacy v0 migration, and use policy draft/update flows instead of adoption. Post-W34 Devvit playtest verified live export, starter-template dry-run, and draft import visibility in the Reddit-hosted WebView. |
 | Runtime verified | W29 API helpers reject cross-subreddit requests before service calls. | `src/server/services/subredditIsolation.ts` resolves current/demo/live subreddit scopes, `src/routes/api.ts` routes body/query subreddit values through the guard, and `src/server/services/redis.ts` rejects unsafe subreddit key namespaces. Tests cover current context, demo exception, cross-subreddit rejection, live-context rejection, and unsafe Redis key names. Devvit playtest `v0.0.1.122` verified `/api/health` context as `modmirror_dev` / `BrightyBrainiac`, `/api/policies` default and explicit-current reads scoped to `modmirror_dev`, the labeled `ExampleLearning` demo exception remained allowed, cross-subreddit query routes returned `403 subreddit_isolation_failed`, live-only modqueue cross-subreddit rejected with the live-context message, and a cross-subreddit policy-create POST was rejected before any write. |
-| Runtime fallback observed | W17 modqueue triage route is reachable from the WebView but has not proven live Reddit modqueue reads. | Post-W34 Devvit playtest refreshed the Act-page Operational Queue panel on `v0.0.1.94`; it returned the labeled `type-supported` fallback and no queue items, not a verified Reddit modqueue adapter result. Keep W17 runtime verification open until safe queue content returns `source: reddit_modqueue` or an exact permission/runtime failure is captured. |
+| Runtime fallback observed | W17 modqueue triage route is reachable from the WebView but has not proven live Reddit modqueue reads. | Post-W34 Devvit playtests refreshed the Act-page Operational Queue panel on `v0.0.1.94` and `v0.0.1.123`; `v0.0.1.123` showed the authenticated expanded dashboard for `modmirror_dev`, entered the read-only loading state, then returned the labeled no-items/type-supported fallback. Keep W17 runtime verification open until safe queue content returns `source: reddit_modqueue` or an exact permission/runtime failure is captured. |
 | Deferred | Live Reddit moderation execution from Apply Policy. | Delivery remains `log_only` because public comment/removal behavior is not playtest-verified. |
 
 ## Known Platform Constraints
@@ -1420,16 +1420,29 @@ Evidence source:
   Reddit-hosted Devvit WebView.
 - Screenshot captured:
   - `output/runtime-proof/post34-v94-modqueue-type-supported-fallback.png`
+- Follow-up same-subreddit attempt:
+  - `npx devvit whoami` reported `u/BrightyBrainiac`.
+  - `npm run dev` reached playtest version `v0.0.1.123` for
+    `r/modmirror_dev`.
+  - Computer Use opened the existing Reddit-hosted expanded dashboard and
+    observed WebView context for app version `0.0.1.123`, subreddit
+    `modmirror_dev`, and user `BrightyBrainiac`.
+  - Only the read-only Operational Queue `Refresh` button was clicked.
 
 Observed behavior:
 
 - The Operational Queue panel remained reachable and non-destructive.
 - Refresh briefly entered the loading state:
   `Reading Reddit modqueue items without taking action.`
+- On `v0.0.1.123`, the loading state also displayed:
+  `Requests time out after 12 seconds with a labeled retry or fallback message.`
 - The final panel still reported
   `Modqueue triage type-supported: Devvit typings expose read-only modqueue APIs, but ModMirror has not runtime-verified this endpoint in playtest.`
 - The panel returned no queue items and told the moderator to use post/comment
   menus or enter a target thing ID directly.
+- No public Reddit writes, live scan/demo load actions, moderation actions,
+  native Mod Notes, Mod Discussion operations, scheduler actions, retention
+  deletion, or external AI calls were performed.
 
 Decision:
 
