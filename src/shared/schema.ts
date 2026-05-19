@@ -2097,3 +2097,25 @@ export interface RedisSortedSetSmokeResult {
   scoreChecks: Record<string, number | undefined>;
   ok: boolean;
 }
+
+export interface RedisStorageSmokeResult {
+  keys: {
+    scanRecord: string;
+    scanIndex: string;
+    actions: string;
+    overrides: string;
+  };
+  expected: {
+    scanMetadataCount: number;
+    actionEventCount: number;
+    overrideEventCount: number;
+  };
+  observed: {
+    scanRecordBytes?: number;
+    scanIndexCardinality: number;
+    actionIndexCardinality: number;
+    overrideIndexCardinality: number;
+    postCleanupExistingKeys: number;
+  };
+  ok: boolean;
+}

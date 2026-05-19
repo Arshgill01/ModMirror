@@ -37,6 +37,14 @@ vi.mock('@devvit/web/server', () => ({
       }
       return Promise.resolve();
     }),
+    exists: vi.fn((...keys: string[]) =>
+      Promise.resolve(
+        keys.filter(
+          (key) =>
+            devvitState.strings.has(key) || devvitState.sortedSets.has(key)
+        ).length
+      )
+    ),
     zAdd: vi.fn((key: string, ...values: { member: string; score: number }[]) => {
       const rows = devvitState.sortedSets.get(key) ?? [];
       rows.push(...values);
@@ -315,6 +323,78 @@ describe('api moderator access guard', () => {
       lastHealthEvent: {
         source: 'smoke_route',
         message: 'Redis sorted-set reverse-rank order matched.',
+      },
+    });
+  });
+
+  it('records Redis storage-envelope smoke results as runtime health events', async () => {
+    const getModPermissionsForSubreddit = vi.fn(async () => ['all']);
+    devvitState.context.username = 'mod_a';
+    devvitState.currentUser = {
+      username: 'mod_a',
+      getModPermissionsForSubreddit,
+    };
+
+    const { api } = await import('./api');
+
+    const response = await api.request('/smoke/redis-storage', {
+      method: 'POST',
+    });
+    const payload = (await response.json()) as {
+      ok: boolean;
+      expected: {
+        scanMetadataCount: number;
+        actionEventCount: number;
+        overrideEventCount: number;
+      };
+      observed: {
+        scanIndexCardinality: number;
+        actionIndexCardinality: number;
+        overrideIndexCardinality: number;
+        postCleanupExistingKeys: number;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      ok: true,
+      expected: {
+        scanMetadataCount: 10,
+        actionEventCount: 500,
+        overrideEventCount: 500,
+      },
+      observed: {
+        scanIndexCardinality: 10,
+        actionIndexCardinality: 500,
+        overrideIndexCardinality: 500,
+        postCleanupExistingKeys: 0,
+      },
+    });
+
+    const matrixResponse = await api.request(
+      '/runtime-capabilities?subreddit=modmirror_dev'
+    );
+    const matrixPayload = (await matrixResponse.json()) as {
+      ok: true;
+      data: {
+        entries: Array<{
+          id: string;
+          state: string;
+          lastHealthEvent?: { source: string; message: string };
+        }>;
+      };
+    };
+    const storageEntry = matrixPayload.data.entries.find(
+      (entry) => entry.id === 'redis-storage-envelope'
+    );
+
+    expect(matrixResponse.status).toBe(200);
+    expect(storageEntry).toMatchObject({
+      state: 'verified_runtime',
+      lastHealthEvent: {
+        source: 'smoke_route',
+        message:
+          'Redis storage envelope smoke matched expected counts and cleaned up.',
       },
     });
   });

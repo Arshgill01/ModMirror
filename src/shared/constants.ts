@@ -445,6 +445,7 @@ export const API_ROUTES = {
   applyPolicyPreview: '/api/apply-policy/preview',
   applyPolicyConfirm: '/api/apply-policy/confirm',
   redisSmoke: '/api/smoke/redis',
+  redisStorageSmoke: '/api/smoke/redis-storage',
   redisSortedSetSmoke: '/api/smoke/redis-zset',
   redditSmoke: '/api/smoke/reddit',
 } as const;

@@ -86,7 +86,8 @@ fully complete because these requirements remain incomplete or weakly verified:
 - Redis sorted-set ordering is now runtime verified through
   `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, after the earlier
   `v0.0.1.131` empty observed-order failure. Practical Redis storage limits
-  remain unproven.
+  remain unproven; `/api/smoke/redis-storage` is now locally available for the
+  next bounded storage-envelope runtime pass.
 - Live modqueue reads still return the labeled fallback instead of verified
   Reddit queue items. W29 proved cross-subreddit live modqueue requests are
   rejected, not that same-subreddit queue reads return live Reddit items.

@@ -1135,3 +1135,34 @@ Devvit's documented variadic `zAdd` call:
 Runtime proof status: reverse-rank sorted-set ordering is now verified for the
 safe diagnostic route. Practical Redis storage limits remain a separate open
 follow-up.
+
+### 2026-05-20 - Post-W34 Redis Storage-Envelope Diagnostic
+
+Added a safe local diagnostic for the remaining practical Redis storage-limit
+proof:
+
+- Added `runRedisStorageSmoke`, which writes a bounded scan-like record,
+  10 scan metadata rows, 500 action-event rows, and 500 override-event rows to
+  namespaced smoke keys, then deletes the keys and verifies cleanup with
+  `redis.exists`.
+- Added `POST /api/smoke/redis-storage`, a `redis-storage-envelope` runtime
+  capability entry, and a Settings `Run Redis storage` control.
+- Added local route/service coverage for expected counts, cleanup, and runtime
+  health-event promotion.
+- Updated `TODO.md`, `RESEARCH.md`, and operational-overhaul docs to keep
+  practical Redis storage limits open until the safe storage smoke passes in
+  Devvit playtest.
+
+Validation:
+
+- `npm test -- src/server/services/redis.test.ts src/routes/apiAccess.test.ts src/server/services/runtimeCapabilities.test.ts`
+  passed: 3 files, 14 tests.
+- `npm run type-check` passed.
+- `npm run lint` passed.
+- `npm test` passed: 47 files, 214 tests.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+Runtime proof status: local diagnostic implemented and validated. Devvit
+playtest for `/api/smoke/redis-storage` was not run in this pass, so practical
+Redis storage limits remain open.

@@ -86,6 +86,7 @@ import type {
   PrivacyRetentionExport,
   PrivacyRetentionSettings,
   RedisSmokeResult,
+  RedisStorageSmokeResult,
   RedisSortedSetSmokeResult,
   ResponseTemplateKind,
   RuntimeCapabilityHealthEvent,
@@ -112,7 +113,12 @@ type OverrideReviewStatus =
   | 'policy_needs_update'
   | 'needs_team_discussion'
   | 'no_action_needed';
-type RuntimeSmokeCheck = 'redis' | 'redis-zset' | 'reddit' | 'access';
+type RuntimeSmokeCheck =
+  | 'redis'
+  | 'redis-zset'
+  | 'redis-storage'
+  | 'reddit'
+  | 'access';
 
 type Page = {
   id: ProductPageId;
@@ -2738,11 +2744,12 @@ function renderRuntimeCapabilitySettings() {
       <div class="runtime-smoke-controls" aria-label="Safe runtime smoke checks">
         <div>
           <strong>Safe smoke checks</strong>
-          <p>Run authenticated WebView diagnostics for Redis, Redis sorted-set ordering, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
+          <p>Run authenticated WebView diagnostics for Redis, Redis sorted-set ordering, the Redis storage envelope, read-only Reddit API access, and current moderator permissions. These checks do not approve, remove, message, or ban.</p>
         </div>
         <div class="button-row">
           <button class="secondary-button compact-button" data-runtime-smoke="redis" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis</button>
           <button class="secondary-button compact-button" data-runtime-smoke="redis-zset" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis ZSET</button>
+          <button class="secondary-button compact-button" data-runtime-smoke="redis-storage" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Redis storage</button>
           <button class="secondary-button compact-button" data-runtime-smoke="reddit" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Run Reddit read</button>
           <button class="secondary-button compact-button" data-runtime-smoke="access" type="button" ${runtimeCapabilityState.smokeRunning ? 'disabled' : ''}>Check access</button>
         </div>
@@ -2863,6 +2870,9 @@ function formatRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
   }
   if (check === 'redis-zset') {
     return 'Redis sorted-set';
+  }
+  if (check === 'redis-storage') {
+    return 'Redis storage envelope';
   }
   if (check === 'reddit') {
     return 'Reddit read-only';
@@ -3904,6 +3914,7 @@ function bindRuntimeCapabilityActions() {
         if (
           check === 'redis' ||
           check === 'redis-zset' ||
+          check === 'redis-storage' ||
           check === 'reddit' ||
           check === 'access'
         ) {
@@ -5373,7 +5384,9 @@ async function runRuntimeSmokeCheck(check: RuntimeSmokeCheck) {
                 ? API_ROUTES.redisSmoke
                 : check === 'redis-zset'
                   ? API_ROUTES.redisSortedSetSmoke
-                  : API_ROUTES.redditSmoke
+                  : check === 'redis-storage'
+                    ? API_ROUTES.redisStorageSmoke
+                    : API_ROUTES.redditSmoke
             ),
             {
               method: 'POST',
@@ -5552,6 +5565,19 @@ function summarizeRuntimeSmokeResult(check: RuntimeSmokeCheck, result: unknown) 
     return redisResult.ok
       ? `Redis sorted-set smoke passed: observed ${observed}.`
       : `Redis sorted-set smoke order mismatch: expected ${expected}, observed ${observed}. Added ${redisResult.addCount ?? 'unknown'}, cardinality ${redisResult.cardinality ?? 'unknown'}, rows ${rowCount}.`;
+  }
+
+  if (check === 'redis-storage') {
+    const redisResult = result as Partial<RedisStorageSmokeResult>;
+    const expected = redisResult.expected;
+    const observed = redisResult.observed;
+    const scan = `${observed?.scanIndexCardinality ?? 'unknown'}/${expected?.scanMetadataCount ?? 'unknown'}`;
+    const actions = `${observed?.actionIndexCardinality ?? 'unknown'}/${expected?.actionEventCount ?? 'unknown'}`;
+    const overrides = `${observed?.overrideIndexCardinality ?? 'unknown'}/${expected?.overrideEventCount ?? 'unknown'}`;
+    const cleanup = observed?.postCleanupExistingKeys ?? 'unknown';
+    return redisResult.ok
+      ? `Redis storage smoke passed: scan ${scan}, actions ${actions}, overrides ${overrides}, cleanup ${cleanup}.`
+      : `Redis storage smoke mismatch: scan ${scan}, actions ${actions}, overrides ${overrides}, cleanup ${cleanup}.`;
   }
 
   if (check === 'access') {

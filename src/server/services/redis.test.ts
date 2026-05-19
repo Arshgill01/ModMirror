@@ -19,6 +19,14 @@ vi.mock('@devvit/web/server', () => ({
       }
       return Promise.resolve();
     }),
+    exists: vi.fn((...keys: string[]) =>
+      Promise.resolve(
+        keys.filter(
+          (key) =>
+            redisState.strings.has(key) || redisState.sortedSets.has(key)
+        ).length
+      )
+    ),
     zAdd: vi.fn((key: string, ...values: { member: string; score: number }[]) => {
       const rows = redisState.sortedSets.get(key) ?? [];
       rows.push(...values);
@@ -91,5 +99,47 @@ describe('redis service diagnostics', () => {
     expect(redisState.sortedSets.has(redisKeys.smokeSortedSet('ExampleLearning'))).toBe(
       false
     );
+  });
+
+  it('verifies the bounded Redis storage envelope and cleans smoke keys', async () => {
+    const { redisKeys, runRedisStorageSmoke } = await import('./redis');
+
+    const result = await runRedisStorageSmoke('ExampleLearning');
+
+    expect(result.keys).toEqual({
+      scanRecord: 'modmirror:ExampleLearning:smoke:redis-storage:scan-record',
+      scanIndex: 'modmirror:ExampleLearning:smoke:redis-storage:scan-index',
+      actions: 'modmirror:ExampleLearning:smoke:redis-storage:actions',
+      overrides: 'modmirror:ExampleLearning:smoke:redis-storage:overrides',
+    });
+    expect(result.expected).toEqual({
+      scanMetadataCount: 10,
+      actionEventCount: 500,
+      overrideEventCount: 500,
+    });
+    expect(result.observed.scanRecordBytes).toBeGreaterThan(0);
+    expect(result.observed.scanIndexCardinality).toBe(10);
+    expect(result.observed.actionIndexCardinality).toBe(500);
+    expect(result.observed.overrideIndexCardinality).toBe(500);
+    expect(result.observed.postCleanupExistingKeys).toBe(0);
+    expect(result.ok).toBe(true);
+    expect(
+      redisState.strings.has(redisKeys.smokeStorageScanRecord('ExampleLearning'))
+    ).toBe(false);
+    expect(
+      redisState.sortedSets.has(
+        redisKeys.smokeStorageScanIndex('ExampleLearning')
+      )
+    ).toBe(false);
+    expect(
+      redisState.sortedSets.has(
+        redisKeys.smokeStorageActions('ExampleLearning')
+      )
+    ).toBe(false);
+    expect(
+      redisState.sortedSets.has(
+        redisKeys.smokeStorageOverrides('ExampleLearning')
+      )
+    ).toBe(false);
   });
 });

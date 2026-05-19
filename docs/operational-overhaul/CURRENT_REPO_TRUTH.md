@@ -36,8 +36,10 @@ It currently supports:
   `/api/smoke/redis-zset` diagnostic and recorded a failed empty observed-order
   result; after the diagnostic switched to Devvit's documented variadic `zAdd`
   call, Devvit playtest `v0.0.1.136` verified reverse-rank sorted-set ordering
-  with `observed newest, middle, oldest`. Practical storage limits still
-  require runtime confirmation.
+  with `observed newest, middle, oldest`. A local `/api/smoke/redis-storage`
+  diagnostic now writes bounded scan/action/override smoke envelopes and
+  verifies cleanup, but practical storage limits still require a Devvit
+  runtime pass.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
 - W06 quick, standard, and deep Mirror Scan depth options with safe caps,
@@ -226,7 +228,8 @@ Runtime evidence does not yet exist for:
   observed on playtests `v0.0.1.94` and `v0.0.1.123`.
 - Practical Redis storage limits for larger live scan/audit datasets; reverse
   sorted-set ordering itself is now runtime verified through
-  `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`.
+  `/api/smoke/redis-zset` on Devvit playtest `v0.0.1.136`, and the
+  `/api/smoke/redis-storage` diagnostic is ready for the next runtime pass.
 
 ## Product Boundary
 
