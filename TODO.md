@@ -523,7 +523,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       enabling any live AI advisory path.
 - [ ] Runtime-verify Devvit app secret retrieval for any provider key before
       marking AI advisory available.
-- [ ] Add Terms/Privacy readiness notes before any uploaded build uses
+- [x] Add Terms/Privacy readiness notes before any uploaded build uses
       external fetch for AI.
 
 ## Operational Overhaul W11 Follow-up
