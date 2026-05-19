@@ -1028,3 +1028,46 @@ Decision:
   may now be described as runtime-verified for this desktop Reddit playtest
   path.
 - Execution receipts remain unverified.
+
+## Post-W34 Log-Only Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm run dev` reached Playtest ready for
+  `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`.
+- Playtest version: `v0.0.1.90`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Reddit page and switched the Devvit modal from
+  `Mobile` to `Fullscreen` before confirmation.
+- Comment guidance custom post used:
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- Screenshots captured:
+  - `output/runtime-proof/post34-v90-after-confirm-click.png`
+  - `output/runtime-proof/post34-v90-receipt-ledger.png`
+
+Verified:
+
+- The fullscreen WebView displayed the Act workspace with the menu-captured
+  comment target `t1_ommzgtz`, author `BrightyBrainiac`, subreddit
+  `modmirror_dev`, and body `Runtime comment target smoke for ModMirror; safe
+  test content.`
+- `Runtime Smoke Policy` was selected.
+- The selected action was changed to `warn`, matching the policy
+  recommendation; Native Mod Note stayed `log only`.
+- Confirming the log-only action showed `Policy action recorded with receipt.`
+- The response proof reported:
+  `Receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0 recorded. No Reddit action was applicable.`
+- The Receipt Ledger displayed the same receipt with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, a gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- No Reddit moderation action was executed.
+
+Decision:
+
+- Log-only Apply Policy receipt creation may now be described as
+  runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- This proof does not authorize destructive Reddit moderation execution or
+  native Mod Note delivery.

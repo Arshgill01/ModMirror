@@ -492,7 +492,7 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       result.
 - [x] Hit `/api/smoke/reddit` in Devvit runtime and record redacted read-only
       context.
-- [ ] Verify log-only Apply Policy creates a receipt in Devvit Redis.
+- [x] Verify log-only Apply Policy creates a receipt in Devvit Redis.
 - [ ] Verify native Reddit mobile app layout and interaction behavior.
 
 ## Expansion Wave 30 Follow-up

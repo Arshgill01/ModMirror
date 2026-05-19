@@ -119,9 +119,27 @@ Post-W34 comment-menu target proof:
   subreddit, body excerpt, and source link in the Act workspace.
 - No Reddit moderation action was executed during this proof.
 
+Post-W34 log-only receipt proof:
+
+- Devvit playtest `v0.0.1.90` opened the comment guidance custom post
+  `1thheea` in Zen as `u/BrightyBrainiac`.
+- Computer Use drove the Reddit/Devvit UI and switched the Devvit modal to
+  fullscreen before confirmation.
+- The Act workspace displayed the captured comment target `t1_ommzgtz`, author
+  `BrightyBrainiac`, subreddit `modmirror_dev`, and body
+  `Runtime comment target smoke for ModMirror; safe test content.`
+- `Runtime Smoke Policy` was selected, selected action was `warn`, Native Mod
+  Note stayed `log only`, and the confirmation returned
+  `Policy action recorded with receipt.`
+- The Receipt Ledger displayed
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with recommended `warn`,
+  selected `warn`, execution `skipped`, mode `log only`, capability
+  `not applicable`, gated response template draft, and Native Mod Note
+  `skipped (disabled)`.
+- No Reddit moderation action was executed during this proof.
+
 ## Known Gaps
 
-- Log-only receipt creation needs Devvit Redis proof.
 - Real remove/approve/ignore-reports execution remains disabled until safe
   controlled playtest proof exists.
 - Native Mod Notes, modmail/mod discussion send, scheduler jobs, external AI,
@@ -161,6 +179,13 @@ Post-W34 comment-menu target validation passed:
 - `npm test -- src/server/services/targetContext.test.ts`
 - `npm run build`
 - `npm run dev`
+
+Post-W34 log-only receipt runtime validation passed:
+
+- `npm run dev`
+- Computer Use Zen fullscreen interaction on Reddit Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v90-after-confirm-click.png`
+- `screencapture -x output/runtime-proof/post34-v90-receipt-ledger.png`
 
 ## Next Engineering Risks
 

@@ -115,9 +115,51 @@ Verified in Reddit comment menu and Devvit WebView:
   - `Open source item`
 - No Reddit moderation action was taken during this proof.
 
+Additional playtest:
+
+- Command: `npm run dev`
+- Devvit URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Version observed: `v0.0.1.90`
+- Browser: signed-in Zen desktop browser as `u/BrightyBrainiac`.
+- Surface: comment guidance custom post
+  `https://www.reddit.com/r/modmirror_dev/comments/1thheea/modmirror_policy_guidance_for_comment/?playtest=modmirror`.
+- UI driver: Computer Use against Zen, with the Devvit modal switched from
+  `Mobile` to `Fullscreen` before confirming the action.
+- Screenshots:
+  - `output/runtime-proof/post34-v90-after-confirm-click.png`
+  - `output/runtime-proof/post34-v90-receipt-ledger.png`
+
+Verified in fullscreen Reddit Devvit WebView:
+
+- The Act workspace loaded the menu-captured comment target:
+  - target thing ID `t1_ommzgtz`
+  - target type `comment`
+  - target author `BrightyBrainiac`
+  - subreddit `modmirror_dev`
+  - body `Runtime comment target smoke for ModMirror; safe test content.`
+- `Runtime Smoke Policy` was selected.
+- The selected action was changed from the default `remove` to `warn` so it
+  matched the policy recommendation and did not need an override reason.
+- Native Mod Note mode remained `log only`.
+- Confirming `Confirm log-only action` showed:
+  `Policy action recorded with receipt.`
+- The response preview showed:
+  `Receipt receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0 recorded. No Reddit action was applicable.`
+- The Receipt Ledger showed the saved receipt:
+  - receipt ID `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`
+  - target `t1_ommzgtz`
+  - rule `Runtime Smoke Policy`
+  - recommended action `warn`
+  - selected action `warn`
+  - execution `skipped`
+  - mode `log only`
+  - capability `not applicable`
+  - response template draft captured; delivery remained gated
+  - native Mod Note `skipped (disabled)`
+- No Reddit moderation action was executed during this proof.
+
 ## Still Not Verified
 
-- Log-only Apply Policy receipt creation in Devvit Redis.
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
 - Native Mod Notes, modmail/mod discussion delivery, scheduler jobs, native
   Reddit mobile app behavior, and non-mod access blocking.
@@ -129,3 +171,4 @@ Verified in Reddit comment menu and Devvit WebView:
 - `npm run lint`
 - `npm run build`
 - `npm run dev`
+- Computer Use Zen fullscreen interaction for the `v0.0.1.90` receipt proof.
