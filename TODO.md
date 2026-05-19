@@ -414,10 +414,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Add `saveAuditEvent` and `listRecentAuditEvents`.
 - [x] Rewire `/api/smoke/redis` through the Wave 1 Redis service.
 
-## Wave 1 Runtime Blocked / Not Runtime-Verified
+## Wave 1 Historical Runtime Follow-up
 
-- [ ] Hit `/api/smoke/redis` in playtest and confirm `modmirror:{subreddit}:smoke:redis-data-layer` write/read.
-- [ ] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
+- [x] Hit `/api/smoke/redis` in playtest and confirm `modmirror:{subreddit}:smoke:redis-data-layer` write/read.
+- [x] Confirm Redis hash behavior for `modmirror:{subreddit}:policies`.
 - [ ] Confirm Redis sorted-set ordering for `modmirror:{subreddit}:overrides`.
 - [ ] Confirm practical Redis storage limits for scan metadata and audit events before storing larger live datasets.
 
@@ -441,9 +441,10 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
 - [x] Complete `npx devvit whoami` locally as `u/BrightyBrainiac`.
 - [x] Create or bind the real Reddit app identity for `modmirror`; `npx devvit view --json` returns app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`.
 - [x] Run `npm run dev` far enough to reach Playtest ready in `r/modmirror_dev`.
-- [ ] Hit `/api/smoke/redis` in playtest and confirm Redis read/write.
-- [ ] Hit `/api/smoke/reddit` in playtest and capture redacted sample output.
-- [ ] Invoke post and comment menu smoke actions in Reddit and confirm form chaining UX.
+- [x] Hit `/api/smoke/redis` in playtest and confirm Redis read/write.
+- [x] Hit `/api/smoke/reddit` in playtest and capture redacted sample output.
+- [x] Runtime-verify the replacement post/comment Apply Policy menu actions and
+      target context handoff in Reddit.
 - [ ] Verify whether `submitComment` works on normal content, before removal, and after removal.
 - [ ] Verify whether a submitted removal comment can be distinguished/stickied.
 - [ ] Verify private message and modmail delivery behavior.
