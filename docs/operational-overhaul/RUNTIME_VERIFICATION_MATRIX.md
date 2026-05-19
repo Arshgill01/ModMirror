@@ -48,7 +48,7 @@ Environment:
 - Branch: `master`
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
-- Latest playtest version observed from merged `master`: `v0.0.1.120`
+- Latest playtest version observed from merged `master`: `v0.0.1.122`
 - Browser/UI driver: Zen desktop browser with Computer Use
 
 Runtime observations:
@@ -66,6 +66,10 @@ Runtime observations:
   Packets, Incident Mode receipt tagging, config import/export, privacy
   dry-run controls, response preview receipts, review health, policy impact,
   attribution correction, replay, and policy ratification.
+- Devvit playtest `v0.0.1.122` verified W29 subreddit isolation in the
+  authenticated WebView API: current/default reads resolved to `modmirror_dev`,
+  the labeled `ExampleLearning` demo namespace remained allowed, and
+  cross-subreddit query/body requests returned isolation errors before writes.
 - No real Reddit moderation action, public post, native Mod Note write, Mod
   Discussion send, scheduler task, actual retention deletion, or external AI
   call was executed.
@@ -77,6 +81,7 @@ Runtime observations:
 | Subreddit dashboard launcher | runtime verified | W13 playtest `v0.0.1.71`; post-W34 `v0.0.1.120` and `v0.0.1.121` launch cards opened the dashboard from merged `master`. | Keep in runtime regression checklist. |
 | Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment; `v0.0.1.121` accessibility-tree sweep covered Act, Scan, Review, and Prove. | Keep in runtime regression checklist; add pixel screenshot proof when capture is reliable. |
 | Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 `v0.0.1.121` rendered launch, Act, Scan, Review, and Prove in both host modes by accessibility-tree inspection. | Verify native Reddit mobile separately. |
+| Subreddit isolation guard | runtime verified | W29 Devvit playtest `v0.0.1.122` used authenticated WebView API probes: `/api/health` returned `modmirror_dev`; `/api/policies` default and explicit-current reads stayed scoped to `modmirror_dev`; `ExampleLearning` remained the labeled demo exception; cross-subreddit policy/runtime-capability/modqueue queries returned `403 subreddit_isolation_failed`; cross-subreddit policy creation returned `400 policy_validation_failed` before writes. | Keep same-subreddit live routes in regression checklist; cross-community dashboards are out of scope. |
 | Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
 | Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
 | Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |

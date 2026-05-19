@@ -141,6 +141,46 @@ Open after this cleanup:
   deletion, native Mod Notes, Mod Discussion delivery, scheduler behavior, live
   modqueue reads, and external AI remain unverified or disabled.
 
+### 2026-05-19 - Post-W34 UI And W29 Runtime Proof Reconciliation
+
+Follow-up proof branches after PR #12:
+
+- PR #14 merged UI sweep proof at
+  `0c9b574f9d17f58172a46129997884720573e6d1`.
+- PR #15 merged W29 subreddit-isolation runtime proof at
+  `51e002dd7f0cdab8445be159b991747c75054d84`.
+
+Runtime proof added:
+
+- Devvit playtest `v0.0.1.121` verified the embedded launch card plus Act,
+  Scan, Review, and Prove in Reddit host Mobile and Fullscreen modes by
+  Computer Use accessibility-tree inspection. No Reddit writes or moderation
+  actions were taken.
+- Devvit playtest `v0.0.1.122` verified W29 context-derived subreddit
+  isolation through authenticated WebView API probes. `/api/health` returned
+  `modmirror_dev` / `BrightyBrainiac`; default and explicit-current policy
+  reads stayed scoped to `modmirror_dev`; the labeled `ExampleLearning` demo
+  namespace remained allowed; cross-subreddit query routes returned
+  `403 subreddit_isolation_failed`; and a cross-subreddit policy creation body
+  returned `400 policy_validation_failed` before any write. The Devvit JWT was
+  redacted from docs.
+
+Validation:
+
+- `git diff --check` - passed.
+- `npm run type-check` - passed.
+- `npm run lint` - passed.
+- `npm test` - passed, 43 files and 186 tests.
+- `npm run build` - passed.
+
+Open after this reconciliation:
+
+- Real Reddit remove/approve/ignore-reports execution, native Reddit mobile,
+  non-mod access blocking, native Mod Notes, Mod Discussion delivery,
+  scheduler behavior, actual retention deletion, same-subreddit live modqueue
+  item reads, multi-moderator ratification proof, and external AI remain
+  unverified or disabled.
+
 ## W00 Commit Plan
 
 Commit only the new `docs/operational-overhaul/` control documents. The

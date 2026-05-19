@@ -8,8 +8,9 @@ Updated: 2026-05-19
 
 Operational overhaul W00-W14 has been integrated into `master`; Expansion
 W16-W34 and the post-W34 runtime-smoke/UI follow-up are also merged. PR #12
-merged at `7598f122fc704468bd01d212575b87741fb7ef2c`, and the latest Devvit
-playtest upload observed from `master` is `v0.0.1.120`.
+merged at `7598f122fc704468bd01d212575b87741fb7ef2c`; later proof PRs closed
+the UI sweep and W29 subreddit-isolation runtime gap. The latest Devvit
+playtest upload observed from `master` is `v0.0.1.122`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -104,10 +105,12 @@ Later lanes should branch after W00 or after the relevant dependency lands:
 
 The W13 gaps for safe Redis/Reddit smoke routes, post/comment Apply Policy menu
 target capture, and log-only receipt persistence were closed in the post-W34
-runtime-smoke follow-up. Native Reddit mobile behavior, real Reddit moderation
-execution, native Mod Notes, Mod Discussion delivery, scheduler behavior,
-actual retention deletion, live modqueue reads, non-mod access checks, and
-external AI remain unverified or disabled.
+runtime-smoke follow-up. The post-W34 UI sweep is closed for desktop Reddit
+host accessibility-tree proof, and W29 context-derived subreddit isolation is
+runtime-verified on Devvit Web playtest `v0.0.1.122`. Native Reddit mobile
+behavior, real Reddit moderation execution, native Mod Notes, Mod Discussion
+delivery, scheduler behavior, actual retention deletion, live modqueue reads,
+non-mod access checks, and external AI remain unverified or disabled.
 
 ## W00 Definition Of Done
 
