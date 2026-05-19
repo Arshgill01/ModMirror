@@ -523,3 +523,17 @@ runtime Settings, and preserves the Devvit expanded-modal viewport dropdown.
       desktop mobile mode and native Reddit mobile app.
 - [ ] Replace static-client browser proof with Devvit WebView screenshots after
       playtest access is available for W31.
+
+## Expansion Wave 32 Follow-up
+
+- [x] Add deterministic synthetic fixtures for stable, drifted, improving,
+      small-subreddit, noisy-attribution, repeated-offender, policy-version,
+      and incident-mode histories.
+- [x] Add a golden synthetic evaluation manifest.
+- [x] Add a local synthetic evaluation command.
+- [x] Cover replay, drift, policy-impact, and safety-label expectations in
+      tests.
+- [ ] Update the golden manifest intentionally when replay or analytics
+      semantics change.
+- [ ] Add future scenario coverage for multi-community comparison after W34
+      integration decides the cross-community contract.
