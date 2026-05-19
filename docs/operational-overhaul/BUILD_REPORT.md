@@ -71,6 +71,11 @@ Post-W34 runtime proof obtained after integration:
 - Computer Use verified the Reddit-hosted launch card, dashboard open,
   fullscreen host mode, Agree page, and Settings runtime matrix on the latest
   playtest without taking moderation/write actions.
+- Follow-up Devvit playtest `v0.0.1.121` used Computer Use in Zen to verify the
+  embedded launch card, dashboard open, Act, Scan, Review, and Prove in both
+  Reddit host `Mobile` and `Fullscreen` modes. This proof is based on the
+  rendered accessibility tree; the Computer Use bitmap payload was blank/white
+  during the session, so no new pixel screenshot proof is claimed.
 - Earlier post-W34 playtests verified safe Redis smoke, Reddit read-only smoke,
   post/comment Apply Policy menu target capture, log-only receipt persistence,
   receipt-backed Evidence Boards and Case Packets, Incident Mode receipt
@@ -93,6 +98,9 @@ Post-W34 merged validation:
 - Devvit Redis receipt/scan/policy persistence needs route-level runtime proof.
   Closed for selected safe routes by post-W34 proof; live modqueue reads and
   destructive cleanup remain unverified.
+- The post-W34 host UI sweep is closed for accessibility-tree proof in Reddit
+  desktop host Mobile/Fullscreen modes; native Reddit mobile app behavior and
+  new pixel-level visual proof remain separate gaps.
 - Real Reddit remove/approve/ignore-reports execution is intentionally disabled.
 - Non-mod access blocking, native mobile, Mod Discussion delivery, scheduler,
   native Mod Notes, and external AI are unverified/disabled.

@@ -521,9 +521,20 @@ Notes:
   discarded. Local Playwright screenshots from the built client were retained
   for visual proof, while Computer Use was used for the Reddit/Devvit fullscreen
   navigation proof.
-- This UI pass targeted the two reported surfaces. A full Act, Scan, Review,
-  Prove, embedded launch, fullscreen, and narrow/mobile sweep remains listed in
-  `TODO.md`.
+- Follow-up on 2026-05-19 uploaded Devvit playtest `v0.0.1.121` from merged
+  `master` and used Computer Use in Zen to inspect the Reddit-hosted Devvit
+  host. The embedded launch card rendered with `Open Dashboard`; the dashboard
+  opened; Reddit's host viewport control switched between `Mobile` and
+  `Fullscreen`; and the Act, Scan, Review, and Prove routes all exposed their
+  expected headings, controls, empty/limited-data labels, and guardrail copy in
+  both host modes.
+- The `v0.0.1.121` follow-up did not click live scan, demo load, workflow
+  confirmation, digest generation, evidence-board updates, or moderation
+  actions. No public Reddit writes or destructive actions were taken.
+- Computer Use's bitmap screenshot payload was blank/white in this Zen session,
+  but the accessibility tree contained the rendered WebView structure and
+  controls. Treat this as host accessibility-tree proof, not new pixel-level
+  visual screenshot proof.
 
 ## Still Not Verified
 

@@ -477,13 +477,21 @@ Post-W34 UI uniformity pass:
   and Settings runtime capability card sizing/status alignment.
 - Computer Use opened a fresh Zen window and reached the Reddit-hosted Devvit
   fullscreen path for the current playtest build, including `v0.0.1.119`.
+- Follow-up Computer Use proof on Devvit playtest `v0.0.1.121` opened the
+  Reddit-hosted embedded launch card, entered the dashboard, switched between
+  Reddit host `Mobile` and `Fullscreen` viewport modes, and inspected Act,
+  Scan, Review, and Prove headings/controls/limited-data states without taking
+  any public or destructive Reddit actions.
 - Screenshot evidence:
   - `output/runtime-proof/post34-v113-ui-pass-embedded-launch.png`
   - `output/runtime-proof/post34-v119-ui-pass-agree-local.png`
   - `output/runtime-proof/post34-v119-ui-pass-settings-matrix-local.png`
 - Local built-client proof shows the reported Agree response-template boxes and
-  Settings runtime matrix cards aligned into consistent grids. A broader
-  Act/Scan/Review/Prove fullscreen and narrow/mobile sweep remains open.
+  Settings runtime matrix cards aligned into consistent grids. The `v0.0.1.121`
+  host sweep closes the accessibility-tree coverage for launch, Act, Scan,
+  Review, and Prove in Reddit host Mobile and Fullscreen modes, but it is not
+  new pixel-level screenshot proof because the Computer Use bitmap capture was
+  blank in that session.
 
 ## Next Engineering Risks
 
