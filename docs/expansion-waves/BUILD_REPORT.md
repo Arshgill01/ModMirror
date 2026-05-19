@@ -276,6 +276,20 @@ Post-W34 Case Packet delivery receipt runtime proof:
 - The UI confirmed no Reddit message was sent. Live Mod Discussion delivery
   remains disabled and unverified.
 
+Post-W34 Response Preview runtime proof:
+
+- Devvit CLI playtest reported `v0.0.1.94`.
+- Computer Use drove the Act UI in the Reddit-hosted Devvit WebView.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-response-preview-receipt.png`
+- The recommendation panel rendered `Response Templates`, `Delivery Gated`,
+  and the preview-only warning.
+- The Receipt Ledger persisted `1 response template draft captured; delivery
+  remained gated.` for receipts `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1`
+  and `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0`.
+- No comment, private message, modmail, Mod Discussion, or native Mod Note was
+  sent during this proof.
+
 ## Known Gaps
 
 - Real remove/approve/ignore-reports execution remains disabled until safe
@@ -376,6 +390,13 @@ Post-W34 Case Packet delivery receipt runtime validation passed:
   WebView
 - `screencapture -x output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
 - `screencapture -x output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+
+Post-W34 Response Preview runtime validation passed:
+
+- `npm test -- src/shared/responseTemplates.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+- Computer Use Zen Response Preview and Receipt Ledger inspection on Reddit
+  Devvit WebView
+- `screencapture -x output/runtime-proof/post34-v94-response-preview-receipt.png`
 
 ## Next Engineering Risks
 

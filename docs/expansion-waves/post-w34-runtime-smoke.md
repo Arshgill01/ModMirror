@@ -345,6 +345,25 @@ Verified in Reddit Devvit WebView:
 - The supported path remains manual Markdown copy. Live Mod Discussion delivery
   remains disabled and unverified.
 
+## Response Preview Receipt Proof
+
+Validated on Devvit playtest `v0.0.1.94` in the Reddit-hosted Devvit WebView.
+
+Screenshot:
+
+- `output/runtime-proof/post34-v94-response-preview-receipt.png`
+
+Verified in Reddit Devvit WebView:
+
+- The Act recommendation panel rendered `Response Templates`, `Delivery Gated`,
+  and the preview-only warning.
+- Receipt `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` persisted
+  `1 response template draft captured; delivery remained gated.`
+- Receipt `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` also persisted
+  `1 response template draft captured; delivery remained gated.`
+- Both receipts kept Reddit delivery disabled or log-only, with native Mod Note
+  `skipped (disabled)`.
+
 ## Still Not Verified
 
 - Destructive moderation execution (`remove`, `approve`, `ignoreReports`).
@@ -388,3 +407,7 @@ Verified in Reddit Devvit WebView:
   `v0.0.1.94` proof.
 - `screencapture -x output/runtime-proof/post34-v94-case-delivery-manual-receipt.png`
 - `screencapture -x output/runtime-proof/post34-v94-case-delivery-mod-discussion-draft.png`
+- `npm test -- src/shared/responseTemplates.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+- Computer Use Zen Response Preview and Receipt Ledger inspection for the
+  `v0.0.1.94` proof.
+- `screencapture -x output/runtime-proof/post34-v94-response-preview-receipt.png`

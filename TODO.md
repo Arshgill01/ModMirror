@@ -12,8 +12,9 @@ Apply Policy menu target capture, log-only receipt persistence, receipt-backed
 content snapshots, receipt-backed Case Packet generation, Evidence Board
 create/list/status persistence, portable config export/import, privacy
 retention inventory/dry-run controls, Incident Mode receipt tagging/reporting,
-and manual/skipped Case Packet delivery receipt persistence are now
-runtime-verified on desktop Reddit playtest. Live
+response template preview receipt persistence, and manual/skipped Case Packet
+delivery receipt persistence are now runtime-verified on desktop Reddit
+playtest. Live
 Reddit moderation execution, actual retention deletion, Mod Discussion
 delivery, scheduler, native Mod Notes, external AI, non-mod access, and native
 Reddit mobile app behavior remain unverified or disabled.
@@ -118,7 +119,7 @@ Reddit mobile app behavior remain unverified or disabled.
 - [x] Add Apply Policy preview integration.
 - [x] Store gated response previews on receipts.
 - [x] Add escaping, fallback, and Apply preview tests.
-- [ ] Runtime-verify response preview persistence through Devvit Web/Redis
+- [x] Runtime-verify response preview persistence through Devvit Web/Redis
       playtest.
 
 ## Expansion Wave 22 Checklist

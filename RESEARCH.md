@@ -71,7 +71,7 @@ Updated by: Codex
 | Verified locally | W20 replay sandbox can simulate proposed policy outcomes without live Reddit calls or receipt mutation. | `src/server/services/replaySandbox.ts` runs read-only policy replay over supplied or scan-derived attributed actions, `/api/policies/:id/replay` loads stored scan actions when given `scanId`, and replay tests cover changed recommendations, skipped rules, and input immutability. Redis/API runtime remains unverified. |
 | Verified locally | W21 community health emits aggregate consistency signals without per-mod blame fields. | `src/server/services/communityHealth.ts` combines stored actions, overrides, receipts, scans, policies, and policy change events into aggregate rule health, repeat-author buckets, policy churn, drift stability, and case-packet readiness. Tests cover empty and small-community states. Redis/API runtime remains unverified. |
 | Verified locally | W22 policy impact measures before/after consistency around adopted policy versions when thresholds are met. | `src/server/services/policyImpact.ts` combines policy versions, receipts, overrides, and scan history, `/api/policies/:id/impact` exposes policy-detail impact, and tests cover thresholded impact, insufficient data, and demo labeling. Redis/API runtime remains unverified. |
-| Verified locally | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts can persist the preview. Redis/API runtime remains unverified. |
+| Runtime verified | W23 response templates render preview-only moderation copy from policy steps. | `src/shared/responseTemplates.ts` renders warning, removal, mod note, modmail, and private-message drafts with escaped variables and missing-variable placeholders; Apply Policy preview includes gated templates and receipts persist the preview. Post-W34 Devvit playtest verified the response preview gate and receipt-ledger persisted draft count in the Reddit-hosted WebView. Delivery remains disabled. |
 | Type/build only | W24 native Mod Notes can call `reddit.addModNote` when explicitly enabled and runtime-verified. | Official Reddit for Developers docs list `RedditAPIClient.addModNote(options)` and `ModNote` properties. Installed `node_modules/@devvit/reddit/RedditClient.d.ts` exposes `addModNote(options): Promise<ModNote>`, and `node_modules/@devvit/reddit/models/ModNote.d.ts` shows `PostNotesRequest` options plus labels. Local tests cover skipped, sent, and failed attempts. No playtest call has been made. |
 | Runtime verified / type-only delivery | W25 case packets can be prepared for manual team review and stored as delivery receipts; Mod Discussion sending remains disabled. | `src/shared/casePacketDelivery.ts` builds case-packet delivery drafts, `/api/delivery/confirm` accepts `case_packet`, and `teamDelivery.ts` stores manual/skipped receipts. Post-W34 Devvit playtest verified manual-ready and skipped Mod Discussion draft receipt persistence in the Reddit-hosted WebView. Official ModMailService docs and installed typings expose `createModDiscussionConversation`, but no playtest send has been made and product routes still do not inject a live adapter. |
 | Runtime verified | W26 Evidence Boards collect review-thread evidence without copying moderator names or target authors into board summaries. | `src/server/services/evidenceBoard.ts` stores boards under namespaced Redis keys and builds evidence summaries from receipts, content snapshots, overrides, case packets, comparables, and policy changes. `src/server/services/evidenceBoard.test.ts` covers multi-source collection, status lifecycle, and privacy flags. Post-W34 Devvit playtest verified receipt-backed board create/list/status persistence in the Reddit-hosted WebView. |
@@ -1357,3 +1357,39 @@ Decision:
   desktop Reddit Devvit WebView playtest path.
 - Live Mod Discussion sending remains unverified and disabled. No Reddit
   message was sent during this proof.
+
+## Post-W34 Response Preview Receipt Runtime Proof
+
+Date: 2026-05-19
+
+Evidence source:
+
+- `npm test -- src/shared/responseTemplates.test.ts src/server/services/applyPolicy.test.ts src/server/services/receipts.test.ts`
+  passed before documenting this proof.
+- `npm run dev` was already serving the Reddit-hosted Devvit WebView at
+  playtest version `v0.0.1.94`.
+- Zen desktop browser was signed in as moderator `u/BrightyBrainiac`.
+- Computer Use drove the Act tab in the Reddit-owned Devvit WebView modal on
+  the comment guidance custom post.
+- Screenshot captured:
+  - `output/runtime-proof/post34-v94-response-preview-receipt.png`
+
+Verified response preview behavior:
+
+- The Apply Policy recommendation panel rendered `Response Templates` with the
+  explicit note `Drafts are rendered for copy/review only; Apply Policy will not send them.`
+- The panel showed `Delivery Gated` and the warning that confirming Apply
+  Policy does not send comments, messages, modmail, or native mod notes.
+- The persisted Receipt Ledger showed receipt
+  `receipt-bc1cf6eb-f184-43ea-beb6-4f6ade9399a1` and receipt
+  `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` with
+  `1 response template draft captured; delivery remained gated.`
+- The receipts remained gated: execution `skipped`, mode `unverified disabled`
+  or `log only`, and native Mod Note `skipped (disabled)`.
+
+Decision:
+
+- W23 response preview rendering and receipt persistence may now be described
+  as runtime-verified for this desktop Reddit Devvit WebView playtest path.
+- Response templates remain preview-only. No comment, private message, modmail,
+  Mod Discussion, or native Mod Note was sent during this proof.
