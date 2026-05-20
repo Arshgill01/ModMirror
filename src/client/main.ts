@@ -41,17 +41,24 @@ import type {
   ActionReceipt,
   AttributionCorrection,
   AttributedModAction,
+  CalibrationAnswerResult,
+  CalibrationPackResponse,
+  CalibrationScenario,
   CasePacket,
   Confidence,
+  CommandCenterV2Response,
   CommunityHealthSummary,
   ConsistencyAnalyticsSummary,
+  DemoOrchestrationManifest,
   DigestCapabilities,
   DigestHistoryResponse,
   DigestReport,
   DigestSettings,
   DriftCandidate,
+  DriftRadarResponse,
   EnforcementAction,
   EvidenceBoardCreateRequest,
+  EvidenceGraphResponse,
   EvidenceBoardListResponse,
   EvidenceBoardStatus,
   EvidenceBoardStatusUpdateRequest,
@@ -74,8 +81,10 @@ import type {
   ModqueueTriageItem,
   ModqueueTriageResponse,
   NativeModNoteMode,
+  OnboardingPath,
   OverrideReason,
   PolicyImpactMeasurement,
+  PolicyWorkbenchResponse,
   PolicyStep,
   PolicyReplayResult,
   PortableConfigImportResult,
@@ -94,6 +103,7 @@ import type {
   RuntimeCapabilityHealthEventInput,
   RuntimeCapabilityMatrix,
   RuntimeCapabilityMatrixEntry,
+  ReviewRoomResponse,
   RulePolicy,
   TeamDeliveryChannel,
   TeamDeliveryCapabilities,
@@ -355,6 +365,20 @@ type ModqueueTriageUiState = {
   response: ModqueueTriageResponse | undefined;
 };
 
+type V2ProductUiState = {
+  loading: boolean;
+  error: string | undefined;
+  commandCenter: CommandCenterV2Response | undefined;
+  policyWorkbench: PolicyWorkbenchResponse | undefined;
+  calibration: CalibrationPackResponse | undefined;
+  calibrationResult: CalibrationAnswerResult | undefined;
+  reviewRoom: ReviewRoomResponse | undefined;
+  evidenceGraph: EvidenceGraphResponse | undefined;
+  demoManifest: DemoOrchestrationManifest | undefined;
+  driftRadar: DriftRadarResponse | undefined;
+  onboarding: OnboardingPath[] | undefined;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -527,6 +551,19 @@ let modqueueState: ModqueueTriageUiState = {
   error: undefined,
   response: undefined,
 };
+let v2ProductState: V2ProductUiState = {
+  loading: false,
+  error: undefined,
+  commandCenter: undefined,
+  policyWorkbench: undefined,
+  calibration: undefined,
+  calibrationResult: undefined,
+  reviewRoom: undefined,
+  evidenceGraph: undefined,
+  demoManifest: undefined,
+  driftRadar: undefined,
+  onboarding: undefined,
+};
 
 function getPageFromHash(): ProductPageId {
   const candidate = canonicalPageId(getHashRoute().page);
@@ -678,6 +715,7 @@ function render() {
         ${renderDemoBanner(summary.dataMode)}
         ${renderRuntimeResilienceBanner()}
         ${renderIncidentBanner()}
+        ${renderV2CommandCenterPanel()}
         <header class="workspace-header">
           <div>
             <h2>${page.title}</h2>
@@ -713,6 +751,7 @@ function renderInlineLaunchCard() {
         </div>
         <p>${APP_TAGLINE}</p>
         <dl class="inline-stats">
+          <div><dt>Consistency</dt><dd>${v2ProductState.commandCenter?.consistencyScore ?? summary.consistencyScore}/100</dd></div>
           <div><dt>Top issue</dt><dd>${escapeHtml(summary.topIssue)}</dd></div>
           <div><dt>Unresolved overrides</dt><dd>${summary.unresolvedOverrideCount}</dd></div>
           <div><dt>Active policies</dt><dd>${summary.activePolicyCount}</dd></div>
@@ -945,6 +984,97 @@ function renderCommandSignal(label: string, value: string) {
   `;
 }
 
+function renderV2CommandCenterPanel() {
+  const command = v2ProductState.commandCenter;
+  if (v2ProductState.loading && command === undefined) {
+    return renderLoadingState('Loading Command Center', 'Reading policy health, scan history, and review tasks.');
+  }
+  if (command === undefined) {
+    return `
+      <section class="command-board" aria-label="Command Center">
+        <div class="command-primary">
+          <span class="eyebrow">Command Center</span>
+          <h3>${v2ProductState.error ? 'Command Center unavailable' : 'Consistency score pending'}</h3>
+          <p>${escapeHtml(v2ProductState.error ?? 'Run a scan or load demo mode to populate the V2 operational view.')}</p>
+        </div>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="command-board" aria-label="Command Center">
+      <div class="command-primary">
+        <span class="eyebrow">Command Center</span>
+        <h3>${command.consistencyScore}/100 consistency</h3>
+        <p>${escapeHtml(command.topIssue)}. Next: ${escapeHtml(command.nextBestAction.label)}.</p>
+        <div class="button-row">
+          <button class="primary-button" data-v2-target="${command.nextBestAction.target}" type="button">${escapeHtml(command.nextBestAction.label)}</button>
+          <button class="secondary-button" data-demo-reset type="button">Reset Demo</button>
+        </div>
+      </div>
+      <div class="command-secondary">
+        <dl class="compact-metrics">
+          ${command.ruleHealth.slice(0, 3).map((row) => `
+            <div>
+              <dt>${escapeHtml(row.ruleName)}</dt>
+              <dd>${formatHealthStatus(row.status)} · ${row.totalActions} actions · ${formatAction(row.confidence)}</dd>
+            </div>
+          `).join('')}
+        </dl>
+        <div class="status-row">
+          ${command.trustLabels.map(renderTrustLabel).join('')}
+        </div>
+      </div>
+    </section>
+    ${renderOnboardingPaths()}
+  `;
+}
+
+function renderTrustLabel(label: CommandCenterV2Response['trustLabels'][number]) {
+  const className =
+    label.tone === 'good'
+      ? 'status-good'
+      : label.tone === 'blocked'
+        ? 'status-danger'
+        : label.tone === 'watch'
+          ? 'status-watch'
+          : 'status-neutral';
+  return `<span class="status-badge ${className}" title="${escapeAttribute(label.detail)}">${escapeHtml(label.label)}</span>`;
+}
+
+function renderOnboardingPaths() {
+  const paths = v2ProductState.onboarding;
+  if (paths === undefined || paths.length === 0) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Onboarding Paths</h3>
+          <p>Role-agnostic routes through scan, policy, calibration, review, and confirmed action.</p>
+        </div>
+      </div>
+      <div class="policy-grid">
+        ${paths.map((path) => `
+          <article class="policy-card">
+            <h4>${escapeHtml(path.label)}</h4>
+            <p>${escapeHtml(formatAction(path.audience))}</p>
+            <ol class="plain-note-list">
+              ${path.steps.map((step) => `
+                <li>
+                  <button class="text-button" data-v2-target="${step.target}" type="button">${escapeHtml(step.label)}</button>
+                  <span class="status-badge ${step.status === 'complete' ? 'status-good' : step.status === 'current' ? 'status-watch' : 'status-neutral'}">${escapeHtml(step.status)}</span>
+                </li>
+              `).join('')}
+            </ol>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
 function renderSetupWizard(steps: SetupStep[]) {
   return `
     <div class="setup-workflow">
@@ -1047,6 +1177,7 @@ function renderScanBody() {
 
   return `
     ${renderScanSummary(scanState.result)}
+    ${renderV2DriftRadarPanel()}
     ${renderAttributionCalibrationPanel()}
     ${renderDriftCandidates(scanState.result.driftCandidates)}
   `;
@@ -1073,6 +1204,38 @@ function renderScanSummary(scan: MirrorScan) {
         ${CONFIDENCE_VALUES.map((confidence) =>
           renderConfidenceItem(confidence, scan.confidenceBreakdown[confidence])
         ).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderV2DriftRadarPanel() {
+  const radar = v2ProductState.driftRadar;
+  if (radar === undefined) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Drift Radar</h3>
+          <p>Rule-level action spread, confidence mix, and representative cases without copied author names.</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(formatDataMode(radar.dataMode as ProductDataMode))}</span>
+      </div>
+      <div class="policy-grid">
+        ${radar.details.slice(0, 3).map((detail) => `
+          <article class="policy-card">
+            <h4>${escapeHtml(detail.ruleName)}</h4>
+            <p>${escapeHtml(detail.whyFlagged[0] ?? 'No drift explanation available.')}</p>
+            <dl class="compact-metrics">
+              <div><dt>Actions</dt><dd>${detail.totalActions}</dd></div>
+              <div><dt>Unmatched</dt><dd>${detail.unmatchedCount}</dd></div>
+              <div><dt>Cases</dt><dd>${detail.representativeCases.length}</dd></div>
+            </dl>
+            <p class="inline-note">${escapeHtml(detail.policyQuestions[0] ?? 'Review this rule with the team.')}</p>
+          </article>
+        `).join('')}
       </div>
     </section>
   `;
@@ -1209,6 +1372,7 @@ function renderAgreePage() {
       </div>
     </section>
     ${renderPolicyFallback()}
+    ${renderV2PolicyWorkbenchPanel()}
     ${renderPolicyList()}
     ${renderPolicyReplayPanel()}
     ${renderDriftPolicyPanel()}
@@ -1227,6 +1391,38 @@ function renderPolicyMessage() {
     return `<p class="inline-success">${escapeHtml(policyState.message)}</p>`;
   }
   return '';
+}
+
+function renderV2PolicyWorkbenchPanel() {
+  const workbench = v2ProductState.policyWorkbench;
+  if (workbench === undefined || workbench.policies.length === 0) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Policy Workbench</h3>
+          <p>Draft gaps, adoption state, starter ladders, and version comparison in one working view.</p>
+        </div>
+        <span class="status-badge status-neutral">${workbench.starterTemplates.length} templates</span>
+      </div>
+      <div class="policy-grid">
+        ${workbench.policies.slice(0, 4).map((policy) => `
+          <article class="policy-card">
+            <h4>${escapeHtml(policy.ruleName)}</h4>
+            <p>${escapeHtml(policy.versionCompare.summary)}</p>
+            <dl class="compact-metrics">
+              <div><dt>State</dt><dd>${escapeHtml(formatAction(policy.adoptionState))}</dd></div>
+              <div><dt>Missing steps</dt><dd>${policy.missingSteps.length}</dd></div>
+              <div><dt>Warnings</dt><dd>${policy.warnings.length}</dd></div>
+            </dl>
+            ${policy.warnings[0] ? `<p class="inline-note">${escapeHtml(policy.warnings[0].message)}</p>` : ''}
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
 }
 
 function renderPolicyFallback() {
@@ -1905,6 +2101,8 @@ function renderReviewPage() {
         <button class="secondary-button" data-load-governance type="button">Refresh</button>
       </div>
     </section>
+    ${renderV2ReviewRoomPanel()}
+    ${renderTeamCalibrationPanel()}
     ${renderGovernanceOverview()}
     ${renderCommunityHealthLens()}
     ${renderConsistencyAnalytics()}
@@ -1955,6 +2153,129 @@ function renderGovernanceMessage() {
     return `<p class="inline-success">${escapeHtml(governanceState.message)}</p>`;
   }
   return '';
+}
+
+function renderV2ReviewRoomPanel() {
+  const reviewRoom = v2ProductState.reviewRoom;
+  if (reviewRoom === undefined) {
+    return '';
+  }
+  const unresolved = reviewRoom.tasks.filter((task) => task.status !== 'resolved');
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Review Room</h3>
+          <p>Overrides, drift, policy health, ratification, and evidence boards become one queue.</p>
+        </div>
+        <span class="status-badge status-watch">${unresolved.length} unresolved</span>
+      </div>
+      <ol class="ledger-list">
+        ${unresolved.slice(0, 5).map((task) => `
+          <li class="ledger-item">
+            <div>
+              <strong>${escapeHtml(task.title)}</strong>
+              <span>${escapeHtml(formatAction(task.source))} · ${escapeHtml(task.dueSignal)}</span>
+            </div>
+            <span class="status-badge ${task.severity === 'urgent' ? 'status-danger' : 'status-watch'}">${escapeHtml(task.severity)}</span>
+            <div class="button-row">
+              <button class="secondary-button compact-button" data-review-task-status="${escapeAttribute(task.id)}" data-review-task-next="in_review" type="button">Start review</button>
+              <button class="secondary-button compact-button" data-review-task-status="${escapeAttribute(task.id)}" data-review-task-next="resolved" type="button">Resolve</button>
+            </div>
+          </li>
+        `).join('')}
+      </ol>
+    </section>
+  `;
+}
+
+function renderTeamCalibrationPanel() {
+  const calibration = v2ProductState.calibration;
+  if (calibration === undefined) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Team Calibration Studio</h3>
+          <p>Practice team policy decisions without rankings, blame, or moderator scoreboards.</p>
+          ${v2ProductState.calibrationResult ? `<p class="inline-success">${escapeHtml(v2ProductState.calibrationResult.explanation)}</p>` : ''}
+        </div>
+        <span class="status-badge status-neutral">${calibration.scenarios.length} scenarios</span>
+      </div>
+      <div class="policy-grid">
+        ${calibration.scenarios.slice(0, 3).map((scenario) => `
+          <article class="policy-card">
+            <h4>${escapeHtml(scenario.title)}</h4>
+            <p>${escapeHtml(scenario.prompt)}</p>
+            <dl class="compact-metrics">
+              <div><dt>Rule</dt><dd>${escapeHtml(scenario.ruleName)}</dd></div>
+              <div><dt>Source</dt><dd>${escapeHtml(formatAction(scenario.source))}</dd></div>
+            </dl>
+            <button class="secondary-button compact-button" data-calibration-answer="${escapeAttribute(scenario.id)}" data-calibration-action="${scenario.expectedAction}" type="button">Show Team Norm</button>
+            <button class="secondary-button compact-button" data-scenario-archive="${escapeAttribute(scenario.id)}" type="button">Archive</button>
+          </article>
+        `).join('')}
+      </div>
+      ${renderScenarioLabForm(calibration.scenarios[0])}
+    </section>
+  `;
+}
+
+function renderScenarioLabForm(seed: CalibrationScenario | undefined) {
+  return `
+    <form class="policy-form" data-scenario-form>
+      <div class="section-header compact-header">
+        <div>
+          <h4>Scenario Lab</h4>
+          <p>Create deterministic teaching scenarios. Drafts stay out of active calibration packs until activated.</p>
+        </div>
+      </div>
+      <div class="incident-form-grid">
+        <label>
+          Title
+          <input name="title" value="${escapeAttribute(seed?.title ?? 'Rule 2 teaching scenario')}" required>
+        </label>
+        <label>
+          Rule key
+          <input name="ruleKey" value="${escapeAttribute(seed?.ruleKey ?? DEMO_POLICY.ruleKey)}" required>
+        </label>
+        <label>
+          Rule name
+          <input name="ruleName" value="${escapeAttribute(seed?.ruleName ?? DEMO_POLICY.ruleName)}" required>
+        </label>
+        <label>
+          Expected action
+          <select name="expectedAction">
+            ${ENFORCEMENT_ACTION_VALUES.map((action) => `
+              <option value="${action}" ${action === (seed?.expectedAction ?? 'warn') ? 'selected' : ''}>${formatAction(action)}</option>
+            `).join('')}
+          </select>
+        </label>
+      </div>
+      <label>
+        Prompt
+        <textarea name="prompt" rows="3" required>${escapeHtml(seed?.prompt ?? 'A first-time learner posts a low-effort homework request without context or prior attempt.')}</textarea>
+      </label>
+      <label>
+        Explanation
+        <textarea name="explanation" rows="3" required>${escapeHtml(seed?.explanation ?? 'Use the team policy norm and record stricter outcomes as exceptions for review.')}</textarea>
+      </label>
+      <label>
+        Teaching reason
+        <input name="teachingReason" value="Policy calibration scenario for team practice" required>
+      </label>
+      <label class="checkbox-label">
+        <input name="active" type="checkbox">
+        Activate immediately
+      </label>
+      <div class="button-row">
+        <button class="secondary-button" type="submit">Save scenario</button>
+      </div>
+      <p class="inline-note">Scenario records do not store moderator names and cannot enforce a Reddit action.</p>
+    </form>
+  `;
 }
 
 function renderGovernanceOverview() {
@@ -2200,12 +2521,47 @@ function renderPolicyImpactDetail(impact: PolicyImpactMeasurement) {
 function renderProvePage() {
   return `
     ${renderConsistencyAnalytics()}
+    ${renderEvidenceGraphPanel()}
     <section class="prove-layout">
       <div>
         ${renderCasePacketPage()}
         ${renderEvidenceBoardPage()}
       </div>
       <div>${renderDigestPage()}</div>
+    </section>
+  `;
+}
+
+function renderEvidenceGraphPanel() {
+  const graph = v2ProductState.evidenceGraph;
+  if (graph === undefined) {
+    return '';
+  }
+  return `
+    <section class="section-panel">
+      <div class="section-header">
+        <div>
+          <h3>Case Evidence Graph</h3>
+          <p>Receipt, policy, override, case packet, and board links with missing references called out.</p>
+        </div>
+        <span class="status-badge status-neutral">${graph.nodes.length} nodes</span>
+      </div>
+      <div class="policy-grid">
+        ${graph.nodes.slice(0, 6).map((node) => `
+          <article class="policy-card">
+            <h4>${escapeHtml(node.label)}</h4>
+            <p>${escapeHtml(node.detail)}</p>
+            <span class="status-badge status-neutral">${escapeHtml(formatAction(node.type))}</span>
+          </article>
+        `).join('')}
+      </div>
+      ${
+        graph.edges.length > 0
+          ? `<p class="inline-note">${escapeHtml(graph.edges.slice(0, 4).map((edge) => `${edge.from} -> ${edge.to}: ${edge.label}`).join('; '))}</p>`
+          : ''
+      }
+      ${graph.missingReferences.map((item) => `<p class="inline-error">${escapeHtml(item)}</p>`).join('')}
+      ${graph.privacyNotes.map((item) => `<p class="inline-note">${escapeHtml(item)}</p>`).join('')}
     </section>
   `;
 }
@@ -3410,6 +3766,7 @@ function bindAllActions() {
   bindNavigation();
   bindAppearanceActions();
   bindActionIntents();
+  bindV2ProductActions();
   bindScanActions();
   bindCalibrationActions();
   bindModqueueActions();
@@ -3474,6 +3831,70 @@ function bindActionIntents() {
         handleActionIntent(button.dataset.actionIntent);
       });
     });
+}
+
+function bindV2ProductActions() {
+  document.querySelectorAll<HTMLButtonElement>('[data-v2-target]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.v2Target;
+      if (target === 'calibration') {
+        activePage = 'review';
+        window.location.hash = '#review';
+        void loadV2ProductSurfaces();
+        return;
+      }
+      if (target && pages.some((page) => page.id === target)) {
+        activePage = target as ProductPageId;
+        window.location.hash = `#${activePage}`;
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-demo-reset]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void resetDemoOrchestrationFromUi();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-calibration-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const scenarioId = button.dataset.calibrationAnswer;
+      const selectedAction = button.dataset.calibrationAction;
+      if (scenarioId && isEnforcementAction(selectedAction)) {
+        void submitCalibrationAnswerFromUi(scenarioId, selectedAction);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-review-task-status]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const taskId = button.dataset.reviewTaskStatus;
+      const status = button.dataset.reviewTaskNext;
+      if (
+        taskId &&
+        (status === 'unresolved' || status === 'in_review' || status === 'resolved')
+      ) {
+        void updateReviewTaskStatusFromUi(taskId, status);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-scenario-archive]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const scenarioId = button.dataset.scenarioArchive;
+      if (scenarioId) {
+        void archiveScenarioFromUi(scenarioId);
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLFormElement>('[data-scenario-form]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      void createScenarioFromUi(new FormData(form));
+    });
+  });
 }
 
 function handleActionIntent(intent: string | undefined) {
@@ -4078,6 +4499,7 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
       record,
       warnings: payload.warnings,
     };
+    await loadV2ProductSurfaces();
   } catch (error) {
     if (mode === 'demo') {
       const payload = createClientPreviewDemoScan();
@@ -4089,6 +4511,7 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
         record: undefined,
         warnings: payload.warnings,
       };
+      await loadV2ProductSurfaces();
       render();
       return;
     }
@@ -5880,6 +6303,249 @@ async function loadEvidenceBoards() {
   render();
 }
 
+async function loadV2ProductSurfaces() {
+  v2ProductState = {
+    ...v2ProductState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  const [
+    commandCenter,
+    policyWorkbench,
+    calibration,
+    reviewRoom,
+    demoManifest,
+    driftRadar,
+    evidenceGraph,
+    onboarding,
+  ] = await Promise.allSettled([
+    fetchApi<CommandCenterV2Response>(withWorkspaceSubreddit(API_ROUTES.commandCenter)),
+    fetchApi<PolicyWorkbenchResponse>(withWorkspaceSubreddit(API_ROUTES.policyWorkbench)),
+    fetchApi<CalibrationPackResponse>(withWorkspaceSubreddit(API_ROUTES.calibrationPack)),
+    fetchApi<ReviewRoomResponse>(withWorkspaceSubreddit(API_ROUTES.reviewRoom)),
+    fetchApi<DemoOrchestrationManifest>(API_ROUTES.demoManifest),
+    loadV2DriftRadar(),
+    loadV2EvidenceGraph(),
+    fetchApi<OnboardingPath[]>(withWorkspaceSubreddit(API_ROUTES.onboarding)),
+  ]);
+
+  const failures = [
+    commandCenter,
+    policyWorkbench,
+    calibration,
+    reviewRoom,
+    demoManifest,
+    driftRadar,
+    evidenceGraph,
+    onboarding,
+  ].filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+  const firstFailure = failures[0];
+
+  v2ProductState = {
+    ...v2ProductState,
+    loading: false,
+    error:
+      firstFailure !== undefined
+        ? normalizeClientError(firstFailure.reason, 'Some V2 surfaces are unavailable.')
+        : undefined,
+    commandCenter: settledValue(commandCenter) ?? v2ProductState.commandCenter,
+    policyWorkbench: settledValue(policyWorkbench) ?? v2ProductState.policyWorkbench,
+    calibration: settledValue(calibration) ?? v2ProductState.calibration,
+    reviewRoom: settledValue(reviewRoom) ?? v2ProductState.reviewRoom,
+    demoManifest: settledValue(demoManifest) ?? v2ProductState.demoManifest,
+    driftRadar: settledValue(driftRadar) ?? v2ProductState.driftRadar,
+    evidenceGraph: settledValue(evidenceGraph) ?? v2ProductState.evidenceGraph,
+    onboarding: settledValue(onboarding) ?? v2ProductState.onboarding,
+  };
+  render();
+}
+
+async function loadV2DriftRadar(): Promise<DriftRadarResponse | undefined> {
+  const scan = scanState.result;
+  if (scan === undefined) {
+    return undefined;
+  }
+  return fetchApi<DriftRadarResponse>(
+    withWorkspaceSubreddit(
+      API_ROUTES.driftRadar.replace(':id', encodeURIComponent(scan.id))
+    )
+  );
+}
+
+async function loadV2EvidenceGraph(): Promise<EvidenceGraphResponse | undefined> {
+  const receiptId = applyState.result?.receipt.id ?? receiptLedgerState.receipts[0]?.id;
+  if (receiptId !== undefined) {
+    return fetchApi<EvidenceGraphResponse>(
+      withWorkspaceSubreddit(
+        `${API_ROUTES.evidenceGraph}?receiptId=${encodeURIComponent(receiptId)}`
+      )
+    );
+  }
+
+  const boardId = evidenceBoardState.boards[0]?.id;
+  if (boardId !== undefined) {
+    return fetchApi<EvidenceGraphResponse>(
+      withWorkspaceSubreddit(
+        `${API_ROUTES.evidenceGraph}?boardId=${encodeURIComponent(boardId)}`
+      )
+    );
+  }
+
+  return undefined;
+}
+
+async function resetDemoOrchestrationFromUi() {
+  v2ProductState = {
+    ...v2ProductState,
+    loading: true,
+    error: undefined,
+  };
+  render();
+
+  try {
+    const manifest = await fetchApi<DemoOrchestrationManifest>(API_ROUTES.demoReset, {
+      method: 'POST',
+    });
+    v2ProductState = {
+      ...v2ProductState,
+      demoManifest: manifest,
+      loading: false,
+      error: undefined,
+    };
+    await runScan('demo');
+    await Promise.all([loadPolicies(), loadGovernance(), loadReceipts(), loadEvidenceBoards()]);
+    await loadV2ProductSurfaces();
+  } catch (error) {
+    v2ProductState = {
+      ...v2ProductState,
+      loading: false,
+      error: normalizeClientError(error, 'Demo orchestration reset failed.'),
+    };
+    render();
+  }
+}
+
+async function submitCalibrationAnswerFromUi(
+  scenarioId: string,
+  selectedAction: EnforcementAction
+) {
+  try {
+    const result = await fetchApi<CalibrationAnswerResult>(
+      API_ROUTES.calibrationAnswer,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+          scenarioId,
+          selectedAction,
+        }),
+      }
+    );
+    v2ProductState = {
+      ...v2ProductState,
+      calibrationResult: result,
+      error: undefined,
+    };
+  } catch (error) {
+    v2ProductState = {
+      ...v2ProductState,
+      error: normalizeClientError(error, 'Calibration answer could not be recorded.'),
+    };
+  }
+  render();
+}
+
+async function updateReviewTaskStatusFromUi(
+  taskId: string,
+  status: ReviewRoomResponse['tasks'][number]['status']
+) {
+  try {
+    await fetchApi<ReviewRoomResponse['tasks'][number]>(
+      `${API_ROUTES.reviewRoom}/tasks/${encodeURIComponent(taskId)}/status`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+          status,
+        }),
+      }
+    );
+    await loadV2ProductSurfaces();
+  } catch (error) {
+    v2ProductState = {
+      ...v2ProductState,
+      error: normalizeClientError(error, 'Review task status could not be updated.'),
+    };
+    render();
+  }
+}
+
+async function createScenarioFromUi(formData: FormData) {
+  const expectedAction = String(formData.get('expectedAction') ?? '');
+  if (!isEnforcementAction(expectedAction)) {
+    v2ProductState = {
+      ...v2ProductState,
+      error: 'Scenario expected action is invalid.',
+    };
+    render();
+    return;
+  }
+
+  try {
+    await fetchApi<CalibrationScenario>(API_ROUTES.calibrationScenarios, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+        title: String(formData.get('title') ?? ''),
+        prompt: String(formData.get('prompt') ?? ''),
+        ruleKey: String(formData.get('ruleKey') ?? ''),
+        ruleName: String(formData.get('ruleName') ?? ''),
+        expectedAction,
+        acceptableAlternatives: [],
+        explanation: String(formData.get('explanation') ?? ''),
+        source: 'manual',
+        active: formData.get('active') === 'on',
+        teachingReason: String(formData.get('teachingReason') ?? ''),
+        containsRealUserContent: false,
+      }),
+    });
+    await loadV2ProductSurfaces();
+  } catch (error) {
+    v2ProductState = {
+      ...v2ProductState,
+      error: normalizeClientError(error, 'Scenario could not be saved.'),
+    };
+    render();
+  }
+}
+
+async function archiveScenarioFromUi(scenarioId: string) {
+  try {
+    await fetchApi<CalibrationScenario>(
+      `${API_ROUTES.calibrationScenarios}/${encodeURIComponent(scenarioId)}/archive`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+        }),
+      }
+    );
+    await loadV2ProductSurfaces();
+  } catch (error) {
+    v2ProductState = {
+      ...v2ProductState,
+      error: normalizeClientError(error, 'Scenario could not be archived.'),
+    };
+    render();
+  }
+}
+
 async function createEvidenceBoardFromReceipt(receiptId: string) {
   const receipt = receiptLedgerState.receipts.find((item) => item.id === receiptId);
   const subject: EvidenceBoardCreateRequest['subject'] = {
@@ -6054,6 +6720,16 @@ async function updateEvidenceBoardStatusFromForm(
 
 function isEvidenceBoardStatus(value: string): value is EvidenceBoardStatus {
   return EVIDENCE_BOARD_STATUS_VALUES.includes(value as EvidenceBoardStatus);
+}
+
+function isEnforcementAction(value: string | undefined): value is EnforcementAction {
+  return ENFORCEMENT_ACTION_VALUES.includes(value as EnforcementAction);
+}
+
+function settledValue<T>(
+  result: PromiseSettledResult<T>
+): T | undefined {
+  return result.status === 'fulfilled' ? result.value : undefined;
 }
 
 async function loadIncidentMode() {
@@ -7820,6 +8496,7 @@ void loadEvidenceBoards();
 void loadIncidentMode();
 void loadPortableConfigTemplates();
 void loadPrivacyRetentionSettings();
+void loadV2ProductSurfaces();
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && dashboardOpen) {
