@@ -688,6 +688,38 @@ export interface PolicyReplayResult {
   warnings: string[];
 }
 
+export type PolicySimulationDelta =
+  | 'same'
+  | 'stricter'
+  | 'looser'
+  | 'manual_review'
+  | 'insufficient_data';
+
+export interface PolicySimulationItem {
+  actionId: string;
+  createdAt: string;
+  confidence: Confidence;
+  historicalAction: EnforcementAction;
+  activeRecommendation?: EnforcementAction;
+  draftRecommendation: EnforcementAction;
+  delta: PolicySimulationDelta;
+  evidence: string[];
+  targetThingId?: string;
+}
+
+export interface PolicySimulationResult {
+  id: string;
+  subreddit: string;
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  generatedAt: string;
+  totalCases: number;
+  summary: Record<PolicySimulationDelta, number>;
+  items: PolicySimulationItem[];
+  warnings: string[];
+}
+
 export interface ApplyPolicyPreviewInput {
   subreddit?: string;
   ruleKey: string;
@@ -1131,6 +1163,276 @@ export interface CommunityHealthSummary {
   ruleSignals: CommunityHealthRuleSignal[];
   privacyGuardrails: string[];
   caveats: string[];
+}
+
+export type TrustLabelKind =
+  | 'source'
+  | 'proof'
+  | 'confidence'
+  | 'privacy'
+  | 'capability'
+  | 'execution';
+
+export type TrustLabelTone = 'neutral' | 'good' | 'watch' | 'blocked';
+
+export interface TrustLabel {
+  kind: TrustLabelKind;
+  label: string;
+  detail: string;
+  tone: TrustLabelTone;
+}
+
+export interface CommandCenterRuleHealthRow {
+  ruleKey?: string;
+  ruleName: string;
+  status: PolicyHealthStatus;
+  consistencyRate: number;
+  totalActions: number;
+  unresolvedOverrideCount: number;
+  confidence: Confidence;
+  nextAction: string;
+  caveats: string[];
+}
+
+export interface CommandCenterV2Response {
+  subreddit: string;
+  generatedAt: string;
+  consistencyScore: number;
+  topIssue: string;
+  dataMode: 'live' | 'demo' | 'mixed' | 'unknown';
+  nextBestAction: {
+    label: string;
+    target: 'scan' | 'agree' | 'act' | 'review' | 'calibration';
+    reason: string;
+  };
+  ruleHealth: CommandCenterRuleHealthRow[];
+  trustLabels: TrustLabel[];
+  caveats: string[];
+}
+
+export interface DriftRadarRepresentativeCase {
+  actionId: string;
+  createdAt: string;
+  normalizedAction?: EnforcementAction;
+  confidence: Confidence;
+  evidence: string[];
+  targetThingId?: string;
+}
+
+export interface DriftRadarRuleDetail {
+  ruleKey?: string;
+  ruleName: string;
+  totalActions: number;
+  actionDistribution: Partial<Record<EnforcementAction, number>>;
+  confidenceDistribution: Record<Confidence, number>;
+  unmatchedCount: number;
+  whyFlagged: string[];
+  policyQuestions: string[];
+  representativeCases: DriftRadarRepresentativeCase[];
+  caveats: string[];
+}
+
+export interface DriftRadarResponse {
+  subreddit: string;
+  scanId?: string;
+  generatedAt: string;
+  dataMode: ActionSource;
+  details: DriftRadarRuleDetail[];
+  trustLabels: TrustLabel[];
+}
+
+export interface PolicyWorkbenchValidationWarning {
+  code:
+    | 'missing_first_offense'
+    | 'missing_override_gate'
+    | 'unsafe_escalation'
+    | 'inactive_policy'
+    | 'no_steps';
+  severity: 'info' | 'warning' | 'blocker';
+  message: string;
+}
+
+export interface PolicyWorkbenchSummary {
+  policyId: string;
+  ruleKey: string;
+  ruleName: string;
+  activeVersionId?: string;
+  draftVersionId?: string;
+  proposedVersionId?: string;
+  adoptionState: PolicyVersionStatus;
+  missingSteps: number[];
+  warnings: PolicyWorkbenchValidationWarning[];
+  linkedDrift?: DriftRadarRuleDetail;
+  versionCompare: {
+    baselineVersion?: number;
+    candidateVersion?: number;
+    changedStepCount: number;
+    summary: string;
+  };
+}
+
+export interface PolicyWorkbenchResponse {
+  subreddit: string;
+  generatedAt: string;
+  policies: PolicyWorkbenchSummary[];
+  starterTemplates: Array<{
+    id: string;
+    label: string;
+    ruleShape: string;
+    steps: PolicyStep[];
+  }>;
+  trustLabels: TrustLabel[];
+}
+
+export type CalibrationScenarioSource =
+  | 'demo_fixture'
+  | 'drift_candidate'
+  | 'receipt'
+  | 'case_packet'
+  | 'manual';
+
+export interface CalibrationScenario {
+  id: string;
+  subreddit: string;
+  title: string;
+  prompt: string;
+  ruleKey: string;
+  ruleName: string;
+  expectedAction: EnforcementAction;
+  acceptableAlternatives: EnforcementAction[];
+  explanation: string;
+  source: CalibrationScenarioSource;
+  sourceId?: string;
+  active: boolean;
+  privacy: {
+    containsRealUserContent: boolean;
+    authorCopied: false;
+    moderatorCopied: false;
+    notes: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CalibrationAnswerInput {
+  subreddit?: string;
+  scenarioId: string;
+  selectedAction: EnforcementAction;
+}
+
+export interface CalibrationAnswerResult {
+  scenarioId: string;
+  selectedAction: EnforcementAction;
+  expectedAction: EnforcementAction;
+  alignment: 'aligned' | 'acceptable_alternative' | 'review_recommended';
+  explanation: string;
+  aggregateSummary: {
+    completedCount: number;
+    alignedCount: number;
+    note: string;
+  };
+}
+
+export interface CalibrationPackResponse {
+  subreddit: string;
+  generatedAt: string;
+  scenarios: CalibrationScenario[];
+  trustLabels: TrustLabel[];
+}
+
+export interface EvidenceGraphNode {
+  id: string;
+  type:
+    | 'receipt'
+    | 'policy'
+    | 'override'
+    | 'case_packet'
+    | 'evidence_board'
+    | 'content_snapshot';
+  label: string;
+  detail: string;
+  trustLabels: TrustLabel[];
+}
+
+export interface EvidenceGraphEdge {
+  from: string;
+  to: string;
+  label: string;
+}
+
+export interface EvidenceGraphResponse {
+  subreddit: string;
+  generatedAt: string;
+  subjectId: string;
+  nodes: EvidenceGraphNode[];
+  edges: EvidenceGraphEdge[];
+  missingReferences: string[];
+  privacyNotes: string[];
+}
+
+export type ReviewTaskSource =
+  | 'override'
+  | 'policy_health'
+  | 'policy_ratification'
+  | 'evidence_board'
+  | 'drift'
+  | 'community_health';
+
+export type ReviewTaskStatus = 'unresolved' | 'in_review' | 'resolved';
+
+export interface ReviewTask {
+  id: string;
+  subreddit: string;
+  source: ReviewTaskSource;
+  sourceId?: string;
+  title: string;
+  severity: 'info' | 'watch' | 'urgent';
+  status: ReviewTaskStatus;
+  dueSignal: string;
+  linkedEvidence: Array<{
+    label: string;
+    target: string;
+  }>;
+  nextAction: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewRoomResponse {
+  subreddit: string;
+  generatedAt: string;
+  tasks: ReviewTask[];
+  trustLabels: TrustLabel[];
+}
+
+export interface OnboardingPath {
+  id: string;
+  label: string;
+  audience: 'new_mod' | 'lead_mod' | 'existing_team' | 'small_subreddit';
+  steps: Array<{
+    label: string;
+    target: 'scan' | 'agree' | 'act' | 'review' | 'calibration' | 'settings';
+    status: 'complete' | 'current' | 'pending';
+  }>;
+}
+
+export interface DemoOrchestrationManifest {
+  subreddit: string;
+  generatedAt: string;
+  deterministicSeed: string;
+  scanCount: number;
+  policyCount: number;
+  receiptCount: number;
+  overrideCount: number;
+  calibrationScenarioCount: number;
+  reviewTaskCount: number;
+  evidenceItemCount: number;
+  storyChecks: Array<{
+    id: string;
+    label: string;
+    ok: boolean;
+  }>;
+  trustLabels: TrustLabel[];
 }
 
 export interface DriftCandidate {

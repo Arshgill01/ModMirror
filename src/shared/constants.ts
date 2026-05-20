@@ -449,6 +449,17 @@ export const API_ROUTES = {
   redisSortedSetSmoke: '/api/smoke/redis-zset',
   retentionCleanupSmoke: '/api/smoke/retention-cleanup',
   redditSmoke: '/api/smoke/reddit',
+  commandCenter: '/api/command-center',
+  driftRadar: '/api/scans/:id/drift-radar',
+  policyWorkbench: '/api/policy-workbench',
+  calibrationPack: '/api/calibration/pack',
+  calibrationAnswer: '/api/calibration/answers',
+  calibrationScenarios: '/api/calibration/scenarios',
+  evidenceGraph: '/api/evidence-graph',
+  reviewRoom: '/api/review-room',
+  onboarding: '/api/onboarding',
+  demoManifest: '/api/demo/manifest',
+  demoReset: '/api/demo/reset',
 } as const;
 
 export const INTERNAL_ROUTES = {

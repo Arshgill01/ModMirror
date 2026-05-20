@@ -63,6 +63,15 @@ export const redisKeys = {
   evidenceBoards: (subreddit: string) => mmKey(subreddit, 'evidence:boards'),
   evidenceBoard: (subreddit: string, boardId: string) =>
     mmKey(subreddit, `evidence:board:${boardId}`),
+  calibrationScenarios: (subreddit: string) =>
+    mmKey(subreddit, 'calibration:scenarios'),
+  calibrationScenario: (subreddit: string, scenarioId: string) =>
+    mmKey(subreddit, `calibration:scenario:${scenarioId}`),
+  calibrationAnswers: (subreddit: string) =>
+    mmKey(subreddit, 'calibration:answers'),
+  reviewTasks: (subreddit: string) => mmKey(subreddit, 'review:tasks'),
+  reviewTask: (subreddit: string, taskId: string) =>
+    mmKey(subreddit, `review:task:${taskId}`),
   incidents: (subreddit: string) => mmKey(subreddit, 'incidents'),
   incident: (subreddit: string, incidentId: string) =>
     mmKey(subreddit, `incident:${incidentId}`),

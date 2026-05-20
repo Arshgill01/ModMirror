@@ -40,11 +40,13 @@ import type {
   AttributionCorrection,
   AttributionCorrectionInput,
   CommunityHealthSummary,
+  CommandCenterV2Response,
   ConsistencyAnalyticsSummary,
   DigestCapabilities,
   DigestHistoryResponse,
   DigestSettings,
   EvidenceBoardCreateRequest,
+  EvidenceGraphResponse,
   EvidenceBoardListResponse,
   EvidenceBoardSourceRef,
   EvidenceBoardStatus,
@@ -60,6 +62,7 @@ import type {
   GenerateDigestRequest,
   GenerateDigestResponse,
   DriftCandidate,
+  DriftRadarResponse,
   LastScanMetadata,
   LaunchContextResponse,
   MirrorScan,
@@ -69,6 +72,7 @@ import type {
   ModeratorAccessDiagnostic,
   ModqueueContentType,
   ModqueueTriageResponse,
+  OnboardingPath,
   OverrideEvent,
   OverrideReviewStatus,
   OverrideReviewUpdateInput,
@@ -81,6 +85,7 @@ import type {
   PolicyImpactMeasurement,
   PolicyReplayActionInput,
   PolicyReplayResult,
+  PolicySimulationResult,
   PortableConfigImportRequest,
   PortableConfigImportResult,
   PortableConfigPackage,
@@ -104,10 +109,20 @@ import type {
   RuntimeCapabilityHealthEventInput,
   RuntimeCapabilityMatrix,
   RuntimeVerificationMatrix,
+  CalibrationAnswerInput,
+  CalibrationAnswerResult,
+  CalibrationPackResponse,
+  CalibrationScenario,
+  DemoOrchestrationManifest,
+  PolicyWorkbenchResponse,
+  ReviewRoomResponse,
+  ReviewTask,
+  ReviewTaskStatus,
 } from '../shared/schema';
 import { runMirrorScan } from '../server/services/mirrorScan';
 import { getConsistencyAnalytics } from '../server/services/analytics';
 import { getCommunityHealthSummary } from '../server/services/communityHealth';
+import { buildCommandCenterV2 } from '../server/services/v2CommandCenter';
 import { getPolicyImpactMeasurement } from '../server/services/policyImpact';
 import {
   compareScanRecords,
@@ -174,6 +189,24 @@ import {
   saveAttributionCorrection,
 } from '../server/services/attributionCalibration';
 import { runPolicyReplay, toPolicyReplayActions } from '../server/services/replaySandbox';
+import { simulatePolicyDraft } from '../server/services/policySimulator';
+import { buildDriftRadar } from '../server/services/driftRadar';
+import {
+  archiveScenario,
+  createScenarioDraft,
+  getCalibrationPack,
+  listCalibrationScenarios,
+  submitCalibrationAnswer,
+  updateScenarioDraft,
+} from '../server/services/calibration';
+import { buildPolicyWorkbenchResponse } from '../server/services/policyWorkbench';
+import { buildEvidenceGraph } from '../server/services/evidenceGraph';
+import { getReviewRoom, updateReviewTaskStatus } from '../server/services/reviewRoom';
+import { buildOnboardingPaths } from '../server/services/onboarding';
+import {
+  getDemoOrchestrationManifest,
+  resetDemoOrchestration,
+} from '../server/services/demoOrchestration';
 import {
   createEvidenceBoard,
   listEvidenceBoards,
@@ -680,6 +713,27 @@ api.get('/scans/:id', async (c) => {
   } satisfies ApiResponse<MirrorScanRecord>);
 });
 
+api.get('/scans/:id/drift-radar', async (c) => {
+  const record = await getScanRecord(getRequestedSubreddit(c), c.req.param('id'));
+  if (record === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'scan_not_found',
+          message: 'Scan record was not found for Drift Radar.',
+        },
+      } satisfies ApiResponse<DriftRadarResponse>,
+      404
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: buildDriftRadar(record),
+  } satisfies ApiResponse<DriftRadarResponse>);
+});
+
 api.get('/attribution/corrections', async (c) => {
   const response: ApiResponse<AttributionCorrection[]> = {
     ok: true,
@@ -731,6 +785,70 @@ api.get('/community-health', async (c) => {
     data: await getCommunityHealthSummary(getRequestedSubreddit(c)),
   };
   return c.json(response);
+});
+
+api.get('/command-center', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const [scanMetadata, policies, policyHealth, communityHealth] =
+    await Promise.all([
+      listScanMetadata(subreddit, { limit: 1 }),
+      listPolicies(subreddit),
+      getPolicyHealthOverview(subreddit),
+      getCommunityHealthSummary(subreddit),
+    ]);
+  const latestScan =
+    scanMetadata[0] === undefined
+      ? undefined
+      : await getScanRecord(subreddit, scanMetadata[0].id);
+
+  const commandInput: Parameters<typeof buildCommandCenterV2>[0] = {
+    subreddit,
+    generatedAt: new Date().toISOString(),
+    policies,
+    policyHealth,
+    communityHealth,
+  };
+  if (latestScan !== undefined) {
+    commandInput.scan = latestScan;
+  }
+
+  return c.json({
+    ok: true,
+    data: buildCommandCenterV2(commandInput),
+  } satisfies ApiResponse<CommandCenterV2Response>);
+});
+
+api.get('/policy-workbench', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const [policies, scanMetadata] = await Promise.all([
+    listPolicies(subreddit),
+    listScanMetadata(subreddit, { limit: 1 }),
+  ]);
+  const versionsByPolicyEntries = await Promise.all(
+    policies.map(async (policy) => [
+      policy.id,
+      await listPolicyVersions(subreddit, policy.id),
+    ] as const)
+  );
+  const scanRecord =
+    scanMetadata[0] === undefined
+      ? undefined
+      : await getScanRecord(subreddit, scanMetadata[0].id);
+
+  const workbenchInput: Parameters<typeof buildPolicyWorkbenchResponse>[0] = {
+    subreddit,
+    generatedAt: new Date().toISOString(),
+    policies,
+    versionsByPolicy: Object.fromEntries(versionsByPolicyEntries),
+  };
+  if (scanRecord !== undefined) {
+    workbenchInput.driftDetails = buildDriftRadar(scanRecord).details;
+  }
+
+  return c.json({
+    ok: true,
+    data: buildPolicyWorkbenchResponse(workbenchInput),
+  } satisfies ApiResponse<PolicyWorkbenchResponse>);
 });
 
 api.get('/policies', async (c) => {
@@ -1083,6 +1201,52 @@ api.post('/policies/:id/replay', async (c) => {
   }
 });
 
+api.post('/policies/:id/simulate', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    scanId: string;
+    actions: PolicyReplayActionInput[];
+    draftPolicy: RulePolicy;
+  }>;
+  const subreddit = getRequestedSubreddit(c);
+  const policy = await getPolicyById(subreddit, c.req.param('id'));
+  if (!policy) {
+    return c.json(policyNotFoundResponse(), 404);
+  }
+
+  const scanRecord =
+    body.scanId === undefined ? undefined : await getScanRecord(subreddit, body.scanId);
+  const actions =
+    scanRecord === undefined
+      ? normalizeReplayActions(body.actions)
+      : toPolicyReplayActions(scanRecord.attributedActions);
+  if (actions.length === 0) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'simulation_actions_required',
+          message: 'Policy simulation requires a scanId or supplied actions.',
+        },
+      } satisfies ApiResponse<PolicySimulationResult>,
+      400
+    );
+  }
+
+  const simulationInput: Parameters<typeof simulatePolicyDraft>[0] = {
+    subreddit,
+    draftPolicy: body.draftPolicy ?? policy,
+    actions,
+  };
+  if (policy.active) {
+    simulationInput.activePolicy = policy;
+  }
+
+  return c.json({
+    ok: true,
+    data: simulatePolicyDraft(simulationInput),
+  } satisfies ApiResponse<PolicySimulationResult>);
+});
+
 api.get('/policies/:id/impact', async (c) => {
   const subreddit = getRequestedSubreddit(c);
   const policy = await getPolicyById(subreddit, c.req.param('id'));
@@ -1256,6 +1420,132 @@ api.get('/policy-health', async (c) => {
   return c.json(response);
 });
 
+api.get('/calibration/pack', async (c) => {
+  return c.json({
+    ok: true,
+    data: await getCalibrationPack(getRequestedSubreddit(c)),
+  } satisfies ApiResponse<CalibrationPackResponse>);
+});
+
+api.get('/calibration/scenarios', async (c) => {
+  return c.json({
+    ok: true,
+    data: await listCalibrationScenarios(getRequestedSubreddit(c)),
+  } satisfies ApiResponse<CalibrationScenario[]>);
+});
+
+api.post('/calibration/answers', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<CalibrationAnswerInput>;
+  if (body.scenarioId === undefined || body.selectedAction === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'calibration_answer_invalid',
+          message: 'scenarioId and selectedAction are required.',
+        },
+      } satisfies ApiResponse<CalibrationAnswerResult>,
+      400
+    );
+  }
+  return c.json({
+    ok: true,
+    data: await submitCalibrationAnswer({
+      subreddit: getRequestedBodySubreddit(body),
+      scenarioId: body.scenarioId,
+      selectedAction: body.selectedAction,
+    }),
+  } satisfies ApiResponse<CalibrationAnswerResult>);
+});
+
+api.post('/calibration/scenarios', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<Parameters<typeof createScenarioDraft>[0]>;
+  try {
+    const scenarioInput: Parameters<typeof createScenarioDraft>[0] = {
+      subreddit: getRequestedBodySubreddit(body),
+      title: body.title ?? '',
+      prompt: body.prompt ?? '',
+      ruleKey: body.ruleKey ?? '',
+      ruleName: body.ruleName ?? '',
+      expectedAction: body.expectedAction ?? 'manual_review',
+      acceptableAlternatives: body.acceptableAlternatives ?? [],
+      explanation: body.explanation ?? '',
+      source: body.source ?? 'manual',
+      active: body.active ?? false,
+    };
+    if (body.teachingReason !== undefined) {
+      scenarioInput.teachingReason = body.teachingReason;
+    }
+    if (body.sourceId !== undefined) {
+      scenarioInput.sourceId = body.sourceId;
+    }
+    if (body.containsRealUserContent !== undefined) {
+      scenarioInput.containsRealUserContent = body.containsRealUserContent;
+    }
+    return c.json(
+      {
+        ok: true,
+        data: await createScenarioDraft(scenarioInput),
+      } satisfies ApiResponse<CalibrationScenario>,
+      201
+    );
+  } catch (error) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'calibration_scenario_invalid',
+          message: error instanceof Error ? error.message : 'Scenario save failed.',
+        },
+      } satisfies ApiResponse<CalibrationScenario>,
+      400
+    );
+  }
+});
+
+api.put('/calibration/scenarios/:id', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<Parameters<typeof createScenarioDraft>[0]>;
+  const scenario = await updateScenarioDraft(
+    getRequestedBodySubreddit(body),
+    c.req.param('id'),
+    body
+  );
+  if (scenario === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'calibration_scenario_not_found',
+          message: 'Calibration scenario was not found.',
+        },
+      } satisfies ApiResponse<CalibrationScenario>,
+      404
+    );
+  }
+  return c.json({ ok: true, data: scenario } satisfies ApiResponse<CalibrationScenario>);
+});
+
+api.post('/calibration/scenarios/:id/archive', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{ subreddit: string }>;
+  const scenario = await archiveScenario(
+    getRequestedBodySubreddit(body),
+    c.req.param('id')
+  );
+  if (scenario === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'calibration_scenario_not_found',
+          message: 'Calibration scenario was not found.',
+        },
+      } satisfies ApiResponse<CalibrationScenario>,
+      404
+    );
+  }
+  return c.json({ ok: true, data: scenario } satisfies ApiResponse<CalibrationScenario>);
+});
+
 api.get('/policies/:id/health', async (c) => {
   const summaries = await listPolicyHealthSummaries(getRequestedSubreddit(c));
   const summary = summaries.find(
@@ -1366,6 +1656,111 @@ api.post('/evidence-boards/:id/status', async (c) => {
   }
 });
 
+api.get('/evidence-graph', async (c) => {
+  const receiptId = c.req.query('receiptId');
+  const boardId = c.req.query('boardId');
+  if (receiptId === undefined && boardId === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'evidence_graph_subject_required',
+          message: 'receiptId or boardId is required.',
+        },
+      } satisfies ApiResponse<EvidenceGraphResponse>,
+      400
+    );
+  }
+
+  return c.json({
+    ok: true,
+    data: await buildEvidenceGraph({
+      subreddit: getRequestedSubreddit(c),
+      subject:
+        receiptId !== undefined
+          ? { type: 'receipt', id: receiptId }
+          : { type: 'board', id: boardId ?? '' },
+    }),
+  } satisfies ApiResponse<EvidenceGraphResponse>);
+});
+
+api.get('/review-room', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  return c.json({
+    ok: true,
+    data: await getReviewRoom({
+      subreddit,
+      policies: await listPolicies(subreddit),
+    }),
+  } satisfies ApiResponse<ReviewRoomResponse>);
+});
+
+api.get('/onboarding', async (c) => {
+  const subreddit = getRequestedSubreddit(c);
+  const [scanMetadata, policies, reviewRoom, calibration] = await Promise.all([
+    listScanMetadata(subreddit, { limit: 1 }),
+    listPolicies(subreddit),
+    getReviewRoom({ subreddit }),
+    getCalibrationPack(subreddit),
+  ]);
+  const latestScan =
+    scanMetadata[0] === undefined
+      ? undefined
+      : await getScanRecord(subreddit, scanMetadata[0].id);
+  const input: Parameters<typeof buildOnboardingPaths>[0] = {
+    policies,
+    reviewRoom,
+    calibration,
+  };
+  if (latestScan !== undefined) {
+    input.scan = latestScan;
+  }
+  return c.json({
+    ok: true,
+    data: buildOnboardingPaths(input),
+  } satisfies ApiResponse<OnboardingPath[]>);
+});
+
+api.post('/review-room/tasks/:id/status', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    subreddit: string;
+    status: ReviewTaskStatus;
+  }>;
+  const status = body.status ?? 'in_review';
+  if (!['unresolved', 'in_review', 'resolved'].includes(status)) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'review_task_status_invalid',
+          message: 'Review task status is invalid.',
+        },
+      } satisfies ApiResponse<ReviewTask>,
+      400
+    );
+  }
+
+  const task = await updateReviewTaskStatus({
+    subreddit: getRequestedBodySubreddit(body),
+    taskId: c.req.param('id'),
+    status,
+  });
+  if (task === undefined) {
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: 'review_task_not_found',
+          message: 'Review task was not found.',
+        },
+      } satisfies ApiResponse<ReviewTask>,
+      404
+    );
+  }
+
+  return c.json({ ok: true, data: task } satisfies ApiResponse<ReviewTask>);
+});
+
 api.get('/incidents', async (c) => {
   const response: ApiResponse<IncidentModeStateResponse> = {
     ok: true,
@@ -1422,6 +1817,22 @@ api.post('/incidents/:id/end', async (c) => {
   } catch (error) {
     return c.json(incidentModeError(error), 400);
   }
+});
+
+api.get('/demo/manifest', async (c) => {
+  const response: ApiResponse<DemoOrchestrationManifest> = {
+    ok: true,
+    data: await getDemoOrchestrationManifest(),
+  };
+  return c.json(response);
+});
+
+api.post('/demo/reset', async (c) => {
+  const response: ApiResponse<DemoOrchestrationManifest> = {
+    ok: true,
+    data: await resetDemoOrchestration({ resetBy: context.username ?? 'unknown' }),
+  };
+  return c.json(response, 201);
 });
 
 api.get('/config/export', async (c) => {
