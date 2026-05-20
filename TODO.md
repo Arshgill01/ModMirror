@@ -56,6 +56,25 @@ detail keys `0`, and index refs `0`.
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 
+## V2 Master Plan Development Audit
+
+- [x] Implement Command Center, Drift Radar, Policy Workbench, Apply Policy
+      Cockpit wiring, Team Calibration Studio, Scenario Lab, Policy Simulator,
+      Case Evidence Graph, Review Room, Community Health Radar integration,
+      Trust/Safety Labels, Demo Orchestration Engine, Onboarding Paths, golden
+      tests, and V2 UI surfaces.
+- [x] Update every `docs/master-plan/v2/waves/*/execution-log.md`.
+- [x] Add `docs/master-plan/v2/final-audit.md`.
+- [x] Run final gates: `npm run type-check`, `npm run lint`, `npm test`, and
+      `npm run build`.
+- [x] Verify Devvit CLI session and playtest upload readiness for
+      `r/modmirror_dev` on version `v0.0.1.156`.
+- [ ] Rerun safe route-level Devvit smoke checks for the new V2 endpoints after
+      opening the playtest WebView. Do not upgrade labels from conservative
+      local/demo proof until those route checks are observed.
+- [ ] Rerun live WebView visual QA for API-backed V2 states; the completed
+      static smoke only verifies nonblank fallback rendering.
+
 UI consistency pass is now part of this batch: align dashboard cards, forms,
 metric boxes, and embedded launch/fullscreen layouts so spacing, borders,
 column rhythm, and responsive wrapping are uniform across Act, Scan, Agree,
