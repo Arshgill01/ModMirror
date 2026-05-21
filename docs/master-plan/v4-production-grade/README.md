@@ -85,7 +85,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 19 | Settings | Config Portability Console | complete |
 | 20 | Settings | Privacy Retention Console | complete |
 | 21 | Runtime | Safe V2 Route-Level Smoke Rehearsal | blocked |
-| 22 | Runtime | True Non-Mod And Limited-Mod Access Proof | pending |
+| 22 | Runtime | True Non-Mod And Limited-Mod Access Proof | blocked |
 | 23 | Runtime | Live Modqueue, Deep Scan, And Reddit Source Proof | pending |
 | 24 | Reliability | Redis Index Hygiene And Storage Envelope | complete |
 | 25 | Runtime | Controlled Retention And Execution Harnesses | pending |

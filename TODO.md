@@ -93,6 +93,10 @@ explicit confirmation checkbox and API flag, shows selected/retained dry-run
 totals clearly, and separates synthetic cleanup proof from operational deletion
 claims in the Settings console.
 
+V4 Wave 22 is blocked: the active Devvit identity is still the already verified
+full moderator account `u/BrightyBrainiac`; no true non-mod or limited-mod
+account session is available to execute `ACCESS_RUNTIME_TEST_PLAN.md`.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
