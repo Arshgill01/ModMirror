@@ -29,11 +29,11 @@ This audit is a prompt-to-artifact checklist. It is not a claim that every runti
 | Add missing plan material | Added/committed `CONTEXT.md`, `letsdoit.md`, `docs/master-plan/**`, `docs/v3-hackathon-victory-waves/**`, `modmirror-expansion-waves-16-34/**`, and `modmirror_operational_overhaul_spec_pack/**` in commit `21a601c`. | Complete |
 | Execute 20-30 waves | V2 contains 20 wave execution logs: `find docs/master-plan/v2/waves -maxdepth 2 -name execution-log.md | wc -l` returned `20`. `docs/master-plan/v2/final-audit.md` records V2 implementation completion and validation. | Complete for V2 implementation waves |
 | Keep wave artifacts reviewable | `docs/master-plan/v2/waves/*/execution-log.md` exist for all 20 V2 waves; `docs/master-plan/v2/final-audit.md` records the final audit. | Complete |
-| Keep `master` clean | `git status --short --branch` shows `## master...origin/master [ahead 4]` with no dirty files at audit start. | Complete locally; not pushed |
+| Keep `master` clean | `git status --short --branch` shows `## master...origin/master` with no dirty files after the latest documentation/proof-asset commits. | Complete and pushed |
 | Commit planning/log artifacts | Commit `21a601c chore: add planning handoff artifacts` committed the planning and state-store artifacts. Commit `ea32104 docs: record latest playtest readiness` recorded readiness evidence. | Complete |
 | Merge latest Gemini/Antigravity UI pass | Commit `e64b5c9 style: merge minimalist UI refresh` merged `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design`, modified `src/client/main.ts` and `src/client/styles.css`, and excluded the older May 20 terminal/retro worktree. | Complete |
 | Avoid older Gemini designs | The older `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/redesign-ui-retro-magazine` worktree was not merged because it was from 2026-05-20 and conflicted with product/style guardrails. The May 21 `implement-continue-feature` worktree had no usable diff. | Complete |
-| Verify local stability after implementation/UI merge | The current batch previously passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npx devvit whoami`, and `timeout 35s npm run dev` to playtest readiness on `v0.0.1.167`. Static Playwright smoke rendered the dashboard and captured `output/playwright/refresh-minimalist-dashboard.png`; only a favicon 404 was observed. After dependency hardening, `npm run deploy` passed and uploaded Devvit app version `0.0.2`. | Complete for local/build/static/deploy readiness |
+| Verify local stability after implementation/UI merge | The current batch previously passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npx devvit whoami`, and `timeout 35s npm run dev` to playtest readiness on `v0.0.1.167`. Static Playwright smoke rendered the dashboard and captured `output/playwright/refresh-minimalist-dashboard.png`; only a favicon 404 was observed. After dependency hardening, `npm run deploy` passed and uploaded Devvit app version `0.0.2`. A later static mobile capture rebuilt the client with `npm run build` and measured no 390px horizontal overflow. | Complete for local/build/static/deploy readiness |
 | Verify route-level Devvit behavior for V2 endpoints | `docs/master-plan/v2/final-audit.md`, `TODO.md`, and `RESEARCH.md` state route-level live Reddit read smoke endpoints were not rerun after the V2 upload. | Incomplete |
 | Verify live WebView visual QA for API-backed V2 states | `TODO.md` keeps this open; static smoke only proved nonblank fallback rendering. | Incomplete |
 | Verify true non-mod protected API blocking | `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` says only local guard/current moderator proof exists; true non-mod account proof is open. | Incomplete |
@@ -78,6 +78,14 @@ Recent completion evidence:
 - Submission/listing materials now record the current deploy proof level and
   remaining publish-readiness gap: terms and privacy links must be set on the
   Devvit app details page before any public publish request.
+- Submission proof assets now include
+  `docs/screenshots/submission/rule2-drift-detail-static.png` and
+  `docs/screenshots/submission/mobile-command-center-static.png`.
+- `docs/APP_DETAILS_HANDOFF.md` records app-details copy, draft raw GitHub
+  terms/privacy links, and publish safety gates.
+- Static mobile QA measured `innerWidth: 390`, `scrollWidth: 390`, and
+  `hasHorizontalOverflow: false`; this is mobile web/static proof only, not
+  native Reddit mobile proof.
 
 Current blocker evidence:
 
