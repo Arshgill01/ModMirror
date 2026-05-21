@@ -1650,6 +1650,42 @@ Decision:
   prove or disprove live Devvit runtime behavior.
 - Do not claim native mobile behavior from this wave.
 
+## V4 Wave 29 Multi-Moderator, Security, And Privacy Review
+
+Date: 2026-05-21
+
+Evidence source:
+
+- `docs/operational-overhaul/MULTI_MODERATOR_RATIFICATION_TEST_PLAN.md` now
+  defines the required distinct-moderator proof.
+- `npm test -- src/server/services/policies.test.ts src/server/services/configPortability.test.ts src/server/services/evidenceBoard.test.ts`
+  passed, covering ratification threshold behavior, config export privacy, and
+  Evidence Board privacy preservation.
+- Repository secrets scan outside `node_modules`, `dist`, `output`, and
+  `package-lock.json` returned no matches for common secret/token/private-key
+  patterns.
+- `find . -path './node_modules' -prune -o -path './dist' -prune -o -path './output' -prune -o -name '.env*' -print`
+  returned no env files.
+- `npm audit --omit=dev` failed with the existing advisory set:
+  `32 vulnerabilities (3 low, 2 moderate, 26 high, 1 critical)`, including
+  Hono/Vite advisories with force fixes outside current ranges and Devvit
+  transitive `protobufjs` advisories with no direct fix available through the
+  installed Devvit package chain.
+
+Decision:
+
+- Wave 29 is complete for assurance review scope.
+- Distinct-moderator ratification runtime proof remains blocked until multiple
+  authenticated moderator sessions are available.
+- Portable config exports remain configuration-only and exclude private
+  history by default.
+- Per-mod/per-user privacy positioning remains aggregate-first; do not add
+  per-mod performance surfaces without stronger permission proof and a product
+  decision.
+- Dependency advisory remediation remains open and should be handled as a
+  separate dependency upgrade/risk-acceptance decision, not by force-upgrading
+  during this assurance wave.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19

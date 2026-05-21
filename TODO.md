@@ -126,6 +126,15 @@ sizes were measured; and a global reduced-motion CSS guard was added. Native
 Reddit mobile app behavior remains unverified because no native app/device
 session was available.
 
+V4 Wave 29 is complete for assurance review scope:
+`docs/operational-overhaul/MULTI_MODERATOR_RATIFICATION_TEST_PLAN.md` now
+defines the distinct-moderator runtime proof. Focused tests still cover
+ratification threshold logic, config exports excluding private history, and
+Evidence Board privacy preservation. A repo secrets-pattern scan found no
+matches outside ignored/generated/dependency paths. Distinct-moderator runtime
+proof remains blocked by account availability, and `npm audit --omit=dev` still
+reports the existing dependency advisory set.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
