@@ -58,7 +58,7 @@ Updated by: Codex
 | Partially verified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks, and protected `GET /api/access/diagnostics` is locally verified for safe current-user runtime capture. The Devvit WebView Settings diagnostic for `u/BrightyBrainiac` on `r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` ModMirror now treats only `all` as `full_moderator` for future per-mod/manage-level visibility; lower-permission moderator roles remain `aggregate_only` until runtime verified. |
 | Verified locally | Manual runtime playtest observations can be recorded from Settings. | `src/client/main.ts` exposes a Settings form for protected manual `playtest` / `manual_qa` runtime capability events, and `src/routes/apiAccess.test.ts` covers POST `/api/runtime-capabilities/events` plus matrix reflection for a manual event. Destructive capabilities still opt out of health-event promotion through `canUpdateFromHealthEvents: false`. |
 | Verified locally | AI privacy readiness gate is documented before any external AI fetch is enabled. | `docs/operational-overhaul/AI_PRIVACY_READINESS.md` records provider terms/privacy review, data minimization, secret handling, HTTP permission review, runtime failure proof, and advisory-only boundaries required before a live AI provider build. External fetch and secret retrieval remain runtime-unverified. |
-| Partially remediated | Direct dependency audit findings for Hono and Vite can be removed without force upgrades. | `hono` is pinned to `4.12.21`, `vite` to `7.3.3`, and Devvit packages to `0.12.24`. `npm run type-check`, `npm run lint`, `npm run build`, `npm test`, `npx devvit --version`, and `npx devvit whoami` pass after the update. `npm audit --omit=dev` now fails with 30 remaining Devvit-transitive advisories: `protobufjs <=7.5.7`, `tmp <=0.2.3`, and `ws 8.0.0 - 8.20.0`. `npm audit fix --force` would downgrade or otherwise break the Devvit chain, so no force fix was applied. |
+| Partially remediated | Direct dependency audit findings and safe Devvit-transitive `tmp`/`ws` findings can be removed without force upgrades. | `hono` is pinned to `4.12.21`, `vite` to `7.3.3`, and Devvit packages to `0.12.24`. npm overrides pin `tmp` to `0.2.5` and `ws` to `8.20.1`. `npm run type-check`, `npm run lint`, `npm run build`, `npm test`, `npx devvit --version`, and `npx devvit whoami` pass after the updates. `npm audit --omit=dev` now fails with 26 remaining Devvit-transitive `protobufjs <=7.5.7` advisories. `npm audit fix --force` would downgrade or otherwise break the Devvit chain, so no force fix was applied. |
 | Blocked rehearsal | V4 Wave 21 safe route-level smoke checks require an authenticated Devvit WebView, not bare localhost curl. | On 2026-05-21, `npx devvit whoami` passed as `u/BrightyBrainiac`, but port `5678` was already owned by `node --no-warnings=ExperimentalWarning /Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design/node_modules/.bin/devvit playtest`. The process was not killed. Direct `curl -i --max-time 5` probes to `http://127.0.0.1:5678/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` with body `Upgrade Required`, so no route JSON proof was captured. The route checklist and blocker record are in `docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/`, `docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`, and `output/runtime-proof/wave-21-safe-route-smoke/attempt-2026-05-21.md`. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
@@ -173,7 +173,7 @@ Updated by: Codex
 - Installed scheduler typings require scheduler capability/configuration and runtime registration proof before scheduled digest jobs can be trusted. No scheduled digest job is registered in Wave 9/10's first implementation slice.
 - Installed modmail/mod discussion typings are sufficient for future research, but ModMirror must not send digest conversations until a moderator explicitly previews/confirms delivery and playtest records exact behavior.
 - Static browser preview with `serve dist/client` cannot reach `/api/*`; Wave 7/8 includes deterministic in-memory demo fallbacks for screenshots and local QA only. Live Devvit runtime still uses server APIs.
-- `npm audit --omit=dev` still fails after direct dependency hardening with 30 remaining vulnerabilities: 3 low, 2 moderate, 24 high, and 1 critical. Direct Hono and Vite findings were removed by updating to `hono@4.12.21` and `vite@7.3.3`; remaining findings are Devvit-transitive `protobufjs`, `tmp`, and `ws` advisories. `npm audit fix --force` would downgrade or otherwise break Devvit packages and must not be used without an explicit dependency-risk decision.
+- `npm audit --omit=dev` still fails after dependency hardening with 26 remaining vulnerabilities: 25 high and 1 critical. Direct Hono/Vite findings were removed by updating to `hono@4.12.21` and `vite@7.3.3`; Devvit-transitive `tmp` and `ws` findings were removed with npm overrides to `tmp@0.2.5` and `ws@8.20.1`. Remaining findings are Devvit-transitive `protobufjs` advisories. `npm audit fix --force` would downgrade or otherwise break Devvit packages and must not be used without an explicit dependency-risk decision.
 
 ## Implementation Warnings for Future Agents
 
@@ -1701,19 +1701,23 @@ Evidence source:
   `hono` to `4.12.21`, and `vite` to `7.3.3`.
 - `npm run type-check`, `npm run lint`, `npm run build`, `npm test`,
   `npx devvit --version`, and `npx devvit whoami` passed after the update.
-- `npm audit --omit=dev` now fails with `30 vulnerabilities (3 low, 2 moderate,
-  24 high, 1 critical)`. The remaining advisories are Devvit-transitive
-  `protobufjs <=7.5.7`, `tmp <=0.2.3`, and `ws 8.0.0 - 8.20.0`.
+- A follow-up npm override pass pins Devvit-transitive `tmp` to `0.2.5` and
+  `ws` to `8.20.1`. `npm ls tmp ws protobufjs --all` confirms those override
+  resolutions while leaving Devvit `protobufjs` at `7.5.4`.
+- `npm audit --omit=dev` now fails with `26 vulnerabilities (25 high,
+  1 critical)`. The remaining advisories are Devvit-transitive
+  `protobufjs <=7.5.7`.
 - `npm audit fix` did not remove the remaining advisory set. `npm audit
   fix --force` recommends a breaking Devvit package change/downgrade path and
   was not run.
 
 Decision:
 
-- Direct Hono and Vite audit findings are remediated.
+- Direct Hono/Vite, transitive `tmp`, and transitive `ws` audit findings are
+  remediated.
 - The remaining audit failure is accepted only as a documented blocker pending
-  an upstream Devvit/protobufjs/tmp/ws package-chain fix or an explicit
-  dependency-risk decision.
+  an upstream Devvit/protobufjs package-chain fix or an explicit dependency-risk
+  decision.
 - Do not use `npm audit fix --force` on this project without a separate review,
   because the current force path would move the app away from the verified
   Devvit package line.

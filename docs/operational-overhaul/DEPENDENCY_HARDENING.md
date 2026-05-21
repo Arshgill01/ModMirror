@@ -13,6 +13,7 @@ upgrades or moving off the verified Devvit package line.
   `0.12.24`.
 - Upgraded `hono` from `4.11.7` to `4.12.21`.
 - Upgraded `vite` from `7.3.1` to `7.3.3`.
+- Added npm overrides for Devvit-transitive `tmp@0.2.5` and `ws@8.20.1`.
 - Regenerated `package-lock.json` through `npm install`.
 
 ## Verification
@@ -35,7 +36,7 @@ Before this follow-up, `npm audit --omit=dev` reported:
 - direct Hono and Vite findings
 - Devvit-transitive `protobufjs`, `tmp`, and `ws` findings
 
-After this follow-up, `npm audit --omit=dev` reports:
+After the direct dependency update, `npm audit --omit=dev` reported:
 
 - `30 vulnerabilities (3 low, 2 moderate, 24 high, 1 critical)`
 - remaining Devvit-transitive findings:
@@ -43,11 +44,17 @@ After this follow-up, `npm audit --omit=dev` reports:
   - `tmp <=0.2.3`
   - `ws 8.0.0 - 8.20.0`
 
+After the npm override follow-up, `npm audit --omit=dev` reports:
+
+- `26 vulnerabilities (25 high, 1 critical)`
+- remaining Devvit-transitive findings:
+  - `protobufjs <=7.5.7`
+
 `npm audit fix` does not clear the remaining set. `npm audit fix --force` would
 downgrade or otherwise break the Devvit package chain, so it was not run.
 
 ## Decision
 
-Direct Hono and Vite findings are remediated. The remaining npm audit failure is
-a documented dependency-chain blocker pending an upstream Devvit fix or an
-explicit risk decision.
+Direct Hono/Vite findings and the safe Devvit-transitive `tmp`/`ws` findings are
+remediated. The remaining npm audit failure is a documented dependency-chain
+blocker pending an upstream Devvit/protobufjs fix or an explicit risk decision.

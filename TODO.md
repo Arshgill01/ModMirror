@@ -134,8 +134,9 @@ Evidence Board privacy preservation. A repo secrets-pattern scan found no
 matches outside ignored/generated/dependency paths. Distinct-moderator runtime
 proof remains blocked by account availability. The dependency-hardening follow-up
 upgraded direct Devvit/Hono/Vite packages and removed the direct Hono/Vite audit
-findings, but `npm audit --omit=dev` still fails on Devvit-transitive
-`protobufjs`, `tmp`, and `ws` advisories; force fixes would downgrade or
+findings. The audit-overrides follow-up also overrides Devvit-transitive `tmp`
+and `ws` to patched versions. `npm audit --omit=dev` still fails on the
+remaining Devvit-transitive `protobufjs` chain; force fixes would downgrade or
 otherwise break the Devvit package chain.
 
 V4 Wave 30 is blocked: the final completion audit cannot close the active goal

@@ -50,10 +50,11 @@ Full validation is run from root after this branch is merged:
 - `npm test`
 
 Post-audit dependency hardening updated Devvit packages to `0.12.24`, `hono` to
-`4.12.21`, and `vite` to `7.3.3`. `npm audit --omit=dev` now fails with the
-remaining Devvit-transitive advisory set:
-`30 vulnerabilities (3 low, 2 moderate, 24 high, 1 critical)`. The direct
-Hono/Vite findings are resolved; no force fix was applied because npm's force
+`4.12.21`, and `vite` to `7.3.3`, then added npm overrides for
+Devvit-transitive `tmp@0.2.5` and `ws@8.20.1`. `npm audit --omit=dev` now fails
+with the remaining Devvit-transitive `protobufjs` advisory set:
+`26 vulnerabilities (25 high, 1 critical)`. The direct Hono/Vite and transitive
+`tmp`/`ws` findings are resolved; no force fix was applied because npm's force
 path would downgrade or otherwise break the Devvit package chain.
 
 ## Status

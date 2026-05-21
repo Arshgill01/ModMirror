@@ -89,6 +89,12 @@ The process was not killed. Direct local route probes against
 `/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest`, so those
 curl probes are blocker evidence only. They are not route-level JSON proof.
 
+On 2026-05-21 at 21:49 IST, the same blocker was still present. Port `5678`
+was still owned by PID `42407`, with observed elapsed time `03:45:08`, from the
+dirty Gemini/Antigravity `refresh-minimalist-ui-design` worktree. `npx devvit
+whoami` still passed as `u/BrightyBrainiac`, but the current `master` workspace
+could not start a clean playtest without disturbing that process.
+
 ## Next Unblock Step
 
 Use one of these non-conflicting paths:

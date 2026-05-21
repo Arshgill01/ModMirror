@@ -138,3 +138,37 @@ the lack of a WebView session for this workspace.
   route JSON.
 - True non-mod and limited-mod access proof remains Wave 22 work.
 - Modqueue/deep source proof remains Wave 23 work.
+
+## Follow-up Recheck
+
+Date: 2026-05-21 21:49 IST
+
+After dependency hardening, the current `master` workspace was rechecked for a
+possible Wave 21 retry.
+
+Commands run:
+
+```sh
+git status --short --branch
+lsof -nP -iTCP:5678 -sTCP:LISTEN || true
+npx devvit playtest --help
+ps -p 42407 -o pid,etime,command
+git -C /Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design status --short --branch
+npx devvit whoami
+```
+
+Result:
+
+- Root `master` was clean and synced with `origin/master`.
+- Port `5678` was still owned by PID `42407`.
+- The owning command was still the Gemini/Antigravity `devvit playtest` process
+  from `refresh-minimalist-ui-design`.
+- Observed elapsed time was `03:45:08`.
+- That Gemini/Antigravity worktree was dirty in `src/client/main.ts` and
+  `src/client/styles.css`, so using its WebView would not prove current
+  `master`.
+- `npx devvit playtest --help` exposes no alternate port flag; installed CLI
+  code hardcodes the local playtest WebSocket port to `5678`.
+- `npx devvit whoami` still passed as `u/BrightyBrainiac`.
+
+Status remains blocked. The Gemini/Antigravity process was not killed.

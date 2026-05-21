@@ -68,7 +68,8 @@ Recent completion evidence:
   secrets/dependency/privacy findings.
 - A dependency-hardening follow-up upgraded Devvit packages to `0.12.24`,
   `hono` to `4.12.21`, and `vite` to `7.3.3`, removing the direct Hono/Vite
-  audit findings while preserving passing build/type/lint/test gates.
+  audit findings while preserving passing build/type/lint/test gates. A later
+  npm override pass removed Devvit-transitive `tmp` and `ws` findings.
 
 Current blocker evidence:
 
@@ -81,10 +82,10 @@ Current blocker evidence:
   moderation-log pagination proof require an owned authenticated Devvit runtime
   session and safe source evidence.
 - Native Reddit mobile app proof remains unavailable.
-- `npm audit --omit=dev` still fails with Devvit-transitive `protobufjs`,
-  `tmp`, and `ws` advisories. Direct Hono/Vite findings are resolved; remaining
-  force fixes would downgrade or otherwise break the Devvit package chain and
-  require a separate dependency-risk decision.
+- `npm audit --omit=dev` still fails with the Devvit-transitive `protobufjs`
+  advisory chain. Direct Hono/Vite and transitive `tmp`/`ws` findings are
+  resolved; remaining force fixes would downgrade or otherwise break the Devvit
+  package chain and require a separate dependency-risk decision.
 
 Merged-worktree cleanup:
 
