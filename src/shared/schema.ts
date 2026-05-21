@@ -1989,6 +1989,10 @@ export interface PortableConfigImportRequest {
 export interface PortableConfigImportPolicyResult extends SubredditRuleRef {
   status: PortableConfigImportStatus;
   message: string;
+  stepCount: number;
+  defaultMessageMode: MessageDeliveryMode;
+  actionSummary: string[];
+  reviewDisposition: string;
 }
 
 export interface PortableConfigImportResult {

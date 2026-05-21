@@ -83,6 +83,11 @@ V4 Wave 18 is complete: Incident Mode now has a Settings control center with
 safe start presets, visible time-left and receipt-tag context, active safeguards,
 and the existing end/report flow remains explicit and confirmation-preserving.
 
+V4 Wave 19 is complete: Configuration Portability now shows an export safety
+summary, server-backed dry-run policy diffs, per-policy draft/proposal
+dispositions, and clear confirmation that imports do not silently adopt
+enforcement.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to

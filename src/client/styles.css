@@ -2345,6 +2345,46 @@ dd {
   min-height: 300px;
 }
 
+.config-safety-strip {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.config-safety-strip div {
+  border-right: 1px solid var(--mm-line);
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.config-safety-strip div:last-child {
+  border-right: 0;
+}
+
+.config-safety-strip strong {
+  color: var(--mm-ink);
+  font-family: var(--mm-font-serif);
+  font-size: 14px;
+}
+
+.config-safety-strip span,
+.config-diff-list {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.config-diff-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+}
+
 .config-portability,
 .privacy-retention {
   background: var(--mm-paper);
@@ -2730,6 +2770,7 @@ dd {
   .incident-banner,
   .runtime-banner,
   .evidence-graph-lanes,
+  .config-safety-strip,
   .incident-control-presets,
   .incident-form-grid,
   .incident-guidance-grid,

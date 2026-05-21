@@ -508,6 +508,7 @@ function buildPolicyImportResult(
       ruleName: policy.ruleName,
       status: 'created',
       message: 'Policy will be imported as a new draft.',
+      ...buildPolicyImportDiff(policy, 'New inactive draft policy.'),
     };
   }
   if (portablePolicyEquals(policy, toPortablePolicy(existing))) {
@@ -516,6 +517,7 @@ function buildPolicyImportResult(
       ruleName: policy.ruleName,
       status: 'skipped',
       message: 'Existing policy already matches this portable policy.',
+      ...buildPolicyImportDiff(policy, 'No write needed.'),
     };
   }
   return {
@@ -523,6 +525,25 @@ function buildPolicyImportResult(
     ruleName: policy.ruleName,
     status: 'updated',
     message: 'Policy will be saved as a draft update for review.',
+    ...buildPolicyImportDiff(policy, 'Draft update requiring team review.'),
+  };
+}
+
+function buildPolicyImportDiff(
+  policy: PortablePolicyConfig,
+  reviewDisposition: string
+): Pick<
+  PortableConfigImportPolicyResult,
+  'stepCount' | 'defaultMessageMode' | 'actionSummary' | 'reviewDisposition'
+> {
+  return {
+    stepCount: policy.steps.length,
+    defaultMessageMode: policy.defaultMessageMode,
+    actionSummary: policy.steps.map(
+      (step) =>
+        `Offense ${step.offenseCount}: ${step.recommendedAction} within ${step.windowDays} day${step.windowDays === 1 ? '' : 's'}`
+    ),
+    reviewDisposition,
   };
 }
 

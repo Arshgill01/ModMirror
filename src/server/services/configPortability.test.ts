@@ -63,7 +63,13 @@ describe('config portability service', () => {
     expect(result.accepted).toBe(true);
     expect(result.dryRun).toBe(true);
     expect(result.importedPolicyCount).toBe(1);
-    expect(result.policies[0]?.status).toBe('created');
+    expect(result.policies[0]).toMatchObject({
+      status: 'created',
+      stepCount: 1,
+      defaultMessageMode: 'log_only',
+      reviewDisposition: 'New inactive draft policy.',
+      actionSummary: ['Offense 1: remove within 30 days'],
+    });
     expect(createPolicy).not.toHaveBeenCalled();
     expect(updatePolicy).not.toHaveBeenCalled();
     expect(updateDigestSettings).not.toHaveBeenCalled();

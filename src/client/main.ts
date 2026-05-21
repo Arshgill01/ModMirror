@@ -3979,7 +3979,8 @@ function renderConfigPortabilitySettings() {
           <h4>Export package</h4>
           ${
             configPortabilityState.exportedPackage
-              ? `<textarea class="markdown-export config-json" readonly>${escapeHtml(JSON.stringify(configPortabilityState.exportedPackage, null, 2))}</textarea>`
+              ? `${renderPortableConfigExportSummary(configPortabilityState.exportedPackage)}
+                <textarea class="markdown-export config-json" readonly>${escapeHtml(JSON.stringify(configPortabilityState.exportedPackage, null, 2))}</textarea>`
               : renderEmptyState(
                   'No export loaded',
                   'Generate a package to review the exact portable JSON before sharing it with another community.',
@@ -4017,6 +4018,25 @@ function renderConfigPortabilityMessage() {
   return '';
 }
 
+function renderPortableConfigExportSummary(portablePackage: PortableConfigPackage) {
+  return `
+    <div class="config-safety-strip" aria-label="Portable config export summary">
+      <div>
+        <strong>${portablePackage.includePrivateHistory ? 'Private history included' : 'Private history excluded'}</strong>
+        <span>Receipts, scans, overrides, content snapshots, evidence boards, delivery receipts, and incident reports stay out of portable config.</span>
+      </div>
+      <div>
+        <strong>${portablePackage.policies.length} policy ${portablePackage.policies.length === 1 ? 'draft' : 'drafts'}</strong>
+        <span>${formatAction(portablePackage.source)} from r/${escapeHtml(portablePackage.subreddit)}.</span>
+      </div>
+      <div>
+        <strong>${portablePackage.settings.digest ? 'Digest settings included' : 'No digest settings'}</strong>
+        <span>Imports create drafts or proposed updates, never adopted enforcement.</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderConfigImportResult() {
   const result = configPortabilityState.importResult;
   if (result === undefined) {
@@ -4025,19 +4045,27 @@ function renderConfigImportResult() {
   return `
     <div class="config-result">
       <h4>${result.dryRun ? 'Dry-run result' : 'Import result'}</h4>
+      <p class="inline-note">${result.dryRun ? 'Dry run only: no policies or settings were written.' : 'Import writes remain drafts or proposed updates until normal review/adoption.'}</p>
       <dl class="compact-metrics">
         <div><dt>Accepted</dt><dd>${result.accepted ? 'yes' : 'no'}</dd></div>
         <div><dt>Policies</dt><dd>${result.importedPolicyCount}</dd></div>
         <div><dt>Skipped</dt><dd>${result.skippedPolicyCount}</dd></div>
         <div><dt>Settings</dt><dd>${result.updatedSettings ? (result.dryRun ? 'would update' : 'updated') : 'unchanged'}</dd></div>
       </dl>
+      <h4>Policy import diff</h4>
       <ol class="incident-list compact">
         ${result.policies
           .map(
             (policy) => `
               <li>
                 <strong>${escapeHtml(policy.ruleName)} - ${formatAction(policy.status)}</strong>
-                <span>${escapeHtml(policy.message)}</span>
+                <span>${escapeHtml(policy.message)} ${escapeHtml(policy.reviewDisposition)}</span>
+                <em>${policy.stepCount} step${policy.stepCount === 1 ? '' : 's'} - ${formatAction(policy.defaultMessageMode)}</em>
+                ${
+                  policy.actionSummary.length > 0
+                    ? `<ul class="config-diff-list">${policy.actionSummary.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`
+                    : ''
+                }
               </li>
             `
           )
