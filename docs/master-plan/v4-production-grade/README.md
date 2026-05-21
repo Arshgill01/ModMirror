@@ -90,7 +90,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 24 | Reliability | Redis Index Hygiene And Storage Envelope | complete |
 | 25 | Runtime | Controlled Retention And Execution Harnesses | pending |
 | 26 | Runtime | Delivery, Mod Notes, And Scheduler Proof Harnesses | pending |
-| 27 | Reliability | Error Taxonomy And Recovery UX | pending |
+| 27 | Reliability | Error Taxonomy And Recovery UX | complete |
 | 28 | Quality | Accessibility, Native Mobile, And Performance | pending |
 | 29 | Assurance | Multi-Moderator, Security, And Privacy Review | pending |
 | 30 | Integration | Final Merge, Proof Assets, And Completion Audit | pending |
