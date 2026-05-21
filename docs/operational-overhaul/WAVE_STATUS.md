@@ -4,7 +4,7 @@ Created: 2026-05-18
 
 ## Current State
 
-Updated: 2026-05-20
+Updated: 2026-05-21
 
 Operational overhaul W00-W14 has been integrated into `master`; Expansion
 W16-W34 and the post-W34 runtime-smoke/UI follow-up are also merged. PR #12
@@ -13,7 +13,7 @@ the UI sweep, W29 subreddit-isolation runtime gap, full-access visibility gate,
 Settings manual runtime event recorder, audit storage caps, AI privacy readiness
 gate, local scheduler-delivery guard, legacy page-ID audit, and synthetic
 multi-community isolation fixture. The latest Devvit playtest observed while
-continuing runtime proof work is `v0.0.1.136`.
+continuing runtime proof work is `v0.0.2.6`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -147,6 +147,11 @@ playtest `v0.0.1.138` ran Settings `Run retention cleanup` and reported
 1/1, detail keys 0, index refs 0.` Synthetic expired-record cleanup is runtime
 verified for that diagnostic path; real operational-record deletion remains a
 separate controlled destructive cleanup test.
+V4 Wave 23 later continued on current `master` with authenticated Devvit
+WebView playtest `v0.0.2.6`: Act Operational Queue still returned the
+type-supported/no-items fallback, while Scan `Deep Live Scan` returned live
+data, depth `Deep`, `120` actions scanned, `1` attributed, and `119` unmatched
+from a requested limit of `250` with page size `100`.
 
 ## W00 Definition Of Done
 

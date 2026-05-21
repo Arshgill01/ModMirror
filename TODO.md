@@ -7,11 +7,12 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.2.4`. The
+playtest observed while continuing runtime proof work is `v0.0.2.6`. The
 current `master` dependency-hardening build passed `npm run deploy`, uploaded
 Devvit app version `0.0.2`, and then reached authenticated Devvit WebView
 playtest readiness as `v0.0.2.2` after the latest UI merge; the dev watcher
-later reached `v0.0.2.4` after documentation/proof updates. Submission/listing
+later reached `v0.0.2.4` after documentation/proof updates, and Wave 23
+read-only source proof later continued on `v0.0.2.6`. Submission/listing
 docs now reflect this proof level, and the local package metadata has the
 upload-safe description `Find enforcement drift before your users do.` App
 details page terms/privacy links still need to be reviewed, hosted, and set
@@ -112,13 +113,14 @@ V4 Wave 22 is blocked: the active Devvit identity is still the already verified
 full moderator account `u/BrightyBrainiac`; no true non-mod or limited-mod
 account session is available to execute `ACCESS_RUNTIME_TEST_PLAN.md`.
 
-V4 Wave 23 is blocked: live modqueue and deep moderation-log pagination proof
-still need safe source evidence from the authenticated Devvit WebView session.
-The current account can prove the full-moderator path, but no live modqueue
-items or deep-pagination source dataset has been captured. Do not claim
-`source: "reddit_modqueue"` or deep pagination runtime behavior until
-`MODQUEUE_RUNTIME_TEST_PLAN.md` and `DEEP_SCAN_RUNTIME_TEST_PLAN.md` are
-executed from an approved session.
+V4 Wave 23 is partially complete: the authenticated Devvit WebView session on
+`v0.0.2.6` proved the read-only deep live scan path on `r/modmirror_dev` with
+source `Live data`, depth `Deep`, `120` actions scanned, `1` attributed, and
+`119` unmatched. The same pass repeated Act Operational Queue `Refresh`, but it
+returned the labeled type-supported/no-items fallback, so live
+`reddit_modqueue` item reads remain open. Do not claim
+`source: "reddit_modqueue"` until `MODQUEUE_RUNTIME_TEST_PLAN.md` returns a
+safe live item or captures an exact Devvit adapter/runtime failure.
 
 V4 Wave 25 is complete as a preparation-only harness wave:
 `docs/operational-overhaul/CONTROLLED_PROOF_HARNESS_AUDIT.md` now ties the
@@ -409,8 +411,9 @@ the repo root are intentionally left untouched.
 - [x] Add a safe runtime test plan for live modqueue item proof.
 - [ ] Runtime-verify `/api/modqueue/triage` in Devvit playtest with safe queue
       content. Post-W34 playtests refreshed the panel on `v0.0.1.94` and
-      `v0.0.1.123`, but still returned the type-supported/no-items fallback
-      instead of verified Reddit modqueue items.
+      `v0.0.1.123`, and V4 Wave 23 refreshed it again on `v0.0.2.6`, but all
+      runs still returned the type-supported/no-items fallback instead of
+      verified Reddit modqueue items.
 
 ## Expansion Wave 16 Checklist
 

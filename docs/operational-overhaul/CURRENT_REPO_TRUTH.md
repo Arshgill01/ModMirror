@@ -87,11 +87,11 @@ It does not yet support:
 - Runtime-verified destructive action receipts. Log-only receipt persistence is
   runtime-verified; real Reddit action receipts remain disabled until live
   action proof exists.
-- Runtime-verified deep attributed scan pagination. Safe live scan persistence
-  and replay/correction paths have post-W34 runtime evidence, but deep
-  moderation-log pagination remains unverified.
-- Runtime-verified deep moderation-log pagination. W06 verifies installed
-  typings and local mocks only.
+- Exact authenticated API/page-cursor trace for deep moderation-log pagination.
+  V4 Wave 23 WebView proof on playtest `v0.0.2.6` returned live deep scan data
+  above one page (`120` actions, requested limit `250`, page size `100`), but
+  the app still preserves conservative pagination warnings until explicit
+  page/cursor counts are captured.
 - Runtime-verified public comment, modmail, scheduler, or native Mod Notes
   delivery.
 - Runtime-verified external AI calls or Devvit secret retrieval for AI

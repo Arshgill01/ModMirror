@@ -17,18 +17,21 @@ shows no remaining required work.
 - Recorded the remaining runtime/account/device blockers.
 - Updated `docs/master-plan/goal-completion-audit.md` with the V4 continuation
   status.
+- Later V4 Wave 21 safe route-level smoke proof was captured on authenticated
+  Devvit WebView playtest `v0.0.2.2`.
+- Later V4 Wave 23 deep live scan WebView proof was captured on authenticated
+  Devvit WebView playtest `v0.0.2.6`.
 
 ## Blockers
 
 Wave 30 cannot honestly complete because:
 
-- Wave 21 route-level smoke remains blocked by lack of an owned authenticated
-  Devvit WebView route-proof session.
 - Wave 22 true non-mod and limited-mod access proof remains blocked by account
   availability.
-- Wave 23 live modqueue and deep pagination proof remains blocked by lack of an
-  owned authenticated runtime session and safe source evidence.
-- Port `5678` is still owned by an Antigravity/Gemini Devvit playtest process.
+- Wave 23 live modqueue proof remains blocked by lack of safe queue content or
+  an exact Devvit adapter/runtime failure. Deep live scan WebView proof is
+  captured; exact API response/page-cursor trace remains a follow-up before
+  weakening conservative pagination warnings.
 - Native Reddit mobile/device proof is unavailable.
 - Dependency advisory remediation remains open and needs a separate
   dependency-upgrade/risk decision.

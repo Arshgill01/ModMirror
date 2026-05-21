@@ -49,7 +49,7 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.2.4`
+  `v0.0.2.6`
 - Browser/UI driver: Zen/Chrome desktop browsers with Computer Use
 
 Runtime observations:
@@ -93,6 +93,14 @@ Runtime observations:
   smokes passed Redis, Redis ZSET, Redis storage, synthetic retention cleanup,
   Reddit read-only, and current-account access diagnostics. The dev watcher
   later reached `v0.0.2.4` after documentation/proof updates.
+- V4 Wave 23 continued on current `master` in authenticated Reddit WebView
+  playtest `v0.0.2.6` as `u/BrightyBrainiac` on `r/modmirror_dev`. Act
+  Operational Queue `Refresh` reached the read-only path and returned the
+  labeled no-items fallback, so live `reddit_modqueue` item reads remain
+  unverified. Scan `Deep Live Scan` completed against live data with depth
+  `Deep`, `120` actions scanned, `1` attributed, `119` unmatched, requested
+  limit `250`, and page size `100`, preserving warnings about partial
+  pagination proof and unmatched attribution.
 - `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
   proof gate for true non-mod protected-route blocking and lower-permission
   moderator role-string capture. That plan has not been executed.
@@ -108,7 +116,7 @@ Runtime observations:
 | Desktop expanded WebView IA | runtime verified | Existing dashboard post rendered Act / Scan / Agree / Review / Prove / Settings in Reddit's expanded modal; post-W34 verified launch/fullscreen/Agree/Settings after UI alignment; `v0.0.1.121` accessibility-tree sweep covered Act, Scan, Review, and Prove. | Keep in runtime regression checklist; add pixel screenshot proof when capture is reliable. |
 | Host viewport control | runtime verified | Expanded modal showed Reddit-owned `Mobile` / `Fullscreen` viewport controls; post-W34 `v0.0.1.121` rendered launch, Act, Scan, Review, and Prove in both host modes by accessibility-tree inspection. | Verify native Reddit mobile separately. |
 | Subreddit isolation guard | runtime verified | W29 Devvit playtest `v0.0.1.122` used authenticated WebView API probes: `/api/health` returned `modmirror_dev`; `/api/policies` default and explicit-current reads stayed scoped to `modmirror_dev`; `ExampleLearning` remained the labeled demo exception; cross-subreddit policy/runtime-capability/modqueue queries returned `403 subreddit_isolation_failed`; cross-subreddit policy creation returned `400 policy_validation_failed` before writes. | Keep same-subreddit live routes in regression checklist; cross-community dashboards are out of scope. |
-| Modqueue triage | runtime fallback observed | Post-W34 playtests `v0.0.1.94` and `v0.0.1.123` reached the Act-page Operational Queue refresh path. The `v0.0.1.123` same-subreddit authenticated WebView refresh showed the read-only loading state, then returned the labeled type-supported/no-items fallback with no live queue items. `MODQUEUE_RUNTIME_TEST_PLAN.md` defines the safe proof gate before claiming live queue reads. | Execute the modqueue runtime test plan: use existing safe queue content if available, or ask before creating/reporting throwaway content, then verify live `reddit_modqueue` items or capture the exact adapter permission/runtime failure. |
+| Modqueue triage | runtime fallback observed | Post-W34 playtests `v0.0.1.94` and `v0.0.1.123` reached the Act-page Operational Queue refresh path. The `v0.0.1.123` same-subreddit authenticated WebView refresh showed the read-only loading state, then returned the labeled type-supported/no-items fallback with no live queue items. V4 Wave 23 repeated the safe refresh on authenticated WebView playtest `v0.0.2.6` and again returned no live queue items. `MODQUEUE_RUNTIME_TEST_PLAN.md` defines the safe proof gate before claiming live queue reads. | Execute the modqueue runtime test plan: use existing safe queue content if available, or ask before creating/reporting throwaway content, then verify live `reddit_modqueue` items or capture the exact adapter permission/runtime failure. |
 | Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
 | Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
 | Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |
@@ -117,7 +125,7 @@ Runtime observations:
 | Redis storage envelope | runtime verified for current caps | `/api/smoke/redis-storage` writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to smoke keys, then deletes them and verifies cleanup. Devvit playtest `v0.0.1.137` returned `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` The runtime matrix showed `5 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep the safe storage smoke in regression checks before raising caps or storing larger live envelopes. |
 | Retention cleanup synthetic smoke | runtime verified for synthetic records | `/api/smoke/retention-cleanup` creates old synthetic scan, receipt, evidence board, and team-delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus sorted-set index references are gone. Local tests cover the route and runtime health event promotion. Devvit playtest `v0.0.1.138` returned `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.` The runtime matrix showed `6 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep this safe synthetic smoke in regression checks. Real operational-record deletion still requires a separate controlled destructive cleanup test. |
 | Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. V4 Wave 21 on playtest `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` | Keep read-only; do not infer live execution support. |
-| Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. | Deep pagination remains unverified. |
+| Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. V4 Wave 23 Devvit WebView playtest `v0.0.2.6` ran a deep live scan with `120` live moderation-log actions against requested limit `250` and page size `100`. | Keep deep scan in regression proof; capture exact API response/page-cursor trace before weakening conservative warnings. |
 | Policy proposal/review/adoption | runtime verified for single-mod playtest path | `policies.test.ts` passes; post-W34 `v0.0.1.104` verified proposed/under-review state and threshold blocking. | Multi-moderator distinct-reviewer proof remains open. |
 | Log-only Apply Policy receipts | runtime verified | Post-W34 playtest `v0.0.1.90` recorded `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` for comment `t1_ommzgtz`; later WebView loads showed it in the Receipt Ledger. | Keep real Reddit execution disabled until separate proof. |
 | Real remove/approve/ignore-reports | disabled with proof plan | Gated by `moderationExecution.ts`; no safe runtime proof. `REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines the required explicit approval, throwaway-target, receipt, Reddit-visible-state, and cleanup gates. | Execute the destructive moderation execution test plan before enabling or claiming live remove/approve/ignore-reports behavior. |

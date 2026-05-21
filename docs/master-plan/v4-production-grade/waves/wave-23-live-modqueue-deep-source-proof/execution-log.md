@@ -2,7 +2,7 @@
 
 Date: 2026-05-21
 
-Branch: `codex/wave-23-source-proof`
+Branch: `codex/wave-23-source-proof`, later continued on `master`
 
 ## What Changed
 
@@ -33,16 +33,35 @@ status records only.
 
 ## Status
 
-Blocked.
+Partially complete.
 
-No live modqueue read, deep moderation-log pagination behavior, or Reddit
-source claim was upgraded. No public Reddit writes, moderation actions, native
-Mod Notes, delivery actions, scheduler jobs, retention deletion, or external AI
-calls were performed.
+Initial planning was blocked by port ownership. After the user approved taking
+over the stale Gemini/Antigravity port `5678` listener, the authenticated
+Reddit WebView proof pass ran on current `master`.
+
+Observed on 2026-05-21:
+
+- Devvit WebView playtest: `v0.0.2.6`
+- Account: `u/BrightyBrainiac`
+- Subreddit: `r/modmirror_dev`
+- Act Operational Queue: `Refresh` entered loading and returned the labeled
+  type-supported/no-items fallback. No live `reddit_modqueue` items and no
+  exact adapter failure were captured.
+- Scan `Deep Live Scan`: completed with source `Live data`, depth `Deep`, `120`
+  actions scanned, `1` attributed, and `119` unmatched.
+- Deep scan warnings: requested up to `250` moderation-log actions with page
+  size `100`; pagination remains conservatively labeled type-verified in the
+  UI; the scan returned `120` of `250`; `1` moderator attribution correction
+  was applied.
+- No public Reddit writes, moderation actions, native Mod Notes, delivery
+  actions, scheduler jobs, retention deletion, or external AI calls were
+  performed.
 
 ## Unblock Step
 
-Execute `MODQUEUE_RUNTIME_TEST_PLAN.md` and
-`DEEP_SCAN_RUNTIME_TEST_PLAN.md` from an authenticated Reddit-hosted Devvit
-WebView for `r/modmirror_dev`, after the active wave owns the Playtest session
-or another approved session is explicitly available.
+Modqueue remains open until `MODQUEUE_RUNTIME_TEST_PLAN.md` returns a live safe
+`reddit_modqueue` item or captures an exact Devvit adapter/runtime failure.
+Deep live scan now has authenticated WebView evidence above one page of
+moderation-log data; keep the follow-up focused on capturing the exact
+authenticated API response excerpt and, if implemented later, explicit
+page/cursor counts.
