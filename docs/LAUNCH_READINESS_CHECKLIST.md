@@ -48,7 +48,7 @@ Expected:
 
 - [x] desktop web
 - [x] narrow viewport
-- [ ] mobile web if possible
+- [x] mobile web static viewport
 - [ ] Reddit mobile app if possible
 - [x] dark Reddit UI
 
@@ -107,6 +107,11 @@ Expected:
 - Static QA reported no horizontal overflow for Digest or Settings, confirmed
   Digest History and Markdown Export are visible, and confirmed Settings shows
   scheduler capability status.
+- Current static mobile viewport QA captured
+  `docs/screenshots/submission/mobile-command-center-static.png` at `390px`
+  wide after running the judge demo path. Playwright measured
+  `innerWidth: 390`, `scrollWidth: 390`, and `hasHorizontalOverflow: false`.
+  This is built-client mobile web proof, not native Reddit mobile app proof.
 - Earlier runtime playtest reached ready at:
   - URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
   - Version: `v0.0.1.70`

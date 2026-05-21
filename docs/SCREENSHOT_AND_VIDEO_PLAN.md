@@ -19,6 +19,10 @@
   built-client capture of the ExampleLearning Rule 2 drift detail. This proves
   the visual state for submission planning only; authenticated Devvit WebView
   route smoke remains tracked separately.
+- `docs/screenshots/submission/mobile-command-center-static.png` — static
+  built-client `390px` mobile viewport capture after the judge demo path.
+  Playwright measured no horizontal overflow. This does not prove native Reddit
+  mobile app behavior.
 
 ## Demo Video Flow
 

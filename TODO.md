@@ -133,7 +133,9 @@ through the primary Act controls, accessible names for enabled interactive
 controls, and no 390px horizontal overflow; the client bundle and main entry
 sizes were measured; and a global reduced-motion CSS guard was added. Native
 Reddit mobile app behavior remains unverified because no native app/device
-session was available.
+session was available. A current static mobile submission screenshot now exists
+at `docs/screenshots/submission/mobile-command-center-static.png`; Playwright
+measured `innerWidth: 390`, `scrollWidth: 390`, and no horizontal overflow.
 
 V4 Wave 29 is complete for assurance review scope:
 `docs/operational-overhaul/MULTI_MODERATOR_RATIFICATION_TEST_PLAN.md` now
