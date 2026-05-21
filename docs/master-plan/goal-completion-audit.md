@@ -72,6 +72,9 @@ Recent completion evidence:
   npm override pass removed Devvit-transitive `tmp` and `ws` findings.
 - Current `master` passed `npm run deploy` and uploaded Devvit app version
   `0.0.2`; this is deploy readiness, not route-level WebView proof.
+- `npx devvit view --json` confirms uploaded version `0.0.2` has build status
+  `1`, public API version `0.12.24`, and app capabilities `[10, 11]`
+  (`MODERATOR`, `WEBVIEW` in installed Devvit protos).
 
 Current blocker evidence:
 

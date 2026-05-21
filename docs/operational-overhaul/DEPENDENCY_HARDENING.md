@@ -33,6 +33,11 @@ The dependency update passed:
 `0.0.2` with `4` new WebView assets. This proves deploy/upload readiness for the
 current build; it does not prove authenticated route-level WebView behavior.
 
+`npx devvit view --json` after the upload returned version `0.0.2` with
+`buildStatus: 1`, `publicApiVersion: "0.12.24"`, and app capabilities
+`[10, 11]`. Installed Devvit protos map those capability values to `MODERATOR`
+and `WEBVIEW`.
+
 ## Audit Result
 
 Before this follow-up, `npm audit --omit=dev` reported:

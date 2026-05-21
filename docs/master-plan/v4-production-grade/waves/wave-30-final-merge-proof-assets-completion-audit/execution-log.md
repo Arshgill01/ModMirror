@@ -63,6 +63,11 @@ automatically bumped the Devvit app version to `0.0.2` and uploaded `4` new
 WebView assets. This is deploy readiness only; route-level WebView smoke proof
 remains blocked under Wave 21.
 
+`npx devvit view --json` after the upload returned version `0.0.2`,
+`buildStatus: 1`, `publicApiVersion: "0.12.24"`, and app capabilities
+`[10, 11]`. Installed Devvit protos map `10` to `MODERATOR` and `11` to
+`WEBVIEW`.
+
 ## Status
 
 Blocked.
