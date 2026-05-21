@@ -13,6 +13,7 @@
 
 - [x] Devvit app identity valid.
 - [x] Playtest starts.
+- [x] Latest upload/deploy readiness passed for Devvit app version `0.0.2`.
 - [x] Inline card works.
 - [x] Expanded dashboard works.
 - [x] Command Center works.
@@ -26,6 +27,8 @@
 - [x] Manual Digest works locally and in playtest.
 - [x] Markdown copy/export works locally and renders in playtest.
 - [x] Runtime Settings shows capability status locally and in playtest.
+- [ ] Latest `0.0.2` route-level WebView smoke checks after opening an
+      authenticated Devvit WebView session.
 
 ## Role Checks
 
@@ -81,22 +84,25 @@ Expected:
 - [x] Known limitations clear.
 - [x] Developer feedback notes drafted.
 - [x] Final report complete after runtime QA.
+- [ ] App details page has public-ready terms and privacy links before publish.
 
 ## Current Evidence Notes
 
-- Final Wave 9/10 local checks passed:
-  - `npm install`
+- Current `master` dependency-hardening checks passed:
   - `npm run type-check`
   - `npm run lint`
   - `npm run build`
-  - `npm test` with 15 files / 67 tests
+  - `npm test` with 62 files / 263 tests
+  - `npm run deploy`, which uploaded Devvit app version `0.0.2`
+  - `npx devvit view --json`, which confirmed public API version `0.12.24`,
+    build status `1`, and app capabilities `[10, 11]`
 - Static Playwright QA captured:
   - `output/playwright/wave9-10/digest-static.png`
   - `output/playwright/wave9-10/settings-static.png`
 - Static QA reported no horizontal overflow for Digest or Settings, confirmed
   Digest History and Markdown Export are visible, and confirmed Settings shows
   scheduler capability status.
-- Runtime playtest reached ready at:
+- Earlier runtime playtest reached ready at:
   - URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
   - Version: `v0.0.1.70`
 - Safari/Computer Use runtime QA verified:
@@ -112,10 +118,13 @@ Expected:
     Digest scheduler `unverified` in playtest.
 - Runtime screenshot captured:
   - `output/playwright/wave9-10/runtime-safari-digest-v0.0.1.70.png`
-- `npm audit --audit-level=low` reports existing dependency issues: 31
-  vulnerabilities (3 low, 27 high, 1 critical). Main remediation paths require
-  out-of-range or breaking updates for `hono`, `vite`, and Devvit transitive
-  `protobufjs`; no force remediation has been applied in this wave.
+- `npm audit --omit=dev` still reports 26 Devvit-transitive `protobufjs`
+  vulnerabilities after direct Hono/Vite updates and safe `tmp`/`ws` overrides.
+  `npm audit fix --force` would downgrade or otherwise break the Devvit package
+  chain and has not been applied.
+- The latest uploaded version carries WebView capability, but the current CLI
+  does not expose a safe local command for terms/privacy links; set them on the
+  app details page before public publishing.
 
 ## Do Not Do Without Human Confirmation
 

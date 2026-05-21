@@ -2,6 +2,7 @@
   "private": true,
   "name": "modmirror",
   "version": "0.0.0",
+  "description": "Find enforcement drift before your users do.",
   "license": "BSD-3-Clause",
   "type": "module",
   "scripts": {

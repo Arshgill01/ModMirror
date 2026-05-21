@@ -79,6 +79,12 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
 
 ## Current Build Proof
 
+- Current `master` passed `npm run deploy` on 2026-05-21, which ran
+  `type-check`, `lint`, `test`, and `devvit upload`.
+- The deploy uploaded Devvit app version `0.0.2` with four WebView assets.
+- `npx devvit view --json` confirmed public API version `0.12.24`, build
+  status `1`, and app capabilities `[10, 11]` (`MODERATOR`, `WEBVIEW` in the
+  installed Devvit protos).
 - Mirror Scan demo mode surfaces Rule 2 drift.
 - Policy Agreement Flow can create/edit policies from drift or manually.
 - Apply Policy simulator previews and confirms `log_only` decisions.
@@ -112,6 +118,13 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
   appeals or claim perfect fairness.
 - Scheduled digest delivery and Calibration Mode remain deferred unless
   explicitly opted in and runtime-verified.
+- True non-mod protected-route proof, lower-permission moderator role proof,
+  live modqueue item reads, deep moderation-log pagination, native Reddit mobile
+  app behavior, public/private delivery, scheduler behavior, native Mod Notes,
+  destructive moderation actions, real retention deletion, and external AI calls
+  remain unverified or disabled.
+- Current app metadata still needs terms/privacy links on the app details page
+  before any public publish request.
 - Browser UI proof is signed in, playtest-ready, shows the compact inline
   launch card, opens the native expanded dashboard modal with the Devvit
   viewport dropdown, and verifies demo scan, policy creation, Apply Policy

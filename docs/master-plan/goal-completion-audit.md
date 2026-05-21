@@ -75,6 +75,9 @@ Recent completion evidence:
 - `npx devvit view --json` confirms uploaded version `0.0.2` has build status
   `1`, public API version `0.12.24`, and app capabilities `[10, 11]`
   (`MODERATOR`, `WEBVIEW` in installed Devvit protos).
+- Submission/listing materials now record the current deploy proof level and
+  remaining publish-readiness gap: terms and privacy links must be set on the
+  Devvit app details page before any public publish request.
 
 Current blocker evidence:
 
@@ -91,6 +94,9 @@ Current blocker evidence:
   advisory chain. Direct Hono/Vite and transitive `tmp`/`ws` findings are
   resolved; remaining force fixes would downgrade or otherwise break the Devvit
   package chain and require a separate dependency-risk decision.
+- Public publish readiness remains incomplete until app details page
+  terms/privacy links are configured and the user explicitly approves a
+  publish request.
 
 Merged-worktree cleanup:
 

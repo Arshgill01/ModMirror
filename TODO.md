@@ -10,7 +10,11 @@ runtime event recorder has been merged through PR #25. The latest Devvit
 playtest observed while continuing runtime proof work is `v0.0.1.138`. The
 current `master` dependency-hardening build passed `npm run deploy` and
 uploaded Devvit app version `0.0.2`; this is upload/deploy readiness evidence,
-not route-level WebView smoke proof.
+not route-level WebView smoke proof. Submission/listing docs now reflect this
+proof level, and the local package metadata has the upload-safe description
+`Find enforcement drift before your users do.` App details page terms/privacy
+links still need to be set outside the local CLI flow before any public publish
+request.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment

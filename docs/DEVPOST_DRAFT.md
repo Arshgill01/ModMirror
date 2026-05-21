@@ -63,14 +63,24 @@ knows versus what it infers.
 
 ## What's Next
 
-- Runtime verification for Redis smoke, Reddit API smoke, menu/form actions,
-  comment delivery ordering, modmail, scheduler, and permission gating.
-- Optional mod discussion digest delivery after safe preview/confirmation proof.
-- Optional weekly digest scheduling after scheduler proof.
-- Deeper role-based access checks for sensitive views.
+- True non-mod and limited-moderator runtime proof for protected workflows.
+- Read-only live modqueue item proof and deep moderation-log pagination proof.
+- Native Reddit mobile QA on a real device/session.
+- Optional public comment, modmail, Mod Discussion, Mod Notes, scheduler, and
+  destructive moderation proof only after explicit approval of the matching
+  controlled runbook.
+- Public app listing terms/privacy links before any publish request.
 
 ## Known Limitations
 
 ModMirror does not use AI, does not auto-ban, does not decide appeals, and does
 not claim perfect attribution. Delivery and scheduler features remain disabled
 unless runtime-verified and explicitly enabled.
+
+## Current Proof Snapshot
+
+As of May 21, 2026, the repository passes local type, lint, build, and test
+gates on `master`. `npm run deploy` also passed and uploaded Devvit app version
+`0.0.2` with WebView capability. Route-level WebView smoke checks for the latest
+build still require an authenticated Devvit WebView session and are not claimed
+from upload readiness alone.

@@ -32,6 +32,10 @@ ModMirror helps moderator teams act consistently.
 Operational overhaul W00-W14, Expansion W16-W34, and the post-W34 runtime
 proof follow-up are merged on `master`.
 
+Current `master` passed `npm run deploy` on May 21, 2026 and uploaded Devvit
+app version `0.0.2` with WebView capability. Treat that as deploy/upload
+readiness, not route-level proof for every WebView API path.
+
 The app opens with a compact Reddit inline launch card and can expand into
 Reddit's native WebView modal. The dashboard is now organized around moderator
 jobs: Act, Scan, Agree, Review, Prove, and Settings.
@@ -56,6 +60,9 @@ Native Reddit mobile behavior, real Reddit moderation execution, actual
 retention deletion, Mod Discussion delivery, scheduler behavior, native Mod
 Notes, live modqueue reads, non-mod access checks, and external AI calls remain
 disabled or unverified until dedicated runtime proof exists.
+
+Before public publishing, app details page terms and privacy links still need
+to be set outside the local CLI flow.
 
 ## Local Commands
 
