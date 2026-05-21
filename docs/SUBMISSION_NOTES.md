@@ -116,8 +116,10 @@ ModMirror does not automatically ban users by default. It recommends, nudges, an
   for sparse communities.
 - Case Packets are evidence packets for moderator review; they do not decide
   appeals or claim perfect fairness.
-- Scheduled digest delivery and Calibration Mode remain deferred unless
-  explicitly opted in and runtime-verified.
+- Scheduled digest delivery remains deferred unless explicitly opted in and
+  runtime-verified. Calibration scenarios and team-practice quiz surfaces exist,
+  but distinct-moderator onboarding proof remains blocked by account
+  availability.
 - True non-mod protected-route proof, lower-permission moderator role proof,
   live modqueue item reads, deep moderation-log pagination, native Reddit mobile
   app behavior, public/private delivery, scheduler behavior, native Mod Notes,

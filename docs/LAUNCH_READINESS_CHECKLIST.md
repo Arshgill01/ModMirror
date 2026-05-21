@@ -20,10 +20,11 @@
 - [x] Demo scenario works.
 - [x] Live empty state is useful.
 - [x] Mirror Scan works or degrades gracefully.
-- [ ] Policies create/edit.
-- [ ] Apply Policy works.
-- [ ] Override review works.
-- [ ] Case Packet works.
+- [x] Demo policy creation from drift works in playtest.
+- [x] Dashboard Apply Policy simulator works in playtest with `log_only`
+      confirmation.
+- [x] Override review inbox and policy health work in playtest.
+- [x] Demo Case Packet generation and Markdown export work in playtest.
 - [x] Manual Digest works locally and in playtest.
 - [x] Markdown copy/export works locally and renders in playtest.
 - [x] Runtime Settings shows capability status locally and in playtest.
@@ -115,6 +116,10 @@ Expected:
     `Fullscreen`.
   - Command Center loads as first dashboard screen.
   - ExampleLearning demo scan loads with 60 actions and labeled demo state.
+  - Low-effort questions policy creation from drift works in the demo path.
+  - Apply Policy preview/confirmation records a `log_only` override.
+  - Review shows the override workflow and policy health state.
+  - Case Packet generation renders tracked context and Markdown Export.
   - Manual Digest generates in playtest, renders Markdown Export, and writes a
     Digest History row.
   - Settings page shows Digest History, Digest mod discussion `unverified`, and
