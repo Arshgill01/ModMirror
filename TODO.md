@@ -146,9 +146,12 @@ matches outside ignored/generated/dependency paths. Distinct-moderator runtime
 proof remains blocked by account availability. The dependency-hardening follow-up
 upgraded direct Devvit/Hono/Vite packages and removed the direct Hono/Vite audit
 findings. The audit-overrides follow-up also overrides Devvit-transitive `tmp`
-and `ws` to patched versions. `npm audit --omit=dev` still fails on the
-remaining Devvit-transitive `protobufjs` chain; force fixes would downgrade or
-otherwise break the Devvit package chain.
+and `ws` to patched versions. A safe dev-tool bump follow-up upgraded and
+validated exact-pinned `globals@17.6.0`, `prettier@3.8.3`,
+`typescript-eslint@8.59.4`, and `vitest@4.1.7`; major Dependabot proposals
+remain unmerged until separately proven against Devvit. `npm audit --omit=dev`
+still fails on the remaining Devvit-transitive `protobufjs` chain; force fixes
+would downgrade or otherwise break the Devvit package chain.
 
 V4 Wave 30 is blocked: the final completion audit cannot close the active goal
 while Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source

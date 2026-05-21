@@ -70,6 +70,9 @@ Recent completion evidence:
   `hono` to `4.12.21`, and `vite` to `7.3.3`, removing the direct Hono/Vite
   audit findings while preserving passing build/type/lint/test gates. A later
   npm override pass removed Devvit-transitive `tmp` and `ws` findings.
+- A safe dev-tool bump follow-up upgraded exact-pinned `globals`, `prettier`,
+  `typescript-eslint`, and `vitest` patch/minor versions while preserving
+  type-check, lint, test, build, and Devvit CLI identity gates.
 - Current `master` passed `npm run deploy` and uploaded Devvit app version
   `0.0.2`; this is deploy readiness, not route-level WebView proof.
 - `npx devvit view --json` confirms uploaded version `0.0.2` has build status
