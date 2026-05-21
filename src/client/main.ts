@@ -28,6 +28,13 @@ import { DEMO_POLICY } from '../shared/demoData';
 import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
 import { buildCasePacketDeliveryDraft } from '../shared/casePacketDelivery';
 import {
+  buildCalibrationQuizSummary,
+  emptyQuizState,
+  syncQuizStateForScenarios,
+  type CalibrationQuizSummary,
+  type QuizState,
+} from './state/store';
+import {
   classifyClientError,
   classifyClipboardFailure,
   formatClientNotice,
@@ -564,6 +571,7 @@ let v2ProductState: V2ProductUiState = {
   driftRadar: undefined,
   onboarding: undefined,
 };
+let calibrationQuizState: QuizState = emptyQuizState();
 
 function getPageFromHash(): ProductPageId {
   const candidate = canonicalPageId(getHashRoute().page);
@@ -2210,33 +2218,149 @@ function renderTeamCalibrationPanel() {
   if (calibration === undefined) {
     return '';
   }
+  const scenarios = calibration.scenarios;
+  const summary = buildCalibrationQuizSummary(scenarios, calibrationQuizState.answerResults);
+  const currentIndex = Math.min(
+    Math.max(calibrationQuizState.currentScenarioIndex, 0),
+    Math.max(scenarios.length - 1, 0)
+  );
+  const currentScenario = scenarios[currentIndex];
   return `
     <section class="section-panel">
       <div class="section-header">
         <div>
-          <h3>Team Calibration Studio</h3>
-          <p>Practice team policy decisions without rankings, blame, or moderator scoreboards.</p>
-          ${v2ProductState.calibrationResult ? `<p class="inline-success">${escapeHtml(v2ProductState.calibrationResult.explanation)}</p>` : ''}
+          <h3>Onboard a New Mod</h3>
+          <p>Practice one team-policy decision at a time without rankings, blame, or moderator scoreboards.</p>
+          ${calibrationQuizState.error ? `<p class="inline-error">${escapeHtml(calibrationQuizState.error)}</p>` : ''}
         </div>
-        <span class="status-badge status-neutral">${calibration.scenarios.length} scenarios</span>
+        <span class="status-badge status-neutral">${summary.completedCount}/${summary.totalCount} complete</span>
       </div>
-      <div class="policy-grid">
-        ${calibration.scenarios.slice(0, 3).map((scenario) => `
-          <article class="policy-card">
-            <h4>${escapeHtml(scenario.title)}</h4>
-            <p>${escapeHtml(scenario.prompt)}</p>
-            <dl class="compact-metrics">
-              <div><dt>Rule</dt><dd>${escapeHtml(scenario.ruleName)}</dd></div>
-              <div><dt>Source</dt><dd>${escapeHtml(formatAction(scenario.source))}</dd></div>
-            </dl>
-            <button class="secondary-button compact-button" data-calibration-answer="${escapeAttribute(scenario.id)}" data-calibration-action="${scenario.expectedAction}" type="button">Show Team Norm</button>
-            <button class="secondary-button compact-button" data-scenario-archive="${escapeAttribute(scenario.id)}" type="button">Archive</button>
-          </article>
-        `).join('')}
-      </div>
-      ${renderScenarioLabForm(calibration.scenarios[0])}
+      ${
+        currentScenario === undefined
+          ? renderEmptyState(
+              'No quiz scenarios yet',
+              'Create an active scenario to practice the team norm before using it for onboarding.',
+              []
+            )
+          : renderCalibrationQuizScenario(currentScenario, currentIndex, scenarios.length)
+      }
+      ${renderCalibrationQuizSummary(summary)}
+      ${renderScenarioLabForm(currentScenario)}
     </section>
   `;
+}
+
+function renderCalibrationQuizScenario(
+  scenario: CalibrationScenario,
+  currentIndex: number,
+  totalCount: number
+) {
+  const result = calibrationQuizState.answerResults[scenario.id];
+  const selectedAction =
+    calibrationQuizState.selectedActions[scenario.id] ?? result?.selectedAction ?? '';
+  const answered = result !== undefined;
+  const submitting = calibrationQuizState.submittingScenarioId === scenario.id;
+  return `
+    <article class="policy-card">
+      <div class="section-header compact-header">
+        <div>
+          <h4>${escapeHtml(scenario.title)}</h4>
+          <p>Scenario ${currentIndex + 1} of ${totalCount}</p>
+        </div>
+        <span class="status-badge status-neutral">${escapeHtml(scenario.ruleName)}</span>
+      </div>
+      <p>${escapeHtml(scenario.prompt)}</p>
+      <dl class="compact-metrics">
+        <div><dt>Rule</dt><dd>${escapeHtml(scenario.ruleName)}</dd></div>
+        <div><dt>Source</dt><dd>${escapeHtml(formatAction(scenario.source))}</dd></div>
+        <div><dt>Privacy</dt><dd>${scenario.privacy.containsRealUserContent ? 'Real content' : 'Synthetic or aggregate'}</dd></div>
+      </dl>
+      <form class="policy-form" data-calibration-quiz-form data-calibration-scenario="${escapeAttribute(scenario.id)}">
+        <fieldset>
+          <legend>Choose the action you would take</legend>
+          <div class="incident-form-grid">
+            ${ENFORCEMENT_ACTION_VALUES.map((action) => `
+              <label class="checkbox-label">
+                <input
+                  name="selectedAction"
+                  type="radio"
+                  value="${action}"
+                  data-calibration-option="${escapeAttribute(scenario.id)}"
+                  ${selectedAction === action ? 'checked' : ''}
+                  ${answered || submitting ? 'disabled' : ''}
+                >
+                ${formatAction(action)}
+              </label>
+            `).join('')}
+          </div>
+        </fieldset>
+        <div class="button-row">
+          <button
+            class="primary-button"
+            type="submit"
+            ${!selectedAction || answered || submitting ? 'disabled' : ''}
+          >
+            ${submitting ? 'Submitting...' : answered ? 'Answer submitted' : 'Submit answer'}
+          </button>
+          <button class="secondary-button compact-button" data-calibration-quiz-nav="previous" type="button" ${currentIndex === 0 ? 'disabled' : ''}>Back</button>
+          <button class="secondary-button compact-button" data-calibration-quiz-nav="next" type="button" ${currentIndex >= totalCount - 1 || !answered ? 'disabled' : ''}>Next</button>
+          <button class="secondary-button compact-button" data-scenario-archive="${escapeAttribute(scenario.id)}" type="button">Archive</button>
+        </div>
+      </form>
+      ${result === undefined ? '<p class="inline-note">Submit your choice to compare it with the existing team norm.</p>' : renderCalibrationFeedback(result)}
+    </article>
+  `;
+}
+
+function renderCalibrationFeedback(result: CalibrationAnswerResult) {
+  return `
+    <aside class="runtime-banner" aria-label="Calibration answer feedback">
+      <div>
+        <strong>${escapeHtml(formatCalibrationAlignment(result.alignment))}</strong>
+        <span>Selected ${formatAction(result.selectedAction)}. Team norm: ${formatAction(result.expectedAction)}.</span>
+      </div>
+      <p>${escapeHtml(result.explanation)}</p>
+      <p>${escapeHtml(result.aggregateSummary.note)}</p>
+    </aside>
+  `;
+}
+
+function renderCalibrationQuizSummary(summary: CalibrationQuizSummary) {
+  if (summary.totalCount === 0) {
+    return '';
+  }
+  return `
+    <aside class="policy-card" aria-label="Team policy quiz summary">
+      <div class="section-header compact-header">
+        <div>
+          <h4>Aggregate Summary</h4>
+          <p>${summary.completedAll ? 'All scenarios are complete.' : 'Complete the remaining scenarios to finish the onboarding practice loop.'}</p>
+        </div>
+        <span class="status-badge ${summary.completedAll ? 'status-good' : 'status-neutral'}">${summary.completedCount}/${summary.totalCount}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Aligned</dt><dd>${summary.alignedCount}</dd></div>
+        <div><dt>Acceptable alternatives</dt><dd>${summary.acceptableAlternativeCount}</dd></div>
+        <div><dt>Review recommended</dt><dd>${summary.reviewRecommendedCount}</dd></div>
+      </dl>
+      <p class="inline-note">This is a team-practice summary only. ModMirror does not create per-mod calibration leaderboards.</p>
+      ${
+        summary.completedAll
+          ? '<div class="button-row"><button class="secondary-button compact-button" data-calibration-quiz-reset type="button">Start over</button></div>'
+          : ''
+      }
+    </aside>
+  `;
+}
+
+function formatCalibrationAlignment(alignment: CalibrationAnswerResult['alignment']) {
+  if (alignment === 'aligned') {
+    return 'Aligned with team norm';
+  }
+  if (alignment === 'acceptable_alternative') {
+    return 'Acceptable alternative';
+  }
+  return 'Review recommended';
 }
 
 function renderScenarioLabForm(seed: CalibrationScenario | undefined) {
@@ -3873,15 +3997,60 @@ function bindV2ProductActions() {
     });
   });
 
-  document.querySelectorAll<HTMLButtonElement>('[data-calibration-answer]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const scenarioId = button.dataset.calibrationAnswer;
-      const selectedAction = button.dataset.calibrationAction;
+  document.querySelectorAll<HTMLInputElement>('[data-calibration-option]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const scenarioId = input.dataset.calibrationOption;
+      if (scenarioId && isEnforcementAction(input.value)) {
+        calibrationQuizState = {
+          ...calibrationQuizState,
+          selectedActions: {
+            ...calibrationQuizState.selectedActions,
+            [scenarioId]: input.value,
+          },
+          error: undefined,
+        };
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll<HTMLFormElement>('[data-calibration-quiz-form]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const scenarioId = form.dataset.calibrationScenario;
+      const selectedAction = String(new FormData(form).get('selectedAction') ?? '');
       if (scenarioId && isEnforcementAction(selectedAction)) {
         void submitCalibrationAnswerFromUi(scenarioId, selectedAction);
       }
     });
   });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-calibration-quiz-nav]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const scenarios = v2ProductState.calibration?.scenarios ?? [];
+      const direction = button.dataset.calibrationQuizNav === 'next' ? 1 : -1;
+      calibrationQuizState = syncQuizStateForScenarios(
+        {
+          ...calibrationQuizState,
+          currentScenarioIndex: calibrationQuizState.currentScenarioIndex + direction,
+          error: undefined,
+        },
+        scenarios
+      );
+      render();
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('[data-calibration-quiz-reset]')?.addEventListener(
+    'click',
+    () => {
+      calibrationQuizState = syncQuizStateForScenarios(
+        emptyQuizState(),
+        v2ProductState.calibration?.scenarios ?? []
+      );
+      render();
+    }
+  );
 
   document.querySelectorAll<HTMLButtonElement>('[data-review-task-status]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -6358,6 +6527,7 @@ async function loadV2ProductSurfaces() {
     onboarding,
   ].filter((result): result is PromiseRejectedResult => result.status === 'rejected');
   const firstFailure = failures[0];
+  const nextCalibration = settledValue(calibration) ?? v2ProductState.calibration;
 
   v2ProductState = {
     ...v2ProductState,
@@ -6368,13 +6538,17 @@ async function loadV2ProductSurfaces() {
         : undefined,
     commandCenter: settledValue(commandCenter) ?? v2ProductState.commandCenter,
     policyWorkbench: settledValue(policyWorkbench) ?? v2ProductState.policyWorkbench,
-    calibration: settledValue(calibration) ?? v2ProductState.calibration,
+    calibration: nextCalibration,
     reviewRoom: settledValue(reviewRoom) ?? v2ProductState.reviewRoom,
     demoManifest: settledValue(demoManifest) ?? v2ProductState.demoManifest,
     driftRadar: settledValue(driftRadar) ?? v2ProductState.driftRadar,
     evidenceGraph: settledValue(evidenceGraph) ?? v2ProductState.evidenceGraph,
     onboarding: settledValue(onboarding) ?? v2ProductState.onboarding,
   };
+  calibrationQuizState = syncQuizStateForScenarios(
+    calibrationQuizState,
+    nextCalibration?.scenarios ?? []
+  );
   render();
 }
 
@@ -6447,6 +6621,12 @@ async function submitCalibrationAnswerFromUi(
   scenarioId: string,
   selectedAction: EnforcementAction
 ) {
+  calibrationQuizState = {
+    ...calibrationQuizState,
+    submittingScenarioId: scenarioId,
+    error: undefined,
+  };
+  render();
   try {
     const result = await fetchApi<CalibrationAnswerResult>(
       API_ROUTES.calibrationAnswer,
@@ -6465,9 +6645,27 @@ async function submitCalibrationAnswerFromUi(
       calibrationResult: result,
       error: undefined,
     };
+    calibrationQuizState = {
+      ...calibrationQuizState,
+      selectedActions: {
+        ...calibrationQuizState.selectedActions,
+        [scenarioId]: selectedAction,
+      },
+      submittedAnswers: {
+        ...calibrationQuizState.submittedAnswers,
+        [scenarioId]: true,
+      },
+      answerResults: {
+        ...calibrationQuizState.answerResults,
+        [scenarioId]: result,
+      },
+      submittingScenarioId: undefined,
+      error: undefined,
+    };
   } catch (error) {
-    v2ProductState = {
-      ...v2ProductState,
+    calibrationQuizState = {
+      ...calibrationQuizState,
+      submittingScenarioId: undefined,
       error: normalizeClientError(error, 'Calibration answer could not be recorded.'),
     };
   }

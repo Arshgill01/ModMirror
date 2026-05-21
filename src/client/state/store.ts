@@ -4,6 +4,7 @@ import type {
   ActionReceipt,
   CalibrationAnswerResult,
   CalibrationPackResponse,
+  CalibrationScenario,
   CasePacket,
   CommandCenterV2Response,
   CommunityHealthSummary,
@@ -230,6 +231,18 @@ export interface QuizState {
   currentScenarioIndex: number;
   selectedActions: Record<string, EnforcementAction>;
   submittedAnswers: Record<string, boolean>;
+  answerResults: Record<string, CalibrationAnswerResult>;
+  submittingScenarioId: string | undefined;
+  error: string | undefined;
+}
+
+export interface CalibrationQuizSummary {
+  totalCount: number;
+  completedCount: number;
+  alignedCount: number;
+  acceptableAlternativeCount: number;
+  reviewRecommendedCount: number;
+  completedAll: boolean;
 }
 
 export interface SimulationUiState {
@@ -353,6 +366,62 @@ export function emptyApplyForm(): ApplyFormState {
   };
 }
 
+export function emptyQuizState(): QuizState {
+  return {
+    currentScenarioIndex: 0,
+    selectedActions: {},
+    submittedAnswers: {},
+    answerResults: {},
+    submittingScenarioId: undefined,
+    error: undefined,
+  };
+}
+
+export function syncQuizStateForScenarios(
+  state: QuizState,
+  scenarios: CalibrationScenario[]
+): QuizState {
+  const scenarioIds = new Set(scenarios.map((scenario) => scenario.id));
+  const lastIndex = Math.max(scenarios.length - 1, 0);
+  return {
+    ...state,
+    currentScenarioIndex: Math.min(Math.max(state.currentScenarioIndex, 0), lastIndex),
+    selectedActions: filterScenarioRecord(state.selectedActions, scenarioIds),
+    submittedAnswers: filterScenarioRecord(state.submittedAnswers, scenarioIds),
+    answerResults: filterScenarioRecord(state.answerResults, scenarioIds),
+    submittingScenarioId:
+      state.submittingScenarioId !== undefined && scenarioIds.has(state.submittingScenarioId)
+        ? state.submittingScenarioId
+        : undefined,
+  };
+}
+
+export function buildCalibrationQuizSummary(
+  scenarios: CalibrationScenario[],
+  answerResults: Record<string, CalibrationAnswerResult>
+): CalibrationQuizSummary {
+  const scenarioIds = new Set(scenarios.map((scenario) => scenario.id));
+  const results = Object.values(answerResults).filter((result) => scenarioIds.has(result.scenarioId));
+  return {
+    totalCount: scenarios.length,
+    completedCount: results.length,
+    alignedCount: results.filter((result) => result.alignment === 'aligned').length,
+    acceptableAlternativeCount: results.filter(
+      (result) => result.alignment === 'acceptable_alternative'
+    ).length,
+    reviewRecommendedCount: results.filter(
+      (result) => result.alignment === 'review_recommended'
+    ).length,
+    completedAll: scenarios.length > 0 && results.length === scenarios.length,
+  };
+}
+
+function filterScenarioRecord<T>(record: Record<string, T>, scenarioIds: Set<string>): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(record).filter(([scenarioId]) => scenarioIds.has(scenarioId))
+  );
+}
+
 function loadThemePreference(): ThemePreference {
   try {
     if (typeof localStorage === 'undefined') {
@@ -456,9 +525,7 @@ export const initialGlobalState: GlobalState = {
     onboarding: undefined,
   },
   quizState: {
-    currentScenarioIndex: 0,
-    selectedActions: {},
-    submittedAnswers: {},
+    ...emptyQuizState(),
   },
   simulationState: {
     loading: false,
