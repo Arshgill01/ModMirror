@@ -197,3 +197,54 @@ Result:
 - Observed elapsed time was `04:03:50`.
 
 Status remains blocked. The Gemini/Antigravity process was not killed.
+
+## Authenticated WebView Retry
+
+Date: 2026-05-21
+
+After the user explicitly authorized taking over the stale Gemini/Antigravity
+listener, the old port `5678` process was stopped and current `master` started
+its own Devvit playtest.
+
+Commands/actions:
+
+```sh
+kill 42407
+npm run dev
+curl -i --max-time 5 http://127.0.0.1:5678/api/health
+curl -i --max-time 5 http://127.0.0.1:5678/api/smoke/redis
+curl -i --max-time 5 "http://127.0.0.1:5678/api/modqueue/triage?subreddit=modmirror_dev"
+```
+
+Runtime environment:
+
+- Worktree: `/Users/arshdeepsingh/Developer/ModMirror`
+- Branch: `master`
+- Devvit account: `u/BrightyBrainiac`
+- Subreddit: `r/modmirror_dev`
+- Playtest URL: `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`
+- Playtest version: `v0.0.2.2`
+- Browser: authenticated Chrome Devvit WebView
+
+Direct bare `curl` probes still returned `HTTP/1.1 426 Upgrade Required`.
+Those probes remain transport-boundary evidence only; they do not exercise the
+signed Devvit WebView route context.
+
+Authenticated Settings safe-smoke results observed through Computer Use in the
+Reddit WebView:
+
+| Check | Result |
+|---|---|
+| Run Redis | `Redis smoke passed: write/read matched inside Devvit playtest.` |
+| Run Redis ZSET | `Redis sorted-set smoke passed: observed newest, middle, oldest.` |
+| Run Redis storage | `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` |
+| Run retention cleanup | `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.` |
+| Run Reddit read | `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` |
+| Check access | `Access check passed: 1 permission(s): all. Per-mod gate: full moderator visibility.` |
+
+Status: Wave 21 safe authenticated WebView route smoke is now complete for the
+current full moderator account. This does not prove true non-mod blocking,
+lower-permission moderator role strings, live modqueue item source behavior,
+deep moderation-log pagination, native mobile, destructive moderation actions,
+delivery, scheduler, native Mod Notes, or actual retention deletion against
+real operational records.

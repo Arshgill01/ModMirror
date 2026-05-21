@@ -34,7 +34,7 @@ This audit is a prompt-to-artifact checklist. It is not a claim that every runti
 | Merge latest Gemini/Antigravity UI pass | Commit `e64b5c9 style: merge minimalist UI refresh` merged `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design`, modified `src/client/main.ts` and `src/client/styles.css`, and excluded the older May 20 terminal/retro worktree. | Complete |
 | Avoid older Gemini designs | The older `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/redesign-ui-retro-magazine` worktree was not merged because it was from 2026-05-20 and conflicted with product/style guardrails. The May 21 `implement-continue-feature` worktree had no usable diff. | Complete |
 | Verify local stability after implementation/UI merge | The current batch previously passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npx devvit whoami`, and `timeout 35s npm run dev` to playtest readiness on `v0.0.1.167`. Static Playwright smoke rendered the dashboard and captured `output/playwright/refresh-minimalist-dashboard.png`; only a favicon 404 was observed. After dependency hardening, `npm run deploy` passed and uploaded Devvit app version `0.0.2`. A later static mobile capture rebuilt the client with `npm run build` and measured no 390px horizontal overflow. | Complete for local/build/static/deploy readiness |
-| Verify route-level Devvit behavior for V2 endpoints | `docs/master-plan/v2/final-audit.md`, `TODO.md`, and `RESEARCH.md` state route-level live Reddit read smoke endpoints were not rerun after the V2 upload. | Incomplete |
+| Verify route-level Devvit behavior for V2 endpoints | V4 Wave 21 authenticated Devvit WebView proof on playtest `v0.0.2.2` passed safe Settings diagnostics for Redis, Redis ZSET, Redis storage, synthetic retention cleanup, Reddit read-only, and current-account access. Bare localhost `curl` still returns `426 Upgrade Required` and is not route JSON proof. | Complete for safe smoke diagnostics |
 | Verify live WebView visual QA for API-backed V2 states | `TODO.md` keeps this open; static smoke only proved nonblank fallback rendering. | Incomplete |
 | Verify true non-mod protected API blocking | `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` says only local guard/current moderator proof exists; true non-mod account proof is open. | Incomplete |
 | Verify lower-permission moderator roles | Runtime-probed current moderator permission is `all`; lower-permission role strings remain unknown and aggregate-only. | Incomplete |
@@ -89,17 +89,19 @@ Recent completion evidence:
 - Static mobile QA measured `innerWidth: 390`, `scrollWidth: 390`, and
   `hasHorizontalOverflow: false`; this is mobile web/static proof only, not
   native Reddit mobile proof.
+- After the latest UI merge, current `master` reached authenticated Devvit
+  WebView playtest `v0.0.2.2` for `r/modmirror_dev` as `u/BrightyBrainiac`.
+  V4 Wave 21 safe Settings smokes passed Redis, Redis ZSET, Redis storage,
+  synthetic retention cleanup, Reddit read-only, and current-account access
+  diagnostics. Bare localhost `curl` still returns `426 Upgrade Required` and
+  remains transport-boundary evidence, not route JSON proof.
 
 Current blocker evidence:
 
-- Wave 21 route smoke remains blocked because unauthenticated localhost probes
-  returned `426 Upgrade Required` and the current port `5678` listener is owned
-  by a Gemini/Antigravity Devvit playtest process.
 - Wave 22 remains blocked because no true non-mod or limited-mod account session
   is available.
 - Wave 23 remains blocked because live modqueue source proof and deep
-  moderation-log pagination proof require an owned authenticated Devvit runtime
-  session and safe source evidence.
+  moderation-log pagination proof require safe source evidence.
 - Native Reddit mobile app proof remains unavailable.
 - `npm audit --omit=dev` still fails with the Devvit-transitive `protobufjs`
   advisory chain. Direct Hono/Vite and transitive `tmp`/`ws` findings are
@@ -122,8 +124,8 @@ The V2 implementation wave batch, V4 production-grade implementation waves,
 planning artifact cleanup, local validation, and latest UI merge are complete.
 The remaining blockers are proof gaps, not ordinary build failures:
 
-- route-level Devvit smoke checks for V2 endpoints;
-- live WebView QA for API-backed states;
+- broader live WebView QA for API-backed V2 states beyond the safe Settings
+  smoke console;
 - true non-mod and lower-permission account proof;
 - live modqueue item proof;
 - deep moderation-log pagination proof;

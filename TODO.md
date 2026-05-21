@@ -7,14 +7,14 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.138`. The
-current `master` dependency-hardening build passed `npm run deploy` and
-uploaded Devvit app version `0.0.2`; this is upload/deploy readiness evidence,
-not route-level WebView smoke proof. Submission/listing docs now reflect this
-proof level, and the local package metadata has the upload-safe description
-`Find enforcement drift before your users do.` App details page terms/privacy
-links still need to be reviewed, hosted, and set outside the local CLI flow
-before any public publish request. Draft copy exists in
+playtest observed while continuing runtime proof work is `v0.0.2.2`. The
+current `master` dependency-hardening build passed `npm run deploy`, uploaded
+Devvit app version `0.0.2`, and then reached authenticated Devvit WebView
+playtest readiness as `v0.0.2.2` after the latest UI merge. Submission/listing
+docs now reflect this proof level, and the local package metadata has the
+upload-safe description `Find enforcement drift before your users do.` App
+details page terms/privacy links still need to be reviewed, hosted, and set
+outside the local CLI flow before any public publish request. Draft copy exists in
 `docs/PRIVACY_POLICY_DRAFT.md` and `docs/TERMS_DRAFT.md`.
 
 The operational overhaul remains build-only/type-verified for several runtime
@@ -59,19 +59,24 @@ playtest `v0.0.1.137` for the current bounded storage caps: 10 scan metadata
 rows, 500 action rows, 500 override rows, one scan-like record, and smoke-key
 cleanup. The synthetic retention cleanup diagnostic passed on Devvit playtest
 `v0.0.1.138`: scans `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`,
-detail keys `0`, and index refs `0`.
+detail keys `0`, and index refs `0`. V4 Wave 21 reran the same safe smoke
+checks from the authenticated Reddit WebView on Devvit playtest `v0.0.2.2`
+after taking over port `5678`: Redis write/read matched, Redis ZSET order was
+`newest, middle, oldest`, Redis storage returned `scan 10/10, actions 500/500,
+overrides 500/500, cleanup 0`, synthetic retention cleanup returned `scans
+1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0`,
+Reddit read-only returned `0 rule(s), 0 removal reason(s), 5 mod log
+action(s)`, and the current account access diagnostic returned `1
+permission(s): all`.
 
 V4 Wave 21 safe route-level smoke planning now exists under
 `docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/` with an
 operational runtime plan at
-`docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`. The 2026-05-21
-rehearsal did not upgrade any route to runtime-verified: port `5678` was owned
-by an Antigravity/Gemini `devvit playtest` process from another worktree, and
-bare `curl` probes to `/api/health`, `/api/runtime-capabilities`, and
-`/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` instead of route
-JSON. A 22:08 IST recheck still found PID `42407` owning port `5678` with
-elapsed time `04:03:50`. Resume Wave 21 only from an authenticated Devvit
-WebView session or after port `5678` is free.
+`docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`. The earlier
+2026-05-21 rehearsal remains useful blocker evidence because bare `curl`
+probes to `/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest`
+returned `HTTP/1.1 426 Upgrade Required`; authenticated WebView proof is now
+captured separately and should be used for runtime labels.
 
 V4 Wave 06 is complete: the Command Center now has a one-click Judge Demo path
 that builds the labeled ExampleLearning Rule 2 story through scan, adopted
@@ -107,12 +112,12 @@ full moderator account `u/BrightyBrainiac`; no true non-mod or limited-mod
 account session is available to execute `ACCESS_RUNTIME_TEST_PLAN.md`.
 
 V4 Wave 23 is blocked: live modqueue and deep moderation-log pagination proof
-still need an authenticated owned Devvit WebView session. The 2026-05-21
-preflight confirmed `u/BrightyBrainiac` with `npx devvit whoami`, but port
-`5678` was already held by an Antigravity/Gemini `devvit playtest` process from
-another worktree. Do not claim `source: "reddit_modqueue"` or deep pagination
-runtime behavior until `MODQUEUE_RUNTIME_TEST_PLAN.md` and
-`DEEP_SCAN_RUNTIME_TEST_PLAN.md` are executed from an approved session.
+still need safe source evidence from the authenticated Devvit WebView session.
+The current account can prove the full-moderator path, but no live modqueue
+items or deep-pagination source dataset has been captured. Do not claim
+`source: "reddit_modqueue"` or deep pagination runtime behavior until
+`MODQUEUE_RUNTIME_TEST_PLAN.md` and `DEEP_SCAN_RUNTIME_TEST_PLAN.md` are
+executed from an approved session.
 
 V4 Wave 25 is complete as a preparation-only harness wave:
 `docs/operational-overhaul/CONTROLLED_PROOF_HARNESS_AUDIT.md` now ties the
@@ -154,12 +159,13 @@ still fails on the remaining Devvit-transitive `protobufjs` chain; force fixes
 would downgrade or otherwise break the Devvit package chain.
 
 V4 Wave 30 is blocked: the final completion audit cannot close the active goal
-while Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source
-proof constraints. Stale merged Codex worktrees were cleaned; Gemini/Antigravity
-worktrees were left untouched. A dependency-hardening follow-up is documented in
+while Waves 22 and 23 remain blocked by account/source proof constraints and
+while the broader production-readiness audit is still open. Stale merged Codex
+worktrees were cleaned; Gemini/Antigravity worktrees were left untouched. A
+dependency-hardening follow-up is documented in
 `docs/operational-overhaul/DEPENDENCY_HARDENING.md`, but the goal remains open
-until the runtime blockers are cleared or the completion criteria are explicitly
-changed.
+until the remaining runtime blockers are cleared and the user gives the final
+green light.
 
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
@@ -182,12 +188,13 @@ closing the overall goal.
       `r/modmirror_dev` on version `v0.0.1.167`; the local playtest command
       reached ready, but also reported a local `EADDRINUSE` warning for port
       `5678`.
-- [ ] Rerun safe route-level Devvit smoke checks for the new V2 endpoints after
-      opening the playtest WebView. V4 Wave 21 now has the exact checklist, but
-      the 2026-05-21 attempt was blocked by the existing Antigravity/Gemini
-      process on port `5678` and direct localhost probes returned
-      `426 Upgrade Required`; do not upgrade labels from conservative
-      local/demo proof until authenticated WebView route checks are observed.
+- [x] Rerun safe route-level Devvit smoke checks for the new V2 endpoints after
+      opening the playtest WebView. V4 Wave 21 authenticated WebView proof on
+      Devvit playtest `v0.0.2.2` passed Redis, Redis ZSET, Redis storage,
+      synthetic retention cleanup, Reddit read-only, and current-account access
+      diagnostics. Direct localhost `curl` still returns `426 Upgrade Required`
+      and should remain documented as a Devvit transport boundary, not route
+      JSON proof.
 - [ ] Rerun live WebView visual QA for API-backed V2 states; the completed
       static smoke only verifies nonblank fallback rendering.
 

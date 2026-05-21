@@ -49,8 +49,8 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.1.138`
-- Browser/UI driver: Zen desktop browser with Computer Use
+  `v0.0.2.2`
+- Browser/UI driver: Zen/Chrome desktop browsers with Computer Use
 
 Runtime observations:
 
@@ -86,12 +86,12 @@ Runtime observations:
   envelope through the safe smoke route.
 - Devvit playtest `v0.0.1.138` verified the synthetic retention cleanup smoke
   route for synthetic expired records only.
-- V4 Wave 21 prepared an exact safe route-level smoke checklist but did not
-  execute authenticated route JSON checks. On 2026-05-21, port `5678` was owned
-  by an Antigravity/Gemini `devvit playtest` process from another worktree.
-  The process was not killed, and direct `curl` probes to `/api/health`,
-  `/api/runtime-capabilities`, and `/api/demo/manifest` returned
-  `HTTP/1.1 426 Upgrade Required`. Treat this as blocker evidence only.
+- V4 Wave 21 first captured that direct localhost `curl` probes return
+  Devvit's `HTTP/1.1 426 Upgrade Required` transport boundary. After user
+  approval to stop the stale Gemini/Antigravity listener, current `master`
+  reached authenticated Reddit WebView playtest `v0.0.2.2` and Settings safe
+  smokes passed Redis, Redis ZSET, Redis storage, synthetic retention cleanup,
+  Reddit read-only, and current-account access diagnostics.
 - `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
   proof gate for true non-mod protected-route blocking and lower-permission
   moderator role-string capture. That plan has not been executed.
@@ -111,11 +111,11 @@ Runtime observations:
 | Post Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.83` showed `Apply ModMirror Policy` on safe post `t3_1texjev` and resolved the target into the Act workspace. | Keep in runtime regression checklist. |
 | Comment Apply Policy menu | runtime verified | Post-W34 playtest `v0.0.1.84` / `v0.0.1.89` showed `Apply ModMirror Policy` on safe comment `t1_ommzgtz` and resolved the comment body into the Act workspace. | Keep in runtime regression checklist. |
 | Target context capture | runtime verified | Post-W34 post/comment menu proofs resolved target ID, type, author, subreddit, and post title/comment body in Reddit's desktop WebView path. | Verify native mobile separately. |
-| Redis smoke | runtime verified | Post-W34 WebView Settings smoke reported write/read matched inside Devvit playtest. | Keep safe smoke button available. |
+| Redis smoke | runtime verified | Post-W34 WebView Settings smoke reported write/read matched inside Devvit playtest. V4 Wave 21 on playtest `v0.0.2.2` reverified `Redis smoke passed: write/read matched inside Devvit playtest.` | Keep safe smoke button available. |
 | Redis sorted-set ordering | runtime verified | Devvit playtest `v0.0.1.131` ran Settings `Run Redis ZSET`; the WebView reported `Redis sorted-set smoke order mismatch: expected newest, middle, oldest, observed .` and the runtime capability matrix recorded `redis-zset-ordering` as failed. After the diagnostic switched to the documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` and the matrix showed `4 runtime`, `0 failed`. | Keep the safe smoke in regression checks. |
 | Redis storage envelope | runtime verified for current caps | `/api/smoke/redis-storage` writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to smoke keys, then deletes them and verifies cleanup. Devvit playtest `v0.0.1.137` returned `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` The runtime matrix showed `5 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep the safe storage smoke in regression checks before raising caps or storing larger live envelopes. |
 | Retention cleanup synthetic smoke | runtime verified for synthetic records | `/api/smoke/retention-cleanup` creates old synthetic scan, receipt, evidence board, and team-delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus sorted-set index references are gone. Local tests cover the route and runtime health event promotion. Devvit playtest `v0.0.1.138` returned `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.` The runtime matrix showed `6 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep this safe synthetic smoke in regression checks. Real operational-record deletion still requires a separate controlled destructive cleanup test. |
-| Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. | Keep read-only; do not infer live execution support. |
+| Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. V4 Wave 21 on playtest `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` | Keep read-only; do not infer live execution support. |
 | Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. | Deep pagination remains unverified. |
 | Policy proposal/review/adoption | runtime verified for single-mod playtest path | `policies.test.ts` passes; post-W34 `v0.0.1.104` verified proposed/under-review state and threshold blocking. | Multi-moderator distinct-reviewer proof remains open. |
 | Log-only Apply Policy receipts | runtime verified | Post-W34 playtest `v0.0.1.90` recorded `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` for comment `t1_ommzgtz`; later WebView loads showed it in the Receipt Ledger. | Keep real Reddit execution disabled until separate proof. |
@@ -126,7 +126,7 @@ Runtime observations:
 | Team delivery | manual/skipped receipts runtime verified, real send disabled | W11 preview-only service; post-W34 verified manual-ready and skipped Mod Discussion draft receipt persistence. Product routes still do not inject a live adapter, and scheduler confirmations are locally guarded as skipped because no scheduler task is registered. `PRIVATE_DELIVERY_TEST_PLAN.md` covers direct private-message and modmail proof; `MOD_DISCUSSION_DELIVERY_TEST_PLAN.md` covers internal Mod Discussion proof; `SCHEDULER_RUNTIME_TEST_PLAN.md` covers proof-only scheduler registration and smoke execution. | Verify private delivery, internal Mod Discussion destination behavior, and scheduler registration before enabling any send path. |
 | AI advisory | disabled/type-only | W10 disabled provider abstraction; `AI_PRIVACY_READINESS.md` records the terms/privacy and data-minimization gate; no HTTP permission/secret proof. | Keep disabled until provider, secret, fetch, latency, failure, and privacy proof exists. |
 | Non-mod access blocking | local server guard verified, runtime unverified | Menu config uses `forUserType: "moderator"` and `moderatorAccess.ts` now requires a signed-in user with non-empty `getModPermissionsForSubreddit` results before protected API routes continue in live subreddit context. Unit tests cover missing user, unavailable permission API, empty permissions, and permission-check failures. Current moderator diagnostics returned permission `all`, but no true non-mod account was used. Future per-mod/manage-level visibility stays aggregate-only unless `all` is present. `ACCESS_RUNTIME_TEST_PLAN.md` now defines the account, route, and evidence gates for the missing proof. | Execute the access runtime test plan with a true non-mod account and record the exact HTTP/UI failure shape. |
-| Current moderator permission diagnostic | runtime verified for current account | Protected `/api/access/diagnostics` is covered by `apiAccess.test.ts`; the Devvit WebView Settings `Check access` diagnostic on playtest `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`. The local diagnostic now also reports `full_moderator` only for `all`. `ACCESS_RUNTIME_TEST_PLAN.md` defines the separate lower-permission moderator role-string proof, but it has not run. | Execute the access runtime test plan with a lower-permission moderator before expanding the full-access-only per-mod/admin gate. |
+| Current moderator permission diagnostic | runtime verified for current account | Protected `/api/access/diagnostics` is covered by `apiAccess.test.ts`; the Devvit WebView Settings `Check access` diagnostic on playtest `v0.0.1.129` returned `Access check passed: 1 permission(s): all.` for the current moderator on `r/modmirror_dev`. V4 Wave 21 on playtest `v0.0.2.2` reverified `Access check passed: 1 permission(s): all. Per-mod gate: full moderator visibility.` The local diagnostic now also reports `full_moderator` only for `all`. `ACCESS_RUNTIME_TEST_PLAN.md` defines the separate lower-permission moderator role-string proof, but it has not run. | Execute the access runtime test plan with a lower-permission moderator before expanding the full-access-only per-mod/admin gate. |
 | Native Reddit mobile app | unverified | W12 static 390px screenshot exists; W13 did not use native mobile app. | Verify in native Reddit app/device mirror. |
 
 ## Diagnostic Routes

@@ -22,9 +22,10 @@ This wave distinguishes three things:
 lsof -nP -iTCP:5678 -sTCP:LISTEN || true
 ```
 
-- If another agent's Devvit process owns port `5678`, do not kill it. Record
-  the PID, command, and elapsed time, then treat local playtest startup as
-  blocked for this wave unless the user explicitly clears the process.
+- If another agent's Devvit process owns port `5678`, do not kill it without
+  explicit user approval. Record the PID, command, and elapsed time, then treat
+  local playtest startup as blocked for this wave unless the user explicitly
+  clears the process.
 - If port `5678` is free, run `npm run dev`, record the app version and
   `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`, then open the
   dashboard in the authenticated Reddit WebView.

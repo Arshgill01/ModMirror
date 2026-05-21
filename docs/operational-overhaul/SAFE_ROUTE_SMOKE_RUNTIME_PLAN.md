@@ -74,7 +74,7 @@ For each route/control, record:
 - `POST /api/smoke/reddit`
 - `POST /api/smoke/retention-cleanup`
 
-## Current Rehearsal Result
+## Runtime Result
 
 On 2026-05-21 at 19:18 IST, this workspace was blocked from starting its own
 playtest because port `5678` was already owned by an Antigravity/Gemini
@@ -99,15 +99,33 @@ On 2026-05-21 at 22:08 IST, the blocker was still present after the
 submission-readiness merge. Port `5678` was still owned by PID `42407`, with
 observed elapsed time `04:03:50`, from the same Gemini/Antigravity
 `refresh-minimalist-ui-design` playtest command. The process was not killed, so
-Wave 21 remains blocked for the current `master` workspace.
+Wave 21 remained blocked at that point for the current `master` workspace.
 
-## Next Unblock Step
+After user approval later on 2026-05-21, the stale Gemini/Antigravity listener
+was stopped, current `master` started `npm run dev`, and Devvit reached
+authenticated Reddit WebView playtest `v0.0.2.2` for `r/modmirror_dev` as
+`u/BrightyBrainiac`.
 
-Use one of these non-conflicting paths:
+Authenticated Settings safe-smoke results:
 
-- have the Antigravity/Gemini playtest owner run the WebView console probe from
-  `docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/README.md`;
-- wait for port `5678` to be free, then run `npm run dev` in this workspace and
-  perform the WebView route checks;
-- use a separate approved Devvit playtest port/session if Devvit supports one
-  without disrupting the existing process.
+- Redis: `Redis smoke passed: write/read matched inside Devvit playtest.`
+- Redis ZSET: `Redis sorted-set smoke passed: observed newest, middle, oldest.`
+- Redis storage: `Redis storage smoke passed: scan 10/10, actions 500/500,
+  overrides 500/500, cleanup 0.`
+- Retention cleanup: `Retention cleanup smoke passed: scans 1/1, receipts 1/1,
+  boards 1/1, delivery 1/1, detail keys 0, index refs 0.`
+- Reddit read: `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod
+  log action(s).`
+- Access: `Access check passed: 1 permission(s): all. Per-mod gate: full
+  moderator visibility.`
+
+Direct localhost `curl` still returns `HTTP/1.1 426 Upgrade Required`; keep
+that as Devvit transport-boundary evidence rather than route JSON proof.
+
+## Remaining Follow-up
+
+Wave 21 is complete for the current full moderator account's safe authenticated
+WebView smoke. Continue remaining runtime proof through the dedicated plans:
+
+- Wave 22: true non-mod and lower-permission moderator account proof.
+- Wave 23: live modqueue item source proof and deep moderation-log pagination.

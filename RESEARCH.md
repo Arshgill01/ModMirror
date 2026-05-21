@@ -47,7 +47,7 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.1.167` after the minimalist UI refresh merge; `/api/smoke/reddit`, post/comment menu target capture, and live quick scan have been playtest-verified in earlier passes. Write operations remain separately gated. The `v0.0.1.167` run only proved upload/playtest readiness, not route-level smoke behavior. On 2026-05-21, current `master` passed `npm run deploy` and uploaded Devvit app version `0.0.2`; this is deploy readiness, not authenticated route-smoke proof. |
+| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.2.2` after the latest UI merge. On 2026-05-21, current `master` passed `npm run deploy` and uploaded Devvit app version `0.0.2`; the later authenticated WebView safe smoke pass on `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` Post/comment menu target capture and live quick scan have been playtest-verified in earlier passes. Write operations remain separately gated. |
 | Verified | Redis read/write works in playtest. | `/api/smoke/redis` and later WebView flows verified Redis-backed policies, scans, corrections, receipts, evidence boards, config import/export, privacy retention inventories/dry runs, incident mode, delivery receipts, and replay state. |
 | Runtime verified for current caps | Override audit persistence reads Redis sorted-set rows newest-first and current local audit indexes are capped. | `src/server/services/auditPersistence.test.ts` covers `saveOverrideEvent` and `listRecentAuditEvents` writing `modmirror:{subreddit}:overrides` scores from `createdAt` and reading with reverse rank ordering. `ACTION_EVENT_HISTORY_LIMIT` and `OVERRIDE_EVENT_HISTORY_LIMIT` cap action and override sorted-set indexes at 500 rows locally. Devvit playtest `v0.0.1.131` first ran `/api/smoke/redis-zset` and failed with an empty observed order. After the diagnostic switched to Devvit's documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` Devvit playtest `v0.0.1.137` ran `/api/smoke/redis-storage` and reported `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` This verifies the current bounded storage envelope, not larger future caps. |
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
@@ -62,7 +62,7 @@ Updated by: Codex
 | Verified locally | Safe direct dev-tool patch/minor bumps preserve the current local build/test gates. | `globals` is pinned to `17.6.0`, `prettier` to `3.8.3`, `typescript-eslint` to `8.59.4`, and `vitest` to `4.1.7`. The follow-up passed `git diff --check`, `npm run type-check`, `npm run lint`, `npm test` (`62` files / `263` tests), `npm run build`, `npx devvit --version`, and `npx devvit whoami`. `npm audit --omit=dev` still fails only on the already documented Devvit-transitive `protobufjs` chain. Major Dependabot proposals for TypeScript 6, ESLint 10, Vite 8, and Node 25 types remain unmerged until separately proven against Devvit. |
 | Verified | Latest uploaded Devvit version carries WebView capability. | `npx devvit view --json` after `npm run deploy` returned version `0.0.2`, `publicApiVersion: "0.12.24"`, `buildStatus: 1`, `builtAt: "2026-05-21T16:25:51.424Z"`, `appCapabilities: [10, 11]`, and nutrition categories including `11`. Installed Devvit protos map `10` to `MODERATOR` and `11` to `WEBVIEW`. The app-level `isWebviewEnabled: false` field still appears in the view output, but the version capability and nutrition metadata show WebView support for the uploaded build. |
 | Verified locally | Devvit CLI does not expose a safe local listing-link update command in this installed version. | `npx devvit --help`, `npx devvit upload --help`, `npx devvit publish --help`, and `npx devvit update app --help` expose upload/publish/view/dependency update flows, but no metadata command for terms/privacy links. Installed CLI publish code instructs apps that require terms or privacy links to add them on the app details page before running `devvit publish` again. `package.json` now has the upload-safe description `Find enforcement drift before your users do.` for local/package metadata. |
-| Blocked rehearsal | V4 Wave 21 safe route-level smoke checks require an authenticated Devvit WebView, not bare localhost curl. | On 2026-05-21, `npx devvit whoami` passed as `u/BrightyBrainiac`, but port `5678` was already owned by `node --no-warnings=ExperimentalWarning /Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design/node_modules/.bin/devvit playtest`. The process was not killed. Direct `curl -i --max-time 5` probes to `http://127.0.0.1:5678/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` with body `Upgrade Required`, so no route JSON proof was captured. The route checklist and blocker record are in `docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/`, `docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`, and `output/runtime-proof/wave-21-safe-route-smoke/attempt-2026-05-21.md`. |
+| Runtime verified | V4 Wave 21 safe route-level smoke checks require an authenticated Devvit WebView, not bare localhost curl. | Earlier 2026-05-21 bare `curl` probes to `http://127.0.0.1:5678/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required`, proving only Devvit's local transport boundary. After the user authorized taking over the stale Gemini/Antigravity listener, current `master` ran `npm run dev` and reached authenticated Reddit WebView playtest `v0.0.2.2`. Settings safe smokes passed: Redis write/read matched; Redis ZSET observed `newest, middle, oldest`; Redis storage returned `scan 10/10, actions 500/500, overrides 500/500, cleanup 0`; synthetic retention cleanup returned `scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0`; Reddit read returned `0 rule(s), 0 removal reason(s), 5 mod log action(s)`; access returned `1 permission(s): all` with full moderator visibility for `u/BrightyBrainiac`. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
@@ -104,19 +104,24 @@ Updated by: Codex
 - On 2026-05-21, after dependency hardening and npm overrides, `npm run
   deploy` passed `tsc --build`, `eslint`, `vitest` (`62` files, `263` tests),
   Devvit's `vite build`, and `devvit upload`. The upload automatically bumped
-  the Devvit app version to `0.0.2` and uploaded `4` new WebView assets. Treat
-  this as deploy readiness only; route-level WebView smoke proof remains Wave
-  21 and was still blocked by port `5678`.
+  the Devvit app version to `0.0.2` and uploaded `4` new WebView assets.
+  A later root `npm run dev` reached playtest `v0.0.2.2` after the latest UI
+  merge and uploaded `2` changed WebView assets; authenticated WebView safe
+  smoke proof is now recorded under Wave 21.
 - `npx devvit view --json` for the uploaded version `0.0.2` returned app
   capabilities `[10, 11]`; installed Devvit protos map these to `MODERATOR` and
   `WEBVIEW`. The nutrition categories also include `11` (`WEBVIEW`). The
   app-level `isWebviewEnabled: false` field remains present in the app metadata,
   but the uploaded version metadata confirms WebView capability.
-- A V4 Wave 21 rehearsal on 2026-05-21 did not start another playtest because
-  an Antigravity/Gemini worktree already owned port `5678` with
-  `devvit playtest`. Direct local HTTP probes to `/api/health`,
-  `/api/runtime-capabilities`, and `/api/demo/manifest` returned
-  `426 Upgrade Required`; this is blocker evidence only, not route-level proof.
+- A V4 Wave 21 rehearsal on 2026-05-21 first found an Antigravity/Gemini
+  worktree owning port `5678` with `devvit playtest`. Direct local HTTP probes
+  to `/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest`
+  returned `426 Upgrade Required`; this is transport-boundary evidence only,
+  not route-level proof. After the user authorized taking over the stale
+  listener, current `master` reached authenticated Reddit WebView playtest
+  `v0.0.2.2`, and Settings safe smokes passed Redis, Redis ZSET, Redis storage,
+  synthetic retention cleanup, Reddit read-only, and current-account access
+  diagnostics.
 - `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
 - Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
 - Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.
@@ -1550,8 +1555,11 @@ Date: 2026-05-21
 Evidence source:
 
 - `npx devvit whoami` reported `u/BrightyBrainiac`.
-- `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` showed port `5678` was already
+- Earlier `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` showed port `5678` was
   held by a Node Devvit playtest process from an Antigravity/Gemini worktree.
+  Wave 21 later unblocked the port and reached authenticated WebView playtest
+  `v0.0.2.2`, but no live modqueue source or deep-pagination dataset was
+  captured during that pass.
 - `docs/operational-overhaul/MODQUEUE_RUNTIME_TEST_PLAN.md` remains the live
   modqueue proof plan.
 - `docs/operational-overhaul/DEEP_SCAN_RUNTIME_TEST_PLAN.md` now defines the
@@ -1562,9 +1570,9 @@ Decision:
 - Wave 23 did not upgrade any Reddit source capability to runtime-verified.
 - Live same-subreddit modqueue reads still require `source: reddit_modqueue`
   with safe `r/modmirror_dev` items, or an exact Devvit adapter/runtime failure.
-- Deep moderation-log pagination still requires authenticated Devvit WebView or
-  runtime API evidence proving the deep cap/page size and actual page/cursor
-  behavior, or an exact adapter/runtime failure.
+- Deep moderation-log pagination still requires runtime API evidence proving
+  the deep cap/page size and actual page/cursor behavior, or an exact
+  adapter/runtime failure.
 - Local tests, static preview, upload readiness, empty fallbacks, and sparse
   scans remain insufficient for these claims.
 
@@ -1749,19 +1757,21 @@ Evidence source:
 - Merged, clean Codex worktrees for earlier V4 waves were removed; only root,
   Gemini/Antigravity worktrees, and the active Wave 30 worktree remained during
   the audit.
-- `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` still showed PID `42407`, a Node
-  Devvit playtest process from a Gemini/Antigravity worktree.
-- V4 Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source
-  proof constraints.
+- Earlier `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` still showed PID `42407`,
+  a Node Devvit playtest process from a Gemini/Antigravity worktree. After user
+  approval, Wave 21 later stopped that stale listener and completed safe
+  authenticated WebView smoke on playtest `v0.0.2.2`.
+- V4 Waves 22 and 23 remain blocked by account/source proof constraints.
 
 Decision:
 
 - Wave 30 is blocked rather than complete.
-- The active broad user goal must remain open because required runtime proof
-  remains blocked and cannot be manufactured from local/static checks.
-- Do not kill the Gemini/Antigravity Devvit process, create accounts, create
-  Reddit content, or run destructive/delivery/scheduler/native Mod Note/external
-  AI proof without explicit approval.
+- The active broad user goal must remain open because required account/source
+  runtime proof remains blocked and cannot be manufactured from local/static
+  checks.
+- Do not kill another agent's Devvit process, create accounts, create Reddit
+  content, or run destructive/delivery/scheduler/native Mod Note/external AI
+  proof without explicit approval.
 
 ## Post-W34 Review Health And Impact Runtime Proof
 
