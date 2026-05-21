@@ -13,8 +13,9 @@ uploaded Devvit app version `0.0.2`; this is upload/deploy readiness evidence,
 not route-level WebView smoke proof. Submission/listing docs now reflect this
 proof level, and the local package metadata has the upload-safe description
 `Find enforcement drift before your users do.` App details page terms/privacy
-links still need to be set outside the local CLI flow before any public publish
-request.
+links still need to be reviewed, hosted, and set outside the local CLI flow
+before any public publish request. Draft copy exists in
+`docs/PRIVACY_POLICY_DRAFT.md` and `docs/TERMS_DRAFT.md`.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment

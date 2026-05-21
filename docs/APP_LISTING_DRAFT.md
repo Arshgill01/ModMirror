@@ -66,3 +66,6 @@ or demo mode.
 - The current CLI help exposes `upload`, `publish`, and `view`, but no safe
   local command for setting app listing links. Terms and privacy links must be
   set on the app details page before any public publish request.
+- Draft link content now exists in `docs/PRIVACY_POLICY_DRAFT.md` and
+  `docs/TERMS_DRAFT.md`; both need review and public hosting before they are
+  used in the app details page.
