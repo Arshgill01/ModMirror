@@ -1793,6 +1793,7 @@ function renderPolicyCard(policy: RulePolicy) {
         <div><dt>Reviews</dt><dd>${reviews.length}</dd></div>
         <div><dt>Updated</dt><dd>${formatDate(policy.updatedAt)}</dd></div>
       </dl>
+      ${renderPolicyRatificationLifecycle(policy)}
       ${
         policy.proposalNote
           ? `<p class="inline-note">Proposal note: ${escapeHtml(policy.proposalNote)}</p>`
@@ -1814,6 +1815,86 @@ function renderPolicyCard(policy: RulePolicy) {
   `;
 }
 
+function renderPolicyRatificationLifecycle(policy: RulePolicy) {
+  const lifecycle = getPolicyLifecycle(policy);
+  const ratification = getPolicyRatificationSummary(policy);
+  const quickAdoptionAllowed =
+    policy.ratificationSettings?.allowSingleModAdoption ?? true;
+  const hasChangeRequest = ratification.requestsForChanges > 0;
+  const reviewLabel =
+    `${ratification.approvals}/${ratification.requiredApprovals} approvals` +
+    (ratification.requestsForChanges > 0
+      ? `, ${ratification.requestsForChanges} change request`
+      : '');
+  const adoptionLabel =
+    lifecycle === 'adopted'
+      ? `Adopted${policy.adoptedAt ? ` ${formatDate(policy.adoptedAt)}` : ''}`
+      : ratification.canAdopt
+        ? 'Ready for reviewed adoption'
+        : (ratification.adoptionBlockedReason ?? 'Waiting for review');
+
+  const stages = [
+    {
+      label: 'Draft',
+      detail: lifecycle === 'draft' ? 'Editable draft version' : 'Draft saved',
+      state:
+        lifecycle === 'draft' && hasChangeRequest
+          ? 'blocked'
+          : lifecycle === 'draft'
+            ? 'active'
+            : 'complete',
+    },
+    {
+      label: 'Propose',
+      detail:
+        policy.proposedAt !== undefined
+          ? `Proposed ${formatDate(policy.proposedAt)}`
+          : 'Not proposed yet',
+      state:
+        lifecycle === 'draft'
+          ? 'pending'
+          : lifecycle === 'proposed'
+            ? 'active'
+            : 'complete',
+    },
+    {
+      label: 'Review',
+      detail: reviewLabel,
+      state: hasChangeRequest
+        ? 'blocked'
+        : ratification.canAdopt || lifecycle === 'adopted'
+          ? 'complete'
+          : lifecycle === 'proposed' || lifecycle === 'under_review'
+            ? 'active'
+            : 'pending',
+    },
+    {
+      label: 'Adopt',
+      detail: adoptionLabel,
+      state:
+        lifecycle === 'adopted'
+          ? 'complete'
+          : lifecycle === 'proposed' || lifecycle === 'under_review'
+            ? ratification.canAdopt
+              ? 'active'
+              : 'blocked'
+            : 'pending',
+    },
+  ] as const;
+
+  return `
+    <div class="ratification-lifecycle" aria-label="Policy ratification lifecycle">
+      ${stages.map((stage) => `
+        <div class="ratification-step ratification-${stage.state}">
+          <span>${stage.label}</span>
+          <strong>${escapeHtml(stage.detail)}</strong>
+        </div>
+      `).join('')}
+    </div>
+    <p class="inline-note">Quick adoption: ${quickAdoptionAllowed ? 'enabled for small-team escape hatch' : 'disabled; reviewed adoption required'}.</p>
+  `;
+}
+
 function renderPolicyLifecycleButtons(policy: RulePolicy) {
   const lifecycle = getPolicyLifecycle(policy);
   const ratification = getPolicyRatificationSummary(policy);
@@ -1830,7 +1911,7 @@ function renderPolicyLifecycleButtons(policy: RulePolicy) {
       ${
         ratification.canAdopt
           ? `<button class="primary-button" data-adopt-policy="${policyId}" type="button">Adopt reviewed</button>`
-          : ''
+          : `<button class="secondary-button" disabled title="${escapeAttribute(ratification.adoptionBlockedReason ?? 'Policy is not ready for adoption.')}" type="button">Adopt reviewed</button>`
       }
       ${
         quickAdoptionAllowed

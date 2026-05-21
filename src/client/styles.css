@@ -1192,6 +1192,56 @@ dd {
   text-align: left;
 }
 
+.ratification-lifecycle {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.ratification-step {
+  background: var(--mm-bg);
+  border: 1px solid var(--mm-line);
+  border-radius: 6px;
+  min-height: 72px;
+  padding: 10px;
+}
+
+.ratification-step span {
+  color: var(--mm-muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ratification-step strong {
+  color: var(--mm-ink);
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 6px;
+}
+
+.ratification-complete {
+  background: rgba(45, 125, 92, 0.08);
+  border-color: rgba(45, 125, 92, 0.35);
+}
+
+.ratification-active {
+  background: rgba(47, 111, 181, 0.08);
+  border-color: rgba(47, 111, 181, 0.38);
+}
+
+.ratification-blocked {
+  background: rgba(164, 76, 60, 0.08);
+  border-color: rgba(164, 76, 60, 0.35);
+}
+
+.ratification-pending {
+  opacity: 0.72;
+}
+
 .target-context-strip {
   background: var(--mm-bg);
   border: 1px solid var(--mm-line);
@@ -2552,6 +2602,7 @@ dd {
   .setup-list li,
   .metric-grid,
   .confidence-grid,
+  .ratification-lifecycle,
   .simulation-summary,
   .distribution-grid,
   .case-grid,
