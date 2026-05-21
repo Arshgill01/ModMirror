@@ -87,6 +87,7 @@ Expected:
 - [x] Final report complete after runtime QA.
 - [x] Draft terms/privacy copy prepared in `docs/TERMS_DRAFT.md` and
       `docs/PRIVACY_POLICY_DRAFT.md`.
+- [x] App details handoff prepared in `docs/APP_DETAILS_HANDOFF.md`.
 - [ ] Draft terms/privacy copy reviewed and hosted at public links.
 - [ ] App details page has public-ready terms and privacy links before publish.
 

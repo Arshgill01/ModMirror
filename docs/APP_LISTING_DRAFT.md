@@ -69,3 +69,4 @@ or demo mode.
 - Draft link content now exists in `docs/PRIVACY_POLICY_DRAFT.md` and
   `docs/TERMS_DRAFT.md`; both need review and public hosting before they are
   used in the app details page.
+- The current app-details handoff lives in `docs/APP_DETAILS_HANDOFF.md`.
