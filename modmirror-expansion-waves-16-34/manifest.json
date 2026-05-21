@@ -1,0 +1,103 @@
+{
+  "name": "modmirror-expansion-waves-16-34",
+  "created": "2026-05-18T15:34:25.354966Z",
+  "purpose": "Continuation engineering pack for ModMirror after operational-overhaul waves",
+  "non_goal": "No submission/Devpost/public-publish work",
+  "waves": [
+    {
+      "number": 16,
+      "slug": "context-intake",
+      "title": "Live Context Intake and Content Snapshotting"
+    },
+    {
+      "number": 17,
+      "slug": "modqueue-triage",
+      "title": "Moderator Queue and Report Triage"
+    },
+    {
+      "number": 18,
+      "slug": "attribution-calibration",
+      "title": "Attribution Calibration and Moderator Feedback"
+    },
+    {
+      "number": 19,
+      "slug": "policy-ratification",
+      "title": "Policy Ratification and Team Workflow"
+    },
+    {
+      "number": 20,
+      "slug": "replay-sandbox",
+      "title": "Replay Sandbox and Safe Simulation"
+    },
+    {
+      "number": 21,
+      "slug": "community-health",
+      "title": "Community Health and Consistency Lens"
+    },
+    {
+      "number": 22,
+      "slug": "policy-impact",
+      "title": "Policy Impact Measurement"
+    },
+    {
+      "number": 23,
+      "slug": "response-library",
+      "title": "Moderation Response Library"
+    },
+    {
+      "number": 24,
+      "slug": "mod-notes",
+      "title": "Native Mod Notes Integration"
+    },
+    {
+      "number": 25,
+      "slug": "appeal-modmail",
+      "title": "Appeal / Modmail Context Integration"
+    },
+    {
+      "number": 26,
+      "slug": "evidence-board",
+      "title": "Collaborative Evidence Board"
+    },
+    {
+      "number": 27,
+      "slug": "incident-mode",
+      "title": "Incident Mode"
+    },
+    {
+      "number": 28,
+      "slug": "config-portability",
+      "title": "Configuration Portability and Templates"
+    },
+    {
+      "number": 29,
+      "slug": "multi-community",
+      "title": "Multi-Community Architecture"
+    },
+    {
+      "number": 30,
+      "slug": "privacy-retention",
+      "title": "Privacy, Retention, and Deletion Controls"
+    },
+    {
+      "number": 31,
+      "slug": "mobile-resilience",
+      "title": "Mobile and Runtime Resilience"
+    },
+    {
+      "number": 32,
+      "slug": "synthetic-eval",
+      "title": "Synthetic Evaluation Harness"
+    },
+    {
+      "number": 33,
+      "slug": "observability",
+      "title": "Observability and Runtime Capability Matrix"
+    },
+    {
+      "number": 34,
+      "slug": "integration",
+      "title": "Integration and Architecture Consolidation"
+    }
+  ]
+}
