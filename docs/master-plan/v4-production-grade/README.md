@@ -81,7 +81,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 15 | Product | Override Resolution Inbox | complete |
 | 16 | Product | Evidence Graph Lane View | complete |
 | 17 | Product | Case Packet And Evidence Board Continuity | complete |
-| 18 | Settings | Incident Mode Control Center | pending |
+| 18 | Settings | Incident Mode Control Center | complete |
 | 19 | Settings | Config Portability Console | pending |
 | 20 | Settings | Privacy Retention Console | pending |
 | 21 | Runtime | Safe V2 Route-Level Smoke Rehearsal | blocked |

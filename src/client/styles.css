@@ -2270,6 +2270,58 @@ dd {
   gap: 12px;
 }
 
+.incident-control-presets {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.incident-preset {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.incident-preset div {
+  display: grid;
+  gap: 3px;
+}
+
+.incident-preset strong {
+  color: var(--mm-ink);
+  font-family: var(--mm-font-serif);
+  font-size: 15px;
+}
+
+.incident-preset span,
+.incident-preset p,
+.incident-preset li {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.incident-preset p,
+.incident-preset ul {
+  margin: 0;
+}
+
+.incident-preset ul,
+.incident-safeguards {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+}
+
+.incident-safeguards {
+  color: var(--mm-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .incident-form-grid,
 .incident-guidance-grid,
 .config-grid,
@@ -2678,6 +2730,7 @@ dd {
   .incident-banner,
   .runtime-banner,
   .evidence-graph-lanes,
+  .incident-control-presets,
   .incident-form-grid,
   .incident-guidance-grid,
   .config-grid,

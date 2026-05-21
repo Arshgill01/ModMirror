@@ -365,6 +365,15 @@ type IncidentModeUiState = {
   report: IncidentModeReport | undefined;
 };
 
+type IncidentControlPreset = {
+  id: string;
+  label: string;
+  reason: IncidentModeReason;
+  durationMinutes: number;
+  description: string;
+  safeguards: string[];
+};
+
 type ConfigPortabilityUiState = {
   loading: boolean;
   importing: boolean;
@@ -573,6 +582,47 @@ let incidentModeState: IncidentModeUiState = {
   incidents: [],
   report: undefined,
 };
+const INCIDENT_CONTROL_PRESETS: IncidentControlPreset[] = [
+  {
+    id: 'raid-watch',
+    label: 'Raid watch',
+    reason: 'raid',
+    durationMinutes: 120,
+    description:
+      'Temporary raid review window. Keep every enforcement decision on the normal Apply Policy confirmation path.',
+    safeguards: [
+      'Tags receipts for post-incident review',
+      'Does not auto-remove or auto-ban',
+      'Expires after 2 hours unless ended earlier',
+    ],
+  },
+  {
+    id: 'spam-flood',
+    label: 'Spam flood',
+    reason: 'spam_flood',
+    durationMinutes: 90,
+    description:
+      'Temporary spam flood triage. Use policy suggestions as review context, then confirm each action explicitly.',
+    safeguards: [
+      'Prioritizes repeat-pattern triage',
+      'Keeps moderator confirmation required',
+      'Expires after 90 minutes',
+    ],
+  },
+  {
+    id: 'brigading-review',
+    label: 'Brigading review',
+    reason: 'brigading',
+    durationMinutes: 60,
+    description:
+      'Temporary coordinated-report review. Keep false-report handling separate from content enforcement.',
+    safeguards: [
+      'Suggests report-abuse triage only',
+      'Does not bypass target context review',
+      'Expires after 1 hour',
+    ],
+  },
+];
 let configPortabilityState: ConfigPortabilityUiState = {
   loading: false,
   importing: false,
@@ -936,7 +986,7 @@ function renderIncidentBanner() {
     <aside class="incident-banner" aria-label="Incident Mode active">
       <div>
         <strong>Incident Mode active</strong>
-        <span>${formatAction(active.reason)} until ${formatDate(active.expiresAt)}. Receipts are tagged ${escapeHtml(active.id)}.</span>
+        <span>${formatAction(active.reason)} - ${formatIncidentTimeRemaining(active.expiresAt)} remaining. Receipts are tagged ${escapeHtml(active.id)}.</span>
       </div>
       <button class="secondary-button compact-button" data-end-incident type="button" ${incidentModeState.ending ? 'disabled' : ''}>End incident</button>
     </aside>
@@ -4216,10 +4266,17 @@ function renderActiveIncident(active: IncidentMode) {
       <dl class="compact-metrics">
         <div><dt>Status</dt><dd>${formatAction(active.status)}</dd></div>
         <div><dt>Reason</dt><dd>${formatAction(active.reason)}</dd></div>
+        <div><dt>Time left</dt><dd>${escapeHtml(formatIncidentTimeRemaining(active.expiresAt))}</dd></div>
         <div><dt>Started</dt><dd>${formatDate(active.startedAt)}</dd></div>
         <div><dt>Expires</dt><dd>${formatDate(active.expiresAt)}</dd></div>
+        <div><dt>Receipt tag</dt><dd>${escapeHtml(active.id)}</dd></div>
       </dl>
       ${active.description ? `<p class="inline-note">${escapeHtml(active.description)}</p>` : ''}
+      <ul class="incident-safeguards" aria-label="Incident Mode safeguards">
+        <li>Normal Apply Policy confirmation is still required.</li>
+        <li>No automatic Reddit removal, ban, comment, message, or mod note is enabled.</li>
+        <li>Receipts are tagged for review; enforcement logic is unchanged.</li>
+      </ul>
       <div class="incident-guidance-grid">
         <div>
           <h4>Policy preset suggestions</h4>
@@ -4270,6 +4327,9 @@ function renderActiveIncident(active: IncidentMode) {
 function renderStartIncidentForm() {
   return `
     <form class="policy-form incident-form" data-incident-start-form>
+      <div class="incident-control-presets" aria-label="Safe incident presets">
+        ${INCIDENT_CONTROL_PRESETS.map(renderIncidentControlPreset).join('')}
+      </div>
       <div class="incident-form-grid">
         <label>
           Reason
@@ -4293,6 +4353,22 @@ function renderStartIncidentForm() {
       </div>
       <p class="inline-note">No auto-remove, auto-ban, or silent action is enabled. Apply Policy still requires confirmation.</p>
     </form>
+  `;
+}
+
+function renderIncidentControlPreset(preset: IncidentControlPreset) {
+  return `
+    <article class="incident-preset">
+      <div>
+        <strong>${escapeHtml(preset.label)}</strong>
+        <span>${formatAction(preset.reason)} - ${preset.durationMinutes} minutes</span>
+      </div>
+      <p>${escapeHtml(preset.description)}</p>
+      <ul>
+        ${preset.safeguards.map((safeguard) => `<li>${escapeHtml(safeguard)}</li>`).join('')}
+      </ul>
+      <button class="secondary-button compact-button" data-incident-preset="${escapeAttribute(preset.id)}" type="button" ${incidentModeState.saving ? 'disabled' : ''}>Start preset</button>
+    </article>
   `;
 }
 
@@ -4924,6 +5000,23 @@ function bindIncidentModeActions() {
     .forEach((button) => {
       button.addEventListener('click', () => {
         void endIncidentMode('');
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-incident-preset]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const preset = INCIDENT_CONTROL_PRESETS.find(
+          (item) => item.id === button.dataset.incidentPreset
+        );
+        if (preset !== undefined) {
+          void startIncidentModeFromRequest({
+            reason: preset.reason,
+            durationMinutes: preset.durationMinutes,
+            description: preset.description,
+          });
+        }
       });
     });
 
@@ -8050,6 +8143,18 @@ async function startIncidentMode(formData: FormData) {
     body.subreddit = subreddit;
   }
 
+  await startIncidentModeFromRequest(body);
+}
+
+async function startIncidentModeFromRequest(request: IncidentModeStartRequest) {
+  const subreddit = getWorkspaceSubreddit();
+  const body: IncidentModeStartRequest = {
+    ...request,
+  };
+  if (subreddit && body.subreddit === undefined) {
+    body.subreddit = subreddit;
+  }
+
   incidentModeState = {
     ...incidentModeState,
     saving: true,
@@ -9845,6 +9950,26 @@ function formatDate(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(timestamp);
+}
+
+function formatIncidentTimeRemaining(expiresAt: string) {
+  const timestamp = Date.parse(expiresAt);
+  if (Number.isNaN(timestamp)) {
+    return 'Timer unavailable';
+  }
+  const remainingMinutes = Math.ceil((timestamp - Date.now()) / 60_000);
+  if (remainingMinutes <= 0) {
+    return 'Expired';
+  }
+  const hours = Math.floor(remainingMinutes / 60);
+  const minutes = remainingMinutes % 60;
+  if (hours === 0) {
+    return `${minutes} min`;
+  }
+  if (minutes === 0) {
+    return `${hours} hr`;
+  }
+  return `${hours} hr ${minutes} min`;
 }
 
 function cssEscape(value: string) {

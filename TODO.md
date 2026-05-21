@@ -79,6 +79,10 @@ V4 Wave 17 is complete: receipt rows now lead to Case Packets and Evidence
 Boards, board rows can navigate back to receipt/packet context, and evidence
 items show explicit provenance labels instead of raw source enum values.
 
+V4 Wave 18 is complete: Incident Mode now has a Settings control center with
+safe start presets, visible time-left and receipt-tag context, active safeguards,
+and the existing end/report flow remains explicit and confirmation-preserving.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
