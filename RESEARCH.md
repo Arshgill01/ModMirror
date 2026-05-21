@@ -1614,6 +1614,42 @@ Decision:
 - No runtime capability label was upgraded from plan-only/type-only to verified
   by this audit.
 
+## V4 Wave 28 Accessibility, Mobile, And Performance Audit
+
+Date: 2026-05-21
+
+Evidence source:
+
+- Static built client opened at `http://127.0.0.1:5188/#act`.
+- Playwright accessibility snapshot after Open Dashboard showed the Act
+  workspace, labeled navigation, runtime notice, appearance group, command
+  center, Apply Policy workflow, Operational Queue, Guided Setup, demo scenario,
+  and receipt ledger.
+- Keyboard Tab traversal reached visible named controls in order:
+  `Act`, `Scan`, `Agree`, `Review`, `Prove`, `Settings`, `System`, `Light`,
+  `Dark`, `Load Demo Scenario`, `Run Judge Demo`, `Refresh policies`.
+- Enabled interactive controls without a name query returned `[]`.
+- 390px viewport reported no horizontal overflow:
+  `width 390`, `scrollWidth 390`, `bodyScrollWidth 390`.
+- Bundle measurements after `npm run build`:
+  `src/client/main.ts` 332,528 bytes, `src/client/styles.css` 52,621 bytes,
+  `dist/client/default.js` 220,466 bytes, `dist/client/default.css` 42,126
+  bytes, built JS+CSS total 262,592 bytes, gzipped built JS+CSS stream 61,764
+  bytes.
+- `src/client/styles.css` now includes a global
+  `prefers-reduced-motion: reduce` override and
+  `src/client/mobileResilience.test.ts` covers it.
+
+Decision:
+
+- Wave 28 is complete for static/browser accessibility, narrow-layout, and
+  performance measurement scope.
+- Native Reddit mobile app behavior remains unverified because no native
+  app/device-mirror session was available.
+- Static preview emitted expected unavailable-API console errors; these do not
+  prove or disprove live Devvit runtime behavior.
+- Do not claim native mobile behavior from this wave.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19

@@ -30,4 +30,11 @@ describe('mobile resilience stylesheet guards', () => {
     expect(stylesheet).toMatch(/flex-wrap:\s*wrap;/);
     expect(stylesheet).toContain('min-width: 320px');
   });
+
+  it('respects reduced-motion preferences across shared UI transitions', () => {
+    expect(stylesheet).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(stylesheet).toMatch(/transition-duration:\s*0\.01ms !important;/);
+    expect(stylesheet).toMatch(/animation-duration:\s*0\.01ms !important;/);
+    expect(stylesheet).toMatch(/scroll-behavior:\s*auto !important;/);
+  });
 });

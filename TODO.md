@@ -119,6 +119,13 @@ scheduler runbooks to their implementation guards. Live send/write/scheduled
 behavior remains unrun and requires explicit approval of the exact proof plan
 before execution.
 
+V4 Wave 28 is complete: static built browser checks verified keyboard focus
+through the primary Act controls, accessible names for enabled interactive
+controls, and no 390px horizontal overflow; the client bundle and main entry
+sizes were measured; and a global reduced-motion CSS guard was added. Native
+Reddit mobile app behavior remains unverified because no native app/device
+session was available.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
