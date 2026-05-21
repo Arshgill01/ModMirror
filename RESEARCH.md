@@ -1686,6 +1686,31 @@ Decision:
   separate dependency upgrade/risk-acceptance decision, not by force-upgrading
   during this assurance wave.
 
+## V4 Wave 30 Completion Audit
+
+Date: 2026-05-21
+
+Evidence source:
+
+- V4 wave reports exist for Waves 01-29 under
+  `docs/master-plan/v4-production-grade/waves/`.
+- Merged, clean Codex worktrees for earlier V4 waves were removed; only root,
+  Gemini/Antigravity worktrees, and the active Wave 30 worktree remained during
+  the audit.
+- `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` still showed PID `42407`, a Node
+  Devvit playtest process from a Gemini/Antigravity worktree.
+- V4 Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source
+  proof constraints.
+
+Decision:
+
+- Wave 30 is blocked rather than complete.
+- The active broad user goal must remain open because required runtime proof
+  remains blocked and cannot be manufactured from local/static checks.
+- Do not kill the Gemini/Antigravity Devvit process, create accounts, create
+  Reddit content, or run destructive/delivery/scheduler/native Mod Note/external
+  AI proof without explicit approval.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19

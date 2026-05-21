@@ -44,11 +44,55 @@ This audit is a prompt-to-artifact checklist. It is not a claim that every runti
 | Verify destructive, delivery, scheduler, native Mod Notes, or external AI capabilities | These remain disabled or approval-gated in `RUNTIME_PROOF_BACKLOG.md` and `RESEARCH.md`. They must not be claimed without explicit approval and controlled proof. | Incomplete by design |
 | Use subagents with correct prefix going forward | User corrected future subagent prompts to use `/goal`, not `/code`. No new subagents were needed for this audit. | Complete as an operating rule |
 
+## V4 Continuation Audit
+
+Update: 2026-05-21
+
+The V4 production-grade board now has implementation or blocker reports for all
+30 waves. Waves 01-20, 24-29 are complete. Waves 21, 22, 23, and 30 are
+blocked with explicit evidence.
+
+Recent completion evidence:
+
+- Wave 17 connected receipt-backed Case Packet and Evidence Board provenance.
+- Wave 18 added the Incident Mode control center.
+- Wave 19 added portable config safety summaries and dry-run policy diffs.
+- Wave 20 added explicit real-deletion confirmation gates.
+- Wave 25 audited destructive-retention and Reddit moderation execution proof
+  harnesses without running them.
+- Wave 26 audited public/private/Mod Discussion/native Mod Note/scheduler proof
+  harnesses without running them.
+- Wave 28 added a reduced-motion guard and recorded static keyboard/mobile and
+  bundle measurements.
+- Wave 29 added the multi-moderator ratification runtime plan and recorded
+  secrets/dependency/privacy findings.
+
+Current blocker evidence:
+
+- Wave 21 route smoke remains blocked because unauthenticated localhost probes
+  returned `426 Upgrade Required` and the current port `5678` listener is owned
+  by a Gemini/Antigravity Devvit playtest process.
+- Wave 22 remains blocked because no true non-mod or limited-mod account session
+  is available.
+- Wave 23 remains blocked because live modqueue source proof and deep
+  moderation-log pagination proof require an owned authenticated Devvit runtime
+  session and safe source evidence.
+- Native Reddit mobile app proof remains unavailable.
+- `npm audit --omit=dev` still reports dependency advisories requiring a
+  separate upgrade/risk decision.
+
+Merged-worktree cleanup:
+
+- Merged clean Codex worktrees for Waves 03-05, 10-16, and 27 were removed.
+- Gemini/Antigravity worktrees were left untouched.
+
 ## Completion Decision
 
 The objective is not fully complete.
 
-The V2 implementation wave batch, planning artifact cleanup, local validation, and latest UI merge are complete. The remaining blockers are proof gaps, not ordinary build failures:
+The V2 implementation wave batch, V4 production-grade implementation waves,
+planning artifact cleanup, local validation, and latest UI merge are complete.
+The remaining blockers are proof gaps, not ordinary build failures:
 
 - route-level Devvit smoke checks for V2 endpoints;
 - live WebView QA for API-backed states;

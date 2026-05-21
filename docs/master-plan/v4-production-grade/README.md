@@ -93,7 +93,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 27 | Reliability | Error Taxonomy And Recovery UX | complete |
 | 28 | Quality | Accessibility, Native Mobile, And Performance | complete |
 | 29 | Assurance | Multi-Moderator, Security, And Privacy Review | complete |
-| 30 | Integration | Final Merge, Proof Assets, And Completion Audit | pending |
+| 30 | Integration | Final Merge, Proof Assets, And Completion Audit | blocked |
 
 ## Wave Details
 

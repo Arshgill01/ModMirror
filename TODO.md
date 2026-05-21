@@ -135,6 +135,12 @@ matches outside ignored/generated/dependency paths. Distinct-moderator runtime
 proof remains blocked by account availability, and `npm audit --omit=dev` still
 reports the existing dependency advisory set.
 
+V4 Wave 30 is blocked: the final completion audit cannot close the active goal
+while Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source
+proof constraints. Stale merged Codex worktrees were cleaned; Gemini/Antigravity
+worktrees were left untouched. The goal remains open until those blockers are
+cleared or the completion criteria are explicitly changed.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
