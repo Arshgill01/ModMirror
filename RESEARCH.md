@@ -1553,6 +1553,33 @@ Decision:
 - Local tests, static preview, upload readiness, empty fallbacks, and sparse
   scans remain insufficient for these claims.
 
+## V4 Wave 25 Controlled Harness Audit
+
+Date: 2026-05-21
+
+Evidence source:
+
+- `docs/operational-overhaul/RETENTION_DESTRUCTIVE_TEST_PLAN.md` defines the
+  approval, unique marker, dry-run, exact-count deletion, post-delete, and
+  policy-history preservation gates for real operational-record cleanup.
+- `docs/operational-overhaul/REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines
+  the approval, throwaway-target, receipt, Reddit-visible-state, and cleanup
+  gates for remove, approve, and ignore-reports proof.
+- `docs/operational-overhaul/CONTROLLED_PROOF_HARNESS_AUDIT.md` ties those
+  runbooks to the implementation gates in retention deletion and moderation
+  execution services.
+
+Decision:
+
+- Wave 25 is complete as a preparation-only harness wave.
+- Real operational-record retention deletion remains unverified and must not be
+  run without explicit approval of the exact cleanup proof.
+- Live Reddit remove, approve, and ignore-reports execution remains disabled by
+  default and must not be run without explicit approval of the exact throwaway
+  content proof.
+- No runtime capability label was upgraded from plan-only to verified by this
+  audit.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19

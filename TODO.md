@@ -105,6 +105,13 @@ another worktree. Do not claim `source: "reddit_modqueue"` or deep pagination
 runtime behavior until `MODQUEUE_RUNTIME_TEST_PLAN.md` and
 `DEEP_SCAN_RUNTIME_TEST_PLAN.md` are executed from an approved session.
 
+V4 Wave 25 is complete as a preparation-only harness wave:
+`docs/operational-overhaul/CONTROLLED_PROOF_HARNESS_AUDIT.md` now ties the
+retention destructive cleanup and live Reddit moderation execution runbooks to
+the implementation gates. Real operational-record deletion and live
+remove/approve/ignore-reports execution remain unrun and require explicit
+approval of the exact proof plan before execution.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
