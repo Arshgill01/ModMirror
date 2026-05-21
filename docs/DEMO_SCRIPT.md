@@ -132,7 +132,7 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Setup wizard / demo scenario
 - [x] Demo seed loaded
 - [x] Mirror Scan result
-- [ ] Rule 2 drift detail
+- [x] Rule 2 drift detail
 - [x] Policy editor
 - [x] Apply Policy simulator
 - [x] Consistency nudge / override reason requirement
@@ -146,6 +146,14 @@ Do not show public comment, private message, modmail, or native Mod Notes delive
 - [x] Digest history/capability status
 - [x] Runtime Settings page
 - [x] Mobile-width Settings screenshot
+
+Latest committed Rule 2 drift-detail proof asset:
+
+- `docs/screenshots/submission/rule2-drift-detail-static.png`
+
+This screenshot is a static built-client proof with deterministic
+ExampleLearning demo data. It does not replace authenticated Devvit WebView
+route proof.
 
 ## Devpost Opening
 

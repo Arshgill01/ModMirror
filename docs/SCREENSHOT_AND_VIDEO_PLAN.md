@@ -13,6 +13,13 @@
 - Settings capability panel.
 - Mobile/narrow viewport Command Center or Settings.
 
+## Captured Proof Assets
+
+- `docs/screenshots/submission/rule2-drift-detail-static.png` — static
+  built-client capture of the ExampleLearning Rule 2 drift detail. This proves
+  the visual state for submission planning only; authenticated Devvit WebView
+  route smoke remains tracked separately.
+
 ## Demo Video Flow
 
 1. Start on the compact inline card.
