@@ -55,6 +55,9 @@ detail keys `0`, and index refs `0`.
 
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
+`docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
+current artifacts and marks the remaining runtime-proof gaps that prevent
+closing the overall goal.
 
 ## V2 Master Plan Development Audit
 
