@@ -2842,25 +2842,30 @@ function renderPolicyHealthCard(summary: PolicyHealthSummary) {
 }
 
 function renderOverrideInbox() {
-  const overrides = [...governanceState.overrides].sort((left, right) =>
-    left.reviewStatus === right.reviewStatus
-      ? Date.parse(right.createdAt) - Date.parse(left.createdAt)
-      : left.reviewStatus === 'unresolved'
-        ? -1
-        : 1
-  );
+  const openOverrides = governanceState.overrides
+    .filter((event) => event.reviewStatus === 'unresolved')
+    .sort((left, right) =>
+      Date.parse(right.createdAt) - Date.parse(left.createdAt)
+    );
 
-  if (overrides.length === 0) {
+  if (openOverrides.length === 0) {
     return renderEmptyState(
-      'Override inbox is clear',
-      'No unresolved exceptions are waiting for team review.',
+      'Open override queue is clear',
+      'Resolved exceptions leave this queue after the review note and status are recorded.',
       [{ label: 'Generate Digest', page: 'prove', intent: 'generate_digest' }]
     );
   }
 
   return `
-    <section class="card-list" aria-label="Override inbox">
-      ${overrides.map(renderOverrideCard).join('')}
+    <section class="card-list" aria-label="Override resolution inbox">
+      <div class="list-header">
+        <div>
+          <h3>Override Resolution Inbox</h3>
+          <p>Choose a resolution and record the team note. Resolved overrides leave this open queue.</p>
+        </div>
+        <span class="status-badge status-neutral">${openOverrides.length} open</span>
+      </div>
+      ${openOverrides.map(renderOverrideCard).join('')}
     </section>
   `;
 }
@@ -2883,12 +2888,15 @@ function renderOverrideCard(event: ReviewableOverrideEvent) {
         <div><dt>Target</dt><dd>${escapeHtml(event.targetThingId ?? 'Not captured')}</dd></div>
       </dl>
       ${event.overrideNote ? `<p>${escapeHtml(event.overrideNote)}</p>` : ''}
-      <input class="review-note-input" data-review-note="${escapeAttribute(event.id)}" placeholder="Optional review note" value="${escapeAttribute(event.reviewNote ?? '')}">
-      <div class="button-row">
-        ${renderReviewButton(event, 'accepted_exception', 'Accept exception')}
-        ${renderReviewButton(event, 'policy_needs_update', 'Policy needs update')}
-        ${renderReviewButton(event, 'needs_team_discussion', 'Needs discussion')}
-        ${renderReviewButton(event, 'no_action_needed', 'No action needed')}
+      <label class="review-note-label">
+        Team review note
+        <textarea class="review-note-input" data-review-note="${escapeAttribute(event.id)}" rows="2" placeholder="Record why the team chose this resolution.">${escapeHtml(event.reviewNote ?? '')}</textarea>
+      </label>
+      <div class="resolution-grid" aria-label="Override resolution options">
+        ${renderReviewButton(event, 'accepted_exception', 'Accept exception', 'Close as a valid context-specific exception.')}
+        ${renderReviewButton(event, 'policy_needs_update', 'Policy needs update', 'Close and flag the policy ladder for revision.')}
+        ${renderReviewButton(event, 'needs_team_discussion', 'Needs discussion', 'Close and route the case to team discussion.')}
+        ${renderReviewButton(event, 'no_action_needed', 'Reviewed', 'Close with no policy or case follow-up.')}
       </div>
     </article>
   `;
@@ -2897,15 +2905,17 @@ function renderOverrideCard(event: ReviewableOverrideEvent) {
 function renderReviewButton(
   event: ReviewableOverrideEvent,
   status: OverrideReviewStatus,
-  label: string
+  label: string,
+  detail: string
 ) {
   const buttonClass =
     status === 'accepted_exception' || status === 'policy_needs_update'
       ? 'primary-button compact-button'
       : 'secondary-button compact-button';
   return `
-    <button class="${buttonClass}" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''} type="button">
-      ${label}
+    <button class="${buttonClass} resolution-button" data-review-override="${escapeAttribute(event.id)}" data-review-status="${status}" ${governanceState.savingOverrideId === event.id ? 'disabled' : ''} type="button">
+      <strong>${label}</strong>
+      <span>${escapeHtml(detail)}</span>
     </button>
   `;
 }
@@ -4936,7 +4946,7 @@ function bindGovernanceActions() {
       if (!overrideId || !status) {
         return;
       }
-      const noteInput = document.querySelector<HTMLInputElement>(
+      const noteInput = document.querySelector<HTMLTextAreaElement>(
         `[data-review-note="${cssEscape(overrideId)}"]`
       );
       void reviewOverride(overrideId, status, noteInput?.value.trim());
@@ -7926,10 +7936,10 @@ async function reviewOverride(
     governanceState = {
       ...governanceState,
       savingOverrideId: undefined,
-      overrides: governanceState.overrides.map((event) =>
-        event.id === updated.id ? updated : event
-      ),
-      message: 'Override review updated.',
+      overrides: governanceState.overrides
+        .map((event) => (event.id === updated.id ? updated : event))
+        .filter((event) => event.reviewStatus === 'unresolved'),
+      message: `Override resolved as ${formatAction(updated.reviewStatus)} and removed from the open queue.`,
     };
   } catch (error) {
     governanceState = {

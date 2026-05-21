@@ -1143,6 +1143,28 @@ dd {
   border-bottom: 0;
 }
 
+.list-header {
+  align-items: start;
+  border-bottom: 1px solid var(--mm-line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 20px 24px 16px;
+}
+
+.list-header h3 {
+  color: var(--mm-ink);
+  font-family: var(--mm-font-serif);
+  font-size: 18px;
+  margin: 0;
+}
+
+.list-header p {
+  color: var(--mm-muted);
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
 .action-card,
 .inbox-card,
 .version-card {
@@ -1744,6 +1766,39 @@ dd {
 
 .review-note-input {
   background: var(--mm-bg);
+}
+
+.review-note-label {
+  color: var(--mm-text);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.resolution-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.resolution-button {
+  align-content: start;
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  text-align: left;
+}
+
+.resolution-button strong {
+  font-size: 13px;
+}
+
+.resolution-button span {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: none;
 }
 
 .version-card ol,
@@ -2518,6 +2573,7 @@ dd {
   .section-header,
   .card-header,
   .case-header,
+  .list-header,
   .empty-state,
   .settings-grid .action-card {
     grid-template-columns: 1fr;
@@ -2603,6 +2659,7 @@ dd {
   .metric-grid,
   .confidence-grid,
   .ratification-lifecycle,
+  .resolution-grid,
   .simulation-summary,
   .distribution-grid,
   .case-grid,
