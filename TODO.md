@@ -132,14 +132,19 @@ defines the distinct-moderator runtime proof. Focused tests still cover
 ratification threshold logic, config exports excluding private history, and
 Evidence Board privacy preservation. A repo secrets-pattern scan found no
 matches outside ignored/generated/dependency paths. Distinct-moderator runtime
-proof remains blocked by account availability, and `npm audit --omit=dev` still
-reports the existing dependency advisory set.
+proof remains blocked by account availability. The dependency-hardening follow-up
+upgraded direct Devvit/Hono/Vite packages and removed the direct Hono/Vite audit
+findings, but `npm audit --omit=dev` still fails on Devvit-transitive
+`protobufjs`, `tmp`, and `ws` advisories; force fixes would downgrade or
+otherwise break the Devvit package chain.
 
 V4 Wave 30 is blocked: the final completion audit cannot close the active goal
 while Waves 21, 22, and 23 remain blocked by authenticated runtime/account/source
 proof constraints. Stale merged Codex worktrees were cleaned; Gemini/Antigravity
-worktrees were left untouched. The goal remains open until those blockers are
-cleared or the completion criteria are explicitly changed.
+worktrees were left untouched. A dependency-hardening follow-up is documented in
+`docs/operational-overhaul/DEPENDENCY_HARDENING.md`, but the goal remains open
+until the runtime blockers are cleared or the completion criteria are explicitly
+changed.
 
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
