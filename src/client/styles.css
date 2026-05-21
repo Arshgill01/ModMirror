@@ -694,6 +694,53 @@ dd {
   padding-left: 18px;
 }
 
+.simulation-summary {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.simulation-delta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.simulation-delta + .simulation-delta {
+  border-left: 1px solid var(--mm-line);
+}
+
+.simulation-delta span,
+.simulation-delta small {
+  color: var(--mm-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.simulation-delta strong {
+  font-size: 24px;
+}
+
+.simulation-stricter {
+  background: #fdf7e8;
+}
+
+.simulation-looser,
+.simulation-insufficient_data {
+  background: #fdf4f4;
+}
+
+.simulation-same {
+  background: #f0f7f4;
+}
+
+.simulation-manual_review {
+  background: var(--mm-bg);
+}
+
 .helper-text {
   color: var(--mm-muted);
   font-size: 13px;
@@ -2489,6 +2536,7 @@ dd {
   .setup-list li,
   .metric-grid,
   .confidence-grid,
+  .simulation-summary,
   .distribution-grid,
   .case-grid,
   .digest-grid {

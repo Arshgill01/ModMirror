@@ -75,7 +75,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 09 | Product | Scenario Lab Authoring And Archiving | pending |
 | 10 | Product | Drift Radar Distribution Drilldown | complete |
 | 11 | Product | Representative Cases With Privacy Guards | complete |
-| 12 | Product | Policy Simulator Console | pending |
+| 12 | Product | Policy Simulator Console | complete |
 | 13 | Product | Policy Starter Templates And Overwrite Guard | pending |
 | 14 | Product | Ratification Lifecycle UX | pending |
 | 15 | Product | Override Resolution Inbox | pending |

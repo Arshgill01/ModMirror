@@ -100,6 +100,8 @@ import type {
   PolicyWorkbenchResponse,
   PolicyStep,
   PolicyReplayResult,
+  PolicySimulationDelta,
+  PolicySimulationResult,
   PortableConfigImportResult,
   PortableConfigPackage,
   PortableConfigTemplateListResponse,
@@ -189,6 +191,12 @@ type PolicyReplayUiState = {
   loadingPolicyId: string | undefined;
   error: string | undefined;
   result: PolicyReplayResult | undefined;
+};
+
+type PolicySimulationUiState = {
+  loadingPolicyId: string | undefined;
+  error: string | undefined;
+  result: PolicySimulationResult | undefined;
 };
 
 type ApplyUiState = {
@@ -467,6 +475,11 @@ let policyState: PolicyUiState = {
   form: emptyPolicyForm(),
 };
 let policyReplayState: PolicyReplayUiState = {
+  loadingPolicyId: undefined,
+  error: undefined,
+  result: undefined,
+};
+let policySimulationState: PolicySimulationUiState = {
   loadingPolicyId: undefined,
   error: undefined,
   result: undefined,
@@ -1509,6 +1522,7 @@ function renderAgreePage() {
     </section>
     ${renderPolicyFallback()}
     ${renderV2PolicyWorkbenchPanel()}
+    ${renderPolicySimulationPanel()}
     ${renderPolicyList()}
     ${renderPolicyReplayPanel()}
     ${renderDriftPolicyPanel()}
@@ -1625,6 +1639,89 @@ function renderPolicyReplayPanel() {
   `;
 }
 
+function renderPolicySimulationPanel() {
+  if (!policySimulationState.result && !policySimulationState.error) {
+    return '';
+  }
+  const result = policySimulationState.result;
+  return `
+    <section class="section-panel replay-panel" aria-label="Policy simulator console">
+      <div class="section-header">
+        <div>
+          <h3>Policy Simulator</h3>
+          <p>Read-only draft impact check against stored scan history. It never writes receipts or Reddit actions.</p>
+          ${policySimulationState.error ? `<p class="inline-error">${escapeHtml(policySimulationState.error)}</p>` : ''}
+        </div>
+      </div>
+      ${
+        result
+          ? `
+            <dl class="compact-metrics">
+              <div><dt>Policy</dt><dd>${escapeHtml(result.ruleName)}</dd></div>
+              <div><dt>Cases</dt><dd>${result.totalCases}</dd></div>
+              <div><dt>Generated</dt><dd>${escapeHtml(formatDate(result.generatedAt))}</dd></div>
+            </dl>
+            ${renderPolicySimulationSummary(result)}
+            <ol class="replay-list">
+              ${result.items.slice(0, 6).map(renderSimulationItem).join('')}
+            </ol>
+            ${result.warnings.map((warning) => `<p class="inline-note">${escapeHtml(warning)}</p>`).join('')}
+          `
+          : ''
+      }
+    </section>
+  `;
+}
+
+function renderPolicySimulationSummary(result: PolicySimulationResult) {
+  const deltas: PolicySimulationDelta[] = [
+    'same',
+    'stricter',
+    'looser',
+    'manual_review',
+    'insufficient_data',
+  ];
+  return `
+    <div class="simulation-summary">
+      ${deltas.map((delta) => {
+        const count = result.summary[delta];
+        const share = result.totalCases > 0 ? Math.round((count / result.totalCases) * 100) : 0;
+        return `
+          <div class="simulation-delta simulation-${delta}">
+            <span>${formatAction(delta)}</span>
+            <strong>${count}</strong>
+            <small>${share}%</small>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderSimulationItem(item: PolicySimulationResult['items'][number]) {
+  return `
+    <li class="ledger-item">
+      <div>
+        <strong>${escapeHtml(item.actionId)}</strong>
+        <span>${formatDate(item.createdAt)} - ${formatAction(item.delta)}</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Historical</dt><dd>${formatAction(item.historicalAction)}</dd></div>
+        ${
+          item.activeRecommendation
+            ? `<div><dt>Active</dt><dd>${formatAction(item.activeRecommendation)}</dd></div>`
+            : ''
+        }
+        <div><dt>Draft</dt><dd>${formatAction(item.draftRecommendation)}</dd></div>
+        <div><dt>Confidence</dt><dd>${formatAction(item.confidence)}</dd></div>
+      </dl>
+      <ul class="compact-list">
+        ${item.evidence.slice(0, 3).map((evidence) => `<li>${escapeHtml(evidence)}</li>`).join('')}
+      </ul>
+    </li>
+  `;
+}
+
 function renderReplayItem(item: PolicyReplayResult['items'][number]) {
   return `
     <li class="ledger-item">
@@ -1677,6 +1774,7 @@ function renderPolicyCard(policy: RulePolicy) {
         <button class="secondary-button" data-edit-policy="${escapeAttribute(policy.id)}" type="button">${policy.active ? 'Draft revision' : 'Edit draft'}</button>
         ${renderPolicyLifecycleButtons(policy)}
         <button class="secondary-button" data-replay-policy="${escapeAttribute(policy.id)}" ${policyReplayState.loadingPolicyId === policy.id ? 'disabled' : ''} type="button">Replay</button>
+        <button class="secondary-button" data-simulate-policy="${escapeAttribute(policy.id)}" ${policySimulationState.loadingPolicyId === policy.id ? 'disabled' : ''} type="button">Simulate</button>
         <button class="secondary-button" data-action-intent="review_policy" type="button">Review health</button>
       </div>
     </article>
@@ -4367,6 +4465,15 @@ function bindPolicyActions() {
     });
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-simulate-policy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const policyId = button.dataset.simulatePolicy;
+      if (policyId) {
+        void runPolicySimulationFromUi(policyId);
+      }
+    });
+  });
+
   document
     .querySelectorAll<HTMLButtonElement>('[data-create-from-drift]')
     .forEach((button) => {
@@ -5352,6 +5459,62 @@ function buildClientDemoReplay(policy: RulePolicy): PolicyReplayResult {
     replay.policyVersionNumber = versionNumber;
   }
   return replay;
+}
+
+function buildClientDemoSimulation(policy: RulePolicy): PolicySimulationResult {
+  const now = new Date().toISOString();
+  return {
+    id: `demo-simulation-${Date.now()}`,
+    subreddit: policy.subreddit,
+    policyId: policy.id,
+    ruleKey: policy.ruleKey,
+    ruleName: policy.ruleName,
+    generatedAt: now,
+    totalCases: 3,
+    summary: {
+      same: 1,
+      stricter: 1,
+      looser: 1,
+      manual_review: 0,
+      insufficient_data: 0,
+    },
+    items: [
+      {
+        actionId: 'demo-simulation-1',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        activeRecommendation: 'warn',
+        draftRecommendation: 'remove',
+        delta: 'stricter',
+        evidence: ['Demo first offense would become stricter under this draft.'],
+      },
+      {
+        actionId: 'demo-simulation-2',
+        createdAt: now,
+        confidence: 'high',
+        historicalAction: 'remove',
+        activeRecommendation: 'remove',
+        draftRecommendation: 'remove',
+        delta: 'same',
+        evidence: ['Demo repeat offense keeps the same recommendation.'],
+      },
+      {
+        actionId: 'demo-simulation-3',
+        createdAt: now,
+        confidence: 'medium',
+        historicalAction: 'temporary_ban_suggested',
+        activeRecommendation: 'remove',
+        draftRecommendation: 'warn',
+        delta: 'looser',
+        evidence: ['Demo first offense would become looser under this draft.'],
+      },
+    ],
+    warnings: [
+      'Demo simulation uses synthetic actions, not live Reddit history.',
+      'Policy simulation is read-only and never creates moderation receipts or Reddit actions.',
+    ],
+  };
 }
 
 function createClientDemoHealth(
@@ -8086,6 +8249,66 @@ async function fetchPolicyReplay(
     withWorkspaceSubreddit(
       API_ROUTES.policyReplay.replace(':id', encodeURIComponent(policyId))
     ),
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+}
+
+async function runPolicySimulationFromUi(policyId: string) {
+  policySimulationState = {
+    loadingPolicyId: policyId,
+    error: undefined,
+    result: policySimulationState.result,
+  };
+  render();
+
+  try {
+    const scanId = scanState.record?.id;
+    if (!scanId) {
+      throw new Error('Run a scan first so the simulator has stored actions to use.');
+    }
+    const policy = policyState.policies.find((item) => item.id === policyId);
+    const simulation = await fetchPolicySimulation(policyId, {
+      scanId,
+      ...(policy ? { draftPolicy: policy } : {}),
+    });
+    policySimulationState = {
+      loadingPolicyId: undefined,
+      result: simulation,
+      error: undefined,
+    };
+  } catch (error) {
+    if (canUseClientDemoFallback()) {
+      const policy = policyState.policies.find((item) => item.id === policyId);
+      if (policy) {
+        policySimulationState = {
+          loadingPolicyId: undefined,
+          result: buildClientDemoSimulation(policy),
+          error: undefined,
+        };
+        render();
+        return;
+      }
+    }
+    policySimulationState = {
+      loadingPolicyId: undefined,
+      error: normalizeClientError(error, 'Policy simulation failed.'),
+      result: undefined,
+    };
+  }
+
+  render();
+}
+
+async function fetchPolicySimulation(
+  policyId: string,
+  body: Record<string, unknown>
+): Promise<PolicySimulationResult> {
+  return fetchApi<PolicySimulationResult>(
+    withWorkspaceSubreddit(`${API_ROUTES.policies}/${encodeURIComponent(policyId)}/simulate`),
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
