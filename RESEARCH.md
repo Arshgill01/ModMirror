@@ -15,7 +15,7 @@ moderator access checks are locally verified but not yet proven with a true
 non-mod account. Per-mod/manage-level visibility is now conservatively gated to
 the runtime-probed `all` permission only.
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 Updated by: Codex
 
@@ -58,6 +58,7 @@ Updated by: Codex
 | Partially verified | Exact moderator permission strings for per-mod analytics gating. | Typings expose permission checks, and protected `GET /api/access/diagnostics` is locally verified for safe current-user runtime capture. The Devvit WebView Settings diagnostic for `u/BrightyBrainiac` on `r/modmirror_dev` returned `Access check passed: 1 permission(s): all.` ModMirror now treats only `all` as `full_moderator` for future per-mod/manage-level visibility; lower-permission moderator roles remain `aggregate_only` until runtime verified. |
 | Verified locally | Manual runtime playtest observations can be recorded from Settings. | `src/client/main.ts` exposes a Settings form for protected manual `playtest` / `manual_qa` runtime capability events, and `src/routes/apiAccess.test.ts` covers POST `/api/runtime-capabilities/events` plus matrix reflection for a manual event. Destructive capabilities still opt out of health-event promotion through `canUpdateFromHealthEvents: false`. |
 | Verified locally | AI privacy readiness gate is documented before any external AI fetch is enabled. | `docs/operational-overhaul/AI_PRIVACY_READINESS.md` records provider terms/privacy review, data minimization, secret handling, HTTP permission review, runtime failure proof, and advisory-only boundaries required before a live AI provider build. External fetch and secret retrieval remain runtime-unverified. |
+| Blocked rehearsal | V4 Wave 21 safe route-level smoke checks require an authenticated Devvit WebView, not bare localhost curl. | On 2026-05-21, `npx devvit whoami` passed as `u/BrightyBrainiac`, but port `5678` was already owned by `node --no-warnings=ExperimentalWarning /Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design/node_modules/.bin/devvit playtest`. The process was not killed. Direct `curl -i --max-time 5` probes to `http://127.0.0.1:5678/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` with body `Upgrade Required`, so no route JSON proof was captured. The route checklist and blocker record are in `docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/`, `docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`, and `output/runtime-proof/wave-21-safe-route-smoke/attempt-2026-05-21.md`. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
 | Broken | The generated template's `npm test` worked without changes. | Template referenced Vitest without including it; Wave 0 added `vitest` and `vitest.config.ts`. |
@@ -96,6 +97,11 @@ Updated by: Codex
 - The current scaffold is Devvit Web with a server-first Hono structure. It does not currently have a React/client dashboard entry.
 - `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`; `npx devvit view --json` returned app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`, slug `modmirror`, and owner `BrightyBrainiac`. `npm run dev` reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`; dashboard browser proof used `v0.0.1.12`, and Wave 5 integration reached Playtest ready on `v0.0.1.15` on 2026-05-17.
 - A later `timeout 35s npm run dev` check reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on `v0.0.1.167` after the minimalist UI refresh merge. It emitted a local warning, `listen EADDRINUSE: address already in use :::5678`, before reaching ready. Treat that run as upload/playtest readiness proof only because no WebView route smoke checks were exercised.
+- A V4 Wave 21 rehearsal on 2026-05-21 did not start another playtest because
+  an Antigravity/Gemini worktree already owned port `5678` with
+  `devvit playtest`. Direct local HTTP probes to `/api/health`,
+  `/api/runtime-capabilities`, and `/api/demo/manifest` returned
+  `426 Upgrade Required`; this is blocker evidence only, not route-level proof.
 - `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
 - Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
 - Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.

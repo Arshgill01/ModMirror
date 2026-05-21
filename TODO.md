@@ -53,6 +53,17 @@ cleanup. The synthetic retention cleanup diagnostic passed on Devvit playtest
 `v0.0.1.138`: scans `1/1`, receipts `1/1`, boards `1/1`, delivery `1/1`,
 detail keys `0`, and index refs `0`.
 
+V4 Wave 21 safe route-level smoke planning now exists under
+`docs/master-plan/v4-production-grade/waves/wave-21-safe-route-smoke/` with an
+operational runtime plan at
+`docs/operational-overhaul/SAFE_ROUTE_SMOKE_RUNTIME_PLAN.md`. The 2026-05-21
+rehearsal did not upgrade any route to runtime-verified: port `5678` was owned
+by an Antigravity/Gemini `devvit playtest` process from another worktree, and
+bare `curl` probes to `/api/health`, `/api/runtime-capabilities`, and
+`/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` instead of route
+JSON. Resume Wave 21 only from an authenticated Devvit WebView session or after
+port `5678` is free.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
@@ -75,8 +86,11 @@ closing the overall goal.
       reached ready, but also reported a local `EADDRINUSE` warning for port
       `5678`.
 - [ ] Rerun safe route-level Devvit smoke checks for the new V2 endpoints after
-      opening the playtest WebView. Do not upgrade labels from conservative
-      local/demo proof until those route checks are observed.
+      opening the playtest WebView. V4 Wave 21 now has the exact checklist, but
+      the 2026-05-21 attempt was blocked by the existing Antigravity/Gemini
+      process on port `5678` and direct localhost probes returned
+      `426 Upgrade Required`; do not upgrade labels from conservative
+      local/demo proof until authenticated WebView route checks are observed.
 - [ ] Rerun live WebView visual QA for API-backed V2 states; the completed
       static smoke only verifies nonblank fallback rendering.
 

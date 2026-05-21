@@ -1,6 +1,6 @@
 # Runtime Verification Matrix
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 This matrix distinguishes runtime proof from local tests, static browser proof,
 type-only support, and disabled capability gates. It is mirrored in the
@@ -86,6 +86,12 @@ Runtime observations:
   envelope through the safe smoke route.
 - Devvit playtest `v0.0.1.138` verified the synthetic retention cleanup smoke
   route for synthetic expired records only.
+- V4 Wave 21 prepared an exact safe route-level smoke checklist but did not
+  execute authenticated route JSON checks. On 2026-05-21, port `5678` was owned
+  by an Antigravity/Gemini `devvit playtest` process from another worktree.
+  The process was not killed, and direct `curl` probes to `/api/health`,
+  `/api/runtime-capabilities`, and `/api/demo/manifest` returned
+  `HTTP/1.1 426 Upgrade Required`. Treat this as blocker evidence only.
 - `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
   proof gate for true non-mod protected-route blocking and lower-permission
   moderator role-string capture. That plan has not been executed.
