@@ -68,7 +68,9 @@ single-page index for remaining proof gaps and proof-plan readiness.
 - [x] Run final gates: `npm run type-check`, `npm run lint`, `npm test`, and
       `npm run build`.
 - [x] Verify Devvit CLI session and playtest upload readiness for
-      `r/modmirror_dev` on version `v0.0.1.156`.
+      `r/modmirror_dev` on version `v0.0.1.166`; the local playtest command
+      reached ready, but also reported a local `EADDRINUSE` warning for port
+      `5678`.
 - [ ] Rerun safe route-level Devvit smoke checks for the new V2 endpoints after
       opening the playtest WebView. Do not upgrade labels from conservative
       local/demo proof until those route checks are observed.
