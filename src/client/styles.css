@@ -1053,6 +1053,22 @@ dd {
   padding-bottom: 0;
 }
 
+.template-grid {
+  margin-bottom: 16px;
+}
+
+.starter-template-card {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.starter-template-card .card-header {
+  align-items: flex-start;
+}
+
+.starter-template-card .button-row {
+  justify-content: flex-start;
+}
+
 /* --- Metrics, Data grids and Lists --- */
 .metric-grid,
 .settings-grid,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PolicyVersion, RulePolicy } from '../../shared/schema';
 import {
+  buildPolicyWorkbenchResponse,
   buildPolicyWorkbenchSummary,
   validatePolicyWorkbench,
 } from './policyWorkbench';
@@ -51,6 +52,28 @@ describe('Policy Workbench', () => {
       candidateVersion: 2,
       changedStepCount: 1,
     });
+  });
+
+  it('returns starter templates as non-adopted starting points only', () => {
+    const response = buildPolicyWorkbenchResponse({
+      subreddit: 'ExampleLearning',
+      generatedAt: '2026-05-21T00:00:00.000Z',
+      policies: [policy()],
+      versionsByPolicy: {},
+    });
+
+    expect(response.starterTemplates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'education-first',
+          label: 'Education first',
+          ruleShape: 'Low-effort or fixable behavior',
+        }),
+      ])
+    );
+    expect(
+      response.starterTemplates.every((template) => 'active' in template)
+    ).toBe(false);
   });
 });
 

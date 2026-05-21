@@ -1557,6 +1557,9 @@ function renderV2PolicyWorkbenchPanel() {
         </div>
         <span class="status-badge status-neutral">${workbench.starterTemplates.length} templates</span>
       </div>
+      <div class="policy-grid template-grid" aria-label="Policy starter templates">
+        ${workbench.starterTemplates.map(renderPolicyStarterTemplate).join('')}
+      </div>
       <div class="policy-grid">
         ${workbench.policies.slice(0, 4).map((policy) => `
           <article class="policy-card">
@@ -1572,6 +1575,36 @@ function renderV2PolicyWorkbenchPanel() {
         `).join('')}
       </div>
     </section>
+  `;
+}
+
+function renderPolicyStarterTemplate(
+  template: PolicyWorkbenchResponse['starterTemplates'][number]
+) {
+  const firstStep = template.steps[0];
+  return `
+    <article class="policy-card starter-template-card">
+      <div class="card-header">
+        <div>
+          <h4>${escapeHtml(template.label)}</h4>
+          <p>${escapeHtml(template.ruleShape)}</p>
+        </div>
+        <span class="status-badge status-neutral">Starting point</span>
+      </div>
+      <dl class="compact-metrics">
+        <div><dt>Steps</dt><dd>${template.steps.length}</dd></div>
+        ${
+          firstStep
+            ? `<div><dt>First action</dt><dd>${formatAction(firstStep.recommendedAction)}</dd></div>`
+            : ''
+        }
+        <div><dt>State</dt><dd>Unsaved draft</dd></div>
+      </dl>
+      <p class="inline-note">Load this ladder, map it to a real subreddit rule, then save it as a draft for review.</p>
+      <div class="button-row">
+        <button class="secondary-button" data-apply-policy-template="${escapeAttribute(template.id)}" type="button">Use template</button>
+      </div>
+    </article>
   `;
 }
 
@@ -4401,6 +4434,17 @@ function bindPolicyActions() {
         activePage = 'agree';
         window.location.hash = '#agree';
         render();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-apply-policy-template]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        const templateId = button.dataset.applyPolicyTemplate;
+        if (templateId) {
+          applyPolicyStarterTemplate(templateId);
+        }
       });
     });
 
@@ -8084,6 +8128,121 @@ async function createPolicyFromDrift(candidate: DriftCandidate) {
   }
 
   render();
+}
+
+function applyPolicyStarterTemplate(templateId: string) {
+  const template = v2ProductState.policyWorkbench?.starterTemplates.find(
+    (candidate) => candidate.id === templateId
+  );
+  if (template === undefined) {
+    policyState = {
+      ...policyState,
+      error: 'Starter template is no longer available. Refresh policies and try again.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+
+  if (
+    hasUnsavedPolicyFormEdits() &&
+    !window.confirm(
+      'Replace the current policy editor draft with this starter template? Unsaved edits will be lost.'
+    )
+  ) {
+    return;
+  }
+
+  policyState = {
+    ...policyState,
+    form: starterTemplateToPolicyForm(template),
+    error: undefined,
+    message:
+      'Starter template loaded as an unsaved draft. Map it to a real subreddit rule before saving; adoption still requires review.',
+  };
+  activePage = 'agree';
+  window.location.hash = '#agree';
+  render();
+}
+
+function starterTemplateToPolicyForm(
+  template: PolicyWorkbenchResponse['starterTemplates'][number]
+): PolicyFormState {
+  return {
+    mode: 'create',
+    ruleKey: '',
+    ruleName: template.ruleShape,
+    defaultMessageMode: 'log_only',
+    requiredApprovals: 1,
+    allowSingleModAdoption: true,
+    steps: template.steps.map((step) => ({ ...step })),
+  };
+}
+
+function hasUnsavedPolicyFormEdits() {
+  if (policyState.form.mode === 'edit') {
+    return true;
+  }
+
+  const formElement = document.querySelector<HTMLFormElement>('[data-policy-form]');
+  const currentForm = readCurrentPolicyForm(formElement) ?? policyState.form;
+  const hasTemplateBodyEdits =
+    formElement !== null &&
+    Array.from(formElement.querySelectorAll<HTMLTextAreaElement>('textarea')).some(
+      (textarea) => textarea.value.trim() !== ''
+    );
+  return hasTemplateBodyEdits || !policyFormsMatch(currentForm, emptyPolicyForm());
+}
+
+function readCurrentPolicyForm(
+  formElement: HTMLFormElement | null
+): PolicyFormState | undefined {
+  if (formElement === null) {
+    return undefined;
+  }
+  const formData = new FormData(formElement);
+  return {
+    ...policyState.form,
+    ruleKey: String(formData.get('ruleKey') ?? '').trim(),
+    ruleName: String(formData.get('ruleName') ?? '').trim(),
+    defaultMessageMode: String(
+      formData.get('defaultMessageMode') ?? 'log_only'
+    ) as MessageDeliveryMode,
+    requiredApprovals: Number(formData.get('requiredApprovals') ?? 1),
+    allowSingleModAdoption: formData.get('allowSingleModAdoption') === 'on',
+    steps: policyState.form.steps.map((step, index) => ({
+      ...step,
+      windowDays: Number(formData.get(`windowDays-${index}`) ?? step.windowDays),
+      recommendedAction: String(
+        formData.get(`recommendedAction-${index}`) ?? step.recommendedAction
+      ) as EnforcementAction,
+      requireOverrideReasonForDeviation:
+        formData.get(`requireOverride-${index}`) === 'on',
+    })),
+  };
+}
+
+function policyFormsMatch(left: PolicyFormState, right: PolicyFormState) {
+  return (
+    left.mode === right.mode &&
+    left.ruleKey === right.ruleKey &&
+    left.ruleName === right.ruleName &&
+    left.defaultMessageMode === right.defaultMessageMode &&
+    left.requiredApprovals === right.requiredApprovals &&
+    left.allowSingleModAdoption === right.allowSingleModAdoption &&
+    left.steps.length === right.steps.length &&
+    left.steps.every((step, index) => {
+      const other = right.steps[index];
+      return (
+        other !== undefined &&
+        step.offenseCount === other.offenseCount &&
+        step.windowDays === other.windowDays &&
+        step.recommendedAction === other.recommendedAction &&
+        step.requireOverrideReasonForDeviation ===
+          other.requireOverrideReasonForDeviation
+      );
+    })
+  );
 }
 
 async function savePolicyForm(formData: FormData) {
