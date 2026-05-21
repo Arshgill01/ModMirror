@@ -46,13 +46,21 @@ import {
   formatClientNotice,
 } from '../shared/clientResilience';
 import {
-  API_TIMEOUT_MS,
   fetchApi,
   fetchWithTimeout,
   normalizeClientError,
   resetDemoAction,
   runScanAction,
 } from './state/actions';
+import {
+  escapeAttribute,
+  escapeHtml,
+  renderConfidenceItem,
+  renderEmptyState,
+  renderLoadingState,
+  renderMetricCard,
+  renderSettingsCard,
+} from './render/primitives';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -66,7 +74,6 @@ import type {
   CalibrationPackResponse,
   CalibrationScenario,
   CasePacket,
-  Confidence,
   CommandCenterV2Response,
   CommunityHealthSummary,
   ConsistencyAnalyticsSummary,
@@ -4133,34 +4140,6 @@ function renderRecentIncidents() {
   `;
 }
 
-function renderSettingsCard(title: string, value: string, detail: string) {
-  return `
-    <article class="action-card">
-      <h3>${escapeHtml(title)}</h3>
-      <strong class="settings-value">${escapeHtml(value)}</strong>
-      <p>${escapeHtml(detail)}</p>
-    </article>
-  `;
-}
-
-function renderMetricCard(label: string, value: string) {
-  return `
-    <article class="metric-card">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-    </article>
-  `;
-}
-
-function renderConfidenceItem(confidence: Confidence, count: number) {
-  return `
-    <div class="confidence-item confidence-${confidence}">
-      <span>${confidence}</span>
-      <strong>${count}</strong>
-    </div>
-  `;
-}
-
 function renderDistributionItem(action: EnforcementAction, count: number) {
   return `
     <div class="distribution-item">
@@ -4180,43 +4159,6 @@ function formatDistribution(
   return entries
     .map(([action, count]) => `${formatAction(action)} ${count}`)
     .join(', ');
-}
-
-function renderEmptyState(
-  title: string,
-  body: string,
-  actions: CommandCenterAction[]
-) {
-  return `
-    <section class="empty-state">
-      <div>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(body)}</p>
-      </div>
-      ${
-        actions.length > 0
-          ? `<div class="button-row">${actions
-              .map(
-                (action) =>
-                  `<button class="secondary-button" data-action-intent="${action.intent}" type="button">${escapeHtml(action.label)}</button>`
-              )
-              .join('')}</div>`
-          : ''
-      }
-    </section>
-  `;
-}
-
-function renderLoadingState(title: string, body: string) {
-  return `
-    <section class="empty-state">
-      <div>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(body)}</p>
-        <p class="helper-text">Requests time out after ${Math.round(API_TIMEOUT_MS / 1000)} seconds with a labeled retry or fallback message.</p>
-      </div>
-    </section>
-  `;
 }
 
 function bindAllActions() {
@@ -9169,19 +9111,6 @@ function cssEscape(value: string) {
   return window.CSS?.escape
     ? window.CSS.escape(value)
     : value.replaceAll('"', '\\"');
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function escapeAttribute(value: string) {
-  return escapeHtml(value);
 }
 
 window.addEventListener('hashchange', () => {

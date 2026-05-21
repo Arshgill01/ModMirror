@@ -67,7 +67,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 01 | Control | Source Truth And Gemini Plan Reconciliation | complete |
 | 02 | Control | Parallel Agent Protocol And PR Discipline | complete |
 | 03 | Client | Client State And Action Extraction | complete |
-| 04 | Client | Component Extraction Without Rewrite | pending |
+| 04 | Client | Component Extraction Without Rewrite | complete |
 | 05 | Product | First-Viewport Product Comprehension | pending |
 | 06 | Product | Judge Demo Path Orchestrator | pending |
 | 07 | Product | Onboard A New Mod Quiz Core | complete |
