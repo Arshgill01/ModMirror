@@ -34,16 +34,25 @@ import {
 } from '../shared/evidenceGraphPresentation';
 import {
   buildCalibrationQuizSummary,
+  emptyApplyForm,
+  emptyPolicyForm,
   emptyQuizState,
   syncQuizStateForScenarios,
   type CalibrationQuizSummary,
   type QuizState,
 } from './state/store';
 import {
-  classifyClientError,
   classifyClipboardFailure,
   formatClientNotice,
 } from '../shared/clientResilience';
+import {
+  API_TIMEOUT_MS,
+  fetchApi,
+  fetchWithTimeout,
+  normalizeClientError,
+  resetDemoAction,
+  runScanAction,
+} from './state/actions';
 import type {
   ApplyPolicyConfirmResult,
   ApplyPolicyPreview,
@@ -405,7 +414,6 @@ const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
 const WEB_VIEW_INLINE_MODE = 1;
 const WEB_VIEW_IMMERSIVE_MODE = 2;
-const API_TIMEOUT_MS = 12_000;
 
 type DevvitWebViewGlobal = {
   webViewMode?: number;
@@ -642,54 +650,6 @@ function getApplyTargetParamsFromHash(): Partial<ApplyFormState> {
     targetBody: targetBody || '',
     targetPermalink: targetPermalink || '',
     subreddit: subreddit || '',
-  };
-}
-
-function emptyPolicyForm(): PolicyFormState {
-  return {
-    mode: 'create',
-    ruleKey: '',
-    ruleName: '',
-    defaultMessageMode: 'log_only',
-    requiredApprovals: 1,
-    allowSingleModAdoption: true,
-    steps: [
-      {
-        offenseCount: 1,
-        windowDays: 30,
-        recommendedAction: 'warn',
-        requireOverrideReasonForDeviation: true,
-      },
-      {
-        offenseCount: 2,
-        windowDays: 30,
-        recommendedAction: 'remove',
-        requireOverrideReasonForDeviation: true,
-      },
-      {
-        offenseCount: 3,
-        windowDays: 30,
-        recommendedAction: 'temporary_ban_suggested',
-        requireOverrideReasonForDeviation: true,
-      },
-    ],
-  };
-}
-
-function emptyApplyForm(): ApplyFormState {
-  const targetParams = getApplyTargetParamsFromHash();
-  return {
-    ruleKey: '',
-    targetThingId: targetParams.targetThingId ?? 't3_demo_policy_target',
-    targetAuthor: targetParams.targetAuthor ?? 'learner_1',
-    targetTitle: targetParams.targetTitle ?? '',
-    targetBody: targetParams.targetBody ?? '',
-    targetPermalink: targetParams.targetPermalink ?? '',
-    subreddit: targetParams.subreddit ?? '',
-    selectedAction: 'remove',
-    modNoteMode: 'log_only',
-    overrideReason: '',
-    overrideNote: '',
   };
 }
 
@@ -5047,12 +5007,12 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
   render();
 
   try {
-    const payload = await fetchApi<MirrorScan>(API_ROUTES.scan, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode, depth }),
+    const { scan: payload, record } = await runScanAction({
+      mode,
+      depth,
+      loadScanRecord,
+      createDemoFallback: createClientPreviewDemoScan,
     });
-    const record = await loadScanRecord(payload).catch(() => undefined);
     scanState = {
       loading: false,
       mode,
@@ -5063,21 +5023,6 @@ async function runScan(mode: ScanMode, depth: MirrorScanDepth = 'standard') {
     };
     await loadV2ProductSurfaces();
   } catch (error) {
-    if (mode === 'demo') {
-      const payload = createClientPreviewDemoScan();
-      scanState = {
-        loading: false,
-        mode,
-        depth,
-        result: payload,
-        record: undefined,
-        warnings: payload.warnings,
-      };
-      await loadV2ProductSurfaces();
-      render();
-      return;
-    }
-
     scanState = {
       loading: false,
       mode,
@@ -7028,9 +6973,7 @@ async function resetDemoOrchestrationFromUi() {
   render();
 
   try {
-    const manifest = await fetchApi<DemoOrchestrationManifest>(API_ROUTES.demoReset, {
-      method: 'POST',
-    });
+    const manifest = await resetDemoAction();
     v2ProductState = {
       ...v2ProductState,
       demoManifest: manifest,
@@ -7953,46 +7896,6 @@ async function reviewOverride(
   }
 
   render();
-}
-
-async function fetchApi<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetchWithTimeout(url, init);
-  let payload: ApiResponse<T>;
-  try {
-    payload = (await response.json()) as ApiResponse<T>;
-  } catch (error) {
-    throw new Error(`API response was not JSON for ${url}: ${String(error)}`);
-  }
-  if (!payload.ok) {
-    throw new Error(`API error (${payload.error.code}): ${payload.error.message}`);
-  }
-  if (!response.ok) {
-    throw new Error(`API request returned ${response.status} for ${url}.`);
-  }
-  return payload.data;
-}
-
-async function fetchWithTimeout(
-  url: string,
-  init?: RequestInit
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => {
-    controller.abort();
-  }, API_TIMEOUT_MS);
-  try {
-    return await fetch(url, {
-      ...init,
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (controller.signal.aborted) {
-      throw new Error(`Request to ${url} timed out after ${API_TIMEOUT_MS}ms.`);
-    }
-    throw error;
-  } finally {
-    window.clearTimeout(timeout);
-  }
 }
 
 async function writeClipboardText(text: string, subject: string): Promise<void> {
@@ -9279,10 +9182,6 @@ function escapeHtml(value: string) {
 
 function escapeAttribute(value: string) {
   return escapeHtml(value);
-}
-
-function normalizeClientError(error: unknown, fallback: string) {
-  return formatClientNotice(classifyClientError(error, fallback));
 }
 
 window.addEventListener('hashchange', () => {
