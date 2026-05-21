@@ -565,6 +565,49 @@ dd {
   color: var(--mm-good) !important;
 }
 
+.evidence-graph-lanes {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.evidence-graph-lane {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  min-width: 0;
+  padding: 14px;
+}
+
+.evidence-node-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.evidence-node-list li {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 10px;
+}
+
+.evidence-node-list strong,
+.evidence-node-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.relationship-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .helper-text {
   color: var(--mm-muted);
   font-size: 13px;
@@ -1865,6 +1908,10 @@ dd {
   .policy-workbench {
     grid-template-columns: 1fr;
   }
+
+  .evidence-graph-lanes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .capability-verified_runtime {
@@ -2303,6 +2350,7 @@ dd {
   .demo-banner,
   .incident-banner,
   .runtime-banner,
+  .evidence-graph-lanes,
   .incident-form-grid,
   .incident-guidance-grid,
   .config-grid,

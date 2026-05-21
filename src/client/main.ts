@@ -28,6 +28,11 @@ import { DEMO_POLICY } from '../shared/demoData';
 import { buildApplyPolicyResponsePreview } from '../shared/responseTemplates';
 import { buildCasePacketDeliveryDraft } from '../shared/casePacketDelivery';
 import {
+  buildEvidenceGraphLanes,
+  buildEvidenceGraphRelationships,
+  formatEvidenceGraphMissingReference,
+} from '../shared/evidenceGraphPresentation';
+import {
   buildCalibrationQuizSummary,
   emptyQuizState,
   syncQuizStateForScenarios,
@@ -2677,30 +2682,53 @@ function renderEvidenceGraphPanel() {
   if (graph === undefined) {
     return '';
   }
+  const lanes = buildEvidenceGraphLanes(graph.nodes);
+  const relationships = buildEvidenceGraphRelationships(graph.nodes, graph.edges);
   return `
     <section class="section-panel">
       <div class="section-header">
         <div>
           <h3>Case Evidence Graph</h3>
-          <p>Receipt, policy, override, case packet, and board links with missing references called out.</p>
+          <p>Context, decisions, policies, and audits separated so evidence links are readable without exposing names.</p>
         </div>
-        <span class="status-badge status-neutral">${graph.nodes.length} nodes</span>
+        <span class="status-badge status-neutral">${graph.nodes.length} nodes · ${relationships.length} links</span>
       </div>
-      <div class="policy-grid">
-        ${graph.nodes.slice(0, 6).map((node) => `
-          <article class="policy-card">
-            <h4>${escapeHtml(node.label)}</h4>
-            <p>${escapeHtml(node.detail)}</p>
-            <span class="status-badge status-neutral">${escapeHtml(formatAction(node.type))}</span>
+      <div class="evidence-graph-lanes">
+        ${lanes.map((lane) => `
+          <article class="evidence-graph-lane">
+            <div class="compact-header">
+              <div>
+                <h4>${escapeHtml(lane.label)}</h4>
+                <p>${escapeHtml(lane.description)}</p>
+              </div>
+              <span class="status-badge status-neutral">${lane.nodes.length}</span>
+            </div>
+            ${
+              lane.nodes.length > 0
+                ? `<ul class="evidence-node-list">${lane.nodes.map((node) => `
+                    <li>
+                      <strong>${escapeHtml(node.label)}</strong>
+                      <span>${escapeHtml(node.detail)}</span>
+                      <div class="status-row">${node.trustLabels.map(renderTrustLabel).join('')}</div>
+                    </li>
+                  `).join('')}</ul>`
+                : '<p class="inline-note">No evidence in this lane yet.</p>'
+            }
           </article>
         `).join('')}
       </div>
       ${
-        graph.edges.length > 0
-          ? `<p class="inline-note">${escapeHtml(graph.edges.slice(0, 4).map((edge) => `${edge.from} -> ${edge.to}: ${edge.label}`).join('; '))}</p>`
+        relationships.length > 0
+          ? `<div class="relationship-row" aria-label="Evidence relationships">
+              ${relationships.map((relationship) => `
+                <span class="status-badge ${relationship.missingEndpoint ? 'status-risk' : 'status-neutral'}" title="${escapeAttribute(relationship.description)}">
+                  ${escapeHtml(relationship.label)}
+                </span>
+              `).join('')}
+            </div>`
           : ''
       }
-      ${graph.missingReferences.map((item) => `<p class="inline-error">${escapeHtml(item)}</p>`).join('')}
+      ${graph.missingReferences.map((item) => `<p class="inline-error">${escapeHtml(formatEvidenceGraphMissingReference(item))}</p>`).join('')}
       ${graph.privacyNotes.map((item) => `<p class="inline-note">${escapeHtml(item)}</p>`).join('')}
     </section>
   `;
