@@ -1349,6 +1349,11 @@ function renderDriftRepresentativeCases(detail: DriftRadarRuleDetail) {
   return `
     <div>
       <h4>Representative cases</h4>
+      <div class="relationship-row" aria-label="Representative case privacy guardrails">
+        <span class="status-badge status-good">Names omitted</span>
+        <span class="status-badge status-neutral">Action IDs only</span>
+        <span class="status-badge status-neutral">Inferred labels stay confidence-scored</span>
+      </div>
       <ol class="case-grid">
         ${detail.representativeCases.map((item) => `
           <li class="action-card">
@@ -1359,11 +1364,12 @@ function renderDriftRepresentativeCases(detail: DriftRadarRuleDetail) {
             <dl class="compact-metrics">
               <div><dt>Action</dt><dd>${formatAction(item.normalizedAction ?? 'manual_review')}</dd></div>
               <div><dt>Created</dt><dd>${escapeHtml(formatDate(item.createdAt))}</dd></div>
-              ${item.targetThingId ? `<div><dt>Target</dt><dd>${escapeHtml(item.targetThingId)}</dd></div>` : ''}
+              ${item.targetThingId ? `<div><dt>Target thing</dt><dd>${escapeHtml(item.targetThingId)}</dd></div>` : ''}
             </dl>
             <ul class="compact-list">
               ${item.evidence.map((evidence) => `<li>${escapeHtml(evidence)}</li>`).join('')}
             </ul>
+            <p class="inline-note">Moderator and author names are not shown in this representative case.</p>
           </li>
         `).join('')}
       </ol>

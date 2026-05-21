@@ -20,6 +20,9 @@ describe('Drift Radar', () => {
     expect(rule?.policyQuestions[0]).toContain('first-offense');
     expect(JSON.stringify(rule)).not.toContain('mod_a');
     expect(JSON.stringify(rule)).not.toContain('learner_a');
+    expect(Object.keys(rule?.representativeCases[0] ?? {})).not.toEqual(
+      expect.arrayContaining(['moderator', 'targetAuthor'])
+    );
   });
 });
 
