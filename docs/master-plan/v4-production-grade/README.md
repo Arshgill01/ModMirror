@@ -73,7 +73,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 07 | Product | Onboard A New Mod Quiz Core | complete |
 | 08 | Product | Quiz Feedback And Team Norm Scorecard | complete |
 | 09 | Product | Scenario Lab Authoring And Archiving | pending |
-| 10 | Product | Drift Radar Distribution Drilldown | pending |
+| 10 | Product | Drift Radar Distribution Drilldown | complete |
 | 11 | Product | Representative Cases With Privacy Guards | pending |
 | 12 | Product | Policy Simulator Console | pending |
 | 13 | Product | Policy Starter Templates And Overwrite Guard | pending |

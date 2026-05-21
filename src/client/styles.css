@@ -608,6 +608,92 @@ dd {
   margin-top: 12px;
 }
 
+.drift-radar-list {
+  display: grid;
+  gap: 12px;
+}
+
+.drift-radar-detail {
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  padding: 14px;
+}
+
+.drift-radar-detail summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.drift-radar-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.drift-radar-detail summary span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.drift-radar-detail summary small {
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.drift-radar-body {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.drift-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.drift-bar-row {
+  display: grid;
+  gap: 6px;
+}
+
+.drift-bar-row > div:first-child {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.drift-bar-row span {
+  color: var(--mm-muted);
+  font-size: 12px;
+}
+
+.drift-bar-track {
+  background: var(--mm-bg);
+  border: 1px solid var(--mm-line);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.drift-bar-track span {
+  background: var(--mm-accent);
+  display: block;
+  height: 100%;
+  min-width: 4px;
+}
+
+.compact-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .helper-text {
   color: var(--mm-muted);
   font-size: 13px;

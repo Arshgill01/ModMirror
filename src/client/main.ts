@@ -68,6 +68,7 @@ import type {
   DigestSettings,
   DriftCandidate,
   DriftRadarResponse,
+  DriftRadarRuleDetail,
   EnforcementAction,
   EvidenceBoardCreateRequest,
   EvidenceGraphResponse,
@@ -1252,21 +1253,121 @@ function renderV2DriftRadarPanel() {
         </div>
         <span class="status-badge status-neutral">${escapeHtml(formatDataMode(radar.dataMode as ProductDataMode))}</span>
       </div>
-      <div class="policy-grid">
-        ${radar.details.slice(0, 3).map((detail) => `
-          <article class="policy-card">
-            <h4>${escapeHtml(detail.ruleName)}</h4>
-            <p>${escapeHtml(detail.whyFlagged[0] ?? 'No drift explanation available.')}</p>
-            <dl class="compact-metrics">
-              <div><dt>Actions</dt><dd>${detail.totalActions}</dd></div>
-              <div><dt>Unmatched</dt><dd>${detail.unmatchedCount}</dd></div>
-              <div><dt>Cases</dt><dd>${detail.representativeCases.length}</dd></div>
-            </dl>
-            <p class="inline-note">${escapeHtml(detail.policyQuestions[0] ?? 'Review this rule with the team.')}</p>
-          </article>
-        `).join('')}
-      </div>
+      ${
+        radar.details.length === 0
+          ? renderEmptyState(
+              'No drift distribution yet',
+              'Run a scan with enough attributed actions, or use demo mode to inspect the full rule distribution.',
+              [{ label: 'Load Demo', page: 'scan', intent: 'load_demo' }]
+            )
+          : `<div class="drift-radar-list">${radar.details.map(renderDriftRadarDetail).join('')}</div>`
+      }
     </section>
+  `;
+}
+
+function renderDriftRadarDetail(detail: DriftRadarRuleDetail) {
+  return `
+    <details class="drift-radar-detail" open>
+      <summary>
+        <span>
+          <strong>${escapeHtml(detail.ruleName)}</strong>
+          <small>${detail.totalActions} actions · ${detail.unmatchedCount} unmatched</small>
+        </span>
+        <span class="status-badge status-neutral">${detail.representativeCases.length} cases</span>
+      </summary>
+      <div class="drift-radar-body">
+        <div>
+          <h4>Action distribution</h4>
+          ${renderDriftActionDistribution(detail)}
+        </div>
+        <div>
+          <h4>Confidence mix</h4>
+          ${renderDriftConfidenceDistribution(detail)}
+        </div>
+        <div>
+          <h4>Why this matters</h4>
+          <ul class="compact-list">
+            ${detail.whyFlagged.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}
+          </ul>
+        </div>
+        <div>
+          <h4>Policy questions</h4>
+          <ul class="compact-list">
+            ${detail.policyQuestions.map((question) => `<li>${escapeHtml(question)}</li>`).join('')}
+          </ul>
+        </div>
+        ${renderDriftRepresentativeCases(detail)}
+        ${detail.caveats.map((caveat) => `<p class="inline-note">${escapeHtml(caveat)}</p>`).join('')}
+      </div>
+    </details>
+  `;
+}
+
+function renderDriftActionDistribution(detail: DriftRadarRuleDetail) {
+  const rows = Object.entries(detail.actionDistribution).filter(([, count]) => count !== undefined);
+  if (rows.length === 0) {
+    return '<p class="inline-note">No normalized action distribution is available for this rule bucket.</p>';
+  }
+  return `
+    <div class="drift-bars">
+      ${rows.map(([action, count]) => {
+        const safeCount = count ?? 0;
+        const share = detail.totalActions > 0 ? Math.round((safeCount / detail.totalActions) * 100) : 0;
+        return `
+          <div class="drift-bar-row">
+            <div>
+              <strong>${formatAction(action)}</strong>
+              <span>${safeCount} action${safeCount === 1 ? '' : 's'} · ${share}%</span>
+            </div>
+            <div class="drift-bar-track" aria-hidden="true">
+              <span style="width: ${share}%"></span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderDriftConfidenceDistribution(detail: DriftRadarRuleDetail) {
+  return `
+    <div class="relationship-row" aria-label="Confidence distribution">
+      ${CONFIDENCE_VALUES.map((confidence) => `
+        <span class="status-badge ${confidence === 'high' ? 'status-good' : confidence === 'unmatched' ? 'status-risk' : confidence === 'low' ? 'status-watch' : 'status-neutral'}">
+          ${escapeHtml(confidence)}: ${detail.confidenceDistribution[confidence]}
+        </span>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderDriftRepresentativeCases(detail: DriftRadarRuleDetail) {
+  if (detail.representativeCases.length === 0) {
+    return '<p class="inline-note">No representative cases are available yet.</p>';
+  }
+  return `
+    <div>
+      <h4>Representative cases</h4>
+      <ol class="case-grid">
+        ${detail.representativeCases.map((item) => `
+          <li class="action-card">
+            <div class="card-header">
+              <strong>${escapeHtml(item.actionId)}</strong>
+              <span class="status-badge status-neutral">${escapeHtml(item.confidence)}</span>
+            </div>
+            <dl class="compact-metrics">
+              <div><dt>Action</dt><dd>${formatAction(item.normalizedAction ?? 'manual_review')}</dd></div>
+              <div><dt>Created</dt><dd>${escapeHtml(formatDate(item.createdAt))}</dd></div>
+              ${item.targetThingId ? `<div><dt>Target</dt><dd>${escapeHtml(item.targetThingId)}</dd></div>` : ''}
+            </dl>
+            <ul class="compact-list">
+              ${item.evidence.map((evidence) => `<li>${escapeHtml(evidence)}</li>`).join('')}
+            </ul>
+          </li>
+        `).join('')}
+      </ol>
+    </div>
   `;
 }
 
