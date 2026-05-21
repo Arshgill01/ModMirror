@@ -987,7 +987,14 @@ export interface MirrorScanDepthMetadata {
   pageSize: number;
   fetchedActions: number;
   hitLimit: boolean;
-  paginationStrategy: 'listing_all';
+  paginationStrategy: 'listing_all' | 'listing_get_pages';
+  observedPageFetches?: number;
+  observedMultiplePages?: boolean;
+  runtimeStatus?:
+    | 'not_observed'
+    | 'single_page_observed'
+    | 'multiple_pages_observed'
+    | 'fetch_failed';
   runtimeVerified: boolean;
 }
 

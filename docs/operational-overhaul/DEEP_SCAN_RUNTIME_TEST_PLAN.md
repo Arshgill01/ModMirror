@@ -8,9 +8,12 @@ ModMirror exposes live scan depths through the Scan page and `POST /api/scan`.
 The deep depth is type-checked and locally tested, and the live Reddit source
 adapter records requested limit, page size, fetched count, and cap warnings.
 
-Deep moderation-log pagination is not runtime-verified. Do not claim Reddit
-runtime pagination behavior from local tests, static preview, upload readiness,
-or sparse empty-history scans.
+Deep moderation-log pagination now has authenticated WebView page-count proof
+from Devvit playtest `v0.0.2.8`: `Deep Live Scan` reported `2` observed
+moderation-log page fetches, `121` actions scanned, requested limit `250`, and
+page size `100`. An exact API JSON excerpt remains optional follow-up evidence;
+do not claim runtime pagination from local tests, static preview, upload
+readiness, or sparse empty-history scans.
 
 ## Scope
 
@@ -59,8 +62,11 @@ Not allowed in this test without explicit user approval:
    - `data.scanDepth.depth`
    - `data.scanDepth.requestedLimit`
    - `data.scanDepth.pageSize`
-   - `data.scanDepth.fetchedCount`
+   - `data.scanDepth.fetchedActions`
    - `data.scanDepth.hitLimit`
+   - `data.scanDepth.paginationStrategy`
+   - `data.scanDepth.observedPageFetches`
+   - `data.scanDepth.observedMultiplePages`
    - `data.scanDepth.runtimeStatus`
    - `data.warnings`
    - persisted scan record ID when present
@@ -74,6 +80,9 @@ Runtime-verified deep pagination:
 - The result shows `depth: "deep"` and the configured deep cap/page size.
 - The fetched moderation-log history is large enough to demonstrate page/cursor
   traversal rather than a single sparse page.
+- The response reports `paginationStrategy: "listing_get_pages"`,
+  `observedMultiplePages: true`, and
+  `runtimeStatus: "multiple_pages_observed"`.
 - The response and UI preserve warnings when the configured cap is hit or when
   runtime pagination remains only partially proven.
 

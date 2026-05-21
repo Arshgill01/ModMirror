@@ -13,7 +13,7 @@ the UI sweep, W29 subreddit-isolation runtime gap, full-access visibility gate,
 Settings manual runtime event recorder, audit storage caps, AI privacy readiness
 gate, local scheduler-delivery guard, legacy page-ID audit, and synthetic
 multi-community isolation fixture. The latest Devvit playtest observed while
-continuing runtime proof work is `v0.0.2.6`.
+continuing runtime proof work is `v0.0.2.8`.
 
 The branch/worktree list below is historical evidence for how the overhaul was
 executed. The merged local worktrees and local wave branches were removed after
@@ -148,10 +148,11 @@ playtest `v0.0.1.138` ran Settings `Run retention cleanup` and reported
 verified for that diagnostic path; real operational-record deletion remains a
 separate controlled destructive cleanup test.
 V4 Wave 23 later continued on current `master` with authenticated Devvit
-WebView playtest `v0.0.2.6`: Act Operational Queue still returned the
-type-supported/no-items fallback, while Scan `Deep Live Scan` returned live
-data, depth `Deep`, `120` actions scanned, `1` attributed, and `119` unmatched
-from a requested limit of `250` with page size `100`.
+WebView playtest `v0.0.2.8`: Act Operational Queue still returned the
+type-supported/no-items fallback on the earlier `v0.0.2.6` pass, while Scan
+`Deep Live Scan` returned live data, depth `Deep`, `121` actions scanned, `1`
+attributed, `120` unmatched, requested limit `250`, page size `100`, and `2`
+observed moderation-log page fetches.
 
 ## W00 Definition Of Done
 

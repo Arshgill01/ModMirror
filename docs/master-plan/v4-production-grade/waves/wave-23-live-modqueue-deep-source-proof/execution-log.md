@@ -61,7 +61,9 @@ Observed on 2026-05-21:
 
 Modqueue remains open until `MODQUEUE_RUNTIME_TEST_PLAN.md` returns a live safe
 `reddit_modqueue` item or captures an exact Devvit adapter/runtime failure.
-Deep live scan now has authenticated WebView evidence above one page of
-moderation-log data; keep the follow-up focused on capturing the exact
-authenticated API response excerpt and, if implemented later, explicit
-page/cursor counts.
+Deep live scan now has authenticated WebView page-count evidence. On
+`v0.0.2.8`, `Deep Live Scan` returned live data with `121` actions scanned,
+`1` attributed, `120` unmatched, requested limit `250`, page size `100`, and
+`2` observed moderation-log page fetches. An exact authenticated API JSON
+excerpt remains optional follow-up evidence, not a blocker for the WebView
+page-count proof.

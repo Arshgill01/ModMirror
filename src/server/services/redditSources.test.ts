@@ -102,6 +102,55 @@ describe('live reddit scan sources', () => {
     );
   });
 
+  it('records observed listing page fetches when the Devvit listing exposes them', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: `mod-action-page-1-${index}`,
+      type: 'removecomment',
+      createdAt: '2026-05-18T00:00:00.000Z',
+    }));
+    const secondPage = Array.from({ length: 20 }, (_, index) => ({
+      id: `mod-action-page-2-${index}`,
+      type: 'removelink',
+      createdAt: '2026-05-18T00:00:00.000Z',
+    }));
+    const listing = {
+      children: [] as unknown[],
+      get hasMore() {
+        return this.children.length < 120;
+      },
+      get: vi.fn(async () => {
+        if (listing.children.length === 0) {
+          listing.children.push(...firstPage);
+        } else {
+          listing.children.push(...secondPage);
+        }
+        return listing.children;
+      }),
+    };
+    reddit.getModerationLog.mockReturnValue(listing);
+
+    const { loadLiveMirrorScanSources } = await import('./redditSources');
+    const sources = await loadLiveMirrorScanSources({ depth: 'deep' });
+
+    expect(listing.get).toHaveBeenCalledTimes(2);
+    expect(sources.actions).toHaveLength(120);
+    expect(sources.scanDepth).toEqual(
+      expect.objectContaining({
+        depth: 'deep',
+        requestedLimit: 250,
+        pageSize: 100,
+        fetchedActions: 120,
+        paginationStrategy: 'listing_get_pages',
+        observedPageFetches: 2,
+        observedMultiplePages: true,
+        runtimeStatus: 'multiple_pages_observed',
+      })
+    );
+    expect(sources.warnings).toContainEqual(
+      expect.stringContaining('observed 2 moderation-log page fetches')
+    );
+  });
+
   it('falls back to empty actions when moderation-log fetch fails', async () => {
     reddit.getModerationLog.mockReturnValue({
       all: vi.fn().mockRejectedValue(new Error('permission denied')),

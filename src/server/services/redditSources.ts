@@ -21,6 +21,13 @@ export type LiveMirrorScanSourceOptions = {
   pageSize?: number;
 };
 
+type RedditListingLike<T> = {
+  all?: () => Promise<T[]>;
+  get?: (count: number) => Promise<T[]>;
+  hasMore?: boolean;
+  children?: T[];
+};
+
 export async function loadLiveMirrorScanSources(
   options: LiveMirrorScanSourceOptions = {}
 ): Promise<MirrorScanSources> {
@@ -109,13 +116,21 @@ async function fetchModerationLog(
 }> {
   const scanDepth = resolveScanDepth(options);
   try {
-    const actions = (await reddit
-      .getModerationLog({
-        subredditName,
-        limit: scanDepth.requestedLimit,
-        pageSize: scanDepth.pageSize,
-      })
-      .all()) as RedditModActionLike[];
+    const listing = reddit.getModerationLog({
+      subredditName,
+      limit: scanDepth.requestedLimit,
+      pageSize: scanDepth.pageSize,
+    }) as RedditListingLike<RedditModActionLike>;
+    const {
+      actions,
+      observedPageFetches,
+      observedMultiplePages,
+      paginationStrategy,
+    } = await collectListingWithPageEvidence(
+      listing,
+      scanDepth.requestedLimit,
+      scanDepth.pageSize
+    );
     const normalized = actions.map((action) =>
       normalizeModAction(action, subredditName)
     );
@@ -123,13 +138,29 @@ async function fetchModerationLog(
       ...scanDepth,
       fetchedActions: normalized.length,
       hitLimit: normalized.length >= scanDepth.requestedLimit,
-      paginationStrategy: 'listing_all',
+      paginationStrategy,
+      observedPageFetches,
+      observedMultiplePages,
+      runtimeStatus:
+        paginationStrategy === 'listing_get_pages'
+          ? observedMultiplePages
+            ? 'multiple_pages_observed'
+            : observedPageFetches === 1
+              ? 'single_page_observed'
+              : 'not_observed'
+          : 'not_observed',
       runtimeVerified: false,
     };
 
-    warnings.push(
-      `Live ${metadata.depth} scan requested up to ${metadata.requestedLimit} moderation-log actions with page size ${metadata.pageSize}. Pagination is type-verified but not playtest-verified.`
-    );
+    if (metadata.observedMultiplePages && metadata.observedPageFetches) {
+      warnings.push(
+        `Live ${metadata.depth} scan observed ${metadata.observedPageFetches} moderation-log page fetches with page size ${metadata.pageSize}. Historical attribution remains confidence-scored.`
+      );
+    } else {
+      warnings.push(
+        `Live ${metadata.depth} scan requested up to ${metadata.requestedLimit} moderation-log actions with page size ${metadata.pageSize}. Pagination is type-verified but not playtest-verified.`
+      );
+    }
     if (metadata.hitLimit) {
       warnings.push(
         `Live scan reached the configured ${metadata.depth} cap. Older moderation actions may exist but were intentionally not fetched.`
@@ -153,18 +184,71 @@ async function fetchModerationLog(
         fetchedActions: 0,
         hitLimit: false,
         paginationStrategy: 'listing_all',
+        observedPageFetches: 0,
+        observedMultiplePages: false,
+        runtimeStatus: 'fetch_failed',
         runtimeVerified: false,
       },
     };
   }
 }
 
+async function collectListingWithPageEvidence<T>(
+  listing: RedditListingLike<T>,
+  requestedLimit: number,
+  pageSize: number
+): Promise<{
+  actions: T[];
+  observedPageFetches: number;
+  observedMultiplePages: boolean;
+  paginationStrategy: MirrorScanDepthMetadata['paginationStrategy'];
+}> {
+  if (
+    typeof listing.get !== 'function' ||
+    !Array.isArray(listing.children) ||
+    typeof listing.hasMore !== 'boolean'
+  ) {
+    const actions =
+      typeof listing.all === 'function' ? await listing.all() : [];
+    return {
+      actions: actions.slice(0, requestedLimit),
+      observedPageFetches: actions.length > 0 ? 1 : 0,
+      observedMultiplePages: false,
+      paginationStrategy: 'listing_all',
+    };
+  }
+
+  let observedPageFetches = 0;
+  let previousLength = listing.children.length;
+
+  while (listing.hasMore && listing.children.length < requestedLimit) {
+    const targetCount = Math.min(
+      requestedLimit,
+      listing.children.length + pageSize
+    );
+    await listing.get(targetCount);
+
+    const currentLength = listing.children.length;
+    if (currentLength <= previousLength) {
+      break;
+    }
+
+    observedPageFetches += 1;
+    previousLength = currentLength;
+  }
+
+  const actions = listing.children.slice(0, requestedLimit);
+  return {
+    actions,
+    observedPageFetches,
+    observedMultiplePages: observedPageFetches > 1,
+    paginationStrategy: 'listing_get_pages',
+  };
+}
+
 function resolveScanDepth(
   options: LiveMirrorScanSourceOptions
-): Pick<
-  MirrorScanDepthMetadata,
-  'depth' | 'requestedLimit' | 'pageSize'
-> {
+): Pick<MirrorScanDepthMetadata, 'depth' | 'requestedLimit' | 'pageSize'> {
   const depth = options.depth ?? 'standard';
   const config = MIRROR_SCAN_DEPTH_CONFIG[depth];
 

@@ -1397,7 +1397,7 @@ function renderScanSummary(scan: MirrorScan) {
       <div class="section-header">
         <div>
           <h3>Confidence Breakdown</h3>
-          <p>Historical rule labels remain inferred and confidence-scored. Scan requested ${scan.scanDepth.requestedLimit} actions with page size ${scan.scanDepth.pageSize}.</p>
+          <p>${renderScanDepthEvidence(scan.scanDepth)}</p>
         </div>
         <span class="status-badge status-neutral">${escapeHtml(scan.smallSubredditStatus.message)}</span>
       </div>
@@ -1408,6 +1408,16 @@ function renderScanSummary(scan: MirrorScan) {
       </div>
     </section>
   `;
+}
+
+function renderScanDepthEvidence(scanDepth: MirrorScan['scanDepth']) {
+  const pageEvidence =
+    scanDepth.paginationStrategy === 'listing_get_pages' &&
+    scanDepth.observedPageFetches !== undefined
+      ? ` Observed ${scanDepth.observedPageFetches} page fetch${scanDepth.observedPageFetches === 1 ? '' : 'es'}.`
+      : '';
+
+  return `Historical rule labels remain inferred and confidence-scored. Scan requested ${scanDepth.requestedLimit} actions with page size ${scanDepth.pageSize}.${pageEvidence}`;
 }
 
 function renderV2DriftRadarPanel() {

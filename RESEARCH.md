@@ -8,7 +8,7 @@ Do not assume Devvit API behavior. Verify it here.
 
 Status: Expansion Waves 16-34 are implemented with post-W34 runtime proof in
 progress. Several safe Devvit WebView paths are runtime-verified, including the
-V4 Wave 23 deep live scan path on `v0.0.2.6`; destructive moderation, native
+V4 Wave 23 deep live scan path on `v0.0.2.8`; destructive moderation, native
 Mod Notes, Mod Discussion sending, scheduler jobs, native mobile, non-mod
 runtime account proof, external AI provider calls, and live modqueue content
 remain disabled or unverified. Server-side protected API moderator access
@@ -44,11 +44,12 @@ Updated by: Codex
 | Verified | Public API routes can be mounted under `/api`; internal form/menu/trigger routes can be mounted separately. | Build-verified Hono routing in `src/index.ts` and route files. |
 | Verified | Reddit API methods for moderation log, removal reasons, rules, submit comment, remove, approve, ignore reports, private messages, modmail, Mod Notes, and permission checks exist in installed typings. | Local SDK typings in `node_modules/@devvit/*` plus `npm run type-check`. |
 | Verified | Wave 2 live source adapter uses only the documented `reddit.getModerationLog`, `reddit.getSubredditRemovalReasons`, and `reddit.getRules` APIs and degrades to warnings on failures. | `src/server/services/redditSources.ts`; local typecheck/test/build proof only. |
+| Runtime verified | Installed Devvit `Listing` supports explicit page-fetch observation for moderation-log reads. | `node_modules/@devvit/reddit/models/Listing.d.ts` exposes `get(count)`, `children`, and `hasMore`; `node_modules/@devvit/reddit/models/Listing.js` confirms `get()` fetches incrementally while `all()` hides the page count. `src/server/services/redditSources.ts` now prefers `Listing.get()` when those fields exist and records `paginationStrategy`, `observedPageFetches`, `observedMultiplePages`, and `runtimeStatus`. Authenticated WebView playtest `v0.0.2.8` showed Deep Live Scan warnings with `observed 2 moderation-log page fetches`, requested `250`, page size `100`, and returned `121` actions. |
 | Verified | Wave 2 demo scan runs through the deterministic attribution pipeline and produces a Rule 2 drift candidate locally. | `src/server/services/mirrorScan.test.ts`; local test proof only. |
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.2.6` during Wave 23 source proof. On 2026-05-21, current `master` passed `npm run deploy` and uploaded Devvit app version `0.0.2`; the authenticated WebView safe smoke pass on `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` Post/comment menu target capture and live quick scan have been playtest-verified in earlier passes. Wave 23 `v0.0.2.6` Scan `Deep Live Scan` returned live data with depth `Deep`, `120` actions scanned, `1` attributed, and `119` unmatched. Write operations remain separately gated. |
+| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.2.8` during Wave 23 source proof. On 2026-05-21, current `master` passed `npm run deploy` and uploaded Devvit app version `0.0.2`; the authenticated WebView safe smoke pass on `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` Post/comment menu target capture and live quick scan have been playtest-verified in earlier passes. Wave 23 `v0.0.2.8` Scan `Deep Live Scan` returned live data with depth `Deep`, `121` actions scanned, `1` attributed, `120` unmatched, and `2` observed moderation-log page fetches. Write operations remain separately gated. |
 | Verified | Redis read/write works in playtest. | `/api/smoke/redis` and later WebView flows verified Redis-backed policies, scans, corrections, receipts, evidence boards, config import/export, privacy retention inventories/dry runs, incident mode, delivery receipts, and replay state. |
 | Runtime verified for current caps | Override audit persistence reads Redis sorted-set rows newest-first and current local audit indexes are capped. | `src/server/services/auditPersistence.test.ts` covers `saveOverrideEvent` and `listRecentAuditEvents` writing `modmirror:{subreddit}:overrides` scores from `createdAt` and reading with reverse rank ordering. `ACTION_EVENT_HISTORY_LIMIT` and `OVERRIDE_EVENT_HISTORY_LIMIT` cap action and override sorted-set indexes at 500 rows locally. Devvit playtest `v0.0.1.131` first ran `/api/smoke/redis-zset` and failed with an empty observed order. After the diagnostic switched to Devvit's documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` Devvit playtest `v0.0.1.137` ran `/api/smoke/redis-storage` and reported `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` This verifies the current bounded storage envelope, not larger future caps. |
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
@@ -64,7 +65,7 @@ Updated by: Codex
 | Verified | Latest uploaded Devvit version carries WebView capability. | `npx devvit view --json` after `npm run deploy` returned version `0.0.2`, `publicApiVersion: "0.12.24"`, `buildStatus: 1`, `builtAt: "2026-05-21T16:25:51.424Z"`, `appCapabilities: [10, 11]`, and nutrition categories including `11`. Installed Devvit protos map `10` to `MODERATOR` and `11` to `WEBVIEW`. The app-level `isWebviewEnabled: false` field still appears in the view output, but the version capability and nutrition metadata show WebView support for the uploaded build. |
 | Verified locally | Devvit CLI does not expose a safe local listing-link update command in this installed version. | `npx devvit --help`, `npx devvit upload --help`, `npx devvit publish --help`, and `npx devvit update app --help` expose upload/publish/view/dependency update flows, but no metadata command for terms/privacy links. Installed CLI publish code instructs apps that require terms or privacy links to add them on the app details page before running `devvit publish` again. `package.json` now has the upload-safe description `Find enforcement drift before your users do.` for local/package metadata. |
 | Runtime verified | V4 Wave 21 safe route-level smoke checks require an authenticated Devvit WebView, not bare localhost curl. | Earlier 2026-05-21 bare `curl` probes to `http://127.0.0.1:5678/api/health`, `/api/runtime-capabilities`, and `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required`, proving only Devvit's local transport boundary. After the user authorized taking over the stale Gemini/Antigravity listener, current `master` ran `npm run dev` and reached authenticated Reddit WebView playtest `v0.0.2.2`. Settings safe smokes passed: Redis write/read matched; Redis ZSET observed `newest, middle, oldest`; Redis storage returned `scan 10/10, actions 500/500, overrides 500/500, cleanup 0`; synthetic retention cleanup returned `scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0`; Reddit read returned `0 rule(s), 0 removal reason(s), 5 mod log action(s)`; access returned `1 permission(s): all` with full moderator visibility for `u/BrightyBrainiac`. |
-| Runtime verified with conservative warning | V4 Wave 23 deep live scan reads live moderation-log data above one page in the authenticated WebView. | On 2026-05-21, current `master` reached Devvit WebView playtest `v0.0.2.6` for `r/modmirror_dev` as `u/BrightyBrainiac`. Scan `Deep Live Scan` completed with source `Live data`, depth `Deep`, `120` actions scanned, `1` attributed, and `119` unmatched. The UI recorded a deep request of `250` actions with page size `100`, returned `120` of `250`, and preserved warnings that pagination is still conservatively labeled type-verified and that historical rule attribution remains inferred. No Reddit writes or moderation actions were performed. |
+| Runtime verified | V4 Wave 23 deep live scan reads live moderation-log data above one page and records page-fetch evidence in the authenticated WebView. | On 2026-05-21, current `master` reached Devvit WebView playtest `v0.0.2.8` for `r/modmirror_dev` as `u/BrightyBrainiac`. Scan `Deep Live Scan` completed with source `Live data`, depth `Deep`, `121` actions scanned, `1` attributed, and `120` unmatched. The UI recorded a deep request of `250` actions with page size `100`, warned that it observed `2` moderation-log page fetches, and showed `Observed 2 page fetches` in Confidence Breakdown. Historical attribution remained confidence-scored. No Reddit writes or moderation actions were performed. |
 | Runtime fallback observed | V4 Wave 23 Operational Queue reaches the read-only modqueue path but still does not prove live queue items. | On the same `v0.0.2.6` authenticated WebView pass, Act Operational Queue `Refresh` entered the loading state and returned the labeled type-supported/no-items fallback. This does not satisfy the `MODQUEUE_RUNTIME_TEST_PLAN.md` gate because no `source: "reddit_modqueue"` item and no exact adapter failure were captured. |
 | Broken | Historical mod-log entries can be treated as having perfect rule/removal reason attribution. | `ModAction` lacks structured rule/removal metadata. |
 | Broken | Policy records can rely on a Devvit-provided stable subreddit rule ID. | `Rule` type lacks stable ID. |
@@ -112,7 +113,7 @@ Updated by: Codex
   merge and uploaded `2` changed WebView assets; authenticated WebView safe
   smoke proof is recorded under Wave 21. The dev watcher later reached
   `v0.0.2.4` after documentation/proof updates. Wave 23 source proof later
-  used authenticated Reddit WebView playtest `v0.0.2.6`.
+  used authenticated Reddit WebView playtests `v0.0.2.6` and `v0.0.2.8`.
 - `npx devvit view --json` for the uploaded version `0.0.2` returned app
   capabilities `[10, 11]`; installed Devvit protos map these to `MODERATOR` and
   `WEBVIEW`. The nutrition categories also include `11` (`WEBVIEW`). The
@@ -129,9 +130,11 @@ Updated by: Codex
   diagnostics.
 - V4 Wave 23 on 2026-05-21 used the same safe read-only posture on Devvit
   WebView playtest `v0.0.2.6`: Operational Queue returned the no-items
-  fallback; `Deep Live Scan` returned live data, depth `Deep`, `120` actions
-  scanned, `1` attributed, `119` unmatched, requested limit `250`, and page
-  size `100`.
+  fallback. A follow-up authenticated WebView pass on `v0.0.2.8` ran `Deep
+  Live Scan` after replacing opaque `Listing.all()` collection with explicit
+  `Listing.get()` page-fetch evidence. The UI returned live data, depth `Deep`,
+  `121` actions scanned, `1` attributed, `120` unmatched, requested limit
+  `250`, page size `100`, and `2` observed moderation-log page fetches.
 - `permissions.reddit = true` is required for Reddit API methods. Redis did not require a separate generated `devvit.json` permission in this template.
 - Menu actions are configured in `devvit.json` with `menu.items[]`; form endpoints are configured through the top-level `forms` map.
 - Historical `ModAction` records expose action text and target metadata, but not structured rule IDs or removal reason IDs.
@@ -1577,14 +1580,12 @@ Evidence source:
 
 Decision:
 
-- Wave 23 did not upgrade any Reddit source capability to runtime-verified.
+- Wave 23 upgraded deep moderation-log pagination to authenticated WebView
+  page-count proof on `v0.0.2.8`.
 - Live same-subreddit modqueue reads still require `source: reddit_modqueue`
   with safe `r/modmirror_dev` items, or an exact Devvit adapter/runtime failure.
-- Deep moderation-log pagination still requires runtime API evidence proving
-  the deep cap/page size and actual page/cursor behavior, or an exact
-  adapter/runtime failure.
 - Local tests, static preview, upload readiness, empty fallbacks, and sparse
-  scans remain insufficient for these claims.
+  scans remain insufficient for live modqueue claims.
 
 ## V4 Wave 25 Controlled Harness Audit
 

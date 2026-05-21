@@ -47,8 +47,10 @@ It currently supports:
   real operational records.
 - W05 full scan record persistence with attributed actions, unmatched actions,
   drift candidates, warnings, retention metadata, and scan compare APIs.
-- W06 quick, standard, and deep Mirror Scan depth options with safe caps,
-  scan-depth metadata, and explicit runtime-unverified pagination warnings.
+- W06 quick, standard, and deep Mirror Scan depth options with safe caps and
+  scan-depth metadata. Deep live pagination now has authenticated WebView
+  page-count proof; historical attribution warnings remain because mod-log rule
+  labels are inferred.
 - W07 consistency analytics from persisted scans and Apply Policy receipts,
   including drift trend direction, receipt-backed policy impact windows, and
   insufficient-data caveats.
@@ -87,11 +89,11 @@ It does not yet support:
 - Runtime-verified destructive action receipts. Log-only receipt persistence is
   runtime-verified; real Reddit action receipts remain disabled until live
   action proof exists.
-- Exact authenticated API/page-cursor trace for deep moderation-log pagination.
-  V4 Wave 23 WebView proof on playtest `v0.0.2.6` returned live deep scan data
-  above one page (`120` actions, requested limit `250`, page size `100`), but
-  the app still preserves conservative pagination warnings until explicit
-  page/cursor counts are captured.
+- Exact authenticated API JSON excerpt for deep moderation-log pagination.
+  V4 Wave 23 WebView proof on playtest `v0.0.2.8` returned live deep scan data
+  with page-count evidence (`121` actions, requested limit `250`, page size
+  `100`, and `2` observed moderation-log page fetches). The app still preserves
+  historical attribution caveats because rule labels remain inferred.
 - Runtime-verified public comment, modmail, scheduler, or native Mod Notes
   delivery.
 - Runtime-verified external AI calls or Devvit secret retrieval for AI
@@ -125,8 +127,10 @@ It does not yet support:
   capped scan metadata indexes by subreddit/source, plus rule and anonymized
   author indexes for later analytics.
 - W06 `src/server/services/redditSources.ts` supports live scan depths:
-  quick 25/25, standard 60/60, and deep 250/100. All live depth metadata remains
-  runtime-unverified until playtest proves actual pagination behavior.
+  quick 25/25, standard 60/60, and deep 250/100. Deep live pagination is
+  runtime-verified in the authenticated WebView for the current data shape:
+  `v0.0.2.8` observed `2` moderation-log page fetches and `121` returned
+  actions.
 - W07 `src/server/services/analytics.ts` computes consistency summaries from
   persisted `MirrorScanRecord` values and W04 receipts. It treats receipts as
   stronger signals than inferred mod-log history, but it only claims impact

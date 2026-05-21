@@ -49,7 +49,7 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.2.6`
+  `v0.0.2.8`
 - Browser/UI driver: Zen/Chrome desktop browsers with Computer Use
 
 Runtime observations:
@@ -101,6 +101,12 @@ Runtime observations:
   `Deep`, `120` actions scanned, `1` attributed, `119` unmatched, requested
   limit `250`, and page size `100`, preserving warnings about partial
   pagination proof and unmatched attribution.
+- V4 Wave 23 follow-up on authenticated Reddit WebView playtest `v0.0.2.8`
+  reran Scan `Deep Live Scan` after the live source adapter began recording
+  explicit Devvit `Listing.get()` page-fetch evidence. The UI showed source
+  `Live data`, depth `Deep`, `121` actions scanned, `1` attributed, `120`
+  unmatched, requested limit `250`, page size `100`, and `2` observed
+  moderation-log page fetches. No Reddit writes were performed.
 - `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
   proof gate for true non-mod protected-route blocking and lower-permission
   moderator role-string capture. That plan has not been executed.
@@ -125,7 +131,7 @@ Runtime observations:
 | Redis storage envelope | runtime verified for current caps | `/api/smoke/redis-storage` writes one scan-like record, 10 scan metadata rows, 500 action rows, and 500 override rows to smoke keys, then deletes them and verifies cleanup. Devvit playtest `v0.0.1.137` returned `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` The runtime matrix showed `5 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep the safe storage smoke in regression checks before raising caps or storing larger live envelopes. |
 | Retention cleanup synthetic smoke | runtime verified for synthetic records | `/api/smoke/retention-cleanup` creates old synthetic scan, receipt, evidence board, and team-delivery receipt records, deletes only those records through retention cleanup, and verifies detail keys plus sorted-set index references are gone. Local tests cover the route and runtime health event promotion. Devvit playtest `v0.0.1.138` returned `Retention cleanup smoke passed: scans 1/1, receipts 1/1, boards 1/1, delivery 1/1, detail keys 0, index refs 0.` The runtime matrix showed `6 runtime`, `1 type-only`, `1 demo-only`, and `0 failed`. | Keep this safe synthetic smoke in regression checks. Real operational-record deletion still requires a separate controlled destructive cleanup test. |
 | Reddit read smoke | runtime verified | Post-W34 WebView Settings smoke reported rules/removal-reason/mod-log read-only results. V4 Wave 21 on playtest `v0.0.2.2` returned `Reddit read smoke passed: 0 rule(s), 0 removal reason(s), 5 mod log action(s).` | Keep read-only; do not infer live execution support. |
-| Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. V4 Wave 23 Devvit WebView playtest `v0.0.2.6` ran a deep live scan with `120` live moderation-log actions against requested limit `250` and page size `100`. | Keep deep scan in regression proof; capture exact API response/page-cursor trace before weakening conservative warnings. |
+| Scan history persistence | runtime verified for safe live scan path | `scans.test.ts` passes; post-W34 live quick scan persisted corrected attribution data and replay consumed it. V4 Wave 23 Devvit WebView playtest `v0.0.2.8` ran a deep live scan with `121` live moderation-log actions against requested limit `250`, page size `100`, and `2` observed moderation-log page fetches. | Keep deep scan in regression proof and preserve historical-attribution caveats. |
 | Policy proposal/review/adoption | runtime verified for single-mod playtest path | `policies.test.ts` passes; post-W34 `v0.0.1.104` verified proposed/under-review state and threshold blocking. | Multi-moderator distinct-reviewer proof remains open. |
 | Log-only Apply Policy receipts | runtime verified | Post-W34 playtest `v0.0.1.90` recorded `receipt-79f819c9-bd62-4b80-8fd0-31b76097dce0` for comment `t1_ommzgtz`; later WebView loads showed it in the Receipt Ledger. | Keep real Reddit execution disabled until separate proof. |
 | Real remove/approve/ignore-reports | disabled with proof plan | Gated by `moderationExecution.ts`; no safe runtime proof. `REDDIT_MODERATION_EXECUTION_TEST_PLAN.md` defines the required explicit approval, throwaway-target, receipt, Reddit-visible-state, and cleanup gates. | Execute the destructive moderation execution test plan before enabling or claiming live remove/approve/ignore-reports behavior. |

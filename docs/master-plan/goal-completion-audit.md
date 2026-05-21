@@ -39,7 +39,7 @@ This audit is a prompt-to-artifact checklist. It is not a claim that every runti
 | Verify true non-mod protected API blocking | `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` says only local guard/current moderator proof exists; true non-mod account proof is open. | Incomplete |
 | Verify lower-permission moderator roles | Runtime-probed current moderator permission is `all`; lower-permission role strings remain unknown and aggregate-only. | Incomplete |
 | Verify live same-subreddit modqueue item reads | Runtime attempts reached a labeled fallback; no `source: "reddit_modqueue"` item proof yet. | Incomplete |
-| Verify deep moderation-log pagination | V4 Wave 23 authenticated WebView playtest `v0.0.2.6` ran Scan `Deep Live Scan` with source `Live data`, depth `Deep`, `120` actions scanned, `1` attributed, `119` unmatched, requested limit `250`, and page size `100`. Exact API response/page-cursor trace remains a follow-up before weakening conservative warnings. | Complete for WebView UI proof; API excerpt follow-up open |
+| Verify deep moderation-log pagination | V4 Wave 23 authenticated WebView playtest `v0.0.2.8` ran Scan `Deep Live Scan` with source `Live data`, depth `Deep`, `121` actions scanned, `1` attributed, `120` unmatched, requested limit `250`, page size `100`, and `2` observed moderation-log page fetches. | Complete for WebView page-count proof; API JSON excerpt optional follow-up |
 | Verify native Reddit mobile app | Desktop host mobile/fullscreen was checked; native app/device proof remains open. | Incomplete |
 | Verify destructive, delivery, scheduler, native Mod Notes, or external AI capabilities | These remain disabled or approval-gated in `RUNTIME_PROOF_BACKLOG.md` and `RESEARCH.md`. They must not be claimed without explicit approval and controlled proof. | Incomplete by design |
 | Use subagents with correct prefix going forward | User corrected future subagent prompts to use `/goal`, not `/code`. No new subagents were needed for this audit. | Complete as an operating rule |
@@ -97,10 +97,11 @@ Recent completion evidence:
   remains transport-boundary evidence, not route JSON proof. The dev watcher
   later reached playtest `v0.0.2.4` after documentation/proof updates.
 - V4 Wave 23 later ran read-only source proof on authenticated Devvit WebView
-  playtest `v0.0.2.6`. Act Operational Queue still returned the labeled
-  type-supported/no-items fallback, but Scan `Deep Live Scan` returned live
-  data with depth `Deep`, `120` actions scanned, `1` attributed, and `119`
-  unmatched from a requested limit of `250` and page size `100`.
+  playtest `v0.0.2.8`. Act Operational Queue still returned the labeled
+  type-supported/no-items fallback on the earlier `v0.0.2.6` pass, but Scan
+  `Deep Live Scan` returned live data with depth `Deep`, `121` actions scanned,
+  `1` attributed, `120` unmatched, requested limit `250`, page size `100`, and
+  `2` observed moderation-log page fetches.
 
 Current blocker evidence:
 
@@ -108,8 +109,8 @@ Current blocker evidence:
   is available.
 - Wave 23 remains partially blocked because live modqueue source proof still
   requires safe queue content or an exact adapter failure. Deep live scan
-  WebView proof is captured, but an exact API response/page-cursor excerpt
-  remains a useful follow-up before changing conservative UI warnings.
+  WebView page-count proof is captured; an exact API JSON excerpt is only an
+  optional follow-up.
 - Native Reddit mobile app proof remains unavailable.
 - `npm audit --omit=dev` still fails with the Devvit-transitive `protobufjs`
   advisory chain. Direct Hono/Vite and transitive `tmp`/`ws` findings are
@@ -136,7 +137,6 @@ The remaining blockers are proof gaps, not ordinary build failures:
   smoke console;
 - true non-mod and lower-permission account proof;
 - live modqueue item proof;
-- exact deep-scan API/page-cursor response proof before weakening warnings;
 - native Reddit mobile proof;
 - explicitly approved proof for any public, destructive, delivery, scheduler, native Mod Notes, retention deletion, or external AI capability.
 

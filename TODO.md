@@ -7,13 +7,14 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.2.6`. The
+playtest observed while continuing runtime proof work is `v0.0.2.8`. The
 current `master` dependency-hardening build passed `npm run deploy`, uploaded
 Devvit app version `0.0.2`, and then reached authenticated Devvit WebView
 playtest readiness as `v0.0.2.2` after the latest UI merge; the dev watcher
 later reached `v0.0.2.4` after documentation/proof updates, and Wave 23
-read-only source proof later continued on `v0.0.2.6`. Submission/listing
-docs now reflect this proof level, and the local package metadata has the
+read-only source proof later continued on `v0.0.2.6` and `v0.0.2.8`.
+Submission/listing docs now reflect this proof level, and the local package
+metadata has the
 upload-safe description `Find enforcement drift before your users do.` App
 details page terms/privacy links still need to be reviewed, hosted, and set
 outside the local CLI flow before any public publish request. Draft copy exists in
@@ -114,11 +115,13 @@ full moderator account `u/BrightyBrainiac`; no true non-mod or limited-mod
 account session is available to execute `ACCESS_RUNTIME_TEST_PLAN.md`.
 
 V4 Wave 23 is partially complete: the authenticated Devvit WebView session on
-`v0.0.2.6` proved the read-only deep live scan path on `r/modmirror_dev` with
-source `Live data`, depth `Deep`, `120` actions scanned, `1` attributed, and
-`119` unmatched. The same pass repeated Act Operational Queue `Refresh`, but it
-returned the labeled type-supported/no-items fallback, so live
-`reddit_modqueue` item reads remain open. Do not claim
+`v0.0.2.8` proved the read-only deep live scan path on `r/modmirror_dev` with
+source `Live data`, depth `Deep`, `121` actions scanned, `1` attributed, `120`
+unmatched, requested limit `250`, page size `100`, and `2` observed
+moderation-log page fetches. The earlier `v0.0.2.6` pass repeated Act
+Operational Queue `Refresh`, but it returned the labeled
+type-supported/no-items fallback, so live `reddit_modqueue` item reads remain
+open. Do not claim
 `source: "reddit_modqueue"` until `MODQUEUE_RUNTIME_TEST_PLAN.md` returns a
 safe live item or captures an exact Devvit adapter/runtime failure.
 
