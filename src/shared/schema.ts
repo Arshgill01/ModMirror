@@ -2058,6 +2058,7 @@ export interface PrivacyDeletionRequest {
   categories?: PrivacyRetentionCategory[];
   dryRun?: boolean;
   expiredOnly?: boolean;
+  confirmDeletion?: boolean;
 }
 
 export interface PrivacyDeletionResult {

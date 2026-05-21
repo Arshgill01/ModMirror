@@ -2444,6 +2444,17 @@ dd {
   line-height: 1.3;
 }
 
+.destructive-confirm {
+  align-items: flex-start;
+  border-top: 1px solid var(--mm-line);
+  color: var(--mm-muted);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.4;
+  padding-top: 10px;
+}
+
 .incident-list {
   border-block: 1px solid var(--mm-line);
   display: grid;

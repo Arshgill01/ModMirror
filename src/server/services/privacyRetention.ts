@@ -127,6 +127,9 @@ export async function deletePrivacyData(options: {
   const categories = normalizeCategories(options.request.categories);
   const dryRun = options.request.dryRun ?? false;
   const expiredOnly = options.request.expiredOnly ?? false;
+  if (!dryRun && options.request.confirmDeletion !== true) {
+    throw new Error('Real privacy deletion requires explicit confirmation.');
+  }
   const inventory = await collectInventory(options.subreddit, deps);
   const reports: PrivacyRetentionCategoryReport[] = [];
 
@@ -178,6 +181,7 @@ export async function cleanupExpiredPrivacyData(options: {
       categories: [...PRIVACY_RETENTION_CATEGORY_VALUES],
       expiredOnly: true,
       ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+      ...(options.dryRun === false ? { confirmDeletion: true } : {}),
     },
     ...(options.dependencies !== undefined
       ? { dependencies: options.dependencies }
@@ -291,6 +295,7 @@ export async function runRetentionCleanupSmoke(
       ],
       dryRun: false,
       expiredOnly: true,
+      confirmDeletion: true,
     },
     dependencies: {
       now: () => checkedAt,

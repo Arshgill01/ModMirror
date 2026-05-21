@@ -2610,6 +2610,9 @@ function normalizePrivacyDeletionRequest(
   if (body.expiredOnly !== undefined) {
     request.expiredOnly = body.expiredOnly === true;
   }
+  if (body.confirmDeletion !== undefined) {
+    request.confirmDeletion = body.confirmDeletion === true;
+  }
   if (Array.isArray(body.categories)) {
     request.categories = body.categories.map((category) => {
       if (

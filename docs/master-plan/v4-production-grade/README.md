@@ -83,7 +83,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 17 | Product | Case Packet And Evidence Board Continuity | complete |
 | 18 | Settings | Incident Mode Control Center | complete |
 | 19 | Settings | Config Portability Console | complete |
-| 20 | Settings | Privacy Retention Console | pending |
+| 20 | Settings | Privacy Retention Console | complete |
 | 21 | Runtime | Safe V2 Route-Level Smoke Rehearsal | blocked |
 | 22 | Runtime | True Non-Mod And Limited-Mod Access Proof | pending |
 | 23 | Runtime | Live Modqueue, Deep Scan, And Reddit Source Proof | pending |

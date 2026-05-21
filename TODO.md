@@ -88,6 +88,11 @@ summary, server-backed dry-run policy diffs, per-policy draft/proposal
 dispositions, and clear confirmation that imports do not silently adopt
 enforcement.
 
+V4 Wave 20 is complete: Privacy Retention now gates real deletion behind an
+explicit confirmation checkbox and API flag, shows selected/retained dry-run
+totals clearly, and separates synthetic cleanup proof from operational deletion
+claims in the Settings console.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to

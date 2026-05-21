@@ -180,6 +180,29 @@ describe('privacy retention service', () => {
     expect(zRem).not.toHaveBeenCalled();
   });
 
+  it('rejects real deletion without explicit confirmation', async () => {
+    const deleteKeys = vi.fn();
+    const { deletePrivacyData } = await import('./privacyRetention');
+
+    await expect(
+      deletePrivacyData({
+        subreddit: 'ExampleLearning',
+        request: {
+          categories: ['action_receipts'],
+          dryRun: false,
+        },
+        dependencies: {
+          listScans: vi.fn().mockResolvedValue([]),
+          listReceipts: vi.fn().mockResolvedValue([receipt('receipt-1')]),
+          listEvidenceBoards: vi.fn().mockResolvedValue([]),
+          listTeamDeliveryReceipts: vi.fn().mockResolvedValue([]),
+          deleteKeys,
+        },
+      })
+    ).rejects.toThrow('explicit confirmation');
+    expect(deleteKeys).not.toHaveBeenCalled();
+  });
+
   it('cleans only expired records according to retention windows', async () => {
     const deleteKeys = vi.fn();
     const zRem = vi.fn();

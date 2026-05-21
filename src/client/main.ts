@@ -4137,6 +4137,7 @@ function renderPrivacyRetentionSettings() {
       <form class="retention-delete-form" data-privacy-delete-form>
         <fieldset>
           <legend>Deletion controls</legend>
+          <p class="inline-note">Start with dry run. Real deletion requires the confirmation checkbox and still excludes protected policy history.</p>
           <div class="category-checks">
             ${PRIVACY_RETENTION_CATEGORY_VALUES.map(
               (category) => `
@@ -4147,6 +4148,10 @@ function renderPrivacyRetentionSettings() {
               `
             ).join('')}
           </div>
+          <label class="destructive-confirm">
+            <input type="checkbox" name="confirmDeletion" value="true">
+            I understand this will delete selected operational Redis records when using a real deletion button.
+          </label>
         </fieldset>
         <div class="button-row">
           <button class="secondary-button" name="mode" value="dry-run" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Dry run selected</button>
@@ -4154,6 +4159,7 @@ function renderPrivacyRetentionSettings() {
           <button class="danger-button" name="mode" value="delete" type="submit" ${privacyRetentionState.deleting ? 'disabled' : ''}>Delete selected</button>
         </div>
       </form>
+      <p class="inline-note">Synthetic retention cleanup is a separate runtime smoke check under Safe smoke checks. It creates and deletes only synthetic proof records.</p>
       ${renderPrivacyRetentionInventory()}
       ${renderPrivacyDeletionResult()}
     </section>
@@ -4220,9 +4226,12 @@ function renderPrivacyDeletionResult() {
   return `
     <div class="retention-result">
       <h4>${result.dryRun ? 'Dry-run deletion' : 'Deletion receipt'}</h4>
+      <p class="inline-note">${result.dryRun ? 'No data was deleted. Counts show what would be selected.' : 'Real deletion was explicitly confirmed. Policy history remains protected.'}</p>
       <dl class="compact-metrics">
         <div><dt>Subreddit</dt><dd>r/${escapeHtml(result.subreddit)}</dd></div>
         <div><dt>Mode</dt><dd>${result.dryRun ? 'dry run' : 'deleted'}</dd></div>
+        <div><dt>Selected</dt><dd>${countPrivacyReportDeleted(result.categories)}</dd></div>
+        <div><dt>Retained</dt><dd>${countPrivacyReportRetained(result.categories)}</dd></div>
         <div><dt>Recorded</dt><dd>${formatDate(result.deletedAt)}</dd></div>
       </dl>
       ${renderPrivacyReports(result.categories)}
@@ -4231,6 +4240,18 @@ function renderPrivacyDeletionResult() {
       </ul>
     </div>
   `;
+}
+
+function countPrivacyReportDeleted(
+  reports: PrivacyRetentionExport['categories']
+) {
+  return reports.reduce((total, report) => total + report.deletedCount, 0);
+}
+
+function countPrivacyReportRetained(
+  reports: PrivacyRetentionExport['categories']
+) {
+  return reports.reduce((total, report) => total + report.retainedCount, 0);
 }
 
 function renderPrivacyReports(
@@ -8538,10 +8559,20 @@ async function deletePrivacyDataFromForm(
     .getAll('category')
     .map((value) => String(value))
     .filter(isPrivacyRetentionCategory);
+  const confirmDeletion = formData.get('confirmDeletion') === 'true';
   if (mode !== 'expired' && categories.length === 0) {
     privacyRetentionState = {
       ...privacyRetentionState,
       error: 'Select at least one data category before running deletion controls.',
+      message: undefined,
+    };
+    render();
+    return;
+  }
+  if ((mode === 'delete' || mode === 'expired') && !confirmDeletion) {
+    privacyRetentionState = {
+      ...privacyRetentionState,
+      error: 'Confirm real privacy deletion before using Delete selected or Delete expired.',
       message: undefined,
     };
     render();
@@ -8564,6 +8595,7 @@ async function deletePrivacyDataFromForm(
         mode === 'expired' ? [...PRIVACY_RETENTION_CATEGORY_VALUES] : categories,
       dryRun: mode !== 'delete' && mode !== 'expired',
       expiredOnly: mode === 'expired',
+      confirmDeletion,
       ...(subreddit ? { subreddit } : {}),
     };
     const deletionResult = await fetchApi<PrivacyDeletionResult>(
