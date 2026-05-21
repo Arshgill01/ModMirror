@@ -70,8 +70,8 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 04 | Client | Component Extraction Without Rewrite | pending |
 | 05 | Product | First-Viewport Product Comprehension | pending |
 | 06 | Product | Judge Demo Path Orchestrator | pending |
-| 07 | Product | Onboard A New Mod Quiz Core | pending |
-| 08 | Product | Quiz Feedback And Team Norm Scorecard | pending |
+| 07 | Product | Onboard A New Mod Quiz Core | complete |
+| 08 | Product | Quiz Feedback And Team Norm Scorecard | complete |
 | 09 | Product | Scenario Lab Authoring And Archiving | pending |
 | 10 | Product | Drift Radar Distribution Drilldown | pending |
 | 11 | Product | Representative Cases With Privacy Guards | pending |
@@ -84,10 +84,10 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 18 | Settings | Incident Mode Control Center | pending |
 | 19 | Settings | Config Portability Console | pending |
 | 20 | Settings | Privacy Retention Console | pending |
-| 21 | Runtime | Safe V2 Route-Level Smoke Rehearsal | pending |
+| 21 | Runtime | Safe V2 Route-Level Smoke Rehearsal | blocked |
 | 22 | Runtime | True Non-Mod And Limited-Mod Access Proof | pending |
 | 23 | Runtime | Live Modqueue, Deep Scan, And Reddit Source Proof | pending |
-| 24 | Reliability | Redis Index Hygiene And Storage Envelope | pending |
+| 24 | Reliability | Redis Index Hygiene And Storage Envelope | complete |
 | 25 | Runtime | Controlled Retention And Execution Harnesses | pending |
 | 26 | Runtime | Delivery, Mod Notes, And Scheduler Proof Harnesses | pending |
 | 27 | Reliability | Error Taxonomy And Recovery UX | pending |
