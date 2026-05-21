@@ -1528,6 +1528,31 @@ Decision:
   proof plan for this gap, including the no-go boundary around creating or
   reporting throwaway content without explicit user approval.
 
+## V4 Wave 23 Reddit Source Proof Preflight
+
+Date: 2026-05-21
+
+Evidence source:
+
+- `npx devvit whoami` reported `u/BrightyBrainiac`.
+- `lsof -nP -iTCP:5678 -sTCP:LISTEN || true` showed port `5678` was already
+  held by a Node Devvit playtest process from an Antigravity/Gemini worktree.
+- `docs/operational-overhaul/MODQUEUE_RUNTIME_TEST_PLAN.md` remains the live
+  modqueue proof plan.
+- `docs/operational-overhaul/DEEP_SCAN_RUNTIME_TEST_PLAN.md` now defines the
+  safe deep moderation-log pagination proof plan.
+
+Decision:
+
+- Wave 23 did not upgrade any Reddit source capability to runtime-verified.
+- Live same-subreddit modqueue reads still require `source: reddit_modqueue`
+  with safe `r/modmirror_dev` items, or an exact Devvit adapter/runtime failure.
+- Deep moderation-log pagination still requires authenticated Devvit WebView or
+  runtime API evidence proving the deep cap/page size and actual page/cursor
+  behavior, or an exact adapter/runtime failure.
+- Local tests, static preview, upload readiness, empty fallbacks, and sparse
+  scans remain insufficient for these claims.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19

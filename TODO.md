@@ -97,6 +97,14 @@ V4 Wave 22 is blocked: the active Devvit identity is still the already verified
 full moderator account `u/BrightyBrainiac`; no true non-mod or limited-mod
 account session is available to execute `ACCESS_RUNTIME_TEST_PLAN.md`.
 
+V4 Wave 23 is blocked: live modqueue and deep moderation-log pagination proof
+still need an authenticated owned Devvit WebView session. The 2026-05-21
+preflight confirmed `u/BrightyBrainiac` with `npx devvit whoami`, but port
+`5678` was already held by an Antigravity/Gemini `devvit playtest` process from
+another worktree. Do not claim `source: "reddit_modqueue"` or deep pagination
+runtime behavior until `MODQUEUE_RUNTIME_TEST_PLAN.md` and
+`DEEP_SCAN_RUNTIME_TEST_PLAN.md` are executed from an approved session.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
