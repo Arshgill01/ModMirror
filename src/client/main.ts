@@ -715,7 +715,6 @@ function render() {
         ${renderDemoBanner(summary.dataMode)}
         ${renderRuntimeResilienceBanner()}
         ${renderIncidentBanner()}
-        ${renderV2CommandCenterPanel()}
         <header class="workspace-header">
           <div>
             <h2>${page.title}</h2>
@@ -731,6 +730,7 @@ function render() {
             ${renderPageAction(page.id)}
           </div>
         </header>
+        ${page.id === 'act' ? renderV2CommandCenterPanel() : ''}
         ${renderPage(page.id)}
       </main>
     </div>
@@ -993,9 +993,16 @@ function renderV2CommandCenterPanel() {
     return `
       <section class="command-board" aria-label="Command Center">
         <div class="command-primary">
-          <span class="eyebrow">Command Center</span>
-          <h3>${v2ProductState.error ? 'Command Center unavailable' : 'Consistency score pending'}</h3>
-          <p>${escapeHtml(v2ProductState.error ?? 'Run a scan or load demo mode to populate the V2 operational view.')}</p>
+          <div class="score-block" style="--score: 0%">
+            <span class="score-label">Consistency</span>
+            <strong>--<span>/100</span></strong>
+            <p>Score pending</p>
+          </div>
+          <div class="next-action">
+            <span class="eyebrow">Command Center</span>
+            <h3>No Data Loaded</h3>
+            <p>${escapeHtml(v2ProductState.error ?? 'Run a scan or load demo mode to populate the operational view.')}</p>
+          </div>
         </div>
       </section>
     `;
@@ -1004,25 +1011,34 @@ function renderV2CommandCenterPanel() {
   return `
     <section class="command-board" aria-label="Command Center">
       <div class="command-primary">
-        <span class="eyebrow">Command Center</span>
-        <h3>${command.consistencyScore}/100 consistency</h3>
-        <p>${escapeHtml(command.topIssue)}. Next: ${escapeHtml(command.nextBestAction.label)}.</p>
-        <div class="button-row">
-          <button class="primary-button" data-v2-target="${command.nextBestAction.target}" type="button">${escapeHtml(command.nextBestAction.label)}</button>
-          <button class="secondary-button" data-demo-reset type="button">Reset Demo</button>
+        <div class="score-block" style="--score: ${command.consistencyScore}%">
+          <span class="score-label">Consistency</span>
+          <strong>${command.consistencyScore}<span>/100</span></strong>
+          <p>Team alignment score</p>
+        </div>
+        <div class="next-action">
+          <span class="eyebrow">Next Action</span>
+          <h3>${escapeHtml(command.nextBestAction.label)}</h3>
+          <p>${escapeHtml(command.topIssue)}.</p>
+          <div class="button-row">
+            <button class="primary-button" data-v2-target="${command.nextBestAction.target}" type="button">${escapeHtml(command.nextBestAction.label)}</button>
+          </div>
         </div>
       </div>
       <div class="command-secondary">
-        <dl class="compact-metrics">
+        <dl class="signal-list">
           ${command.ruleHealth.slice(0, 3).map((row) => `
             <div>
               <dt>${escapeHtml(row.ruleName)}</dt>
-              <dd>${formatHealthStatus(row.status)} · ${row.totalActions} actions · ${formatAction(row.confidence)}</dd>
+              <dd>${formatHealthStatus(row.status)} · ${row.totalActions} actions</dd>
             </div>
           `).join('')}
         </dl>
-        <div class="status-row">
-          ${command.trustLabels.map(renderTrustLabel).join('')}
+        <div class="secondary-actions">
+          <div class="status-row" style="flex-grow: 1; display: flex; gap: 8px; justify-content: flex-start; align-items: center;">
+            ${command.trustLabels.map(renderTrustLabel).join('')}
+          </div>
+          <button class="secondary-button" data-demo-reset type="button">Reset Demo</button>
         </div>
       </div>
     </section>
