@@ -724,6 +724,7 @@ function render() {
             ${renderPageAction(page.id)}
           </div>
         </header>
+        ${renderFirstViewportBrief(summary)}
         ${page.id === 'act' ? renderV2CommandCenterPanel() : ''}
         ${renderPage(page.id)}
       </main>
@@ -760,6 +761,84 @@ function renderInlineLaunchCard() {
     ?.addEventListener('click', (event) => {
       openDashboard(event);
     });
+}
+
+function renderFirstViewportBrief(summary: ReturnType<typeof buildDashboardSummary>) {
+  const topHealth = governanceState.health?.summaries[0];
+  const topDrift = scanState.result?.driftCandidates[0];
+  const healthValue =
+    governanceState.health !== undefined
+      ? `${governanceState.health.stablePolicies}/${governanceState.health.totalPolicies} stable`
+      : `${summary.consistencyScore}/100`;
+  const healthDetail =
+    topHealth !== undefined
+      ? `${topHealth.ruleName}: ${formatHealthStatus(topHealth.status)}`
+      : 'Policy health appears after scans and receipts are available.';
+  const driftValue =
+    topDrift !== undefined ? topDrift.ruleName : 'No drift signal yet';
+  const driftDetail =
+    topDrift !== undefined
+      ? `${topDrift.totalActions} actions, ${formatAction(topDrift.confidence)} confidence`
+      : summary.dataMode === 'unknown'
+        ? 'Run a scan or load ExampleLearning to populate drift evidence.'
+        : 'No current candidate is above the drift threshold.';
+  const safetyValue = getFirstViewportSafetyValue(summary);
+  const safetyDetail = getFirstViewportSafetyDetail(summary);
+
+  return `
+    <section class="first-viewport-brief" aria-label="Current ModMirror operating state">
+      <div class="brief-cell">
+        <span>Policy health</span>
+        <strong>${escapeHtml(healthValue)}</strong>
+        <p>${escapeHtml(healthDetail)}</p>
+      </div>
+      <div class="brief-cell">
+        <span>Top drift</span>
+        <strong>${escapeHtml(driftValue)}</strong>
+        <p>${escapeHtml(driftDetail)}</p>
+      </div>
+      <div class="brief-cell brief-action">
+        <span>Next action</span>
+        <strong>${escapeHtml(summary.primaryAction.label)}</strong>
+        <button class="primary-button" data-action-intent="${summary.primaryAction.intent}" type="button">${escapeHtml(summary.primaryAction.label)}</button>
+      </div>
+      <div class="brief-cell">
+        <span>Safety/runtime</span>
+        <strong>${escapeHtml(safetyValue)}</strong>
+        <p>${escapeHtml(safetyDetail)}</p>
+      </div>
+    </section>
+  `;
+}
+
+function getFirstViewportSafetyValue(
+  summary: ReturnType<typeof buildDashboardSummary>
+) {
+  if (summary.dataMode === 'demo') {
+    return 'Demo labeled';
+  }
+  if (getRuntimeCapabilityEntry('redis-smoke')?.state === 'verified_runtime') {
+    return 'Runtime connected';
+  }
+  if (healthError !== undefined) {
+    return 'Static preview';
+  }
+  return 'Log-only guarded';
+}
+
+function getFirstViewportSafetyDetail(
+  summary: ReturnType<typeof buildDashboardSummary>
+) {
+  if (summary.dataMode === 'demo') {
+    return 'ExampleLearning data is separated from live subreddit state.';
+  }
+  if (getRuntimeCapabilityEntry('redis-smoke')?.state === 'verified_runtime') {
+    return 'Redis is reachable; destructive Reddit actions remain gated unless separately verified.';
+  }
+  if (healthError !== undefined) {
+    return healthError;
+  }
+  return 'Apply Policy receipts default to safe log-only behavior unless runtime proof enables more.';
 }
 
 function renderPageAction(pageId: ProductPageId) {

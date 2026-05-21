@@ -760,6 +760,56 @@ dd {
 }
 
 /* --- Command Board (Main Stats Top Block) --- */
+.first-viewport-brief {
+  background: var(--mm-paper);
+  border: 1px solid var(--mm-line);
+  border-radius: var(--mm-panel-radius);
+  box-shadow: 0 1px 3px rgba(26, 29, 32, 0.04);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.brief-cell {
+  border-right: 1px solid var(--mm-line);
+  display: grid;
+  gap: 8px;
+  min-height: 124px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.brief-cell:last-child {
+  border-right: 0;
+}
+
+.brief-cell span {
+  color: var(--mm-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.brief-cell strong {
+  color: var(--mm-ink);
+  font-family: var(--mm-font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.brief-cell p {
+  color: var(--mm-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.brief-action .primary-button {
+  align-self: end;
+  justify-self: start;
+}
+
 .command-board {
   background: var(--mm-paper);
   border: 1px solid var(--mm-line);
@@ -2656,6 +2706,7 @@ dd {
 
   .signal-list div,
   .setup-list li,
+  .first-viewport-brief,
   .metric-grid,
   .confidence-grid,
   .ratification-lifecycle,
@@ -2673,6 +2724,7 @@ dd {
   }
 
   .metric-card,
+  .brief-cell,
   .metric-card:nth-child(2n),
   .confidence-item,
   .distribution-item,
@@ -2683,6 +2735,7 @@ dd {
   }
 
   .metric-card:last-child,
+  .brief-cell:last-child,
   .confidence-item:last-child,
   .distribution-item:last-child,
   .case-grid .action-card:last-child {
