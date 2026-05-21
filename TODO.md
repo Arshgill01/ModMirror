@@ -112,6 +112,13 @@ the implementation gates. Real operational-record deletion and live
 remove/approve/ignore-reports execution remain unrun and require explicit
 approval of the exact proof plan before execution.
 
+V4 Wave 26 is complete as a preparation-only harness wave:
+`docs/operational-overhaul/DELIVERY_SCHEDULER_PROOF_HARNESS_AUDIT.md` now ties
+public comment, private/modmail, Mod Discussion, native Mod Notes, and
+scheduler runbooks to their implementation guards. Live send/write/scheduled
+behavior remains unrun and requires explicit approval of the exact proof plan
+before execution.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to

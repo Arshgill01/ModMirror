@@ -1580,6 +1580,40 @@ Decision:
 - No runtime capability label was upgraded from plan-only to verified by this
   audit.
 
+## V4 Wave 26 Delivery, Mod Notes, And Scheduler Harness Audit
+
+Date: 2026-05-21
+
+Evidence source:
+
+- `docs/operational-overhaul/PUBLIC_COMMENT_DELIVERY_TEST_PLAN.md` defines the
+  approval, throwaway-target, identity, distinguish/sticky, and before/after
+  removal proof gates for public comments.
+- `docs/operational-overhaul/PRIVATE_DELIVERY_TEST_PLAN.md` defines consenting
+  recipient, method-specific, and deprecated-API boundaries for private
+  messages and modmail.
+- `docs/operational-overhaul/MOD_DISCUSSION_DELIVERY_TEST_PLAN.md` defines the
+  internal moderator discussion send proof and keeps scheduler behavior
+  separate.
+- `docs/operational-overhaul/NATIVE_MOD_NOTES_TEST_PLAN.md` defines native Mod
+  Note write, receipt, readback, deletion, and cleanup gates.
+- `docs/operational-overhaul/SCHEDULER_RUNTIME_TEST_PLAN.md` defines a
+  proof-only scheduler smoke task and forbids delivery/moderation/retention
+  side effects.
+- `docs/operational-overhaul/DELIVERY_SCHEDULER_PROOF_HARNESS_AUDIT.md` ties
+  those runbooks to implementation guards.
+
+Decision:
+
+- Wave 26 is complete as a preparation-only harness wave.
+- Public comment, private message, modmail, internal Mod Discussion, native Mod
+  Notes, and scheduler runtime behavior remain unverified and disabled or gated.
+- Scheduler proof must use a proof-only task that cannot send messages, create
+  native Mod Notes, run retention deletion, execute moderation actions, or call
+  external AI.
+- No runtime capability label was upgraded from plan-only/type-only to verified
+  by this audit.
+
 ## Post-W34 Review Health And Impact Runtime Proof
 
 Date: 2026-05-19
