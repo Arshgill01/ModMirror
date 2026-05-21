@@ -102,7 +102,11 @@ export function parseJson<T>(value: string | undefined): T | undefined {
     return undefined;
   }
 
-  return JSON.parse(value) as T;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function readJson<T>(key: string): Promise<T | undefined> {
@@ -117,6 +121,178 @@ export async function deleteKeys(...keys: string[]): Promise<void> {
   if (keys.length > 0) {
     await redis.del(...keys);
   }
+}
+
+export type RedisSortedSetJsonRow = {
+  member: string;
+  score?: number;
+};
+
+export type CompactedJsonSortedSetRows<T> = {
+  values: T[];
+  retainedMembers: string[];
+  staleMembers: string[];
+};
+
+export type ReadCompactedJsonSortedSetOptions<T> = {
+  limit: number;
+  getStableId: (value: T) => string | undefined;
+  readLimit?: number;
+  compact?: boolean;
+};
+
+export type ReadCompactedJsonSortedSetResult<T> =
+  CompactedJsonSortedSetRows<T> & {
+    removedCount: number;
+  };
+
+export function compactJsonSortedSetRows<T>(
+  rows: RedisSortedSetJsonRow[],
+  getStableId: (value: T) => string | undefined
+): CompactedJsonSortedSetRows<T> {
+  const seenIds = new Set<string>();
+  const values: T[] = [];
+  const retainedMembers: string[] = [];
+  const staleMembers: string[] = [];
+
+  for (const row of rows) {
+    const value = parseJson<T>(row.member);
+    if (value === undefined) {
+      staleMembers.push(row.member);
+      continue;
+    }
+
+    const stableId = getStableId(value);
+
+    if (stableId === undefined || seenIds.has(stableId)) {
+      staleMembers.push(row.member);
+      continue;
+    }
+
+    seenIds.add(stableId);
+    values.push(value);
+    retainedMembers.push(row.member);
+  }
+
+  return {
+    values,
+    retainedMembers,
+    staleMembers,
+  };
+}
+
+export async function removeSortedSetMembers(
+  key: string,
+  members: string[]
+): Promise<number> {
+  if (members.length === 0) {
+    return 0;
+  }
+
+  return redis.zRem(key, [...new Set(members)]);
+}
+
+export async function trimSortedSetIndex(
+  key: string,
+  maxCount: number
+): Promise<void> {
+  if (maxCount <= 0) {
+    return;
+  }
+
+  await redis.zRemRangeByRank(key, 0, -(maxCount + 1));
+}
+
+export async function readCompactedJsonSortedSet<T>(
+  key: string,
+  options: ReadCompactedJsonSortedSetOptions<T>
+): Promise<ReadCompactedJsonSortedSetResult<T>> {
+  if (options.limit <= 0) {
+    return {
+      values: [],
+      retainedMembers: [],
+      staleMembers: [],
+      removedCount: 0,
+    };
+  }
+
+  const readLimit = Math.max(options.limit, options.readLimit ?? options.limit * 2);
+  const rows = await redis.zRange(key, 0, readLimit - 1, {
+    by: 'rank',
+    reverse: true,
+  });
+  const compacted = compactJsonSortedSetRows<T>(rows, options.getStableId);
+  const removedCount =
+    options.compact === false
+      ? 0
+      : await removeSortedSetMembers(key, compacted.staleMembers);
+
+  return {
+    ...compacted,
+    values: compacted.values.slice(0, options.limit),
+    retainedMembers: compacted.retainedMembers.slice(0, options.limit),
+    removedCount,
+  };
+}
+
+export async function upsertJsonSortedSetMember<T>(
+  key: string,
+  value: T,
+  score: number,
+  getStableId: (value: T) => string | undefined,
+  options: { maxCount?: number } = {}
+): Promise<void> {
+  const stableId = getStableId(value);
+  if (stableId === undefined) {
+    throw new Error('Cannot index JSON sorted-set member without a stable id.');
+  }
+
+  const rows = await redis.zRange(key, 0, -1, {
+    by: 'rank',
+    reverse: true,
+  });
+  const staleMembers = rows.flatMap((row: { member: string }) => {
+    const parsed = parseJson<T>(row.member);
+    if (parsed === undefined) {
+      return [row.member];
+    }
+
+    return getStableId(parsed) === stableId ? [row.member] : [];
+  });
+
+  await removeSortedSetMembers(key, staleMembers);
+  await redis.zAdd(key, {
+    member: serializeJson(value),
+    score,
+  });
+
+  if (options.maxCount !== undefined) {
+    await trimSortedSetIndex(key, options.maxCount);
+  }
+}
+
+export async function deleteJsonSortedSetMembersById<T>(
+  key: string,
+  stableIds: string[],
+  getStableId: (value: T) => string | undefined
+): Promise<number> {
+  const stableIdSet = new Set(stableIds);
+  if (stableIdSet.size === 0) {
+    return 0;
+  }
+
+  const rows = await redis.zRange(key, 0, -1, {
+    by: 'rank',
+    reverse: true,
+  });
+  const members = rows.flatMap((row: { member: string }) => {
+    const parsed = parseJson<T>(row.member);
+    return parsed !== undefined && stableIdSet.has(getStableId(parsed) ?? '')
+      ? [row.member]
+      : [];
+  });
+
+  return removeSortedSetMembers(key, members);
 }
 
 export async function runRedisDataSmoke(
