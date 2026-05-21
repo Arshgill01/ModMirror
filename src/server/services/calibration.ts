@@ -162,9 +162,16 @@ export async function listCalibrationScenarios(
     SCENARIO_LIST_LIMIT - 1,
     { by: 'rank', reverse: true }
   );
-  return rows
+  const latestById = new Map<string, CalibrationScenario>();
+  for (const scenario of rows
     .map((row: { member: string }) => parseJson<CalibrationScenario>(row.member))
-    .filter((scenario): scenario is CalibrationScenario => scenario !== undefined)
+    .filter((scenario): scenario is CalibrationScenario => scenario !== undefined)) {
+    if (!latestById.has(scenario.id)) {
+      latestById.set(scenario.id, scenario);
+    }
+  }
+
+  return [...latestById.values()]
     .filter((scenario) => (options.activeOnly ? scenario.active : true))
     .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
 }
@@ -213,6 +220,7 @@ export async function updateScenarioDraft(
   if (existing === undefined) {
     return undefined;
   }
+  const updatedAt = nextScenarioTimestamp(existing.updatedAt);
   const updated: CalibrationScenario = {
     ...existing,
     title: input.title === undefined ? existing.title : requireText(input.title, 'Scenario title'),
@@ -235,7 +243,7 @@ export async function updateScenarioDraft(
         ? existing.explanation
         : requireText(input.explanation, 'Scenario explanation'),
     active: input.active ?? existing.active,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
   };
   await saveCalibrationScenario(updated);
   return updated;
@@ -352,6 +360,15 @@ function requireText(value: string, label: string): string {
     throw new Error(`${label} is required.`);
   }
   return trimmed;
+}
+
+function nextScenarioTimestamp(previous: string): string {
+  const previousTime = Date.parse(previous);
+  const now = Date.now();
+  if (Number.isFinite(previousTime) && now <= previousTime) {
+    return new Date(previousTime + 1).toISOString();
+  }
+  return new Date(now).toISOString();
 }
 
 function validateAction(action: EnforcementAction): EnforcementAction {

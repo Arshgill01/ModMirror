@@ -1461,14 +1461,19 @@ api.post('/calibration/answers', async (c) => {
 api.post('/calibration/scenarios', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<Parameters<typeof createScenarioDraft>[0]>;
   try {
+    if (body.expectedAction === undefined) {
+      throw new Error('Expected action is required.');
+    }
     const scenarioInput: Parameters<typeof createScenarioDraft>[0] = {
       subreddit: getRequestedBodySubreddit(body),
       title: body.title ?? '',
       prompt: body.prompt ?? '',
       ruleKey: body.ruleKey ?? '',
       ruleName: body.ruleName ?? '',
-      expectedAction: body.expectedAction ?? 'manual_review',
-      acceptableAlternatives: body.acceptableAlternatives ?? [],
+      expectedAction: body.expectedAction,
+      acceptableAlternatives: Array.isArray(body.acceptableAlternatives)
+        ? body.acceptableAlternatives
+        : [],
       explanation: body.explanation ?? '',
       source: body.source ?? 'manual',
       active: body.active ?? false,

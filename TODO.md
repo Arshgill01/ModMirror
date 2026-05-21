@@ -70,6 +70,11 @@ policy, stricter Apply Policy override receipt, Case Packet, Evidence Board,
 evidence graph, and digest-ready proof. This is static/demo proof, not live
 Devvit runtime proof.
 
+V4 Wave 09 is complete: Scenario Lab now exposes acceptable alternatives,
+client-side required-field validation, in-flight save/archive state, stricter
+server expected-action validation, and active-pack archive correctness for
+stored calibration scenarios.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to

@@ -72,7 +72,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 06 | Product | Judge Demo Path Orchestrator | complete |
 | 07 | Product | Onboard A New Mod Quiz Core | complete |
 | 08 | Product | Quiz Feedback And Team Norm Scorecard | complete |
-| 09 | Product | Scenario Lab Authoring And Archiving | pending |
+| 09 | Product | Scenario Lab Authoring And Archiving | complete |
 | 10 | Product | Drift Radar Distribution Drilldown | complete |
 | 11 | Product | Representative Cases With Privacy Guards | complete |
 | 12 | Product | Policy Simulator Console | complete |

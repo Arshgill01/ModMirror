@@ -423,6 +423,13 @@ type JudgeDemoUiState = {
   completedSteps: string[];
 };
 
+type ScenarioLabUiState = {
+  saving: boolean;
+  archivingScenarioId: string | undefined;
+  error: string | undefined;
+  message: string | undefined;
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -617,6 +624,12 @@ let judgeDemoState: JudgeDemoUiState = {
   message: undefined,
   error: undefined,
   completedSteps: [],
+};
+let scenarioLabState: ScenarioLabUiState = {
+  saving: false,
+  archivingScenarioId: undefined,
+  error: undefined,
+  message: undefined,
 };
 let calibrationQuizState: QuizState = emptyQuizState();
 
@@ -2723,7 +2736,7 @@ function renderCalibrationQuizScenario(
           </button>
           <button class="secondary-button compact-button" data-calibration-quiz-nav="previous" type="button" ${currentIndex === 0 ? 'disabled' : ''}>Back</button>
           <button class="secondary-button compact-button" data-calibration-quiz-nav="next" type="button" ${currentIndex >= totalCount - 1 || !answered ? 'disabled' : ''}>Next</button>
-          <button class="secondary-button compact-button" data-scenario-archive="${escapeAttribute(scenario.id)}" type="button">Archive</button>
+          <button class="secondary-button compact-button" data-scenario-archive="${escapeAttribute(scenario.id)}" type="button" ${scenarioLabState.archivingScenarioId === scenario.id ? 'disabled' : ''}>${scenarioLabState.archivingScenarioId === scenario.id ? 'Archiving...' : 'Archive'}</button>
         </div>
       </form>
       ${result === undefined ? '<p class="inline-note">Submit your choice to compare it with the existing team norm.</p>' : renderCalibrationFeedback(result)}
@@ -2783,12 +2796,17 @@ function formatCalibrationAlignment(alignment: CalibrationAnswerResult['alignmen
 }
 
 function renderScenarioLabForm(seed: CalibrationScenario | undefined) {
+  const acceptableAlternatives = new Set(
+    seed?.acceptableAlternatives ?? ['remove']
+  );
   return `
     <form class="policy-form" data-scenario-form>
       <div class="section-header compact-header">
         <div>
           <h4>Scenario Lab</h4>
           <p>Create deterministic teaching scenarios. Drafts stay out of active calibration packs until activated.</p>
+          ${scenarioLabState.error ? `<p class="inline-error">${escapeHtml(scenarioLabState.error)}</p>` : ''}
+          ${scenarioLabState.message ? `<p class="inline-success">${escapeHtml(scenarioLabState.message)}</p>` : ''}
         </div>
       </div>
       <div class="incident-form-grid">
@@ -2813,6 +2831,22 @@ function renderScenarioLabForm(seed: CalibrationScenario | undefined) {
           </select>
         </label>
       </div>
+      <fieldset>
+        <legend>Acceptable alternatives</legend>
+        <div class="incident-form-grid">
+          ${ENFORCEMENT_ACTION_VALUES.map((action) => `
+            <label class="checkbox-label">
+              <input
+                name="acceptableAlternatives"
+                type="checkbox"
+                value="${action}"
+                ${acceptableAlternatives.has(action) ? 'checked' : ''}
+              >
+              ${formatAction(action)}
+            </label>
+          `).join('')}
+        </div>
+      </fieldset>
       <label>
         Prompt
         <textarea name="prompt" rows="3" required>${escapeHtml(seed?.prompt ?? 'A first-time learner posts a low-effort homework request without context or prior attempt.')}</textarea>
@@ -2830,7 +2864,7 @@ function renderScenarioLabForm(seed: CalibrationScenario | undefined) {
         Activate immediately
       </label>
       <div class="button-row">
-        <button class="secondary-button" type="submit">Save scenario</button>
+        <button class="secondary-button" type="submit" ${scenarioLabState.saving ? 'disabled' : ''}>${scenarioLabState.saving ? 'Saving...' : 'Save scenario'}</button>
       </div>
       <p class="inline-note">Scenario records do not store moderator names and cannot enforce a Reddit action.</p>
     </form>
@@ -5551,6 +5585,68 @@ function createClientDemoPolicy(candidate?: DriftCandidate): RulePolicy {
   };
 }
 
+function createClientDemoCalibrationPack(): CalibrationPackResponse {
+  const now = new Date().toISOString();
+  const baseScenario = {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    ruleKey: DEMO_POLICY.ruleKey,
+    ruleName: DEMO_POLICY.ruleName,
+    source: 'demo_fixture' as const,
+    active: true,
+    privacy: {
+      containsRealUserContent: false,
+      authorCopied: false as const,
+      moderatorCopied: false as const,
+      notes: ['Static preview scenario contains no real subreddit user content.'],
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: now,
+    scenarios: [
+      {
+        ...baseScenario,
+        id: 'client-demo-calibration-rule2-first',
+        title: 'First low-effort question',
+        prompt:
+          'A new learner posts a one-line homework question with no code, context, or prior attempt.',
+        expectedAction: 'warn',
+        acceptableAlternatives: ['remove'],
+        explanation:
+          'The team norm is a warning for first captured Rule 2 cases, with stricter action only when repeat history is visible.',
+      },
+      {
+        ...baseScenario,
+        id: 'client-demo-calibration-rule2-repeat',
+        title: 'Repeat low-effort pattern',
+        prompt:
+          'The same author has three recent low-effort removals and posts another no-context question.',
+        expectedAction: 'temporary_ban_suggested',
+        acceptableAlternatives: ['manual_review'],
+        explanation:
+          'Escalation is acceptable when the repeat pattern is captured and a moderator still confirms the action.',
+      },
+    ],
+    trustLabels: [
+      {
+        kind: 'source',
+        label: 'Static demo',
+        detail: 'Client fallback scenarios are labeled and separated from live subreddit data.',
+        tone: 'neutral',
+      },
+      {
+        kind: 'privacy',
+        label: 'No real users',
+        detail: 'Static scenarios avoid copied author and moderator fields.',
+        tone: 'good',
+      },
+    ],
+  };
+}
+
 function buildClientDemoReplay(policy: RulePolicy): PolicyReplayResult {
   const now = new Date().toISOString();
   const replay: PolicyReplayResult = {
@@ -6981,7 +7077,11 @@ async function loadV2ProductSurfaces() {
     onboarding,
   ].filter((result): result is PromiseRejectedResult => result.status === 'rejected');
   const firstFailure = failures[0];
-  const nextCalibration = settledValue(calibration) ?? v2ProductState.calibration;
+  const nextCalibration =
+    settledValue(calibration) ??
+    (isStandaloneStaticPreview()
+      ? createClientDemoCalibrationPack()
+      : v2ProductState.calibration);
 
   v2ProductState = {
     ...v2ProductState,
@@ -7507,46 +7607,105 @@ async function updateReviewTaskStatusFromUi(
 }
 
 async function createScenarioFromUi(formData: FormData) {
-  const expectedAction = String(formData.get('expectedAction') ?? '');
-  if (!isEnforcementAction(expectedAction)) {
-    v2ProductState = {
-      ...v2ProductState,
-      error: 'Scenario expected action is invalid.',
+  const payload = scenarioFormDataToPayload(formData);
+  if (typeof payload === 'string') {
+    scenarioLabState = {
+      ...scenarioLabState,
+      saving: false,
+      error: payload,
+      message: undefined,
     };
     render();
     return;
   }
 
+  scenarioLabState = {
+    ...scenarioLabState,
+    saving: true,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
   try {
     await fetchApi<CalibrationScenario>(API_ROUTES.calibrationScenarios, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
-        title: String(formData.get('title') ?? ''),
-        prompt: String(formData.get('prompt') ?? ''),
-        ruleKey: String(formData.get('ruleKey') ?? ''),
-        ruleName: String(formData.get('ruleName') ?? ''),
-        expectedAction,
-        acceptableAlternatives: [],
-        explanation: String(formData.get('explanation') ?? ''),
-        source: 'manual',
-        active: formData.get('active') === 'on',
-        teachingReason: String(formData.get('teachingReason') ?? ''),
-        containsRealUserContent: false,
-      }),
+      body: JSON.stringify(payload),
     });
+    scenarioLabState = {
+      saving: false,
+      archivingScenarioId: undefined,
+      error: undefined,
+      message: payload.active
+        ? 'Scenario saved and activated in the calibration pack.'
+        : 'Scenario saved as an inactive draft.',
+    };
     await loadV2ProductSurfaces();
   } catch (error) {
-    v2ProductState = {
-      ...v2ProductState,
+    scenarioLabState = {
+      ...scenarioLabState,
+      saving: false,
       error: normalizeClientError(error, 'Scenario could not be saved.'),
+      message: undefined,
     };
     render();
   }
 }
 
+function scenarioFormDataToPayload(formData: FormData) {
+  const requiredFields = [
+    ['title', 'Scenario title'],
+    ['ruleKey', 'Rule key'],
+    ['ruleName', 'Rule name'],
+    ['prompt', 'Scenario prompt'],
+    ['explanation', 'Scenario explanation'],
+    ['teachingReason', 'Teaching reason'],
+  ] as const;
+  const textValues = Object.fromEntries(
+    requiredFields.map(([key]) => [key, String(formData.get(key) ?? '').trim()])
+  ) as Record<(typeof requiredFields)[number][0], string>;
+  const missing = requiredFields.find(([key]) => textValues[key].length === 0);
+  if (missing !== undefined) {
+    return `${missing[1]} is required.`;
+  }
+
+  const expectedAction = String(formData.get('expectedAction') ?? '');
+  if (!isEnforcementAction(expectedAction)) {
+    return 'Scenario expected action is invalid.';
+  }
+
+  const acceptableAlternatives = formData
+    .getAll('acceptableAlternatives')
+    .map((value) => String(value))
+    .filter(isEnforcementAction)
+    .filter((action) => action !== expectedAction);
+
+  return {
+    subreddit: getWorkspaceSubreddit() ?? DEMO_SUBREDDIT_NAME,
+    title: textValues.title,
+    prompt: textValues.prompt,
+    ruleKey: textValues.ruleKey,
+    ruleName: textValues.ruleName,
+    expectedAction,
+    acceptableAlternatives,
+    explanation: textValues.explanation,
+    source: 'manual' as const,
+    active: formData.get('active') === 'on',
+    teachingReason: textValues.teachingReason,
+    containsRealUserContent: false,
+  };
+}
+
 async function archiveScenarioFromUi(scenarioId: string) {
+  scenarioLabState = {
+    ...scenarioLabState,
+    archivingScenarioId: scenarioId,
+    error: undefined,
+    message: undefined,
+  };
+  render();
+
   try {
     await fetchApi<CalibrationScenario>(
       `${API_ROUTES.calibrationScenarios}/${encodeURIComponent(scenarioId)}/archive`,
@@ -7558,11 +7717,19 @@ async function archiveScenarioFromUi(scenarioId: string) {
         }),
       }
     );
+    scenarioLabState = {
+      saving: false,
+      archivingScenarioId: undefined,
+      error: undefined,
+      message: 'Scenario archived and removed from the active calibration pack.',
+    };
     await loadV2ProductSurfaces();
   } catch (error) {
-    v2ProductState = {
-      ...v2ProductState,
+    scenarioLabState = {
+      ...scenarioLabState,
+      archivingScenarioId: undefined,
       error: normalizeClientError(error, 'Scenario could not be archived.'),
+      message: undefined,
     };
     render();
   }
