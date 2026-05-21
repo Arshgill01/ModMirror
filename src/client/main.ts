@@ -2291,6 +2291,7 @@ function renderReceiptLedgerItem(receipt: ActionReceipt) {
           : ''
       }
       <div class="button-row">
+        <button class="secondary-button" data-case-from-receipt="${escapeAttribute(receipt.id)}" type="button">Generate case packet</button>
         <button class="secondary-button" data-create-evidence-board-receipt="${escapeAttribute(receipt.id)}" type="button" ${evidenceBoardState.saving ? 'disabled' : ''}>Open evidence board</button>
       </div>
     </li>
@@ -3251,7 +3252,7 @@ function renderEvidenceBoardThread(board: EvidenceBoardThread) {
           .map(
             (item) => `
               <li>
-                <span>${formatAction(item.source)}</span>
+                <span>${escapeHtml(formatEvidenceSourceLabel(item, board))}</span>
                 <strong>${escapeHtml(item.label)}</strong>
                 <p>${escapeHtml(item.summary)}</p>
               </li>
@@ -3259,6 +3260,18 @@ function renderEvidenceBoardThread(board: EvidenceBoardThread) {
           )
           .join('')}
       </ul>
+      <div class="button-row">
+        ${
+          board.subject.receiptId
+            ? `<button class="secondary-button compact-button" data-open-receipt-ledger="${escapeAttribute(board.subject.receiptId)}" type="button">Back to receipt</button>`
+            : ''
+        }
+        ${
+          board.subject.casePacketId
+            ? `<button class="secondary-button compact-button" data-open-case-packet type="button">Back to packet</button>`
+            : ''
+        }
+      </div>
       <form class="evidence-status-form" data-evidence-board-status-form="${escapeAttribute(board.id)}">
         <label>
           Status
@@ -3277,6 +3290,35 @@ function renderEvidenceBoardThread(board: EvidenceBoardThread) {
       </form>
     </li>
   `;
+}
+
+function formatEvidenceSourceLabel(
+  item: EvidenceBoardThread['evidence'][number],
+  board: EvidenceBoardThread
+) {
+  if (item.source === 'receipt') {
+    return item.sourceId ? 'Receipt-backed' : 'Receipt unavailable';
+  }
+  if (
+    board.subreddit === DEMO_SUBREDDIT_NAME ||
+    item.sourceId?.startsWith('demo-') ||
+    item.sourceId?.startsWith('client-demo-')
+  ) {
+    return `Demo ${formatAction(item.source)}`;
+  }
+  if (item.source === 'comparable_case' || item.source === 'policy_change') {
+    return `Inferred ${formatAction(item.source)}`;
+  }
+  if (item.source === 'case_packet') {
+    return item.sourceId ? 'Packet-backed' : 'Packet unavailable';
+  }
+  if (item.source === 'content_snapshot') {
+    return item.sourceId ? 'Snapshot-backed' : 'Snapshot unavailable';
+  }
+  if (item.source === 'manual_note') {
+    return 'Manual note';
+  }
+  return formatAction(item.source);
 }
 
 function renderCasePacketPage() {
@@ -4768,6 +4810,15 @@ function bindCasePacketActions() {
     });
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-case-from-receipt]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const receiptId = button.dataset.caseFromReceipt;
+      if (receiptId) {
+        void generateCasePacket({ type: 'action', receiptId });
+      }
+    });
+  });
+
   document
     .querySelector<HTMLFormElement>('[data-case-action-form]')
     ?.addEventListener('submit', (event) => {
@@ -4820,6 +4871,26 @@ function bindEvidenceBoardActions() {
         if (receiptId) {
           void createEvidenceBoardFromReceipt(receiptId);
         }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-open-receipt-ledger]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        activePage = 'act';
+        window.location.hash = '#act';
+        render();
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-open-case-packet]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        activePage = 'prove';
+        window.location.hash = '#prove';
+        render();
       });
     });
 
@@ -8563,7 +8634,7 @@ async function generateCasePacket(
       packet: data.packet,
     };
   } catch (error) {
-    if (subject.type === 'demo' && canUseClientDemoFallback()) {
+    if (canUseDemoCasePacketFallback(subject)) {
       casePacketState = {
         loading: false,
         deliverySaving: false,
@@ -8589,6 +8660,18 @@ async function generateCasePacket(
   }
 
   render();
+}
+
+function canUseDemoCasePacketFallback(
+  subject: GenerateCasePacketRequest['subject']
+) {
+  return (
+    canUseClientDemoFallback() &&
+    (subject.type === 'demo' ||
+      subject.receiptId?.startsWith('demo-') === true ||
+      subject.receiptId?.startsWith('client-demo-') === true ||
+      subject.actionId?.startsWith('demo-') === true)
+  );
 }
 
 async function copyCasePacketMarkdown() {

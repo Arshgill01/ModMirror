@@ -80,7 +80,7 @@ and the exact WebView route, UI control, account type, app version, and result.
 | 14 | Product | Ratification Lifecycle UX | complete |
 | 15 | Product | Override Resolution Inbox | complete |
 | 16 | Product | Evidence Graph Lane View | complete |
-| 17 | Product | Case Packet And Evidence Board Continuity | pending |
+| 17 | Product | Case Packet And Evidence Board Continuity | complete |
 | 18 | Settings | Incident Mode Control Center | pending |
 | 19 | Settings | Config Portability Console | pending |
 | 20 | Settings | Privacy Retention Console | pending |

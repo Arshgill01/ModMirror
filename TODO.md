@@ -75,6 +75,10 @@ client-side required-field validation, in-flight save/archive state, stricter
 server expected-action validation, and active-pack archive correctness for
 stored calibration scenarios.
 
+V4 Wave 17 is complete: receipt rows now lead to Case Packets and Evidence
+Boards, board rows can navigate back to receipt/packet context, and evidence
+items show explicit provenance labels instead of raw source enum values.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to
