@@ -57,6 +57,12 @@ with the remaining Devvit-transitive `protobufjs` advisory set:
 `tmp`/`ws` findings are resolved; no force fix was applied because npm's force
 path would downgrade or otherwise break the Devvit package chain.
 
+On 2026-05-21, current `master` also passed `npm run deploy`, including
+type-check, lint, tests, Devvit build, and `devvit upload`. The upload
+automatically bumped the Devvit app version to `0.0.2` and uploaded `4` new
+WebView assets. This is deploy readiness only; route-level WebView smoke proof
+remains blocked under Wave 21.
+
 ## Status
 
 Blocked.

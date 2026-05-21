@@ -33,7 +33,7 @@ This audit is a prompt-to-artifact checklist. It is not a claim that every runti
 | Commit planning/log artifacts | Commit `21a601c chore: add planning handoff artifacts` committed the planning and state-store artifacts. Commit `ea32104 docs: record latest playtest readiness` recorded readiness evidence. | Complete |
 | Merge latest Gemini/Antigravity UI pass | Commit `e64b5c9 style: merge minimalist UI refresh` merged `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/refresh-minimalist-ui-design`, modified `src/client/main.ts` and `src/client/styles.css`, and excluded the older May 20 terminal/retro worktree. | Complete |
 | Avoid older Gemini designs | The older `/Users/arshdeepsingh/.gemini/antigravity/worktrees/ModMirror/redesign-ui-retro-magazine` worktree was not merged because it was from 2026-05-20 and conflicted with product/style guardrails. The May 21 `implement-continue-feature` worktree had no usable diff. | Complete |
-| Verify local stability after implementation/UI merge | The current batch previously passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npx devvit whoami`, and `timeout 35s npm run dev` to playtest readiness on `v0.0.1.167`. Static Playwright smoke rendered the dashboard and captured `output/playwright/refresh-minimalist-dashboard.png`; only a favicon 404 was observed. | Complete for local/build/static readiness |
+| Verify local stability after implementation/UI merge | The current batch previously passed `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npx devvit whoami`, and `timeout 35s npm run dev` to playtest readiness on `v0.0.1.167`. Static Playwright smoke rendered the dashboard and captured `output/playwright/refresh-minimalist-dashboard.png`; only a favicon 404 was observed. After dependency hardening, `npm run deploy` passed and uploaded Devvit app version `0.0.2`. | Complete for local/build/static/deploy readiness |
 | Verify route-level Devvit behavior for V2 endpoints | `docs/master-plan/v2/final-audit.md`, `TODO.md`, and `RESEARCH.md` state route-level live Reddit read smoke endpoints were not rerun after the V2 upload. | Incomplete |
 | Verify live WebView visual QA for API-backed V2 states | `TODO.md` keeps this open; static smoke only proved nonblank fallback rendering. | Incomplete |
 | Verify true non-mod protected API blocking | `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` says only local guard/current moderator proof exists; true non-mod account proof is open. | Incomplete |
@@ -70,6 +70,8 @@ Recent completion evidence:
   `hono` to `4.12.21`, and `vite` to `7.3.3`, removing the direct Hono/Vite
   audit findings while preserving passing build/type/lint/test gates. A later
   npm override pass removed Devvit-transitive `tmp` and `ws` findings.
+- Current `master` passed `npm run deploy` and uploaded Devvit app version
+  `0.0.2`; this is deploy readiness, not route-level WebView proof.
 
 Current blocker evidence:
 

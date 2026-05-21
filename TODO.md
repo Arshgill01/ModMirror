@@ -7,7 +7,10 @@ the UI sweep proof has been merged through PR #14, the Wave 29
 subreddit-isolation runtime reconciliation has been merged through PR #16, the
 full-access visibility gate has been merged through PR #24, and the manual
 runtime event recorder has been merged through PR #25. The latest Devvit
-playtest observed while continuing runtime proof work is `v0.0.1.138`.
+playtest observed while continuing runtime proof work is `v0.0.1.138`. The
+current `master` dependency-hardening build passed `npm run deploy` and
+uploaded Devvit app version `0.0.2`; this is upload/deploy readiness evidence,
+not route-level WebView smoke proof.
 
 The operational overhaul remains build-only/type-verified for several runtime
 paths unless a wave report explicitly says playtest was run. Post/comment

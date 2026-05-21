@@ -27,6 +27,11 @@ The dependency update passed:
 - `npm test`
 - `npx devvit --version`
 - `npx devvit whoami`
+- `npm run deploy`
+
+`npm run deploy` passed after the hardening work and uploaded Devvit app version
+`0.0.2` with `4` new WebView assets. This proves deploy/upload readiness for the
+current build; it does not prove authenticated route-level WebView behavior.
 
 ## Audit Result
 

@@ -47,7 +47,7 @@ Updated by: Codex
 | Verified | `getModerationLog()` does not expose structured removal reason or subreddit rule fields in the installed `ModAction` type. | `node_modules/@devvit/reddit/RedditClient.d.ts`. |
 | Verified | Subreddit `Rule` does not expose a stable rule ID in the installed SDK type. | `Rule` type in installed typings. |
 | Verified | Redis can be imported from `@devvit/web/server`, defaults to installation scope, and supports string/hash/sorted-set style operations. | `RedisClient.d.ts`; smoke code typechecks/builds. |
-| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.1.167` after the minimalist UI refresh merge; `/api/smoke/reddit`, post/comment menu target capture, and live quick scan have been playtest-verified in earlier passes. Write operations remain separately gated. The `v0.0.1.167` run only proved upload/playtest readiness, not route-level smoke behavior. |
+| Verified | Reddit API read methods work in the target subreddit during playtest for dashboard launch, smoke reads, menu target context, and live scan inputs. | `npx devvit whoami` succeeds as `u/BrightyBrainiac`; `npm run dev` reached Playtest ready for `r/modmirror_dev`, most recently on `v0.0.1.167` after the minimalist UI refresh merge; `/api/smoke/reddit`, post/comment menu target capture, and live quick scan have been playtest-verified in earlier passes. Write operations remain separately gated. The `v0.0.1.167` run only proved upload/playtest readiness, not route-level smoke behavior. On 2026-05-21, current `master` passed `npm run deploy` and uploaded Devvit app version `0.0.2`; this is deploy readiness, not authenticated route-smoke proof. |
 | Verified | Redis read/write works in playtest. | `/api/smoke/redis` and later WebView flows verified Redis-backed policies, scans, corrections, receipts, evidence boards, config import/export, privacy retention inventories/dry runs, incident mode, delivery receipts, and replay state. |
 | Runtime verified for current caps | Override audit persistence reads Redis sorted-set rows newest-first and current local audit indexes are capped. | `src/server/services/auditPersistence.test.ts` covers `saveOverrideEvent` and `listRecentAuditEvents` writing `modmirror:{subreddit}:overrides` scores from `createdAt` and reading with reverse rank ordering. `ACTION_EVENT_HISTORY_LIMIT` and `OVERRIDE_EVENT_HISTORY_LIMIT` cap action and override sorted-set indexes at 500 rows locally. Devvit playtest `v0.0.1.131` first ran `/api/smoke/redis-zset` and failed with an empty observed order. After the diagnostic switched to Devvit's documented variadic `zAdd` call, Devvit playtest `v0.0.1.136` reported `Redis sorted-set smoke passed: observed newest, middle, oldest.` Devvit playtest `v0.0.1.137` ran `/api/smoke/redis-storage` and reported `Redis storage smoke passed: scan 10/10, actions 500/500, overrides 500/500, cleanup 0.` This verifies the current bounded storage envelope, not larger future caps. |
 | Partially verified | Menu actions work in the Reddit UI for post/comment Apply Policy target capture. | Post target capture was playtest-verified on `v0.0.1.83` and comment target capture on `v0.0.1.84`; the older chained smoke-form path is no longer the primary product path and remains nonessential/unverified. |
@@ -98,6 +98,12 @@ Updated by: Codex
 - The current scaffold is Devvit Web with a server-first Hono structure. It does not currently have a React/client dashboard entry.
 - `npm run dev` maps to `devvit playtest`. On 2026-05-16, `npx devvit whoami` succeeded as `u/BrightyBrainiac`; `npx devvit view --json` returned app id `5cd5fae3-9da6-4e7c-a243-7c8762badd91`, slug `modmirror`, and owner `BrightyBrainiac`. `npm run dev` reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror`; dashboard browser proof used `v0.0.1.12`, and Wave 5 integration reached Playtest ready on `v0.0.1.15` on 2026-05-17.
 - A later `timeout 35s npm run dev` check reached Playtest ready for `https://www.reddit.com/r/modmirror_dev/?playtest=modmirror` on `v0.0.1.167` after the minimalist UI refresh merge. It emitted a local warning, `listen EADDRINUSE: address already in use :::5678`, before reaching ready. Treat that run as upload/playtest readiness proof only because no WebView route smoke checks were exercised.
+- On 2026-05-21, after dependency hardening and npm overrides, `npm run
+  deploy` passed `tsc --build`, `eslint`, `vitest` (`62` files, `263` tests),
+  Devvit's `vite build`, and `devvit upload`. The upload automatically bumped
+  the Devvit app version to `0.0.2` and uploaded `4` new WebView assets. Treat
+  this as deploy readiness only; route-level WebView smoke proof remains Wave
+  21 and was still blocked by port `5678`.
 - A V4 Wave 21 rehearsal on 2026-05-21 did not start another playtest because
   an Antigravity/Gemini worktree already owned port `5678` with
   `devvit playtest`. Direct local HTTP probes to `/api/health`,
@@ -1707,6 +1713,8 @@ Evidence source:
 - `npm audit --omit=dev` now fails with `26 vulnerabilities (25 high,
   1 critical)`. The remaining advisories are Devvit-transitive
   `protobufjs <=7.5.7`.
+- `npm run deploy` passed after the hardening work and uploaded Devvit app
+  version `0.0.2` with `4` new WebView assets.
 - `npm audit fix` did not remove the remaining advisory set. `npm audit
   fix --force` recommends a breaking Devvit package change/downgrade path and
   was not run.
