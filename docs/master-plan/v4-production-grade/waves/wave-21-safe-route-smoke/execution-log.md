@@ -248,3 +248,8 @@ lower-permission moderator role strings, live modqueue item source behavior,
 deep moderation-log pagination, native mobile, destructive moderation actions,
 delivery, scheduler, native Mod Notes, or actual retention deletion against
 real operational records.
+
+After the documentation/proof updates, the still-running dev watcher performed
+one final rebuild and reached playtest `v0.0.2.4` before it was stopped. The
+safe-smoke observations above were taken on `v0.0.2.2`; the later upload did
+not add product-code changes.

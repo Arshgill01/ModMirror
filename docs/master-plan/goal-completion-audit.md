@@ -94,7 +94,8 @@ Recent completion evidence:
   V4 Wave 21 safe Settings smokes passed Redis, Redis ZSET, Redis storage,
   synthetic retention cleanup, Reddit read-only, and current-account access
   diagnostics. Bare localhost `curl` still returns `426 Upgrade Required` and
-  remains transport-boundary evidence, not route JSON proof.
+  remains transport-boundary evidence, not route JSON proof. The dev watcher
+  later reached playtest `v0.0.2.4` after documentation/proof updates.
 
 Current blocker evidence:
 

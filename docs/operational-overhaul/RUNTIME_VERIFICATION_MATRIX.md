@@ -49,7 +49,7 @@ Environment:
 - Devvit user: `u/BrightyBrainiac`
 - Playtest subreddit: `r/modmirror_dev`
 - Latest playtest version observed while continuing runtime proof work:
-  `v0.0.2.2`
+  `v0.0.2.4`
 - Browser/UI driver: Zen/Chrome desktop browsers with Computer Use
 
 Runtime observations:
@@ -91,7 +91,8 @@ Runtime observations:
   approval to stop the stale Gemini/Antigravity listener, current `master`
   reached authenticated Reddit WebView playtest `v0.0.2.2` and Settings safe
   smokes passed Redis, Redis ZSET, Redis storage, synthetic retention cleanup,
-  Reddit read-only, and current-account access diagnostics.
+  Reddit read-only, and current-account access diagnostics. The dev watcher
+  later reached `v0.0.2.4` after documentation/proof updates.
 - `docs/operational-overhaul/ACCESS_RUNTIME_TEST_PLAN.md` defines the required
   proof gate for true non-mod protected-route blocking and lower-permission
   moderator role-string capture. That plan has not been executed.
