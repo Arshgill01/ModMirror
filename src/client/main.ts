@@ -416,6 +416,13 @@ type V2ProductUiState = {
   onboarding: OnboardingPath[] | undefined;
 };
 
+type JudgeDemoUiState = {
+  running: boolean;
+  message: string | undefined;
+  error: string | undefined;
+  completedSteps: string[];
+};
+
 const THEME_STORAGE_KEY = 'modmirror:theme-preference';
 const DEVVIT_INTERNAL_MESSAGE_TYPE = 'devvit-internal';
 const WEB_VIEW_CLIENT_SCOPE = 0;
@@ -604,6 +611,12 @@ let v2ProductState: V2ProductUiState = {
   demoManifest: undefined,
   driftRadar: undefined,
   onboarding: undefined,
+};
+let judgeDemoState: JudgeDemoUiState = {
+  running: false,
+  message: undefined,
+  error: undefined,
+  completedSteps: [],
 };
 let calibrationQuizState: QuizState = emptyQuizState();
 
@@ -1057,6 +1070,36 @@ function renderCommandSignal(label: string, value: string) {
   `;
 }
 
+function renderJudgeDemoStatus() {
+  if (
+    !judgeDemoState.running &&
+    judgeDemoState.message === undefined &&
+    judgeDemoState.error === undefined &&
+    judgeDemoState.completedSteps.length === 0
+  ) {
+    return '';
+  }
+
+  const statusClass = judgeDemoState.error ? 'inline-error' : 'inline-success';
+  const statusText =
+    judgeDemoState.error ??
+    judgeDemoState.message ??
+    'Running the labeled ExampleLearning demo path.';
+
+  return `
+    <div class="judge-demo-status" aria-live="polite">
+      <p class="${statusClass}">${escapeHtml(statusText)}</p>
+      ${
+        judgeDemoState.completedSteps.length > 0
+          ? `<ol>${judgeDemoState.completedSteps
+              .map((step) => `<li>${escapeHtml(step)}</li>`)
+              .join('')}</ol>`
+          : ''
+      }
+    </div>
+  `;
+}
+
 function renderV2CommandCenterPanel() {
   const command = v2ProductState.commandCenter;
   if (v2ProductState.loading && command === undefined) {
@@ -1075,6 +1118,10 @@ function renderV2CommandCenterPanel() {
             <span class="eyebrow">Command Center</span>
             <h3>No Data Loaded</h3>
             <p>${escapeHtml(v2ProductState.error ?? 'Run a scan or load demo mode to populate the operational view.')}</p>
+            <div class="button-row">
+              <button class="primary-button" data-run-judge-demo type="button" ${judgeDemoState.running ? 'disabled' : ''}>Run Judge Demo</button>
+            </div>
+            ${renderJudgeDemoStatus()}
           </div>
         </div>
       </section>
@@ -1095,7 +1142,9 @@ function renderV2CommandCenterPanel() {
           <p>${escapeHtml(command.topIssue)}.</p>
           <div class="button-row">
             <button class="primary-button" data-v2-target="${command.nextBestAction.target}" type="button">${escapeHtml(command.nextBestAction.label)}</button>
+            <button class="secondary-button" data-run-judge-demo type="button" ${judgeDemoState.running ? 'disabled' : ''}>Run Judge Demo</button>
           </div>
+          ${renderJudgeDemoStatus()}
         </div>
       </div>
       <div class="command-secondary">
@@ -4335,6 +4384,12 @@ function bindV2ProductActions() {
     });
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-run-judge-demo]').forEach((button) => {
+    button.addEventListener('click', () => {
+      void runJudgeDemoPathFromUi();
+    });
+  });
+
   document.querySelectorAll<HTMLInputElement>('[data-calibration-option]').forEach((input) => {
     input.addEventListener('change', () => {
       const scenarioId = input.dataset.calibrationOption;
@@ -7012,6 +7067,362 @@ async function resetDemoOrchestrationFromUi() {
     };
     render();
   }
+}
+
+async function runJudgeDemoPathFromUi() {
+  judgeDemoState = {
+    running: true,
+    message: 'Running the labeled ExampleLearning demo path.',
+    error: undefined,
+    completedSteps: [],
+  };
+  dashboardOpen = true;
+  render();
+
+  try {
+    await runScan('demo');
+    completeJudgeDemoStep('Loaded ExampleLearning and surfaced Rule 2 drift.');
+
+    const policy = createClientDemoPolicy(
+      scanState.result?.driftCandidates.find(
+        (candidate) => candidate.ruleKey === DEMO_POLICY.ruleKey
+      )
+    );
+    policyState = {
+      ...policyState,
+      error: undefined,
+      message: 'Demo Rule 2 policy selected for the judge path.',
+      policies: upsertPolicy(policyState.policies, policy),
+      form: policyToForm(policy),
+    };
+    governanceState = {
+      ...governanceState,
+      error: undefined,
+      health: createClientDemoHealth(),
+      analytics: createClientDemoAnalytics(),
+      communityHealth: createClientDemoCommunityHealth(),
+      versionsByPolicy: createClientDemoVersions(),
+      impactsByPolicy: createClientDemoImpacts(),
+    };
+    completeJudgeDemoStep('Selected the adopted Rule 2 policy ladder.');
+
+    const payload = buildJudgeDemoApplyPayload();
+    const preview = createClientDemoApplyPreview(payload);
+    const result = createClientDemoApplyResult(payload);
+    const packet = createClientDemoCasePacket();
+    const board = createClientDemoEvidenceBoard(result, packet);
+    const digest = createClientDemoDigestReport();
+
+    applyState = {
+      ...applyState,
+      loading: false,
+      confirming: false,
+      error: undefined,
+      message: 'Judge demo recorded a stricter log-only override with receipt.',
+      form: judgeDemoPayloadToApplyForm(payload),
+      preview: {
+        ...preview,
+        recommendation: result.recommendation,
+      },
+      result,
+    };
+    receiptLedgerState = {
+      loading: false,
+      receipts: [
+        result.receipt,
+        ...receiptLedgerState.receipts.filter(
+          (receipt) => receipt.id !== result.receipt.id
+        ),
+      ],
+    };
+    governanceState = {
+      ...governanceState,
+      health: createClientDemoHealth(result.overrideEvent),
+      overrides: createClientDemoOverrides(result.overrideEvent),
+    };
+    completeJudgeDemoStep('Previewed Apply Policy and recorded a stricter override.');
+
+    casePacketState = {
+      ...casePacketState,
+      loading: false,
+      error: undefined,
+      message: 'Judge demo Case Packet generated from the latest receipt.',
+      packet,
+    };
+    evidenceBoardState = {
+      ...evidenceBoardState,
+      loading: false,
+      saving: false,
+      error: undefined,
+      message: 'Judge demo Evidence Board opened with receipt, override, packet, and comparable evidence.',
+      boards: [
+        board,
+        ...evidenceBoardState.boards.filter((item) => item.id !== board.id),
+      ],
+    };
+    v2ProductState = {
+      ...v2ProductState,
+      evidenceGraph: createClientDemoEvidenceGraph(result, packet, board),
+    };
+    completeJudgeDemoStep('Opened Case Packet and Evidence Board proof.');
+
+    digestState = {
+      loading: false,
+      error: undefined,
+      report: digest,
+      history: [
+        digest,
+        ...digestState.history.filter((item) => item.id !== digest.id),
+      ],
+      capabilities: createClientDigestCapabilities(),
+      settings: {
+        ...createClientDigestSettings(),
+        lastGeneratedAt: digest.generatedAt,
+      },
+      message: 'Judge demo digest is ready for manual review.',
+    };
+    completeJudgeDemoStep('Generated digest-ready proof for the final story.');
+
+    activePage = 'prove';
+    window.location.hash = '#prove';
+    judgeDemoState = {
+      ...judgeDemoState,
+      running: false,
+      message: 'Judge demo complete: receipt, override, Case Packet, Evidence Board, and digest are ready.',
+    };
+  } catch (error) {
+    judgeDemoState = {
+      ...judgeDemoState,
+      running: false,
+      error: normalizeClientError(error, 'Judge demo path failed.'),
+    };
+  }
+
+  render();
+}
+
+function completeJudgeDemoStep(step: string) {
+  judgeDemoState = {
+    ...judgeDemoState,
+    completedSteps: [...judgeDemoState.completedSteps, step],
+  };
+  render();
+}
+
+function buildJudgeDemoApplyPayload(): ReturnType<typeof applyFormDataToPayload> {
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    ruleKey: DEMO_POLICY.ruleKey,
+    targetThingId: 't3_demo_case_r2_appeal',
+    targetAuthor: 'learner_1',
+    targetTitle: 'Repeat low-effort help request',
+    targetBody:
+      'I need the answer fast and did not read the sidebar or prior guidance.',
+    targetPermalink: '/r/ExampleLearning/comments/demo_case_r2_appeal',
+    selectedAction: 'temporary_ban_suggested',
+    modNoteMode: 'log_only',
+    source: 'simulator',
+    confirmed: true,
+    overrideReason: 'severe_context',
+    overrideNote:
+      'Judge demo: stricter action selected because repeated context is visible in the demo history.',
+  };
+}
+
+function judgeDemoPayloadToApplyForm(
+  payload: ReturnType<typeof applyFormDataToPayload>
+): ApplyFormState {
+  return {
+    ruleKey: payload.ruleKey,
+    targetThingId: payload.targetThingId,
+    targetAuthor: payload.targetAuthor,
+    targetTitle: payload.targetTitle ?? '',
+    targetBody: payload.targetBody ?? '',
+    targetPermalink: payload.targetPermalink ?? '',
+    subreddit: payload.subreddit ?? DEMO_SUBREDDIT_NAME,
+    selectedAction: payload.selectedAction,
+    modNoteMode: payload.modNoteMode,
+    overrideReason: payload.overrideReason ?? '',
+    overrideNote: payload.overrideNote ?? '',
+  };
+}
+
+function createClientDemoEvidenceBoard(
+  result: ApplyPolicyConfirmResult,
+  packet: CasePacket
+): EvidenceBoardThread {
+  const now = new Date().toISOString();
+  const overrideId = result.overrideEvent?.id ?? 'demo-override-r2-appeal';
+
+  return {
+    id: 'client-demo-evidence-board',
+    subreddit: DEMO_SUBREDDIT_NAME,
+    title: 'Rule 2 judge demo proof board',
+    status: 'open',
+    subject: {
+      ruleKey: DEMO_POLICY.ruleKey,
+      receiptId: result.receipt.id,
+      casePacketId: packet.id,
+      policyId: DEMO_POLICY.id,
+      policyVersionId: 'demo-policy-low-effort-v2',
+      ...(result.receipt.targetThingId
+        ? { targetThingId: result.receipt.targetThingId }
+        : {}),
+    },
+    evidence: [
+      {
+        id: 'client-demo-evidence-receipt',
+        source: 'receipt',
+        sourceId: result.receipt.id,
+        label: 'Log-only action receipt',
+        summary:
+          'Receipt records the selected temporary-ban suggestion without attempting Reddit execution.',
+        occurredAt: result.receipt.createdAt,
+        addedAt: now,
+        privacy: createDemoEvidencePrivacy([
+          'Target author is retained on the receipt; board summary avoids copying it.',
+        ]),
+      },
+      {
+        id: 'client-demo-evidence-override',
+        source: 'override',
+        sourceId: overrideId,
+        label: 'Override audit',
+        summary:
+          'Override reason explains why the selected action was stricter than the Rule 2 policy.',
+        occurredAt: result.overrideEvent?.createdAt ?? now,
+        addedAt: now,
+        privacy: createDemoEvidencePrivacy(['Override detail is summarized for team review.']),
+      },
+      {
+        id: 'client-demo-evidence-packet',
+        source: 'case_packet',
+        sourceId: packet.id,
+        label: 'Case Packet',
+        summary:
+          'Packet collects comparable Rule 2 cases and caveats without automated appeal judgment.',
+        occurredAt: packet.generatedAt,
+        addedAt: now,
+        privacy: createDemoEvidencePrivacy(['Case Packet uses labeled demo seed data.']),
+      },
+      {
+        id: 'client-demo-evidence-comparable',
+        source: 'comparable_case',
+        sourceId: 'demo-case-r2-comparable-followed',
+        label: 'Comparable first-offense case',
+        summary:
+          'Comparable case shows the team-aligned first-offense warning outcome.',
+        occurredAt: '2026-05-14T11:30:00.000Z',
+        addedAt: now,
+        privacy: createDemoEvidencePrivacy([
+          'Comparable author remains anonymized in the board.',
+        ]),
+      },
+    ],
+    statusHistory: [
+      {
+        toStatus: 'open',
+        changedAt: now,
+        changedBy: 'local-preview',
+        note: 'Opened by the Judge Demo path orchestrator.',
+      },
+    ],
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'local-preview',
+  };
+}
+
+function createDemoEvidencePrivacy(
+  redactionNotes: string[]
+): EvidenceBoardThread['evidence'][number]['privacy'] {
+  return {
+    sourceContainsAuthor: true,
+    authorCopiedToBoard: false,
+    contentExcerptCopiedToBoard: false,
+    moderatorNameCopiedToBoard: false,
+    retentionCategory: 'moderation_evidence',
+    redactionNotes,
+  };
+}
+
+function createClientDemoEvidenceGraph(
+  result: ApplyPolicyConfirmResult,
+  packet: CasePacket,
+  board: EvidenceBoardThread
+): EvidenceGraphResponse {
+  const overrideId = result.overrideEvent?.id ?? 'demo-override-r2-appeal';
+  const labels = [
+    {
+      kind: 'source' as const,
+      label: 'Demo seed',
+      detail: 'Generated from labeled ExampleLearning data only.',
+      tone: 'neutral' as const,
+    },
+  ];
+
+  return {
+    subreddit: DEMO_SUBREDDIT_NAME,
+    generatedAt: new Date().toISOString(),
+    subjectId: result.receipt.id,
+    nodes: [
+      {
+        id: result.receipt.id,
+        type: 'receipt',
+        label: 'Action receipt',
+        detail: 'Log-only receipt for stricter Rule 2 action.',
+        trustLabels: [
+          ...labels,
+          {
+            kind: 'execution',
+            label: 'No Reddit execution',
+            detail: 'The judge path records ModMirror state only.',
+            tone: 'good',
+          },
+        ],
+      },
+      {
+        id: DEMO_POLICY.id,
+        type: 'policy',
+        label: 'Rule 2 policy',
+        detail: 'First offense recommends warning with override required.',
+        trustLabels: labels,
+      },
+      {
+        id: overrideId,
+        type: 'override',
+        label: 'Override audit',
+        detail: 'Selected action was stricter than the policy recommendation.',
+        trustLabels: labels,
+      },
+      {
+        id: packet.id,
+        type: 'case_packet',
+        label: 'Case Packet',
+        detail: 'Comparable cases and caveats for moderator review.',
+        trustLabels: labels,
+      },
+      {
+        id: board.id,
+        type: 'evidence_board',
+        label: 'Evidence Board',
+        detail: 'Receipt, override, packet, and comparable evidence collected.',
+        trustLabels: labels,
+      },
+    ],
+    edges: [
+      { from: result.receipt.id, to: DEMO_POLICY.id, label: 'uses policy' },
+      { from: result.receipt.id, to: overrideId, label: 'records override' },
+      { from: packet.id, to: result.receipt.id, label: 'explains receipt' },
+      { from: board.id, to: packet.id, label: 'collects packet' },
+      { from: board.id, to: overrideId, label: 'tracks review' },
+    ],
+    missingReferences: [],
+    privacyNotes: [
+      'Demo graph avoids per-moderator ranking and does not copy comparable-case authors into board summaries.',
+      'This proof is a local/static demonstration, not live Reddit runtime proof.',
+    ],
+  };
 }
 
 async function submitCalibrationAnswerFromUi(

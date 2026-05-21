@@ -64,6 +64,12 @@ bare `curl` probes to `/api/health`, `/api/runtime-capabilities`, and
 JSON. Resume Wave 21 only from an authenticated Devvit WebView session or after
 port `5678` is free.
 
+V4 Wave 06 is complete: the Command Center now has a one-click Judge Demo path
+that builds the labeled ExampleLearning Rule 2 story through scan, adopted
+policy, stricter Apply Policy override receipt, Case Packet, Evidence Board,
+evidence graph, and digest-ready proof. This is static/demo proof, not live
+Devvit runtime proof.
+
 `docs/operational-overhaul/RUNTIME_PROOF_BACKLOG.md` is the current
 single-page index for remaining proof gaps and proof-plan readiness.
 `docs/master-plan/goal-completion-audit.md` maps the active broad user goal to

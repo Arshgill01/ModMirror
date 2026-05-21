@@ -891,6 +891,28 @@ dd {
   justify-self: start;
 }
 
+.judge-demo-status {
+  border-top: 1px solid var(--mm-line);
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 12px;
+}
+
+.judge-demo-status p {
+  margin: 0;
+}
+
+.judge-demo-status ol {
+  color: var(--mm-muted);
+  display: grid;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 1.4;
+  margin: 0;
+  padding-left: 18px;
+}
+
 .command-secondary {
   display: grid;
   grid-template-rows: 1fr auto;
