@@ -172,3 +172,28 @@ Result:
 - `npx devvit whoami` still passed as `u/BrightyBrainiac`.
 
 Status remains blocked. The Gemini/Antigravity process was not killed.
+
+## Follow-up Recheck
+
+Date: 2026-05-21 22:08 IST
+
+After the submission-readiness documentation merge, the current `master`
+workspace was rechecked again for a possible Wave 21 retry.
+
+Commands run:
+
+```sh
+git status --short --branch
+lsof -nP -iTCP:5678 -sTCP:LISTEN || true
+ps -p 42407 -o pid,etime,command || true
+```
+
+Result:
+
+- Root `master` was clean and synced with `origin/master`.
+- Port `5678` was still owned by PID `42407`.
+- The owning command was still the Gemini/Antigravity `devvit playtest` process
+  from `refresh-minimalist-ui-design`.
+- Observed elapsed time was `04:03:50`.
+
+Status remains blocked. The Gemini/Antigravity process was not killed.

@@ -68,8 +68,9 @@ rehearsal did not upgrade any route to runtime-verified: port `5678` was owned
 by an Antigravity/Gemini `devvit playtest` process from another worktree, and
 bare `curl` probes to `/api/health`, `/api/runtime-capabilities`, and
 `/api/demo/manifest` returned `HTTP/1.1 426 Upgrade Required` instead of route
-JSON. Resume Wave 21 only from an authenticated Devvit WebView session or after
-port `5678` is free.
+JSON. A 22:08 IST recheck still found PID `42407` owning port `5678` with
+elapsed time `04:03:50`. Resume Wave 21 only from an authenticated Devvit
+WebView session or after port `5678` is free.
 
 V4 Wave 06 is complete: the Command Center now has a one-click Judge Demo path
 that builds the labeled ExampleLearning Rule 2 story through scan, adopted

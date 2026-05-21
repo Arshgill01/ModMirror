@@ -95,6 +95,12 @@ dirty Gemini/Antigravity `refresh-minimalist-ui-design` worktree. `npx devvit
 whoami` still passed as `u/BrightyBrainiac`, but the current `master` workspace
 could not start a clean playtest without disturbing that process.
 
+On 2026-05-21 at 22:08 IST, the blocker was still present after the
+submission-readiness merge. Port `5678` was still owned by PID `42407`, with
+observed elapsed time `04:03:50`, from the same Gemini/Antigravity
+`refresh-minimalist-ui-design` playtest command. The process was not killed, so
+Wave 21 remains blocked for the current `master` workspace.
+
 ## Next Unblock Step
 
 Use one of these non-conflicting paths:
